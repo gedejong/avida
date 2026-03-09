@@ -38,12 +38,14 @@ Focus:
 - `Data::Package` (Rust-backed deterministic `ArrayPackage` conversion/format path via C ABI)
 - `Data::TimeSeriesRecorder` (Rust-backed deterministic parse/serialize + append path via C ABI)
 - `Data::Provider` deterministic helper dispatch/parse path (Rust-backed C ABI helpers; C++ API unchanged)
+- `Data::Manager` deterministic argumented-ID split path (Rust-backed C ABI helpers for parse/classify reuse)
 
 Focus:
 - Define narrow ABI seams around pure computation and deterministic transforms.
 - Avoid crossing ownership boundaries with complex object graphs.
 - Keep `rust/avida-rust/src/lib.rs` as a thin hub with per-domain module ownership.
 - Evaluate mature external crates first for each slice; keep custom code only when parity/ABI constraints require it.
+- Reuse shared Rust helper parsers across `source/data` modules to eliminate duplicated C++ bracket parsing logic.
 
 ## Wave 5: Runtime and execution core
 

@@ -131,4 +131,25 @@ mod tests {
         avd_provider_string_free(raw);
         avd_provider_string_free(arg);
     }
+
+    #[test]
+    fn provider_id_split_rejects_malformed_forms() {
+        let mut raw: *mut c_char = std::ptr::null_mut();
+        let mut arg: *mut c_char = std::ptr::null_mut();
+        let malformed = CString::new("demo]").expect("literal has no NUL");
+        let ok = avd_provider_split_argumented_id(malformed.as_ptr(), &mut raw, &mut arg);
+        assert_eq!(ok, 0);
+        assert!(raw.is_null());
+        assert!(arg.is_null());
+    }
+
+    #[test]
+    fn provider_id_classification_edge_cases() {
+        let standard = CString::new("core.demo").expect("literal has no NUL");
+        let argumented = CString::new("core.demo[]").expect("literal has no NUL");
+        let malformed = CString::new("x]").expect("literal has no NUL");
+        assert_eq!(avd_provider_is_standard_id(standard.as_ptr()), 1);
+        assert_eq!(avd_provider_is_argumented_id(argumented.as_ptr()), 1);
+        assert_eq!(avd_provider_is_argumented_id(malformed.as_ptr()), 0);
+    }
 }

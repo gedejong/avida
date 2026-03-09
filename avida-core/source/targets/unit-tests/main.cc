@@ -56,6 +56,7 @@ public:
 #include "avida/data/Package.h"
 #include "avida/data/Provider.h"
 #include "avida/data/TimeSeriesRecorder.h"
+#include "rust/running_stats_ffi.h"
 #include "cDoubleSum.h"
 #include "cHistogram.h"
 #include "cOrderedWeightedIndex.h"
@@ -604,6 +605,35 @@ protected:
   }
 };
 
+class cManagerDataIdHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "Data::Manager ID Helpers"; }
+protected:
+  void RunTests()
+  {
+    char* raw_id = NULL;
+    char* arg = NULL;
+
+    int ok = avd_provider_split_argumented_id("demo[value]", &raw_id, &arg);
+    bool split_ok = (ok != 0) && raw_id && arg &&
+      Apto::String(raw_id) == "demo[]" &&
+      Apto::String(arg) == "value";
+    ReportTestResult("Split valid argumented ID", split_ok);
+    avd_provider_string_free(raw_id);
+    avd_provider_string_free(arg);
+
+    raw_id = NULL;
+    arg = NULL;
+    ok = avd_provider_split_argumented_id("demo]", &raw_id, &arg);
+    ReportTestResult("Split malformed argumented ID fails", ok == 0 && raw_id == NULL && arg == NULL);
+
+    ReportTestResult("Standard ID classification", avd_provider_is_standard_id("core.demo") == 1);
+    ReportTestResult("Argumented ID classification", avd_provider_is_argumented_id("core.demo[]") == 1);
+    ReportTestResult("Malformed trailing bracket classification", avd_provider_is_argumented_id("x]") == 0);
+  }
+};
+
 
 
 
@@ -634,6 +664,7 @@ int main(int argc, const char* argv[])
   TEST(cHistogram);
   TEST(cTimeSeriesRecorder);
   TEST(cProvider);
+  TEST(cManagerDataIdHelper);
   
   if (failed == 0)
     cout << "All unit tests passed." << endl;

@@ -28,9 +28,30 @@
 #include "avida/data/Package.h"
 #include "avida/data/Provider.h"
 #include "avida/data/Recorder.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cassert>
 
+namespace {
+bool SplitArgumentedDataID(
+  const Avida::Data::DataID& data_id,
+  Avida::Data::DataID& raw_id,
+  Avida::Data::Argument& argument
+)
+{
+  char* raw_id_cstr = NULL;
+  char* argument_cstr = NULL;
+  if (avd_provider_split_argumented_id((const char*) data_id, &raw_id_cstr, &argument_cstr) == 0) {
+    return false;
+  }
+
+  raw_id = (raw_id_cstr != NULL) ? raw_id_cstr : "";
+  argument = (argument_cstr != NULL) ? argument_cstr : "";
+  avd_provider_string_free(raw_id_cstr);
+  avd_provider_string_free(argument_cstr);
+  return true;
+}
+}
 
 static Avida::WorldFacetPtr DeserializeDataManager(Avida::ArchivePtr)
 {
@@ -91,20 +112,9 @@ Apto::String Avida::Data::Manager::Describe(const DataID& data_id) const
   if (!data_id.GetSize()) return rtn;
   
   if (data_id[data_id.GetSize() - 1] == ']') {
-    // Handle argumented data value
-    
-    // Find start of argument
-    int start_idx = -1;
-    for (int i = 0; i < data_id.GetSize(); i++) {
-      if (data_id[i] == '[') {
-        start_idx = i + 1;
-        break;
-      }
-    }
-    if (start_idx == -1) return "";  // argument start not found
-    
-    // Separate argument from incoming requested data id
-    DataID raw_id = data_id.Substring(0, start_idx) + "]";
+    DataID raw_id;
+    Argument argument;
+    if (!SplitArgumentedDataID(data_id, raw_id, argument)) return "";  // argument start not found
     
     // Check if argumented provider exists for requested data
     ArgumentedProviderPtr provider;
@@ -137,21 +147,9 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
     if (!data_id.GetSize()) return false;
     
     if (data_id[data_id.GetSize() - 1] == ']') {
-      // Handle argumented data value
-      
-      // Find start of argument
-      int start_idx = -1;
-      for (int i = 0; i < data_id.GetSize(); i++) {
-        if (data_id[i] == '[') {
-          start_idx = i + 1;
-          break;
-        }
-      }
-      if (start_idx == -1) return false;  // argument start not found
-      
-      // Separate argument from incoming requested data id
-      Apto::String argument = data_id.Substring(start_idx, data_id.GetSize() - start_idx - 1);
-      DataID raw_id = data_id.Substring(0, start_idx) + "]";
+      DataID raw_id;
+      Argument argument;
+      if (!SplitArgumentedDataID(data_id, raw_id, argument)) return false;  // argument start not found
       
       // Check if argumented provider exists for requested data
       if (!m_arg_provider_map.Has(raw_id)) return false;
@@ -193,20 +191,9 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
     if (rdid[rdid.GetSize() - 1] == ']') {
       
       // Handle argumented data value      
-      
-      // Find start of argument
-      int start_idx = -1;
-      for (int i = 0; i < rdid.GetSize(); i++) {
-        if (rdid[i] == '[') {
-          start_idx = i + 1;
-          break;
-        }
-      }
-      if (start_idx == -1) return false;  // argument start not found
-      
-      // Separate argument from incoming requested data id
-      Apto::String argument = rdid.Substring(start_idx, rdid.GetSize() - start_idx - 1);
-      DataID raw_id = rdid.Substring(0, start_idx) + "]";
+      DataID raw_id;
+      Argument argument;
+      if (!SplitArgumentedDataID(rdid, raw_id, argument)) return false;  // argument start not found
 
       ArgumentedProviderPtr provider = m_active_arg_provider_map[raw_id];
       if (!provider) return false; // Argumented providers should be activated above, whaa??
@@ -452,21 +439,12 @@ Avida::Data::PackagePtr Avida::Data::Manager::GetCurrentValue(const DataID& data
   Apto::MutexAutoLock cvmutexlock(m_current_value_mutex);
   
   if (m_current_values.Get(data_id, rtn)) return rtn;
+  if (!data_id.GetSize()) return rtn;
   
   if (data_id[data_id.GetSize() - 1] == ']') {
-    // Find start of argument
-    int start_idx = -1;
-    for (int i = 0; i < data_id.GetSize(); i++) {
-      if (data_id[i] == '[') {
-        start_idx = i + 1;
-        break;
-      }
-    }
-    if (start_idx == -1) return rtn;  // argument start not found
-    
-    // Separate argument from incoming requested data id
-    Apto::String argument = data_id.Substring(start_idx, data_id.GetSize() - start_idx - 1);
-    DataID raw_id = data_id.Substring(0, start_idx) + "]";
+    DataID raw_id;
+    Argument argument;
+    if (!SplitArgumentedDataID(data_id, raw_id, argument)) return rtn;  // argument start not found
     
     m_rwlock.ReadLock();
     ArgumentedProviderPtr arg_provider;
