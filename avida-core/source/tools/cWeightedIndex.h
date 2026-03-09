@@ -24,6 +24,8 @@
 #define cWeightedIndex_h
 
 #include "avida/core/Types.h"
+#include <cassert>
+#include "rust/running_stats_ffi.h"
 
 #ifndef NULL
 #define NULL 0
@@ -37,22 +39,31 @@
 class cWeightedIndex
 {
 protected:
-  int size;
-  Apto::Array<double> item_weight;
-  Apto::Array<double> subtree_weight;
+  AvidaWeightedIndexHandle* m_handle;
 
   
   cWeightedIndex(); // @not_implemented
   
 public:
   cWeightedIndex(int in_size);
+  cWeightedIndex(const cWeightedIndex& in);
+  cWeightedIndex& operator=(const cWeightedIndex& in);
   ~cWeightedIndex();
 
   void SetWeight(int id, double weight);
-  double GetWeight(int id) { return item_weight[id]; }
+  double GetWeight(int id)
+  {
+    return avd_wi_get_weight(m_handle, id);
+  }
 
-  double GetTotalWeight() { return subtree_weight[0]; }
-  int GetSize() const {return size;}
+  double GetTotalWeight()
+  {
+    return avd_wi_get_total_weight(m_handle);
+  }
+  int GetSize() const
+  {
+    return avd_wi_get_size(m_handle);
+  }
   int FindPosition(double position, int root_id=0);
 
   int GetParent(int id)     { return (id-1) / 2; }

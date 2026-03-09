@@ -26,15 +26,33 @@
 using namespace std;
 
 cOrderedWeightedIndex::cOrderedWeightedIndex()
-  : item_weight(0)
-  , cum_weight(0)
-  , item_value(0)
+  : m_handle(avd_owi_new())
 {
+  assert(m_handle != 0);
+}
+
+cOrderedWeightedIndex::cOrderedWeightedIndex(const cOrderedWeightedIndex& in)
+  : m_handle(avd_owi_clone(in.m_handle))
+{
+  assert(m_handle != 0);
+}
+
+cOrderedWeightedIndex& cOrderedWeightedIndex::operator=(const cOrderedWeightedIndex& in)
+{
+  if (this != &in) {
+    AvidaOrderedWeightedIndexHandle* new_handle = avd_owi_clone(in.m_handle);
+    assert(new_handle != 0);
+    avd_owi_free(m_handle);
+    m_handle = new_handle;
+  }
+  return *this;
 }
 
 
 cOrderedWeightedIndex::~cOrderedWeightedIndex()
 {
+  avd_owi_free(m_handle);
+  m_handle = 0;
 }
 
 
@@ -42,37 +60,11 @@ cOrderedWeightedIndex::~cOrderedWeightedIndex()
  
 void cOrderedWeightedIndex::SetWeight(int value, double in_weight)
 {
-  int cur_size = item_value.GetSize();
-  item_weight.Resize(cur_size + 1);
-  cum_weight.Resize(cur_size + 1);
-  item_value.Resize(cur_size + 1);
-
-  item_value[cur_size] = value;
-  item_weight[cur_size] = in_weight;
-  cum_weight[cur_size] = (cur_size == 0) ? in_weight : cum_weight[cur_size-1] + in_weight;
+  avd_owi_set_weight(m_handle, value, in_weight);
  }
 
 int cOrderedWeightedIndex::FindPosition(double position){
-  return Lookup(position, 0, GetSize()-1);
-}
-
-
-int cOrderedWeightedIndex::Lookup(double weight, int ndxA, int ndxE)
-{
-  int mid = ndxA + (ndxE - ndxA) / 2;
-
-  if (cum_weight[mid]-item_weight[mid] <= weight && cum_weight[mid] > weight)
-  {
-    return item_value[mid];
-  }
-  
-  if (cum_weight[mid] >  weight)
-  { 
-    return Lookup(weight, ndxA, mid-1);
-  }
-  else{
-    return Lookup(weight, mid+1, ndxE);
-  }
+  return avd_owi_find_position(m_handle, position);
 }
 
 

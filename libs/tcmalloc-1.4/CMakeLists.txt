@@ -1,6 +1,6 @@
-PROJECT(TCMALLOC CXX)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.20)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(TCMALLOC CXX)
 
 # Default location for installed software/configs/ docs is the build directory.
 SET(CMAKE_INSTALL_PREFIX

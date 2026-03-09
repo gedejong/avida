@@ -2,6 +2,7 @@
 #define BIT_ARRAY_H
 
 #include "avida/core/Types.h"
+#include "rust/running_stats_ffi.h"
 
 #include <assert.h>
 
@@ -92,7 +93,7 @@ using namespace std;
 
 class cRawBitArray {
 private:
-  unsigned int * bit_fields;
+  AvidaRawBitArrayHandle* m_handle;
   
   // Disallow default copy constructor and operator=
   // (we need to know the number of bits we're working with!)
@@ -103,42 +104,32 @@ private:
   inline int GetField(const int index) const { return index >> 5; }
   inline int GetFieldPos(const int index) const { return index & 31; }
 public:
-  cRawBitArray() : bit_fields(NULL) { ; }
+  cRawBitArray() : m_handle(NULL) { ; }
   ~cRawBitArray() {
-    if (bit_fields != NULL) {
-      delete [] bit_fields;
+    if (m_handle != NULL) {
+      avd_rba_free(m_handle);
+      m_handle = NULL;
     }
   }
 
   void Zero(const int num_bits) {
-    const int num_fields = GetNumFields(num_bits);
-    for (int i = 0; i < num_fields; i++) {
-      bit_fields[i] = 0;
-    }    
+    avd_rba_zero(m_handle, num_bits);
   }
 
   void Ones(const int num_bits) {
-    const int num_fields = GetNumFields(num_bits);
-    for (int i = 0; i < num_fields; i++) {
-      bit_fields[i] = ~0;
-    }    
-    const int last_bit = GetFieldPos(num_bits);
-    if (last_bit > 0) {
-      bit_fields[num_fields - 1] &= (1 << last_bit) - 1;
-    }
+    avd_rba_ones(m_handle, num_bits);
   }
 
   cRawBitArray(const int num_bits) {
-    const int num_fields = GetNumFields(num_bits);
-    bit_fields = new unsigned int[ num_fields ];
-    Zero(num_bits);
+    m_handle = avd_rba_new(num_bits);
+    assert(m_handle != NULL);
   }
 
   // The Copy() method and the Copy Constructor must both be told how many
   // bits they are working with.
   void Copy(const cRawBitArray & in_array, const int num_bits);
   cRawBitArray(const cRawBitArray & in_array, const int num_bits)
-    : bit_fields(NULL)
+    : m_handle(NULL)
   {
     Copy(in_array, num_bits);
   }
@@ -148,21 +139,11 @@ public:
   // we're also going to assume that the index is within range w/o any special
   // checks.
   bool GetBit(const int index) const{
-    const int field_id = GetField(index);
-    const int pos_id = GetFieldPos(index);
-    return (bit_fields[field_id] & (1 << pos_id)) != 0;
+    return avd_rba_get_bit(m_handle, index) != 0;
   }
 
   void SetBit(const int index, const bool value) {
-    const int field_id = GetField(index);
-    const int pos_id = GetFieldPos(index);
-    const int pos_mask = 1 << pos_id;
-
-    if (value == false) {
-      bit_fields[field_id] &= ~pos_mask;
-    } else {
-      bit_fields[field_id] |= pos_mask;
-    }
+    avd_rba_set_bit(m_handle, index, value ? 1 : 0);
   }
 
   bool IsEqual(const cRawBitArray & in_array, int num_bits) const;

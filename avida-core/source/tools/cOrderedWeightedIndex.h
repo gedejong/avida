@@ -24,6 +24,8 @@
 #define cOrderedWeightedIndex_h
 
 #include "avida/core/Types.h"
+#include <cassert>
+#include "rust/running_stats_ffi.h"
 
 #ifndef NULL
 #define NULL 0
@@ -42,23 +44,33 @@ using namespace std;
 class cOrderedWeightedIndex
 {
 protected:
-  Apto::Array<double> item_weight;
-  Apto::Array<double> cum_weight;
-  Apto::Array<int>    item_value;
-
-  int Lookup(double weight, int ndxA, int ndxE);
+  AvidaOrderedWeightedIndexHandle* m_handle;
 
 public:
   cOrderedWeightedIndex();
+  cOrderedWeightedIndex(const cOrderedWeightedIndex& in);
+  cOrderedWeightedIndex& operator=(const cOrderedWeightedIndex& in);
   ~cOrderedWeightedIndex();
 
   void   SetWeight(int value, double weight);
   
-  double GetWeight(int id) { return item_weight[id]; }
-  int    GetValue(int id)  { return item_value[id];  }
+  double GetWeight(int id)
+  {
+    return avd_owi_get_weight(m_handle, id);
+  }
+  int GetValue(int id)
+  {
+    return avd_owi_get_value(m_handle, id);
+  }
 
-  double GetTotalWeight() { return cum_weight[GetSize()-1]; }
-  int GetSize() const {return item_weight.GetSize();}
+  double GetTotalWeight()
+  {
+    return avd_owi_get_total_weight(m_handle);
+  }
+  int GetSize() const
+  {
+    return avd_owi_get_size(m_handle);
+  }
   
   int FindPosition(double position);
 

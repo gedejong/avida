@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 using namespace std;
 
@@ -52,6 +53,15 @@ public:
 
 
 #include "cBitArray.h"
+#include "avida/data/Package.h"
+#include "avida/data/Provider.h"
+#include "avida/data/TimeSeriesRecorder.h"
+#include "cDoubleSum.h"
+#include "cHistogram.h"
+#include "cOrderedWeightedIndex.h"
+#include "cRunningAverage.h"
+#include "cRunningStats.h"
+#include "cWeightedIndex.h"
 class cRawBitArrayTests : public cUnitTest
 {
 public:
@@ -308,6 +318,289 @@ protected:
     ReportTestResult("Chained Bitwise Operations", ((~ba & ~ba2).CountBits() == 31));
     ReportTestResult("++operator", ((++(~ba & ~ba2)).CountBits() == 30));
     ReportTestResult("operator++", (((~ba & ~ba2)++).CountBits() == 31));
+
+    cBitArray find_test(16);
+    find_test.Clear();
+    find_test.Set(5, true);
+    find_test.Set(9, true);
+    ReportTestResult("FindBit1", (find_test.FindBit1(0) == 5 && find_test.FindBit1(6) == 9 && find_test.FindBit1(10) == -1));
+
+    Apto::Array<int> ones = find_test.GetOnes();
+    ReportTestResult("GetOnes", (ones.GetSize() == 2 && ones[0] == 5 && ones[1] == 9));
+
+    cBitArray resize_test(34);
+    resize_test.SetAll();
+    ReportTestResult("SetAll NonWordAligned", (resize_test.CountBits() == 34));
+    resize_test.Resize(33);
+    ReportTestResult("Resize Shrink Masks Tail", (resize_test.CountBits() == 33));
+    resize_test.Clear();
+    ReportTestResult("Clear NonWordAligned", (resize_test.CountBits() == 0));
+
+    cBitArray hash_a(16);
+    hash_a.Set(1, true);
+    hash_a.Set(3, true);
+    cBitArray hash_b(hash_a);
+    int hash_a_val = Apto::HashKey<cBitArray, 101>::Hash(hash_a);
+    int hash_b_val = Apto::HashKey<cBitArray, 101>::Hash(hash_b);
+    hash_b.Set(4, true);
+    int hash_c_val = Apto::HashKey<cBitArray, 101>::Hash(hash_b);
+    ReportTestResult("MapKey Equality/Hash Compatibility", (hash_a == cBitArray(hash_a) && hash_a_val == hash_b_val && hash_c_val != hash_a_val));
+  }
+};
+
+class cRunningStatsTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cRunningStats"; }
+protected:
+  void RunTests()
+  {
+    cRunningStats stats;
+
+    stats.Push(1.0);
+    stats.Push(2.0);
+    stats.Push(3.0);
+    stats.Push(4.0);
+
+    ReportTestResult("Count", (fabs(stats.N() - 4.0) < 1e-12));
+    ReportTestResult("Mean", (fabs(stats.Mean() - 2.5) < 1e-12));
+    ReportTestResult("Variance", (fabs(stats.Variance() - 1.6666666666666667) < 1e-12));
+    ReportTestResult("StdDeviation", (fabs(stats.StdDeviation() - 1.2909944487358056) < 1e-12));
+    ReportTestResult("StdError", (fabs(stats.StdError() - 0.6454972243679028) < 1e-12));
+
+    cRunningStats copied(stats);
+    ReportTestResult("Copy Constructor", (fabs(copied.Mean() - stats.Mean()) < 1e-12));
+
+    cRunningStats assigned;
+    assigned = stats;
+    ReportTestResult("Assignment", (fabs(assigned.Variance() - stats.Variance()) < 1e-12));
+
+    stats.Clear();
+    ReportTestResult("Clear", (fabs(stats.N()) < 1e-12 && fabs(stats.Mean()) < 1e-12));
+  }
+};
+
+class cRunningAverageTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cRunningAverage"; }
+protected:
+  void RunTests()
+  {
+    cRunningAverage avg(3);
+
+    avg.Add(1.0);
+    avg.Add(2.0);
+    ReportTestResult("Warm-up Average", (fabs(avg.Average()) < 1e-12));
+    ReportTestResult("Warm-up Variance", (fabs(avg.Variance()) < 1e-12));
+    ReportTestResult("Warm-up StdError", (fabs(avg.StdError()) < 1e-12));
+
+    avg.Add(3.0);
+    ReportTestResult("Steady Average", (fabs(avg.Average() - 2.0) < 1e-12));
+    ReportTestResult("Steady Variance", (fabs(avg.Variance() - 1.0) < 1e-12));
+    ReportTestResult("Steady StdError", (fabs(avg.StdError() - 3.4641016151377544) < 1e-12));
+
+    avg.Add(10.0);
+    ReportTestResult("Wrap Average", (fabs(avg.Average() - 5.0) < 1e-12));
+    ReportTestResult("Wrap Variance", (fabs(avg.Variance() - 19.0) < 1e-12));
+
+    avg.Clear();
+    ReportTestResult("Clear Resets Average", (fabs(avg.Average()) < 1e-12));
+    ReportTestResult("Clear Resets Variance", (fabs(avg.Variance()) < 1e-12));
+  }
+};
+
+class cDoubleSumTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cDoubleSum"; }
+protected:
+  void RunTests()
+  {
+    cDoubleSum sum;
+    ReportTestResult("Initial Count", (fabs(sum.Count()) < 1e-12));
+    ReportTestResult("Initial Sum", (fabs(sum.Sum()) < 1e-12));
+    ReportTestResult("Initial Average", (fabs(sum.Average()) < 1e-12));
+
+    sum.Add(2.0);
+    sum.Add(4.0, 2.0);
+    ReportTestResult("Weighted Count", (fabs(sum.Count() - 3.0) < 1e-12));
+    ReportTestResult("Weighted Sum", (fabs(sum.Sum() - 10.0) < 1e-12));
+    ReportTestResult("Weighted Average", (fabs(sum.Average() - (10.0 / 3.0)) < 1e-12));
+    ReportTestResult("Tracked Max", (fabs(sum.Max() - 4.0) < 1e-12));
+
+    cDoubleSum copied(sum);
+    ReportTestResult("Copy Constructor", (fabs(copied.Sum() - sum.Sum()) < 1e-12));
+    copied.Subtract(4.0, 2.0);
+    ReportTestResult("Subtract", (fabs(copied.Count() - 1.0) < 1e-12 && fabs(copied.Sum() - 2.0) < 1e-12));
+
+    cDoubleSum assigned;
+    assigned = sum;
+    ReportTestResult("Assignment", (fabs(assigned.Variance() - sum.Variance()) < 1e-12));
+
+    sum.Clear();
+    ReportTestResult("Clear", (fabs(sum.Count()) < 1e-12 && fabs(sum.Sum()) < 1e-12));
+  }
+};
+
+class cWeightedIndexTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cWeightedIndex"; }
+protected:
+  void RunTests()
+  {
+    cWeightedIndex wi(7);
+    wi.SetWeight(0, 1.0);
+    wi.SetWeight(1, 2.0);
+    wi.SetWeight(2, 3.0);
+    wi.SetWeight(3, 4.0);
+    wi.SetWeight(4, 5.0);
+    wi.SetWeight(5, 6.0);
+    wi.SetWeight(6, 7.0);
+
+    ReportTestResult("TotalWeight", (fabs(wi.GetTotalWeight() - 28.0) < 1e-12));
+    ReportTestResult("Find Root Bucket", (wi.FindPosition(0.5) == 0));
+    ReportTestResult("Find Left Branch Bucket", (wi.FindPosition(3.5) == 3));
+    ReportTestResult("Find Right Branch Bucket", (wi.FindPosition(27.5) == 6));
+
+    cWeightedIndex copied(wi);
+    ReportTestResult("Copy Constructor", (fabs(copied.GetTotalWeight() - wi.GetTotalWeight()) < 1e-12));
+
+    cWeightedIndex assigned(7);
+    assigned = wi;
+    ReportTestResult("Assignment", (fabs(assigned.GetWeight(4) - 5.0) < 1e-12));
+  }
+};
+
+class cOrderedWeightedIndexTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cOrderedWeightedIndex"; }
+protected:
+  void RunTests()
+  {
+    cOrderedWeightedIndex owi;
+    owi.SetWeight(10, 1.0);
+    owi.SetWeight(20, 2.0);
+    owi.SetWeight(30, 3.0);
+    owi.SetWeight(40, 4.0);
+
+    ReportTestResult("TotalWeight", (fabs(owi.GetTotalWeight() - 10.0) < 1e-12));
+    ReportTestResult("Find First Bucket", (owi.FindPosition(0.5) == 10));
+    ReportTestResult("Find Mid Bucket", (owi.FindPosition(3.5) == 30));
+    ReportTestResult("Find Last Bucket", (owi.FindPosition(8.5) == 40));
+
+    cOrderedWeightedIndex copied(owi);
+    ReportTestResult("Copy Constructor", (fabs(copied.GetTotalWeight() - owi.GetTotalWeight()) < 1e-12));
+
+    cOrderedWeightedIndex assigned;
+    assigned = owi;
+    ReportTestResult("Assignment", (assigned.GetValue(2) == 30));
+  }
+};
+
+class cHistogramTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cHistogram"; }
+protected:
+  void RunTests()
+  {
+    cHistogram hist(5, 1);
+    hist.Insert(1, 1);
+    hist.Insert(3, 2);
+    hist.Insert(5, 1);
+
+    ReportTestResult("Count/Total", (hist.GetCount() == 4 && hist.GetTotal() == 12));
+    ReportTestResult("Mode", (hist.GetMode() == 3));
+    ReportTestResult("Average", (fabs(hist.GetAverage() - 3.0) < 1e-12));
+    ReportTestResult("Variance", (fabs(hist.GetVariance() - (8.0 / 3.0)) < 1e-12));
+
+    hist.Remove(3);
+    ReportTestResult("Remove", (hist.GetCount() == 3 && hist.GetTotal() == 9));
+
+    hist.RemoveBin(5);
+    ReportTestResult("RemoveBin", (hist.GetCount() == 2 && hist.GetTotal() == 4));
+
+    hist.Resize(4, 2);
+    ReportTestResult("Resize", (hist.GetMinBin() == 2 && hist.GetMaxBin() == 4 && hist.GetCount() == 1 && hist.GetTotal() == 3));
+  }
+};
+
+class cTimeSeriesRecorderDouble : public Avida::Data::TimeSeriesRecorder<double>
+{
+public:
+  cTimeSeriesRecorderDouble(const Avida::Data::DataID& data_id)
+    : Avida::Data::TimeSeriesRecorder<double>(data_id) { ; }
+  cTimeSeriesRecorderDouble(const Avida::Data::DataID& data_id, Apto::String str)
+    : Avida::Data::TimeSeriesRecorder<double>(data_id, str) { ; }
+protected:
+  bool shouldRecordValue(Avida::Update) { return true; }
+};
+
+class cTimeSeriesRecorderTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "TimeSeriesRecorder"; }
+protected:
+  void RunTests()
+  {
+    Avida::Data::DataID data_id("demo.value");
+    cTimeSeriesRecorderDouble rec(data_id);
+    Avida::Data::DataRetrievalFunctor retrieve = [] (const Avida::Data::DataID&) {
+      return Avida::Data::PackagePtr(new Avida::Data::Wrap<double>(1.25));
+    };
+    rec.NotifyData(10, retrieve);
+    rec.NotifyData(12, retrieve);
+    ReportTestResult("NotifyData + AsString", (rec.AsString() == "10:1.250000,12:1.250000"));
+
+    cTimeSeriesRecorderDouble loaded(data_id, "3:2.500000,5:4.000000");
+    ReportTestResult("String Constructor Parses Count", (loaded.NumPoints() == 2));
+    ReportTestResult("String Constructor Parses Data", (fabs(loaded.DataPoint(0) - 2.5) < 1e-12 && fabs(loaded.DataPoint(1) - 4.0) < 1e-12));
+    ReportTestResult("String Constructor Parses Time", (loaded.DataTime(0) == 3 && loaded.DataTime(1) == 5));
+    ReportTestResult("String Constructor Roundtrip", (loaded.AsString() == "3:2.500000,5:4.000000"));
+  }
+};
+
+class cMockArgumentedProvider : public Avida::Data::ArgumentedProvider
+{
+public:
+  mutable Avida::Data::DataID last_id;
+  mutable Avida::Data::Argument last_arg;
+
+  Avida::Data::ConstDataSetPtr Provides() const { return Avida::Data::ConstDataSetPtr(); }
+  void UpdateProvidedValues(Avida::Update) { ; }
+  Apto::String DescribeProvidedValue(const Avida::Data::DataID& data_id) const { return data_id; }
+  void SetActiveArguments(const Avida::Data::DataID&, Avida::Data::ConstArgumentSetPtr) { ; }
+  Avida::Data::ConstArgumentSetPtr GetValidArguments(const Avida::Data::DataID&) const { return Avida::Data::ConstArgumentSetPtr(); }
+  bool IsValidArgument(const Avida::Data::DataID&, Avida::Data::Argument) const { return true; }
+
+  Avida::Data::PackagePtr GetProvidedValueForArgument(const Avida::Data::DataID& data_id, const Avida::Data::Argument& arg) const {
+    last_id = data_id;
+    last_arg = arg;
+    return Avida::Data::PackagePtr(new Avida::Data::Wrap<int>(arg.GetSize()));
+  }
+};
+
+class cProviderTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "Data::Provider"; }
+protected:
+  void RunTests()
+  {
+    cMockArgumentedProvider provider;
+    Avida::Data::PackagePtr pkg;
+
+    pkg = provider.GetProvidedValue("demo[]");
+    ReportTestResult("Argumented empty argument dispatch", pkg && provider.last_id == "demo[]" && provider.last_arg == "" && pkg->IntValue() == 0);
+
+    pkg = provider.GetProvidedValue("demo[value]");
+    ReportTestResult("Argumented parse dispatch", pkg && provider.last_id == "demo[]" && provider.last_arg == "value" && pkg->IntValue() == 5);
+
+    pkg = provider.GetProvidedValue("demo]");
+    ReportTestResult("Malformed argumented id returns null", !pkg);
   }
 };
 
@@ -333,6 +626,14 @@ int main(int argc, const char* argv[])
   
   TEST(cRawBitArray);
   TEST(cBitArray);
+  TEST(cRunningStats);
+  TEST(cRunningAverage);
+  TEST(cDoubleSum);
+  TEST(cWeightedIndex);
+  TEST(cOrderedWeightedIndex);
+  TEST(cHistogram);
+  TEST(cTimeSeriesRecorder);
+  TEST(cProvider);
   
   if (failed == 0)
     cout << "All unit tests passed." << endl;

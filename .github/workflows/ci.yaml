@@ -12,9 +12,36 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake g++ make python3
     - name: Build Avida
-      run: ./build_avida
+      run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
     - name: Run tests
-      run: ./run_tests
+      run: ./run_tests --mode=slave
+    - name: Run unit tests
+      run: ./cbuild/work/unit-tests
+
+  tests-rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ make python3
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Build Avida (Rust-enabled)
+      env:
+        AVD_ENABLE_RUST: "1"
+      run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
+    - name: Run tests (Rust-enabled)
+      run: ./run_tests --mode=slave
+    - name: Run unit tests (RunningStats parity)
+      run: ./cbuild/work/unit-tests
+    - name: Rust checks
+      run: |
+        cd rust/avida-rust
+        cargo test --all-targets
+        cargo fmt --check
+        cargo clippy --all-targets -- -D warnings
 
   # tests-windows:
   #   runs-on: windows-latest

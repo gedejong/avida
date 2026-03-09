@@ -23,8 +23,20 @@
  */
 
 #include "avida/data/Package.h"
+#include "rust/running_stats_ffi.h"
 
 #include <limits>
+#include <vector>
+
+namespace {
+Apto::String RustOwnedStringToApto(char* raw)
+{
+  if (!raw) return Apto::String();
+  Apto::String value(raw);
+  avd_pkg_string_free(raw);
+  return value;
+}
+}
 
 // Data::Package
 // --------------------------------------------------------------------------------------------------------------
@@ -41,28 +53,26 @@ Avida::Data::ConstPackagePtr Avida::Data::Package::GetComponent(int) const { ret
 // Data::ArrayPackage
 // --------------------------------------------------------------------------------------------------------------
 
-bool Avida::Data::ArrayPackage::BoolValue() const { return (m_entries.GetSize() != 0); }
-int Avida::Data::ArrayPackage::IntValue() const { return m_entries.GetSize(); }
-double Avida::Data::ArrayPackage::DoubleValue() const { return std::numeric_limits<double>::quiet_NaN(); }
+bool Avida::Data::ArrayPackage::BoolValue() const { return avd_pkg_array_bool_value(m_entries.GetSize()) != 0; }
+int Avida::Data::ArrayPackage::IntValue() const { return avd_pkg_array_int_value(m_entries.GetSize()); }
+double Avida::Data::ArrayPackage::DoubleValue() const { return avd_pkg_array_double_value(); }
 
 
 Apto::String Avida::Data::ArrayPackage::StringValue() const
 {
-  Apto::String rtn;
-  
-  if (!m_entries.GetSize()) return rtn;
-  
-  rtn += "'";
-  rtn += m_entries[0]->StringValue();
-  rtn += "'";
-  
-  for (int i = 1; i < m_entries.GetSize(); i++) {
-    rtn += ",'";
-    rtn += m_entries[i]->StringValue();
-    rtn += "'";
+  const int count = m_entries.GetSize();
+  if (!count) return Apto::String();
+
+  std::vector<Apto::String> entries;
+  entries.reserve(count);
+  std::vector<const char*> c_entries;
+  c_entries.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    entries.push_back(m_entries[i]->StringValue());
+    c_entries.push_back((const char*) entries.back());
   }
-  
-  return rtn;
+
+  return RustOwnedStringToApto(avd_pkg_array_string_value(c_entries.data(), count));
 }
 
 
@@ -71,10 +81,7 @@ bool Avida::Data::ArrayPackage::IsAggregate() const { return true; }
 
 Apto::String Avida::Data::ArrayPackage::GetAggregateDescriptor() const
 {
-  Apto::String desc("array(");
-  desc += Apto::AsStr(m_entries.GetSize());
-  desc += ")";
-  return desc;
+  return RustOwnedStringToApto(avd_pkg_array_descriptor(m_entries.GetSize()));
 }
 
 int Avida::Data::ArrayPackage::NumComponents() const { return m_entries.GetSize(); }

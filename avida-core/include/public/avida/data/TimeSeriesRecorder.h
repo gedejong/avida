@@ -29,6 +29,7 @@
 #include "avida/core/Types.h"
 #include "avida/data/Recorder.h"
 
+struct AvidaTimeSeriesHandle;
 
 namespace Avida {
   namespace Data {
@@ -48,6 +49,7 @@ namespace Avida {
     public:
       LIB_EXPORT TimeSeriesRecorder(const DataID& data_id);
       LIB_EXPORT TimeSeriesRecorder(const DataID& data_id, Apto::String str);
+      LIB_EXPORT ~TimeSeriesRecorder();
       
       // Data::Recorder Interface
       LIB_EXPORT inline ConstDataSetPtr RequestedData() const { return m_requested; }
@@ -68,6 +70,8 @@ namespace Avida {
       
       
     private:
+      AvidaTimeSeriesHandle* m_rust_handle;
+
       struct DataEntry
       {
         T data;

@@ -26,6 +26,7 @@
 
 #include "avida/data/Package.h"
 #include "avida/data/Util.h"
+#include "rust/running_stats_ffi.h"
 
 
 bool Avida::Data::Provider::SupportsConcurrentUpdate() const
@@ -51,22 +52,17 @@ Avida::Data::PackagePtr Avida::Data::ArgumentedProvider::GetProvidedValue(const 
   PackagePtr pkg;
   Apto::String argument;
   
-  if (IsStandardID(data_id)) {
+  if (avd_provider_is_standard_id((const char*) data_id) != 0) {
     return GetProvidedValueForArgument(data_id, argument);
-  } else if (IsArgumentedID(data_id)) {    
-    // Find start of argument
-    int start_idx = -1;
-    for (int i = 0; i < data_id.GetSize(); i++) {
-      if (data_id[i] == '[') {
-        start_idx = i + 1;
-        break;
-      }
-    }
-    if (start_idx != -1) {
-      // Separate argument from incoming requested data id
-      argument = data_id.Substring(start_idx, data_id.GetSize() - start_idx - 1);
-      DataID raw_id = data_id.Substring(0, start_idx) + "]";
-      return GetProvidedValueForArgument(raw_id, argument);
+  } else if (avd_provider_is_argumented_id((const char*) data_id) != 0) {
+    char* raw_id = NULL;
+    char* arg = NULL;
+    if (avd_provider_split_argumented_id((const char*) data_id, &raw_id, &arg) != 0) {
+      DataID parsed_raw((raw_id) ? raw_id : "");
+      argument = (arg) ? arg : "";
+      avd_provider_string_free(raw_id);
+      avd_provider_string_free(arg);
+      return GetProvidedValueForArgument(parsed_raw, argument);
     }
   }
   

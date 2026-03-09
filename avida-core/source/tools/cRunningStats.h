@@ -23,45 +23,92 @@
 #define cRunningStats_h
 
 #include <cmath>
+#include <cassert>
+#include "rust/running_stats_ffi.h"
 
 
 class cRunningStats
 {
 private:
-  double m_n;  // count
-  double m_m1; // mean
-  double m_m2; // second moment
-  double m_m3; // third moment
-  double m_m4; // fourth moment
+  AvidaRunningStatsHandle* m_handle;
   
 public:
-  inline cRunningStats() : m_n(0.0), m_m1(0.0), m_m2(0.0), m_m3(0.0), m_m4(0.0) { ; }
+  inline cRunningStats()
+    : m_handle(avd_rs_new())
+  {
+    assert(m_handle != 0);
+  }
 
-  inline void Clear() { m_n = 0.0; m_m1 = 0.0; m_m2 = 0.0; m_m3 = 0.0; m_m4 = 0.0; }
+  inline cRunningStats(const cRunningStats& rhs)
+    : m_handle(avd_rs_clone(rhs.m_handle))
+  {
+    assert(m_handle != 0);
+  }
+
+  inline cRunningStats& operator=(const cRunningStats& rhs)
+  {
+    if (this != &rhs) {
+      AvidaRunningStatsHandle* new_handle = avd_rs_clone(rhs.m_handle);
+      assert(new_handle != 0);
+      avd_rs_free(m_handle);
+      m_handle = new_handle;
+    }
+    return *this;
+  }
+
+  inline ~cRunningStats()
+  {
+    avd_rs_free(m_handle);
+    m_handle = 0;
+  }
+
+  inline void Clear()
+  {
+    avd_rs_clear(m_handle);
+  }
   
   inline void Push(double x);
 
-  inline double N() const { return m_n; }
-  inline double Mean() const { return m_m1; }
-  inline double StdDeviation() const { return sqrt(Variance()); }
-  inline double StdError() const { return (m_n > 1.0) ? sqrt(Variance() / m_n) : 0.0; }
-  inline double Variance() const { return (m_n > 1.0) ? (m_m2 / (m_n - 1.0)) : 0.0; }
-  inline double Skewness() const { return sqrt(m_n) * m_m3 / pow(m_m2, 1.5); }
-  inline double Kurtosis() const { return m_n * m_m4 / (m_m2 * m_m2); }
+  inline double N() const
+  {
+    return avd_rs_n(m_handle);
+  }
+
+  inline double Mean() const
+  {
+    return avd_rs_mean(m_handle);
+  }
+
+  inline double StdDeviation() const
+  {
+    return avd_rs_std_deviation(m_handle);
+  }
+
+  inline double StdError() const
+  {
+    return avd_rs_std_error(m_handle);
+  }
+
+  inline double Variance() const
+  {
+    return avd_rs_variance(m_handle);
+  }
+
+  inline double Skewness() const
+  {
+    return avd_rs_skewness(m_handle);
+  }
+
+  inline double Kurtosis() const
+  {
+    return avd_rs_kurtosis(m_handle);
+  }
 };
 
 
 inline void cRunningStats::Push(double x)
 {
-  m_n++;
-  double d = (x - m_m1);
-  double d_n = d / m_n;
-  double d_n2 = d_n * d_n;
-  
-  m_m4 += d * d_n2 * d_n * ((m_n - 1) * ((m_n * m_n) - 3 * m_n + 3)) + 6 * d_n2 * m_m2 - 4 * d_n * m_m3;
-  m_m3 += d * d_n2 * ((m_n - 1) * (m_n - 2)) - 3 * d_n * m_m2;
-  m_m2 += d * d_n * (m_n - 1);
-  m_m1 += d_n;
+  avd_rs_push(m_handle, x);
 }
 
 #endif

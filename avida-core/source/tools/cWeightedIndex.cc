@@ -28,16 +28,32 @@ using namespace std;
 
 
 cWeightedIndex::cWeightedIndex(int in_size)
-  : size(in_size)
-  , item_weight(size)
-  , subtree_weight(size)
+  : m_handle(avd_wi_new(in_size))
 {
-  item_weight.SetAll(0);
-  subtree_weight.SetAll(0);
+  assert(m_handle != 0);
+}
+
+cWeightedIndex::cWeightedIndex(const cWeightedIndex& in)
+  : m_handle(avd_wi_clone(in.m_handle))
+{
+  assert(m_handle != 0);
+}
+
+cWeightedIndex& cWeightedIndex::operator=(const cWeightedIndex& in)
+{
+  if (this != &in) {
+    AvidaWeightedIndexHandle* new_handle = avd_wi_clone(in.m_handle);
+    assert(new_handle != 0);
+    avd_wi_free(m_handle);
+    m_handle = new_handle;
+  }
+  return *this;
 }
 
 cWeightedIndex::~cWeightedIndex()
 {
+  avd_wi_free(m_handle);
+  m_handle = 0;
 }
 
 
@@ -63,17 +79,7 @@ cWeightedIndex::~cWeightedIndex()
   
 void cWeightedIndex::SetWeight(int id, double in_weight)
 {
-  item_weight[id] = in_weight;
-  
-  while (true) {
-    const int left_id = GetLeftChild(id);
-    const int right_id = GetRightChild(id);
-    const double left_subtree = (left_id >= size) ? 0.0 : subtree_weight[left_id];
-    const double right_subtree = (right_id >= size) ? 0.0 : subtree_weight[right_id];
-    subtree_weight[id] = item_weight[id] + left_subtree + right_subtree;
-    if (id == 0) break;
-    id = GetParent(id);
-  }
+  avd_wi_set_weight(m_handle, id, in_weight);
 }
 
 // This order of testing is about 10% faster than the one used below.
@@ -100,29 +106,6 @@ void cWeightedIndex::SetWeight(int id, double in_weight)
 
 int cWeightedIndex::FindPosition(double position, int root_id)
 {
-  //if (position >= subtree_weight[root_id]) {
-//  cout << "BDB: position " << position << "subtree_weight[" << root_id << "] = " << subtree_weight[root_id] << endl;
-  //}
-  assert(position < subtree_weight[root_id]);
-
-  // First, see if we should just return this node.
-  if (position < item_weight[root_id]) {
-    return root_id;
-  }
-
-  // If not, then see if we should search in the left subtree...
-  position -= item_weight[root_id];
-  const int left_id = GetLeftChild(root_id);
-  assert (left_id < size);
-  if (position < subtree_weight[left_id]) {
-    return FindPosition(position, left_id);
-  }
-
-  // Otherwise we must look in the right subtree...
-  position -= subtree_weight[left_id];
-  const int right_id = GetRightChild(root_id);
-  assert (right_id < size);
-  assert (position < subtree_weight[right_id]);
-  return FindPosition(position, right_id);
+  return avd_wi_find_position(m_handle, position, root_id);
 }
 

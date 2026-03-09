@@ -1,6 +1,6 @@
-PROJECT(AVIDA)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.20)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(AVIDA)
 
 # compile with debugging symbols
 if(NOT WIN32 AND NOT DEFINED ENV{AVIDA_DISABLE_BACKTRACE})
@@ -396,18 +396,13 @@ ENDIF(WIN32)
 #ENDIF(WIN32)
 
 
-# Locate TCMalloc
-IF(NOT TARGET tcmalloc-1.4)
-  FIND_LIBRARY(TCMALLOC_LIBRARY tcmalloc-1.4 PATHS ${PROJECT_SOURCE_DIR}/../cbuild/lib ${PROJECT_SOURCE_DIR}/../libs/tcmalloc-1.4/cbuild/lib)
-  ADD_LIBRARY(tcmalloc-1.4 STATIC IMPORTED)
-  SET_PROPERTY(TARGET tcmalloc-1.4 PROPERTY IMPORTED_LOCATION "${TCMALLOC_LIBRARY}")
-ENDIF(NOT TARGET tcmalloc-1.4)
-
-
 # Handle the TCMalloc library
 # ------------------------------------------------------------------------------
 IF(UNIX)
   IF (CMAKE_CXX_COMPILER MATCHES ".*icpc.*")
+    SET(AVD_ENABLE_TCMALLOC FALSE)
+  ELSEIF (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*")
+    # The vendored tcmalloc (1.4) does not compile cleanly on modern Clang.
     SET(AVD_ENABLE_TCMALLOC FALSE)
   ELSE (CMAKE_CXX_COMPILER MATCHES ".*icpc.*")
     SET(AVD_ENABLE_TCMALLOC TRUE)
@@ -430,6 +425,23 @@ ENDIF(AVD_ENABLE_TCMALLOC)
 # - For each enabled target, process its build instructions.  Must occur after
 # - avida-core has been defined.
 # ------------------------------------------------------------------------------
+OPTION(AVD_RUST_ENABLED
+  "Enable experimental Rust-backed modules."
+  OFF
+)
+SET(AVD_RUST_LIB_PATH
+  ""
+  CACHE FILEPATH
+  "Path to the prebuilt Rust static library (libavida_rust.a)."
+)
+IF(AVD_RUST_ENABLED)
+  IF(NOT AVD_RUST_LIB_PATH)
+    MESSAGE(FATAL_ERROR "AVD_RUST_ENABLED is ON, but AVD_RUST_LIB_PATH is empty.")
+  ENDIF(NOT AVD_RUST_LIB_PATH)
+  ADD_LIBRARY(avida-rust STATIC IMPORTED)
+  SET_PROPERTY(TARGET avida-rust PROPERTY IMPORTED_LOCATION "${AVD_RUST_LIB_PATH}")
+ENDIF(AVD_RUST_ENABLED)
+
 OPTION(AVD_CMDLINE
   "Enable building standard command line Avida (fastest version)."
   ON
@@ -446,6 +458,9 @@ IF(AVD_CMDLINE)
   endif()
 
   SET(AVIDA_CMDLINE_LIBS aptostatic avida-core aptostatic)  
+  IF(AVD_RUST_ENABLED)
+    LIST(APPEND AVIDA_CMDLINE_LIBS avida-rust)
+  ENDIF(AVD_RUST_ENABLED)
   IF(AVD_ENABLE_TCMALLOC)
     LIST(APPEND AVIDA_CMDLINE_LIBS tcmalloc-1.4)
   ENDIF(AVD_ENABLE_TCMALLOC)  
@@ -505,6 +520,9 @@ IF(AVD_GUI_NCURSES)
     ADD_EXECUTABLE(avida-viewer ${AVIDA_VIEWER_SOURCES})
     
     SET(AVIDA_VIEWER_LIBS avida-core aptostatic ${NCURSES_LIBRARY})
+    IF(AVD_RUST_ENABLED)
+      LIST(APPEND AVIDA_VIEWER_LIBS avida-rust)
+    ENDIF(AVD_RUST_ENABLED)
     IF(NOT MSVC)
       LIST(APPEND AVIDA_VIEWER_LIBS pthread)
     ENDIF(NOT MSVC)
@@ -553,6 +571,9 @@ IF(AVD_GUI_PROTOTYPE_TEXT)
     ADD_EXECUTABLE(avida-text ${AVIDA_TEXT_VIEWER_SOURCES} ${Viewer_SOURCES} ${COREGUI_SOURCES})
     
     SET(AVIDA_TEXT_VIEWER_LIBS avida-core ${NCURSES_LIBRARY})
+    IF(AVD_RUST_ENABLED)
+      LIST(APPEND AVIDA_TEXT_VIEWER_LIBS avida-rust)
+    ENDIF(AVD_RUST_ENABLED)
     IF(NOT MSVC)
       LIST(APPEND AVIDA_TEXT_VIEWER_LIBS pthread)
     ENDIF(NOT MSVC)
@@ -595,9 +616,21 @@ IF(AVD_UNIT_TESTS)
   SET(UNIT_TESTS_DIR source/targets/unit-tests)
   SET(UNIT_TESTS_SOURCES
     ${UNIT_TESTS_DIR}/main.cc
+    ${DATA_DIR}/Package.cc
+    ${DATA_DIR}/Provider.cc
+    ${DATA_DIR}/Recorder.cc
+    ${DATA_DIR}/TimeSeriesRecorder.cc
     ${TOOLS_DIR}/cBitArray.cc
+    ${TOOLS_DIR}/cHistogram.cc
+    ${TOOLS_DIR}/cOrderedWeightedIndex.cc
+    ${TOOLS_DIR}/cWeightedIndex.cc
+    ${TOOLS_DIR}/cRunningAverage.cc
   )
   ADD_EXECUTABLE(unit-tests ${UNIT_TESTS_SOURCES})
+  TARGET_LINK_LIBRARIES(unit-tests aptostatic)
+  IF(AVD_RUST_ENABLED)
+    TARGET_LINK_LIBRARIES(unit-tests avida-rust)
+  ENDIF(AVD_RUST_ENABLED)
   INSTALL_TARGETS(/work unit-tests)
 ENDIF(AVD_UNIT_TESTS)
 

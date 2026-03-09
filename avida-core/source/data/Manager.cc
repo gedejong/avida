@@ -42,13 +42,15 @@ bool Avida::Data::Manager::s_registered_with_facet_factory =
   Avida::WorldFacet::RegisterFacetType(Avida::Reserved::DataManagerFacetID, DeserializeDataManager);
 
 
-Avida::Data::Manager::Manager() : m_world(NULL), m_available(new DataSet)
+Avida::Data::Manager::Manager() : m_world(NULL), m_available(new DataSet), m_recorders(new Apto::Set<RecorderPtr>)
 {
   
 }
 
 Avida::Data::Manager::~Manager()
 {
+  // Intentionally do not delete m_recorders. Apto hash-btree teardown can crash
+  // at process shutdown on modern toolchains in legacy builds.
 }
 
 
@@ -317,7 +319,7 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
   
   // Store the recorder
   m_recorder_mutex.Lock();
-  m_recorders.Insert(recorder);
+  m_recorders->Insert(recorder);
   m_recorder_mutex.Unlock();
   return true;
 }
@@ -326,7 +328,7 @@ bool Avida::Data::Manager::DetachRecorder(RecorderPtr recorder)
 {
   bool success = false;
   m_recorder_mutex.Lock();
-  success = m_recorders.Remove(recorder);
+  success = m_recorders->Remove(recorder);
   // @TODO - this should probably deactivate data providers that are no longer needed, or at least adjust schedule
   m_recorder_mutex.Unlock();
   return success;
@@ -438,7 +440,7 @@ void Avida::Data::Manager::PerformUpdate(Context&, Update current_update)
   // Release RWLock before notification to prevent double RWLocking deadlock during recorder attachment
   m_rwlock.ReadUnlock();
   
-  for (Apto::Set<RecorderPtr>::Iterator it = m_recorders.Begin(); it.Next();) {
+  for (Apto::Set<RecorderPtr>::Iterator it = m_recorders->Begin(); it.Next();) {
     (*it.Get())->NotifyData(current_update, drf);
   }
   m_recorder_mutex.Unlock();

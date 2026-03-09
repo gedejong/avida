@@ -53,7 +53,9 @@ namespace Avida {
       DataSetPtr m_available;
       
       mutable Apto::Mutex m_recorder_mutex;
-      Apto::Set<RecorderPtr> m_recorders;
+      // NOTE: Kept as process-lifetime allocation to avoid teardown-time crashes
+      // in legacy Apto hash-btree destruction on some modern toolchains.
+      Apto::Set<RecorderPtr>* m_recorders;
       
       Apto::Array<ProviderPtr> m_active_providers;
       Apto::Array<ArgumentedProviderPtr> m_active_arg_providers;

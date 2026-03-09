@@ -25,13 +25,25 @@
 #include "avida/data/TimeSeriesRecorder.h"
 
 #include "avida/data/Package.h"
+#include "rust/running_stats_ffi.h"
 
+namespace {
+Apto::String RustOwnedStringToApto(char* raw)
+{
+  if (!raw) return Apto::String();
+  Apto::String value(raw);
+  avd_tsr_string_free(raw);
+  return value;
+}
+}
 
 namespace Avida {
   namespace Data {
     
     template <>
-    TimeSeriesRecorder<PackagePtr>::TimeSeriesRecorder(const DataID& data_id) : m_data_id(data_id)
+    TimeSeriesRecorder<PackagePtr>::TimeSeriesRecorder(const DataID& data_id)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_new())
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -39,7 +51,9 @@ namespace Avida {
     }
 
     template <>
-    TimeSeriesRecorder<bool>::TimeSeriesRecorder(const DataID& data_id) : m_data_id(data_id)
+    TimeSeriesRecorder<bool>::TimeSeriesRecorder(const DataID& data_id)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_new())
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -47,7 +61,9 @@ namespace Avida {
     }
     
     template <>
-    TimeSeriesRecorder<int>::TimeSeriesRecorder(const DataID& data_id) : m_data_id(data_id)
+    TimeSeriesRecorder<int>::TimeSeriesRecorder(const DataID& data_id)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_new())
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -55,7 +71,9 @@ namespace Avida {
     }
 
     template <>
-    TimeSeriesRecorder<double>::TimeSeriesRecorder(const DataID& data_id) : m_data_id(data_id)
+    TimeSeriesRecorder<double>::TimeSeriesRecorder(const DataID& data_id)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_new())
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -63,7 +81,9 @@ namespace Avida {
     }
 
     template <>
-    TimeSeriesRecorder<Apto::String>::TimeSeriesRecorder(const DataID& data_id) : m_data_id(data_id)
+    TimeSeriesRecorder<Apto::String>::TimeSeriesRecorder(const DataID& data_id)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_new())
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -72,7 +92,9 @@ namespace Avida {
     
     
     template <>
-    TimeSeriesRecorder<PackagePtr>::TimeSeriesRecorder(const DataID& data_id, Apto::String str) : m_data_id(data_id)
+    TimeSeriesRecorder<PackagePtr>::TimeSeriesRecorder(const DataID& data_id, Apto::String str)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_from_string((const char*) str))
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -87,7 +109,9 @@ namespace Avida {
     }
     
     template <>
-    TimeSeriesRecorder<bool>::TimeSeriesRecorder(const DataID& data_id, Apto::String str) : m_data_id(data_id)
+    TimeSeriesRecorder<bool>::TimeSeriesRecorder(const DataID& data_id, Apto::String str)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_from_string((const char*) str))
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -102,7 +126,9 @@ namespace Avida {
     }
     
     template <>
-    TimeSeriesRecorder<int>::TimeSeriesRecorder(const DataID& data_id, Apto::String str) : m_data_id(data_id)
+    TimeSeriesRecorder<int>::TimeSeriesRecorder(const DataID& data_id, Apto::String str)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_from_string((const char*) str))
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -117,7 +143,9 @@ namespace Avida {
     }
     
     template <>
-    TimeSeriesRecorder<double>::TimeSeriesRecorder(const DataID& data_id, Apto::String str) : m_data_id(data_id)
+    TimeSeriesRecorder<double>::TimeSeriesRecorder(const DataID& data_id, Apto::String str)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_from_string((const char*) str))
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -132,7 +160,9 @@ namespace Avida {
     }
     
     template <>
-    TimeSeriesRecorder<Apto::String>::TimeSeriesRecorder(const DataID& data_id, Apto::String str) : m_data_id(data_id)
+    TimeSeriesRecorder<Apto::String>::TimeSeriesRecorder(const DataID& data_id, Apto::String str)
+      : m_data_id(data_id)
+      , m_rust_handle(avd_tsr_from_string((const char*) str))
     {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
@@ -145,13 +175,22 @@ namespace Avida {
       }
     }
     
+    template <class T>
+    TimeSeriesRecorder<T>::~TimeSeriesRecorder()
+    {
+      avd_tsr_free(m_rust_handle);
+      m_rust_handle = NULL;
+    }
+    
 
     
     template <>
     void TimeSeriesRecorder<PackagePtr>::NotifyData(Update update, DataRetrievalFunctor retrieve_data)
     {
       if (shouldRecordValue(update)) {
-        m_data.Push(DataEntry(update, retrieve_data(m_data_id)));
+        PackagePtr value = retrieve_data(m_data_id);
+        m_data.Push(DataEntry(update, value));
+        avd_tsr_push_string(m_rust_handle, update, (const char*) value->StringValue());
         didRecordValue();
       }
     }
@@ -161,7 +200,9 @@ namespace Avida {
     void TimeSeriesRecorder<bool>::NotifyData(Update update, DataRetrievalFunctor retrieve_data)
     {
       if (shouldRecordValue(update)) {
-        m_data.Push(DataEntry(update, retrieve_data(m_data_id)->BoolValue()));
+        bool value = retrieve_data(m_data_id)->BoolValue();
+        m_data.Push(DataEntry(update, value));
+        avd_tsr_push_bool(m_rust_handle, update, value ? 1 : 0);
         didRecordValue();
       }
     }
@@ -170,7 +211,9 @@ namespace Avida {
     void TimeSeriesRecorder<int>::NotifyData(Update update, DataRetrievalFunctor retrieve_data)
     {
       if (shouldRecordValue(update)) {
-        m_data.Push(DataEntry(update, retrieve_data(m_data_id)->IntValue()));
+        int value = retrieve_data(m_data_id)->IntValue();
+        m_data.Push(DataEntry(update, value));
+        avd_tsr_push_int(m_rust_handle, update, value);
         didRecordValue();
       }
     }
@@ -179,7 +222,9 @@ namespace Avida {
     void TimeSeriesRecorder<double>::NotifyData(Update update, DataRetrievalFunctor retrieve_data)
     {
       if (shouldRecordValue(update)) {
-        m_data.Push(DataEntry(update, retrieve_data(m_data_id)->DoubleValue()));
+        double value = retrieve_data(m_data_id)->DoubleValue();
+        m_data.Push(DataEntry(update, value));
+        avd_tsr_push_double(m_rust_handle, update, value);
         didRecordValue();
       }
     }
@@ -188,7 +233,9 @@ namespace Avida {
     void TimeSeriesRecorder<Apto::String>::NotifyData(Update update, DataRetrievalFunctor retrieve_data)
     {
       if (shouldRecordValue(update)) {
-        m_data.Push(DataEntry(update, retrieve_data(m_data_id)->StringValue()));
+        Apto::String value = retrieve_data(m_data_id)->StringValue();
+        m_data.Push(DataEntry(update, value));
+        avd_tsr_push_string(m_rust_handle, update, (const char*) value);
         didRecordValue();
       }
     }
@@ -197,61 +244,31 @@ namespace Avida {
     template <>
     Apto::String TimeSeriesRecorder<PackagePtr>::AsString() const
     {
-      if (m_data.GetSize() == 0) return "";
-      
-      Apto::String rtn = Apto::FormatStr("%d:%s", m_data[0].update, (const char*)m_data[0].data->StringValue());
-      for (int i = 1; i < m_data.GetSize(); i++) {
-        rtn += Apto::FormatStr(",%d:%s", m_data[i].update, (const char*)m_data[i].data->StringValue());
-      }
-      return rtn;
+      return RustOwnedStringToApto(avd_tsr_as_string(m_rust_handle));
     }
 
     template <>
     Apto::String TimeSeriesRecorder<bool>::AsString() const
     {
-      if (m_data.GetSize() == 0) return "";
-      
-      Apto::String rtn = Apto::FormatStr("%d:%d", m_data[0].update, m_data[0].data);
-      for (int i = 1; i < m_data.GetSize(); i++) {
-        rtn += Apto::FormatStr(",%d:%d", m_data[i].update, m_data[i].data);
-      }
-      return rtn;
+      return RustOwnedStringToApto(avd_tsr_as_string(m_rust_handle));
     }
 
     template <>
     Apto::String TimeSeriesRecorder<int>::AsString() const
     {
-      if (m_data.GetSize() == 0) return "";
-      
-      Apto::String rtn = Apto::FormatStr("%d:%d", m_data[0].update, m_data[0].data);
-      for (int i = 1; i < m_data.GetSize(); i++) {
-        rtn += Apto::FormatStr(",%d:%d", m_data[i].update, m_data[i].data);
-      }
-      return rtn;
+      return RustOwnedStringToApto(avd_tsr_as_string(m_rust_handle));
     }
 
     template <>
     Apto::String TimeSeriesRecorder<double>::AsString() const
     {
-      if (m_data.GetSize() == 0) return "";
-      
-      Apto::String rtn = Apto::FormatStr("%d:%f", m_data[0].update, m_data[0].data);
-      for (int i = 1; i < m_data.GetSize(); i++) {
-        rtn += Apto::FormatStr(",%d:%f", m_data[i].update, m_data[i].data);
-      }
-      return rtn;
+      return RustOwnedStringToApto(avd_tsr_as_string(m_rust_handle));
     }
   
     template <>
     Apto::String TimeSeriesRecorder<Apto::String>::AsString() const
     {
-      if (m_data.GetSize() == 0) return "";
-      
-      Apto::String rtn = Apto::FormatStr("%d:%s", m_data[0].update, (const char*)m_data[0].data);
-      for (int i = 1; i < m_data.GetSize(); i++) {
-        rtn += Apto::FormatStr(",%d:%s", m_data[i].update, (const char*)m_data[i].data);
-      }
-      return rtn;
+      return RustOwnedStringToApto(avd_tsr_as_string(m_rust_handle));
     }
 };
 };

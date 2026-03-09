@@ -24,16 +24,14 @@
 #define cRunningAverage_h
 
 #include <cmath>
+#include <cassert>
+#include "rust/running_stats_ffi.h"
 
 class cRunningAverage
 {
 private:
-  double* m_values;  // Array of actual values
-  double m_s1;       // average
-  double m_s2;       // sum of squares
-  int m_window_size;        // Size of sliding window
-  int m_pointer;
-  int m_n;
+  AvidaRunningAverageHandle* m_handle;
+  int m_window_size;
   
   
   cRunningAverage(); // @not_implemented
@@ -51,18 +49,38 @@ public:
   
   
   //accessors
-  double Sum()          const { return m_s1; }
-  double S1()           const { return m_s1; }
-  double SumOfSquares() const { return m_s2; }
-  double S2()           const { return m_s2; }
+  double Sum() const
+  {
+    return avd_ra_sum(m_handle);
+  }
+
+  double S1() const { return Sum(); }
+
+  double SumOfSquares() const
+  {
+    return avd_ra_sum_of_squares(m_handle);
+  }
+
+  double S2() const { return SumOfSquares(); }
   
-  double Average() const { return ( m_n == m_window_size ) ? (m_s1 / m_n) : 0; }
-  double Variance() const { return ( m_n == m_window_size ) ? (m_s2 - m_s1 * m_s1 / m_n) / (m_n - 1) : 0; }
+  double Average() const
+  {
+    return avd_ra_average(m_handle);
+  }
+
+  double Variance() const
+  {
+    return avd_ra_variance(m_handle);
+  }
     
-  double StdDeviation() const { return sqrt(Variance()); }
+  double StdDeviation() const
+  {
+    return avd_ra_std_deviation(m_handle);
+  }
+
   double StdError()  const
   {
-    return ( m_n == m_window_size ) ? sqrt(m_s2 - m_s1 * m_s1 / m_n / (m_n * (m_n - 1))) : 0;
+    return avd_ra_std_error(m_handle);
   }
 
   // Notation Shortcuts

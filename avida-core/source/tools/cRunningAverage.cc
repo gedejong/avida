@@ -26,38 +26,25 @@
 
 
 cRunningAverage::cRunningAverage( int window_size ) : 
-  m_values(0), m_s1(0), m_s2(0), m_window_size( window_size ),
-  m_pointer(0), m_n(0) 
+  m_handle(0), m_window_size(window_size)
 {
   assert( m_window_size > 1 );
-  m_values = new double[ m_window_size ];
+  m_handle = avd_ra_new(m_window_size);
+  assert(m_handle != 0);
 }
 
 
 cRunningAverage::~cRunningAverage() {
-  delete [] m_values;
+  avd_ra_free(m_handle);
+  m_handle = 0;
 }
 
 
 void cRunningAverage::Add( double value ) {
-  m_s1 += value;
-  m_s2 += value*value;
-  if ( m_n < m_window_size ) {
-    m_values[ m_n ] = value;
-    m_n += 1;
-  } else {
-    double out_v = m_values[ m_pointer ];
-    m_s1 -= out_v;
-    m_s2 -= out_v * out_v;
-    m_values[ m_pointer++ ] = value;
-    if ( m_pointer == m_window_size ) m_pointer = 0;
-  }
+  avd_ra_add(m_handle, value);
 }
 
 
 void cRunningAverage::Clear() {
-  m_s1 = 0;
-  m_s2 = 0;
-  m_pointer = 0;
-  m_n = 0;
+  avd_ra_clear(m_handle);
 }
