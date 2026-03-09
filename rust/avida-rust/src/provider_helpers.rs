@@ -1,5 +1,13 @@
 use std::ffi::{c_char, c_int, CStr, CString};
 
+use nom::{
+    bytes::complete::take_till,
+    character::complete::char as parse_char,
+    combinator::rest,
+    error::{Error, ErrorKind},
+    IResult, Parser,
+};
+
 fn alloc_c_string(value: String) -> *mut c_char {
     let sanitized: Vec<u8> = value.bytes().filter(|b| *b != 0).collect();
     match CString::new(sanitized) {
@@ -16,13 +24,22 @@ fn parse_id(input: &str) -> (bool, bool, String, String) {
         return (is_standard, false, String::new(), String::new());
     }
 
-    if let Some(open_idx) = input.find('[') {
-        let start_idx = open_idx + 1;
-        let argument = input[start_idx..size - 1].to_owned();
-        let raw_id = format!("{}]", &input[..start_idx]);
-        return (is_standard, true, raw_id, argument);
+    if let Ok((_, (prefix, argument))) = parse_argumented_id_nom(input) {
+        let raw_id = format!("{prefix}[]");
+        return (is_standard, true, raw_id, argument.to_owned());
     }
     (is_standard, true, String::new(), String::new())
+}
+
+fn parse_argumented_id_nom(input: &str) -> IResult<&str, (&str, &str)> {
+    let (input, prefix) = take_till(|c| c == '[').parse(input)?;
+    let (input, _) = parse_char('[').parse(input)?;
+    let (input, remainder) = rest.parse(input)?;
+    if let Some(argument) = remainder.strip_suffix(']') {
+        Ok((input, (prefix, argument)))
+    } else {
+        Err(nom::Err::Error(Error::new(input, ErrorKind::Char)))
+    }
 }
 
 #[no_mangle]

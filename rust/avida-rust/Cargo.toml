@@ -17,3 +17,6 @@ expect_used = "deny"
 panic = "deny"
 todo = "deny"
 unimplemented = "deny"
+
+[dependencies]
+nom = "8.0.0"
