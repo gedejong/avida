@@ -11,6 +11,7 @@ This roadmap keeps the codebase in mixed C/C++ + Rust mode while incrementally m
 Exit criteria:
 - Build and test gates pass (`./build_avida -DAVD_UNIT_TESTS:BOOL=ON`, `./run_tests --mode=slave`, `./cbuild/work/unit-tests`).
 - Rust crate quality gates pass (`cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings` in `rust/avida-rust`).
+- Rust coverage gate passes (`./scripts/ci_coverage_check.sh 75` in `rust/avida-rust`; CI `coverage-rust` lane), with initial scope focused on actively migrated FFI-centric modules.
 - FFI invariants are documented and followed: opaque handles, explicit create/free, null-safe no-op reads/writes, and no cross-language frees.
 
 ## Wave 2: Deterministic weighted selectors

@@ -27,6 +27,7 @@ Use this workflow for any migration slice in `avida`.
   - `cargo test --all-targets`
   - `cargo fmt --check`
   - `cargo clippy --all-targets -- -D warnings`
+  - `./scripts/ci_coverage_check.sh 75`
 - Project gates:
   - `./build_avida -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF`
   - `./cbuild/work/unit-tests`

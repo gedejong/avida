@@ -65,6 +65,28 @@ jobs:
         path: rust/avida-rust/target/criterion
         if-no-files-found: error
 
+  coverage-rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
+    - name: Run Rust coverage gate (75%)
+      run: |
+        cd rust/avida-rust
+        ./scripts/ci_coverage_check.sh 75 | tee target/coverage-summary.txt
+    - name: Upload coverage artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-coverage-artifacts
+        path: |
+          rust/avida-rust/target/coverage-summary.txt
+          rust/avida-rust/target/llvm-cov
+        if-no-files-found: warn
+
   # tests-windows:
   #   runs-on: windows-latest
   #   steps:
