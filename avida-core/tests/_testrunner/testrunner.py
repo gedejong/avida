@@ -1110,7 +1110,14 @@ def main(argv):
         elif opt == "--builddir":
             settings["builddir"] = arg
         elif opt == "--diff-max-threshold":
-            settings["diff-max-threshold"] = arg
+            try:
+                parsed_threshold = int(arg)
+                if parsed_threshold < 0:
+                    raise ValueError()
+                settings["diff-max-threshold"] = parsed_threshold
+            except ValueError:
+                print("Error: --diff-max-threshold must be a non-negative integer")
+                return -1
         elif opt == "--help-test-cfg":
             opt_showtestcfg = True
         elif opt == "-j":
