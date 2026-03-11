@@ -81,6 +81,44 @@ jobs:
       if: always()
       run: ccache -s || true
 
+  tests-backtrace-smoke:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Restore C/C++ compiler cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('**/CMakeLists.txt', 'build_avida') }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.ref_name }}-
+          ${{ runner.os }}-ccache-
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ make python3 ccache
+    - name: Configure/reconfigure smoke check (backtrace-enabled)
+      env:
+        AVIDA_ENABLE_BACKTRACE: "1"
+      run: |
+        echo "AVIDA_ENABLE_BACKTRACE=${AVIDA_ENABLE_BACKTRACE}"
+        git submodule update --init libs/apto libs/backward-cpp
+        rm -rf cbuild-backtrace-reconfigure
+        cmake -S . -B cbuild-backtrace-reconfigure -DCMAKE_POLICY_VERSION_MINIMUM=3.20 -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF
+        cmake -S . -B cbuild-backtrace-reconfigure -DCMAKE_POLICY_VERSION_MINIMUM=3.20 -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF
+    - name: Build Avida (backtrace-enabled smoke)
+      env:
+        AVIDA_ENABLE_BACKTRACE: "1"
+        CC: ccache gcc
+        CXX: ccache g++
+        CCACHE_DIR: ~/.cache/ccache
+      run: |
+        echo "AVIDA_ENABLE_BACKTRACE=${AVIDA_ENABLE_BACKTRACE}"
+        ./build_avida -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF
+    - name: Show ccache statistics
+      if: always()
+      run: ccache -s || true
+
   tests-rust:
     runs-on: ubuntu-latest
     steps:
