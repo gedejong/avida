@@ -830,16 +830,14 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
 
 void cResourceCount::DoNonSpatialUpdates(cAvidaContext& ctx, const int res_id, int num_steps) const
 {
-  // Calculate our entire PRECALC_DISTANCE intervals
-  while (num_steps > PRECALC_DISTANCE) {
-    resource_count[res_id] *= decay_precalc(res_id, PRECALC_DISTANCE);
-    resource_count[res_id] += inflow_precalc(res_id, PRECALC_DISTANCE);
-    num_steps -= PRECALC_DISTANCE;
-  }
-  
-  // Calculate our remaining number of steps
-  resource_count[res_id] *= decay_precalc(res_id, num_steps);
-  resource_count[res_id] += inflow_precalc(res_id, num_steps);
+  (void)ctx;
+  resource_count[res_id] = avd_rc_apply_nonspatial_steps(
+    resource_count[res_id],
+    &decay_precalc(res_id, 0),
+    &inflow_precalc(res_id, 0),
+    PRECALC_DISTANCE,
+    num_steps
+  );
 }
 
 

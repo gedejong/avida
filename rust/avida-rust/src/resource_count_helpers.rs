@@ -81,6 +81,28 @@ fn saturating_update_delta(current_update: c_int, previous_update: c_int) -> c_i
     current_update.saturating_sub(previous_update)
 }
 
+fn apply_nonspatial_steps_internal(
+    mut current: f64,
+    decay_precalc: &[f64],
+    inflow_precalc: &[f64],
+    precalc_distance: c_int,
+    num_steps: c_int,
+) -> f64 {
+    if precalc_distance < 0 || num_steps < 0 {
+        return current;
+    }
+    let p = precalc_distance as usize;
+    if p == 0 {
+        return current * decay_precalc[0] + inflow_precalc[0];
+    }
+    let mut remaining = num_steps as usize;
+    while remaining > p {
+        current = current * decay_precalc[p] + inflow_precalc[p];
+        remaining -= p;
+    }
+    current * decay_precalc[remaining] + inflow_precalc[remaining]
+}
+
 #[no_mangle]
 pub extern "C" fn avd_rc_num_steps(update_time: f64, update_step: f64) -> c_int {
     num_steps_from_ratio(update_time, update_step)
@@ -101,6 +123,35 @@ pub extern "C" fn avd_rc_remainder_update_time(
     num_steps: c_int,
 ) -> f64 {
     update_time - (num_steps as f64) * update_step
+}
+
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_rc_apply_nonspatial_steps(
+    current: f64,
+    decay_precalc: *const f64,
+    inflow_precalc: *const f64,
+    precalc_distance: c_int,
+    num_steps: c_int,
+) -> f64 {
+    if precalc_distance < 0 || num_steps < 0 {
+        return current;
+    }
+    let count = match precalc_distance.checked_add(1) {
+        Some(v) => v,
+        None => return current,
+    };
+    with_slice(decay_precalc, count, current, |decay_slice| {
+        with_slice(inflow_precalc, count, current, |inflow_slice| {
+            apply_nonspatial_steps_internal(
+                current,
+                decay_slice,
+                inflow_slice,
+                precalc_distance,
+                num_steps,
+            )
+        })
+    })
 }
 
 #[no_mangle]
@@ -310,5 +361,54 @@ mod tests {
 
         avd_rc_fill_precalc_tables(0.9, 1.0, 0.1, 3, std::ptr::null_mut(), inflow.as_mut_ptr());
         assert_eq!(inflow, vec![456.0; 4]);
+    }
+
+    #[test]
+    fn rc_apply_nonspatial_steps_matches_reference_cxx_loop() {
+        let distance = 100;
+        let mut decay = vec![0.0; (distance + 1) as usize];
+        let mut inflow = vec![0.0; (distance + 1) as usize];
+        avd_rc_fill_precalc_tables(
+            0.91,
+            1.75,
+            1.0 / 10000.0,
+            distance,
+            decay.as_mut_ptr(),
+            inflow.as_mut_ptr(),
+        );
+
+        let mut reference = 12.5;
+        let mut remaining = 237;
+        while remaining > distance {
+            reference = reference * decay[distance as usize] + inflow[distance as usize];
+            remaining -= distance;
+        }
+        reference = reference * decay[remaining as usize] + inflow[remaining as usize];
+
+        let got =
+            avd_rc_apply_nonspatial_steps(12.5, decay.as_ptr(), inflow.as_ptr(), distance, 237);
+        assert!((got - reference).abs() < 1e-12);
+    }
+
+    #[test]
+    fn rc_apply_nonspatial_steps_guards_invalid_inputs() {
+        let decay = [1.0, 0.9];
+        let inflow = [0.0, 0.1];
+        assert_eq!(
+            avd_rc_apply_nonspatial_steps(5.0, std::ptr::null(), inflow.as_ptr(), 1, 1),
+            5.0
+        );
+        assert_eq!(
+            avd_rc_apply_nonspatial_steps(5.0, decay.as_ptr(), std::ptr::null(), 1, 1),
+            5.0
+        );
+        assert_eq!(
+            avd_rc_apply_nonspatial_steps(5.0, decay.as_ptr(), inflow.as_ptr(), -1, 1),
+            5.0
+        );
+        assert_eq!(
+            avd_rc_apply_nonspatial_steps(5.0, decay.as_ptr(), inflow.as_ptr(), 1, -1),
+            5.0
+        );
     }
 }

@@ -57,6 +57,7 @@ Focus:
 - `cResourceCount` scheduling boundary policy lock (completed): explicit truncation/saturation/invalid-step semantics in Rust helper math with boundary parity fixtures (negative, exact-boundary, NaN/Inf, large-ratio saturation) in Rust+C++ unit tests
 - `cResourceCount` spatial scheduling helper derivation (completed): Rust-backed deterministic spatial update-count delta derivation for `DoUpdates` (`m_spatial_update - m_last_updated`) with explicit saturation parity fixtures while keeping `DoSpatialUpdates`/`FlowAll`/`StateAll` in C++
 - `cResourceCount` setup precalc table derivation (completed): Rust-backed additive helper for deterministic `Setup` recurrence table fill (`decay_precalc`/`inflow_precalc`) while preserving C++ table ownership and update-loop usage
+- `cResourceCount` non-spatial step-application kernel (completed): Rust-backed deterministic helper for chunked + remainder recurrence application used by `DoNonSpatialUpdates`, preserving C++ ownership while centralizing update math parity
 - `cResourceHistory` deterministic entry helpers (completed): Rust-backed exact/non-exact update selection and bounds-safe value lookup used by `getEntryForUpdate`, `GetResourceCountForUpdate`, and `GetResourceLevelsForUpdate` while keeping file loading and state ownership in C++
 - `cEventList` deterministic parse helpers (completed): Rust-backed trigger classification and timing tuple parsing (`begin`/`all`/`once`/`end` and numeric forms) routed through additive C ABI while preserving C++ event creation/state mutation ownership
 - `Data::TimeSeriesRecorder` typed parse-policy parity hardening (completed): Rust typed getter coercion now matches legacy `Apto::StrAs` semantics (`bool` exact true aliases only; `int`/`double` C-style coercion including partial/hex/exponent forms) with shared Rust+C++ matrix fixtures and unchanged ABI surface
@@ -70,4 +71,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: add a lightweight reviewer checklist + guardrails to keep new Rust FFI modules aligned with shared `common.rs` pointer-accessor and CString/output-pointer helper conventions.
+- Next candidate: extract deterministic `cSpatialResCount` flow scalar and range-normalization helper math behind additive Rust helpers while keeping spatial traversal/state mutation in C++.

@@ -1045,6 +1045,24 @@ protected:
       "Spatial scheduling negative saturation",
       avd_rc_num_spatial_updates(std::numeric_limits<int>::min(), 1) == std::numeric_limits<int>::min()
     );
+
+    const int precalc_distance = 4;
+    const double decay[] = {1.0, 0.9, 0.81, 0.729, 0.6561};
+    const double inflow[] = {0.0, 0.1, 0.19, 0.271, 0.3439};
+    const double initial = 10.0;
+    int remaining = 9;
+    double expected = initial;
+    while (remaining > precalc_distance) {
+      expected = expected * decay[precalc_distance] + inflow[precalc_distance];
+      remaining -= precalc_distance;
+    }
+    expected = expected * decay[remaining] + inflow[remaining];
+    const double got = avd_rc_apply_nonspatial_steps(initial, decay, inflow, precalc_distance, 9);
+    ReportTestResult("Non-spatial step apply parity", fabs(got - expected) < 1e-12);
+    ReportTestResult(
+      "Non-spatial step apply null guard",
+      avd_rc_apply_nonspatial_steps(initial, NULL, inflow, precalc_distance, 9) == initial
+    );
   }
 };
 
