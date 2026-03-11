@@ -63,4 +63,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extend shared `common.rs` CString/output-pointer helper adoption to remaining Rust FFI modules.
+- Next candidate: keep new FFI modules aligned with shared `common.rs` pointer-accessor/CString helper patterns via checklist-enforced conventions.

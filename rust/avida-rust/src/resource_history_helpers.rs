@@ -1,3 +1,4 @@
+use crate::common::with_slice;
 use std::ffi::c_int;
 
 fn select_entry_index_internal(updates: &[c_int], update: c_int, exact: bool) -> c_int {
@@ -29,34 +30,29 @@ fn select_entry_index_internal(updates: &[c_int], update: c_int, exact: bool) ->
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rh_select_entry_index(
     updates: *const c_int,
     count: c_int,
     update: c_int,
     exact: c_int,
 ) -> c_int {
-    if updates.is_null() || count <= 0 {
-        return -1;
-    }
-    let count_usize = match usize::try_from(count) {
-        Ok(v) => v,
-        Err(_) => return -1,
-    };
-    // SAFETY: updates is non-null and treated as read-only for count elements.
-    let updates_slice = unsafe { std::slice::from_raw_parts(updates, count_usize) };
-    select_entry_index_internal(updates_slice, update, exact != 0)
+    with_slice(updates, count, -1, |updates_slice| {
+        select_entry_index_internal(updates_slice, update, exact != 0)
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rh_value_at_or_zero(values: *const f64, count: c_int, index: c_int) -> f64 {
-    if values.is_null() || count <= 0 || index < 0 || index >= count {
-        return 0.0;
-    }
-    let idx = index as usize;
-    // SAFETY: values is non-null and idx is validated within [0, count).
-    unsafe { *values.add(idx) }
+    with_slice(values, count, 0.0, |values_slice| {
+        if index < 0 {
+            return 0.0;
+        }
+        let idx = match usize::try_from(index) {
+            Ok(v) => v,
+            Err(_) => return 0.0,
+        };
+        values_slice.get(idx).copied().unwrap_or(0.0)
+    })
 }
 
 #[cfg(test)]
@@ -91,5 +87,6 @@ mod tests {
         assert_eq!(avd_rh_value_at_or_zero(values.as_ptr(), 3, 3), 0.0);
         assert_eq!(avd_rh_value_at_or_zero(std::ptr::null(), 3, 1), 0.0);
         assert_eq!(avd_rh_value_at_or_zero(values.as_ptr(), 0, 0), 0.0);
+        assert_eq!(avd_rh_value_at_or_zero(values.as_ptr(), -1, 0), 0.0);
     }
 }

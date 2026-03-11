@@ -812,6 +812,10 @@ protected:
       "Lookup invalid input",
       avd_rc_lookup_resource_index(NULL, 3, "resA") == -1
     );
+    ReportTestResult(
+      "Lookup null query",
+      avd_rc_lookup_resource_index(names, 3, NULL) == -1
+    );
   }
 };
 
@@ -953,6 +957,10 @@ protected:
       "Select empty input",
       avd_rh_select_entry_index(NULL, 0, 25, 0) == -1
     );
+    ReportTestResult(
+      "Select negative count input",
+      avd_rh_select_entry_index(updates, -1, 25, 0) == -1
+    );
 
     const double values[] = {1.25, 2.5};
     const int value_count = sizeof(values) / sizeof(values[0]);
@@ -971,6 +979,10 @@ protected:
     ReportTestResult(
       "Value lookup null input defaults zero",
       avd_rh_value_at_or_zero(NULL, value_count, 0) == 0.0
+    );
+    ReportTestResult(
+      "Value lookup negative count defaults zero",
+      avd_rh_value_at_or_zero(values, -1, 0) == 0.0
     );
   }
 };

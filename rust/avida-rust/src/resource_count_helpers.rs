@@ -1,30 +1,31 @@
-use std::ffi::{c_char, c_int, CStr};
+use crate::common::{with_cstr, with_slice};
+use std::ffi::{c_char, c_int};
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rc_lookup_resource_index(
     names: *const *const c_char,
     count: c_int,
     query: *const c_char,
 ) -> c_int {
-    if names.is_null() || query.is_null() || count <= 0 {
+    let query_bytes = with_cstr(query, None::<Vec<u8>>, |q| Some(q.to_bytes().to_vec()));
+    let Some(query_bytes) = query_bytes else {
         return -1;
-    }
-    // SAFETY: query was checked for null and is only read.
-    let query_bytes = unsafe { CStr::from_ptr(query) }.to_bytes();
-    for i in 0..count {
-        // SAFETY: names was checked for null and i is within [0, count).
-        let name_ptr = unsafe { *names.add(i as usize) };
-        if name_ptr.is_null() {
-            return -1;
+    };
+
+    with_slice(names, count, -1, |name_ptrs| {
+        for (i, name_ptr) in name_ptrs.iter().enumerate() {
+            if name_ptr.is_null() {
+                return -1;
+            }
+            let is_match = with_cstr(*name_ptr, false, |name| {
+                name.to_bytes() == query_bytes.as_slice()
+            });
+            if is_match {
+                return i as c_int;
+            }
         }
-        // SAFETY: name_ptr validated non-null and is only read.
-        let name_bytes = unsafe { CStr::from_ptr(name_ptr) }.to_bytes();
-        if name_bytes == query_bytes {
-            return i;
-        }
-    }
-    -1
+        -1
+    })
 }
 
 #[no_mangle]
@@ -120,6 +121,12 @@ mod tests {
         );
         assert_eq!(
             avd_rc_lookup_resource_index(std::ptr::null(), 0, std::ptr::null()),
+            -1
+        );
+        let a = CString::new("resA").expect("literal has no NUL");
+        let names = [a.as_ptr()];
+        assert_eq!(
+            avd_rc_lookup_resource_index(names.as_ptr(), names.len() as c_int, std::ptr::null()),
             -1
         );
     }

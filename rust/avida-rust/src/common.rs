@@ -3,7 +3,7 @@ use crate::{
     AvidaRawBitArrayHandle, AvidaRunningAverageHandle, AvidaRunningStatsHandle,
     AvidaWeightedIndexHandle,
 };
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{c_char, c_int, CStr, CString};
 
 macro_rules! define_handle_accessors {
     ($ref_name:ident, $mut_name:ident, $handle_ty:ty) => {
@@ -73,4 +73,22 @@ pub(crate) fn set_out<T>(out: *mut T, value: T) -> bool {
     // SAFETY: output pointer checked for null and written exactly once.
     unsafe { *out = value };
     true
+}
+
+pub(crate) fn with_slice<T, R>(
+    ptr: *const T,
+    count: c_int,
+    default: R,
+    f: impl FnOnce(&[T]) -> R,
+) -> R {
+    if ptr.is_null() || count <= 0 {
+        return default;
+    }
+    let count_usize = match usize::try_from(count) {
+        Ok(v) => v,
+        Err(_) => return default,
+    };
+    // SAFETY: pointer is checked for null and used read-only for count elements.
+    let slice = unsafe { std::slice::from_raw_parts(ptr, count_usize) };
+    f(slice)
 }
