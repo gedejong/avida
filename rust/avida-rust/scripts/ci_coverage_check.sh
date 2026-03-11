@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-THRESHOLD="${1:-75}"
-IGNORE_REGEX="${2:-.*\/(bit_array|double_sum|histogram|ordered_weighted_index|running_average|running_stats|weighted_index)\.rs$}"
+THRESHOLD="${1:-80}"
 
 SYSROOT="$(rustc --print sysroot)"
 HOST_TRIPLE="$(rustc -vV | sed -n 's/^host: //p')"
@@ -21,6 +20,5 @@ fi
 cargo llvm-cov \
   --workspace \
   --all-targets \
-  --ignore-filename-regex "${IGNORE_REGEX}" \
   --fail-under-lines "${THRESHOLD}" \
   --summary-only

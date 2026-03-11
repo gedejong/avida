@@ -73,10 +73,10 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     - name: Install cargo-llvm-cov
       run: cargo install cargo-llvm-cov
-    - name: Run Rust coverage gate (75%)
+    - name: Run Rust coverage gate (80%)
       run: |
         cd rust/avida-rust
-        ./scripts/ci_coverage_check.sh 75 | tee target/coverage-summary.txt
+        ./scripts/ci_coverage_check.sh 80 | tee target/coverage-summary.txt
     - name: Upload coverage artifacts
       if: always()
       uses: actions/upload-artifact@v4

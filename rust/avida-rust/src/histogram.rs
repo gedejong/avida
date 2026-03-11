@@ -297,3 +297,65 @@ pub extern "C" fn avd_hist_get_max_bin(handle: *const AvidaHistogramHandle) -> c
 pub extern "C" fn avd_hist_get_num_bins(handle: *const AvidaHistogramHandle) -> c_int {
     with_hist_ref(handle, 0, |h| h.num_bins())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn histogram_insert_remove_resize_and_stats() {
+        let h = avd_hist_new(4, 0);
+        assert!(!h.is_null());
+        assert_eq!(avd_hist_get_num_bins(h), 5);
+        assert_eq!(avd_hist_get_min_bin(h), 0);
+        assert_eq!(avd_hist_get_max_bin(h), 4);
+
+        avd_hist_insert(h, 0, 1);
+        avd_hist_insert(h, 2, 3);
+        avd_hist_insert(h, 4, 2);
+        assert_eq!(avd_hist_get_count(h), 6);
+        assert_eq!(avd_hist_get_total(h), 14);
+        assert_eq!(avd_hist_get_mode(h), 2);
+        assert_eq!(avd_hist_get_count_for_value(h, 2), 3);
+        assert!(avd_hist_get_average(h) > 2.0);
+        assert!(avd_hist_get_variance(h) > 0.0);
+        assert!(avd_hist_get_count_variance(h) > 0.0);
+        assert!(avd_hist_get_std_dev(h) > 0.0);
+        assert!(avd_hist_get_count_std_dev(h) > 0.0);
+        // Legacy behavior: entropy path does not skip zero-probability bins and may produce NaN.
+        assert!(avd_hist_get_entropy(h).is_nan());
+        assert!(avd_hist_get_norm_entropy(h).is_finite());
+
+        avd_hist_remove(h, 4);
+        assert_eq!(avd_hist_get_count_for_value(h, 4), 1);
+        avd_hist_remove_bin(h, 2);
+        assert_eq!(avd_hist_get_count_for_value(h, 2), 0);
+        assert_eq!(avd_hist_get_count(h), 2);
+
+        avd_hist_resize(h, 6, -1);
+        assert_eq!(avd_hist_get_min_bin(h), -1);
+        assert_eq!(avd_hist_get_max_bin(h), 6);
+        assert_eq!(avd_hist_get_num_bins(h), 8);
+        assert_eq!(avd_hist_get_count_for_value(h, 0), 1);
+        assert_eq!(avd_hist_get_count_for_value(h, 4), 1);
+
+        avd_hist_clear(h);
+        assert_eq!(avd_hist_get_count(h), 0);
+        assert_eq!(avd_hist_get_total(h), 0);
+        avd_hist_free(h);
+    }
+
+    #[test]
+    fn histogram_null_and_invalid_paths_are_safe() {
+        assert!(avd_hist_new(0, 1).is_null());
+        avd_hist_free(std::ptr::null_mut());
+        avd_hist_resize(std::ptr::null_mut(), 1, 0);
+        avd_hist_clear(std::ptr::null_mut());
+        avd_hist_insert(std::ptr::null_mut(), 1, 1);
+        avd_hist_remove(std::ptr::null_mut(), 1);
+        avd_hist_remove_bin(std::ptr::null_mut(), 1);
+        assert_eq!(avd_hist_get_count(std::ptr::null()), 0);
+        assert_eq!(avd_hist_get_total(std::ptr::null()), 0);
+        assert_eq!(avd_hist_get_average(std::ptr::null()), 0.0);
+    }
+}

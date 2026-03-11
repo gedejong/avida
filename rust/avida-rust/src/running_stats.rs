@@ -154,11 +154,41 @@ mod tests {
 
     #[test]
     fn running_stats_matches_reference_values() {
-        let mut rs = AvidaRunningStatsHandle::new();
+        let h = avd_rs_new();
+        assert!(!h.is_null());
         for v in [1.0_f64, 2.0, 3.0, 4.0] {
-            rs.push(v);
+            avd_rs_push(h, v);
         }
-        assert_eq!(rs.n, 4.0);
-        assert!((rs.m1 - 2.5).abs() < 1e-12);
+        assert_eq!(avd_rs_n(h), 4.0);
+        assert!((avd_rs_mean(h) - 2.5).abs() < 1e-12);
+        assert!(avd_rs_variance(h) > 0.0);
+        assert!(avd_rs_std_deviation(h) > 0.0);
+        assert!(avd_rs_std_error(h) > 0.0);
+        assert!(avd_rs_skewness(h).is_finite());
+        assert!(avd_rs_kurtosis(h).is_finite());
+
+        let c = avd_rs_clone(h);
+        assert!(!c.is_null());
+        assert_eq!(avd_rs_n(c), 4.0);
+
+        avd_rs_clear(c);
+        assert_eq!(avd_rs_n(c), 0.0);
+        assert_eq!(avd_rs_variance(c), 0.0);
+        assert_eq!(avd_rs_std_error(c), 0.0);
+
+        avd_rs_free(c);
+        avd_rs_free(h);
+    }
+
+    #[test]
+    fn running_stats_null_safety_paths() {
+        assert!(avd_rs_clone(std::ptr::null()).is_null());
+        avd_rs_free(std::ptr::null_mut());
+        avd_rs_clear(std::ptr::null_mut());
+        avd_rs_push(std::ptr::null_mut(), 1.0);
+        assert_eq!(avd_rs_n(std::ptr::null()), 0.0);
+        assert_eq!(avd_rs_mean(std::ptr::null()), 0.0);
+        assert_eq!(avd_rs_variance(std::ptr::null()), 0.0);
+        assert_eq!(avd_rs_std_deviation(std::ptr::null()), 0.0);
     }
 }

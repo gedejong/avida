@@ -154,3 +154,58 @@ pub extern "C" fn avd_ds_std_deviation(handle: *const AvidaDoubleSumHandle) -> c
 pub extern "C" fn avd_ds_std_error(handle: *const AvidaDoubleSumHandle) -> c_double {
     with_ds_ref(handle, 0.0, |h| h.std_error())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn double_sum_tracks_weighted_stats_and_clear() {
+        let h = avd_ds_new();
+        assert!(!h.is_null());
+        assert_eq!(avd_ds_count(h), 0.0);
+        assert_eq!(avd_ds_sum(h), 0.0);
+
+        avd_ds_add(h, 2.0, 1.0);
+        avd_ds_add(h, 4.0, 2.0);
+        assert!((avd_ds_count(h) - 3.0).abs() < 1e-12);
+        assert!((avd_ds_sum(h) - 10.0).abs() < 1e-12);
+        assert!((avd_ds_average(h) - (10.0 / 3.0)).abs() < 1e-12);
+        assert_eq!(avd_ds_max(h), 4.0);
+        assert!(avd_ds_variance(h) > 0.0);
+        assert!(avd_ds_std_deviation(h) > 0.0);
+        assert!(avd_ds_std_error(h) > 0.0);
+
+        avd_ds_subtract(h, 4.0, 1.0);
+        assert!((avd_ds_count(h) - 2.0).abs() < 1e-12);
+        assert!((avd_ds_sum(h) - 6.0).abs() < 1e-12);
+
+        let cloned = avd_ds_clone(h);
+        assert!(!cloned.is_null());
+        assert!((avd_ds_sum(cloned) - 6.0).abs() < 1e-12);
+        avd_ds_clear(cloned);
+        assert_eq!(avd_ds_count(cloned), 0.0);
+        assert_eq!(avd_ds_sum(cloned), 0.0);
+
+        avd_ds_free(cloned);
+        avd_ds_free(h);
+    }
+
+    #[test]
+    fn double_sum_handles_nulls_and_zero_variance_paths() {
+        assert!(avd_ds_clone(std::ptr::null()).is_null());
+        avd_ds_free(std::ptr::null_mut());
+        avd_ds_clear(std::ptr::null_mut());
+        avd_ds_add(std::ptr::null_mut(), 1.0, 1.0);
+        avd_ds_subtract(std::ptr::null_mut(), 1.0, 1.0);
+        assert_eq!(avd_ds_count(std::ptr::null()), 0.0);
+        assert_eq!(avd_ds_average(std::ptr::null()), 0.0);
+        assert_eq!(avd_ds_variance(std::ptr::null()), 0.0);
+
+        let h = avd_ds_new();
+        avd_ds_add(h, 7.0, 1.0);
+        assert_eq!(avd_ds_variance(h), 0.0);
+        assert_eq!(avd_ds_std_error(h), 0.0);
+        avd_ds_free(h);
+    }
+}

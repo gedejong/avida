@@ -148,3 +148,50 @@ pub extern "C" fn avd_owi_find_position(
 ) -> c_int {
     with_owi_ref(handle, -1, |h| h.find_position(position))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ordered_weighted_index_lookup_and_clone() {
+        let h = avd_owi_new();
+        assert!(!h.is_null());
+        assert_eq!(avd_owi_get_size(h), 0);
+        assert_eq!(avd_owi_find_position(h, 0.0), -1);
+
+        avd_owi_set_weight(h, 10, 1.0);
+        avd_owi_set_weight(h, 20, 2.0);
+        avd_owi_set_weight(h, 30, 3.0);
+        assert_eq!(avd_owi_get_size(h), 3);
+        assert!((avd_owi_get_total_weight(h) - 6.0).abs() < 1e-12);
+        assert_eq!(avd_owi_get_value(h, 0), 10);
+        assert_eq!(avd_owi_get_weight(h, 2), 3.0);
+        assert_eq!(avd_owi_find_position(h, 0.2), 10);
+        assert_eq!(avd_owi_find_position(h, 1.4), 20);
+        assert_eq!(avd_owi_find_position(h, 3.5), 30);
+        assert_eq!(avd_owi_find_position(h, 7.0), -1);
+        assert_eq!(avd_owi_get_value(h, -1), -1);
+        assert_eq!(avd_owi_get_weight(h, -1), 0.0);
+
+        let c = avd_owi_clone(h);
+        assert!(!c.is_null());
+        assert_eq!(avd_owi_get_size(c), 3);
+        assert_eq!(avd_owi_get_value(c, 1), 20);
+        avd_owi_set_weight(c, 40, 4.0);
+        assert_eq!(avd_owi_get_size(c), 4);
+        assert!((avd_owi_get_total_weight(c) - 10.0).abs() < 1e-12);
+
+        avd_owi_free(c);
+        avd_owi_free(h);
+    }
+
+    #[test]
+    fn ordered_weighted_index_null_safety() {
+        assert!(avd_owi_clone(std::ptr::null()).is_null());
+        avd_owi_free(std::ptr::null_mut());
+        avd_owi_set_weight(std::ptr::null_mut(), 1, 1.0);
+        assert_eq!(avd_owi_get_total_weight(std::ptr::null()), 0.0);
+        assert_eq!(avd_owi_find_position(std::ptr::null(), 0.0), -1);
+    }
+}

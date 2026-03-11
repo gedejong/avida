@@ -139,11 +139,42 @@ pub extern "C" fn avd_ra_std_error(handle: *const AvidaRunningAverageHandle) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn running_average_warmup_and_wrap_behavior() {
-        let mut ra = AvidaRunningAverageHandle::new(3);
-        ra.add(1.0);
-        ra.add(2.0);
-        assert_eq!(ra.average(), 0.0);
+        let h = avd_ra_new(3);
+        assert!(!h.is_null());
+        avd_ra_add(h, 1.0);
+        avd_ra_add(h, 2.0);
+        assert_eq!(avd_ra_average(h), 0.0);
+
+        avd_ra_add(h, 3.0);
+        assert!((avd_ra_average(h) - 2.0).abs() < 1e-12);
+        assert!(avd_ra_variance(h) > 0.0);
+        assert!(avd_ra_std_deviation(h) > 0.0);
+        assert!(avd_ra_std_error(h) > 0.0);
+
+        // Force wrap-around path.
+        avd_ra_add(h, 4.0);
+        avd_ra_add(h, 5.0);
+        assert!((avd_ra_average(h) - 4.0).abs() < 1e-12);
+        assert!(avd_ra_sum(h) > 0.0);
+        assert!(avd_ra_sum_of_squares(h) > 0.0);
+
+        avd_ra_clear(h);
+        assert_eq!(avd_ra_average(h), 0.0);
+        assert_eq!(avd_ra_variance(h), 0.0);
+        avd_ra_free(h);
+    }
+
+    #[test]
+    fn running_average_null_and_invalid_paths() {
+        assert!(avd_ra_new(1).is_null());
+        assert!(avd_ra_new(0).is_null());
+        avd_ra_free(std::ptr::null_mut());
+        avd_ra_clear(std::ptr::null_mut());
+        avd_ra_add(std::ptr::null_mut(), 1.0);
+        assert_eq!(avd_ra_average(std::ptr::null()), 0.0);
+        assert_eq!(avd_ra_std_error(std::ptr::null()), 0.0);
     }
 }
