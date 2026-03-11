@@ -1,3 +1,7 @@
+use avida_rust::bit_array::{
+    avd_rba_count_bits, avd_rba_free, avd_rba_increment, avd_rba_new, avd_rba_set_bit,
+    avd_rba_shift,
+};
 use avida_rust::resource_count_helpers::{
     avd_rc_accumulate_update_time, avd_rc_num_steps, avd_rc_remainder_update_time,
 };
@@ -5,6 +9,7 @@ use avida_rust::{
     avd_pkg_double_to_string, avd_pkg_str_as_bool, avd_pkg_str_as_double, avd_pkg_str_as_int,
     avd_pkg_string_free, avd_provider_classify_id, avd_provider_string_free,
 };
+use bitvec::prelude::{BitVec, Lsb0};
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::ffi::{c_char, CString};
 use std::hint::black_box;
@@ -114,10 +119,81 @@ fn bench_package_parsing_and_formatting(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_bit_array_shift_increment_count(c: &mut Criterion) {
+    let mut group = c.benchmark_group("bit_array_helpers");
+    let sizes = [128_i32, 1024_i32, 4096_i32];
+
+    for num_bits in sizes {
+        group.bench_function(format!("ffi_shift_increment_count_{num_bits}b"), |b| {
+            b.iter(|| {
+                let handle = avd_rba_new(num_bits);
+                if handle.is_null() {
+                    return;
+                }
+                for i in (0..num_bits).step_by(17) {
+                    avd_rba_set_bit(handle, i, 1);
+                }
+                for shift in [1, 7, -3, 13, -17] {
+                    avd_rba_shift(handle, num_bits, black_box(shift));
+                    avd_rba_increment(handle, num_bits);
+                }
+                let count = avd_rba_count_bits(handle, num_bits);
+                avd_rba_free(handle);
+                black_box(count);
+            })
+        });
+
+        group.bench_function(format!("bitvec_reference_{num_bits}b"), |b| {
+            b.iter(|| {
+                let mut bits = BitVec::<u32, Lsb0>::repeat(false, num_bits as usize);
+                for i in (0..num_bits).step_by(17) {
+                    bits.set(i as usize, true);
+                }
+                for shift in [1_i32, 7, -3, 13, -17] {
+                    let mut shifted = BitVec::<u32, Lsb0>::repeat(false, num_bits as usize);
+                    if shift > 0 {
+                        for i in (0..num_bits).rev() {
+                            let src = i - shift;
+                            if src >= 0 {
+                                shifted.set(i as usize, bits[src as usize]);
+                            }
+                        }
+                    } else if shift < 0 {
+                        let right = -shift;
+                        for i in 0..num_bits {
+                            let src = i + right;
+                            if src < num_bits {
+                                shifted.set(i as usize, bits[src as usize]);
+                            }
+                        }
+                    } else {
+                        shifted.clone_from(&bits);
+                    }
+                    bits = shifted;
+
+                    let mut carry = true;
+                    for i in 0..bits.len() {
+                        if !carry {
+                            break;
+                        }
+                        let next = !bits[i];
+                        bits.set(i, next);
+                        carry = !next;
+                    }
+                }
+                black_box(bits.count_ones())
+            })
+        });
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_resource_scheduling,
     bench_provider_classification,
-    bench_package_parsing_and_formatting
+    bench_package_parsing_and_formatting,
+    bench_bit_array_shift_increment_count
 );
 criterion_main!(benches);

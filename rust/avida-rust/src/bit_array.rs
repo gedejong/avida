@@ -539,4 +539,83 @@ mod tests {
         assert_eq!(count as usize, expected.count_ones());
         assert_eq!(count2 as usize, expected.count_ones());
     }
+
+    #[test]
+    fn bitvec_binary_op_matrix_matches_ffi_semantics() {
+        let sizes = [1_i32, 31, 32, 33, 65, 127];
+        for num_bits in sizes {
+            let mut left = AvidaRawBitArrayHandle {
+                bit_fields: vec![0_u32; AvidaRawBitArrayHandle::num_fields(num_bits)],
+            };
+            let mut right = AvidaRawBitArrayHandle {
+                bit_fields: vec![0_u32; AvidaRawBitArrayHandle::num_fields(num_bits)],
+            };
+            for i in 0..num_bits {
+                if i % 3 == 0 {
+                    AvidaRawBitArrayHandle::set_bit_in(&mut left.bit_fields, i, true);
+                }
+                if i % 5 == 0 {
+                    AvidaRawBitArrayHandle::set_bit_in(&mut right.bit_fields, i, true);
+                }
+            }
+
+            let left_bits = bitvec_from_handle(&left, num_bits);
+            let right_bits = bitvec_from_handle(&right, num_bits);
+
+            for name in ["and", "or", "xor"] {
+                let mut ffi_left = AvidaRawBitArrayHandle {
+                    bit_fields: left.bit_fields.clone(),
+                };
+                let ffi_right = AvidaRawBitArrayHandle {
+                    bit_fields: right.bit_fields.clone(),
+                };
+                match name {
+                    "and" => avd_rba_and(&mut ffi_left, &ffi_right, num_bits),
+                    "or" => avd_rba_or(&mut ffi_left, &ffi_right, num_bits),
+                    "xor" => avd_rba_xor(&mut ffi_left, &ffi_right, num_bits),
+                    _ => unreachable!(),
+                }
+                let got = bitvec_from_handle(&ffi_left, num_bits);
+                let expected = match name {
+                    "and" => left_bits.clone() & right_bits.clone(),
+                    "or" => left_bits.clone() | right_bits.clone(),
+                    "xor" => left_bits.clone() ^ right_bits.clone(),
+                    _ => unreachable!(),
+                };
+                assert_eq!(got, expected, "{name} mismatch at size {num_bits}");
+            }
+
+            let mut ffi_not = AvidaRawBitArrayHandle {
+                bit_fields: left.bit_fields.clone(),
+            };
+            avd_rba_not(&mut ffi_not, num_bits);
+            let mut expected_not = !left_bits.clone();
+            expected_not.truncate(num_bits as usize);
+            assert_eq!(bitvec_from_handle(&ffi_not, num_bits), expected_not);
+
+            let mut ffi_nand = AvidaRawBitArrayHandle {
+                bit_fields: left.bit_fields.clone(),
+            };
+            avd_rba_nand(&mut ffi_nand, &right, num_bits);
+            let mut expected_nand = !(left_bits.clone() & right_bits.clone());
+            expected_nand.truncate(num_bits as usize);
+            assert_eq!(bitvec_from_handle(&ffi_nand, num_bits), expected_nand);
+
+            let mut ffi_nor = AvidaRawBitArrayHandle {
+                bit_fields: left.bit_fields.clone(),
+            };
+            avd_rba_nor(&mut ffi_nor, &right, num_bits);
+            let mut expected_nor = !(left_bits.clone() | right_bits.clone());
+            expected_nor.truncate(num_bits as usize);
+            assert_eq!(bitvec_from_handle(&ffi_nor, num_bits), expected_nor);
+
+            let mut ffi_equ = AvidaRawBitArrayHandle {
+                bit_fields: left.bit_fields.clone(),
+            };
+            avd_rba_equ(&mut ffi_equ, &right, num_bits);
+            let mut expected_equ = !(left_bits.clone() ^ right_bits.clone());
+            expected_equ.truncate(num_bits as usize);
+            assert_eq!(bitvec_from_handle(&ffi_equ, num_bits), expected_equ);
+        }
+    }
 }

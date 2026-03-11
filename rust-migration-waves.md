@@ -61,6 +61,7 @@ Focus:
 - `cEventList` deterministic parse helpers (completed): Rust-backed trigger classification and timing tuple parsing (`begin`/`all`/`once`/`end` and numeric forms) routed through additive C ABI while preserving C++ event creation/state mutation ownership
 - `Data::TimeSeriesRecorder` typed parse-policy parity hardening (completed): Rust typed getter coercion now matches legacy `Apto::StrAs` semantics (`bool` exact true aliases only; `int`/`double` C-style coercion including partial/hex/exponent forms) with shared Rust+C++ matrix fixtures and unchanged ABI surface
 - `Data::Package` primitive formatting parity hardening (completed): Rust-backed `Wrap<bool/int/double>::StringValue` paths now have expanded boundary/threshold parity matrices (signed zero, denormals, exponent cutovers, integer limits, NaN/Inf) locked against legacy `Apto::AsStr` behavior
+- `cBitArray` selective `bitvec` evaluation (completed, no-adopt): Added focused Criterion benchmark matrix for `shift`/`increment`/`count` workloads plus expanded Rust parity matrices across binary/unary ops and edge widths; benchmark deltas were mixed/marginal, so production internals remain on the current custom bit-field path with stronger decision evidence.
 - Build/configure robustness hardening (completed): default low-noise configure path with optional backtrace opt-in, CI reconfigure smoke check, and stable Linux static link-order preservation for `aptostatic` resolution
 - Consistency fixture hardening (completed): cross-platform determinism stabilizations for `sex` and `shaded_green_beard_instructions` via fixture-local knob pinning, narrower intent-focused output assertions, and richer CI diagnostics artifacts
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
@@ -68,4 +69,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: evaluate selective production adoption of `bitvec` for `bit_array` only where benchmarks show clear maintainability/performance wins.
+- Next candidate: add a dedicated CI matrix leg for explicit backtrace-enabled builds (`AVIDA_ENABLE_BACKTRACE=1`) to keep optional diagnostics paths continuously validated.
