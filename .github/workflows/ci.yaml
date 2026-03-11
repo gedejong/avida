@@ -7,11 +7,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore C/C++ compiler cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('**/CMakeLists.txt', 'build_avida') }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.ref_name }}-
+          ${{ runner.os }}-ccache-
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ make python3
+        sudo apt-get install -y cmake g++ make python3 ccache
     - name: Build Avida
+      env:
+        CC: ccache gcc
+        CXX: ccache g++
+        CCACHE_DIR: ~/.cache/ccache
       run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
     - name: Run tests
       run: |
@@ -34,20 +46,44 @@ jobs:
           run_tests.log
           run_tests-diagnostics.log
         if-no-files-found: warn
+    - name: Show ccache statistics
+      if: always()
+      run: ccache -s || true
 
   tests-rust:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore C/C++ compiler cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('**/CMakeLists.txt', 'build_avida') }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ github.ref_name }}-
+          ${{ runner.os }}-ccache-
+    - name: Restore Rust dependency/build cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          rust/avida-rust/target
+        key: ${{ runner.os }}-rust-${{ hashFiles('rust/avida-rust/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rust-
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ make python3
+        sudo apt-get install -y cmake g++ make python3 ccache
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
     - name: Build Avida (Rust-enabled)
       env:
         AVD_ENABLE_RUST: "1"
+        CC: ccache gcc
+        CXX: ccache g++
+        CCACHE_DIR: ~/.cache/ccache
       run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
     - name: Run tests (Rust-enabled)
       run: |
@@ -76,11 +112,24 @@ jobs:
           run_tests-rust.log
           run_tests-rust-diagnostics.log
         if-no-files-found: warn
+    - name: Show ccache statistics
+      if: always()
+      run: ccache -s || true
 
   perf-rust:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore Rust dependency/build cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          rust/avida-rust/target
+        key: ${{ runner.os }}-rust-${{ hashFiles('rust/avida-rust/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rust-
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
     - name: Run Rust critical path benchmarks
@@ -103,12 +152,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore Rust dependency/build cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          rust/avida-rust/target
+        key: ${{ runner.os }}-rust-${{ hashFiles('rust/avida-rust/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rust-
+    - name: Restore cargo-llvm-cov cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/cargo-llvm-cov
+        key: ${{ runner.os }}-cargo-llvm-cov-0.8.4
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
     - name: Install llvm-tools-preview
       run: rustup component add llvm-tools-preview
     - name: Install cargo-llvm-cov
-      run: cargo install cargo-llvm-cov
+      run: |
+        if [ ! -x "${HOME}/.cargo/bin/cargo-llvm-cov" ]; then
+          cargo install cargo-llvm-cov
+        fi
     - name: Run Rust coverage gate (80%)
       run: |
         cd rust/avida-rust
