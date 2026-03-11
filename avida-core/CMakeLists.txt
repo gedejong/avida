@@ -457,7 +457,7 @@ IF(AVD_CMDLINE)
   ADD_EXECUTABLE(avida ${AVIDA_CMDLINE_SOURCES})
   endif()
 
-  SET(AVIDA_CMDLINE_LIBS aptostatic avida-core)
+  SET(AVIDA_CMDLINE_LIBS aptostatic avida-core aptostatic)
   IF(AVD_RUST_ENABLED)
     LIST(APPEND AVIDA_CMDLINE_LIBS avida-rust)
   ENDIF(AVD_RUST_ENABLED)
