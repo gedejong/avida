@@ -7,8 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Restore C/C++ compiler cache
       uses: actions/cache@v4
       with:
@@ -78,8 +76,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Restore C/C++ compiler cache
       uses: actions/cache@v4
       with:
@@ -168,8 +164,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Restore Rust dependency/build cache
       uses: actions/cache@v4
       with:
@@ -202,8 +196,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Restore Rust dependency/build cache
       uses: actions/cache@v4
       with:
