@@ -23,6 +23,7 @@ jobs:
       env:
         AVIDA_DISABLE_BACKTRACE: "1"
       run: |
+        git submodule update --init libs/apto libs/backward-cpp
         rm -rf cbuild-reconfigure
         cmake -S . -B cbuild-reconfigure -DCMAKE_POLICY_VERSION_MINIMUM=3.20 -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF
         cmake -S . -B cbuild-reconfigure -DCMAKE_POLICY_VERSION_MINIMUM=3.20 -DAVD_UNIT_TESTS:BOOL=ON -DAPTO_UNIT_TESTS:BOOL=OFF
