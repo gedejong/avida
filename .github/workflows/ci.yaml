@@ -14,9 +14,26 @@ jobs:
     - name: Build Avida
       run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
     - name: Run tests
-      run: ./run_tests --mode=slave
+      run: |
+        set -o pipefail
+        ./run_tests --mode=slave 2>&1 | tee run_tests.log
+    - name: Run focused diff diagnostics on failure
+      if: failure()
+      run: |
+        set +e
+        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-diagnostics.log
+        exit 0
     - name: Run unit tests
       run: ./cbuild/work/unit-tests
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tests-logs
+        path: |
+          run_tests.log
+          run_tests-diagnostics.log
+        if-no-files-found: warn
 
   tests-rust:
     runs-on: ubuntu-latest
@@ -33,7 +50,15 @@ jobs:
         AVD_ENABLE_RUST: "1"
       run: ./build_avida -DAVD_UNIT_TESTS:BOOL=ON
     - name: Run tests (Rust-enabled)
-      run: ./run_tests --mode=slave
+      run: |
+        set -o pipefail
+        ./run_tests --mode=slave 2>&1 | tee run_tests-rust.log
+    - name: Run focused diff diagnostics on failure (Rust-enabled)
+      if: failure()
+      run: |
+        set +e
+        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-rust-diagnostics.log
+        exit 0
     - name: Run unit tests (RunningStats parity)
       run: ./cbuild/work/unit-tests
     - name: Rust checks
@@ -42,6 +67,15 @@ jobs:
         cargo test --all-targets
         cargo fmt --check
         cargo clippy --all-targets -- -D warnings
+    - name: Upload Rust test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tests-rust-logs
+        path: |
+          run_tests-rust.log
+          run_tests-rust-diagnostics.log
+        if-no-files-found: warn
 
   perf-rust:
     runs-on: ubuntu-latest
