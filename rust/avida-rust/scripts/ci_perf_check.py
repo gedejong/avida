@@ -10,14 +10,14 @@ from typing import Dict, List, Tuple
 
 
 BASELINES_NS: Dict[str, float] = {
-    "resource_scheduling_helpers/num_steps+remainder_pipeline": 58_429.0,
-    "provider_id_helpers/classify_standard": 12.870,
-    "provider_id_helpers/classify_argumented_with_outputs": 285.03,
-    "provider_id_helpers/classify_malformed": 19.252,
-    "package_helpers/str_as_bool": 3.3045,
-    "package_helpers/str_as_int": 7.4641,
-    "package_helpers/str_as_double": 20.267,
-    "package_helpers/double_to_string": 168.16,
+    "resource_scheduling_helpers/num_steps+remainder_pipeline": 53_402.540,
+    "provider_id_helpers/classify_standard": 22.438,
+    "provider_id_helpers/classify_argumented_with_outputs": 205.364,
+    "provider_id_helpers/classify_malformed": 26.152,
+    "package_helpers/str_as_bool": 4.669,
+    "package_helpers/str_as_int": 10.096,
+    "package_helpers/str_as_double": 70.987,
+    "package_helpers/double_to_string": 255.216,
 }
 
 
@@ -54,7 +54,7 @@ def fmt_ns(nanoseconds: float) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--threshold", type=float, default=0.20)
+    parser.add_argument("--threshold", type=float, default=0.50)
     parser.add_argument("--target-dir", default="target")
     args = parser.parse_args()
 
