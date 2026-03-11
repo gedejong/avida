@@ -167,6 +167,8 @@ double avd_rc_accumulate_update_time(double current, double delta);
 int avd_rc_num_steps(double update_time, double update_step);
 int avd_rc_num_spatial_updates(int current_update, int previous_update);
 double avd_rc_remainder_update_time(double update_time, double update_step, int num_steps);
+int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
+double avd_rh_value_at_or_zero(const double* values, int count, int index);
 
 #ifdef __cplusplus
 }

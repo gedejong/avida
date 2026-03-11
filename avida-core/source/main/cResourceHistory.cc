@@ -24,41 +24,27 @@
 #include "cInitFile.h"
 #include "cResourceCount.h"
 #include "cStringList.h"
+#include "rust/running_stats_ffi.h"
 
 
 int cResourceHistory::getEntryForUpdate(int update, bool exact) const
 {
-  int entry = -1;
-  
-  if (exact) {
-    for (int i = 0; i < m_entries.GetSize(); i++) {
-      if (update == m_entries[i].update) {
-        entry = i;
-        break;
-      }
-    }
-  } else {
-    // Find the update that is closest to the born update, round down
-    entry = 0;
-    for (; entry < m_entries.GetSize(); entry++) if (m_entries[entry].update > update) break;
-    if (entry > 0) entry--;
-  }
-
-  return entry;
+  Apto::Array<int> updates;
+  updates.Resize(m_entries.GetSize());
+  for (int i = 0; i < m_entries.GetSize(); ++i) updates[i] = m_entries[i].update;
+  const int* updates_ptr = (updates.GetSize() > 0) ? &updates[0] : NULL;
+  return avd_rh_select_entry_index(updates_ptr, updates.GetSize(), update, exact ? 1 : 0);
 }
 
 bool cResourceHistory::GetResourceCountForUpdate(cAvidaContext& ctx, int update, cResourceCount& rc, bool exact) const
 {
   int entry = getEntryForUpdate(update, exact);
-  if (entry == -1) return false;
-      
+  if (entry < 0 || entry >= m_entries.GetSize()) return false;
+
+  const int value_count = m_entries[entry].values.GetSize();
+  const double* values_ptr = (value_count > 0) ? &m_entries[entry].values[0] : NULL;
   for (int i = 0; i < rc.GetSize(); i++) {
-    if (entry >= m_entries.GetSize() || i >= m_entries[entry].values.GetSize()) {
-			rc.Set(ctx, i, 0.0);
-		}
-    else {
-			rc.Set(ctx, i, m_entries[entry].values[i]);
-		}
+    rc.Set(ctx, i, avd_rh_value_at_or_zero(values_ptr, value_count, i));
   }
   
   return true;
@@ -67,12 +53,13 @@ bool cResourceHistory::GetResourceCountForUpdate(cAvidaContext& ctx, int update,
 bool cResourceHistory::GetResourceLevelsForUpdate(int update, Apto::Array<double>& levels, bool exact) const
 {
   int entry = getEntryForUpdate(update, exact);
-  if (entry == -1) return false;
+  if (entry < 0 || entry >= m_entries.GetSize()) return false;
   
   levels.Resize(m_entries[entry].values.GetSize());
+  const int value_count = m_entries[entry].values.GetSize();
+  const double* values_ptr = (value_count > 0) ? &m_entries[entry].values[0] : NULL;
   for (int i = 0; i < levels.GetSize(); i++) {
-    if (entry >= m_entries.GetSize()) levels[i] = 0.0;
-    else levels[i] = m_entries[entry].values[i];
+    levels[i] = avd_rh_value_at_or_zero(values_ptr, value_count, i);
   }
   
   return true;

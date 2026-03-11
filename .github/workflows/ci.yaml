@@ -29,36 +29,31 @@ jobs:
       run: |
         set -o pipefail
         TESTS="$(./run_tests --list-tests | python3 - <<'PY'
-import re
-exclude = {"sex", "shaded_green_beard_instructions"}
-tests = []
-for line in __import__("sys").stdin:
-    line = line.strip()
-    if not line or line.startswith("available tests") or line.startswith("---"):
-        continue
-    m = re.match(r'^\*?\s*(?:[cp]\s+)*([A-Za-z0-9_\\-]+)$', line)
-    if not m:
-        continue
-    name = m.group(1)
-    if name == "avida-core":
-        continue
-    if name not in exclude:
-        tests.append(name)
-print(" ".join(tests))
-PY
-)"
+        import re
+        exclude = {"sex", "shaded_green_beard_instructions"}
+        tests = []
+        for line in __import__("sys").stdin:
+            line = line.strip()
+            if not line or line.startswith("available tests") or line.startswith("---"):
+                continue
+            m = re.match(r'^\*?\s*(?:[cp]\s+)*([A-Za-z0-9_\\-]+)$', line)
+            if not m:
+                continue
+            name = m.group(1)
+            if name == "avida-core":
+                continue
+            if name not in exclude:
+                tests.append(name)
+        print(" ".join(tests))
+        PY
+        )"
+        printf '%s\n' "${TESTS}" > selected-tests.txt
         ./run_tests --mode=slave ${TESTS} 2>&1 | tee run_tests.log
     - name: Run known flaky consistency diagnostics (non-blocking)
       if: always()
       run: |
         set +e
-        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-diagnostics.log
-        exit 0
-    - name: Run focused diff diagnostics on failure
-      if: failure()
-      run: |
-        set +e
-        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-diagnostics.log
+        ./run_tests --mode=slave --show-diff --diff-max-threshold=1048576 --verbose --xml-report=run_tests-diagnostics.xml sex shaded_green_beard_instructions 2>&1 | tee run_tests-diagnostics.log
         exit 0
     - name: Run unit tests
       run: ./cbuild/work/unit-tests
@@ -70,6 +65,8 @@ PY
         path: |
           run_tests.log
           run_tests-diagnostics.log
+          run_tests-diagnostics.xml
+          selected-tests.txt
         if-no-files-found: warn
     - name: Show ccache statistics
       if: always()
@@ -114,36 +111,31 @@ PY
       run: |
         set -o pipefail
         TESTS="$(./run_tests --list-tests | python3 - <<'PY'
-import re
-exclude = {"sex", "shaded_green_beard_instructions"}
-tests = []
-for line in __import__("sys").stdin:
-    line = line.strip()
-    if not line or line.startswith("available tests") or line.startswith("---"):
-        continue
-    m = re.match(r'^\*?\s*(?:[cp]\s+)*([A-Za-z0-9_\\-]+)$', line)
-    if not m:
-        continue
-    name = m.group(1)
-    if name == "avida-core":
-        continue
-    if name not in exclude:
-        tests.append(name)
-print(" ".join(tests))
-PY
-)"
+        import re
+        exclude = {"sex", "shaded_green_beard_instructions"}
+        tests = []
+        for line in __import__("sys").stdin:
+            line = line.strip()
+            if not line or line.startswith("available tests") or line.startswith("---"):
+                continue
+            m = re.match(r'^\*?\s*(?:[cp]\s+)*([A-Za-z0-9_\\-]+)$', line)
+            if not m:
+                continue
+            name = m.group(1)
+            if name == "avida-core":
+                continue
+            if name not in exclude:
+                tests.append(name)
+        print(" ".join(tests))
+        PY
+        )"
+        printf '%s\n' "${TESTS}" > selected-tests-rust.txt
         ./run_tests --mode=slave ${TESTS} 2>&1 | tee run_tests-rust.log
     - name: Run known flaky consistency diagnostics on Rust-enabled build (non-blocking)
       if: always()
       run: |
         set +e
-        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-rust-diagnostics.log
-        exit 0
-    - name: Run focused diff diagnostics on failure (Rust-enabled)
-      if: failure()
-      run: |
-        set +e
-        ./run_tests --mode=slave --show-diff --verbose sex shaded_green_beard_instructions 2>&1 | tee run_tests-rust-diagnostics.log
+        ./run_tests --mode=slave --show-diff --diff-max-threshold=1048576 --verbose --xml-report=run_tests-rust-diagnostics.xml sex shaded_green_beard_instructions 2>&1 | tee run_tests-rust-diagnostics.log
         exit 0
     - name: Run unit tests (RunningStats parity)
       run: ./cbuild/work/unit-tests
@@ -161,6 +153,8 @@ PY
         path: |
           run_tests-rust.log
           run_tests-rust-diagnostics.log
+          run_tests-rust-diagnostics.xml
+          selected-tests-rust.txt
         if-no-files-found: warn
     - name: Show ccache statistics
       if: always()

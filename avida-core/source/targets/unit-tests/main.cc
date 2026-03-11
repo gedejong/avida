@@ -919,6 +919,62 @@ protected:
   }
 };
 
+class cResourceHistoryHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cResourceHistory Helpers"; }
+protected:
+  void RunTests()
+  {
+    const int updates[] = {10, 20, 30};
+    const int update_count = sizeof(updates) / sizeof(updates[0]);
+
+    ReportTestResult(
+      "Select exact hit",
+      avd_rh_select_entry_index(updates, update_count, 20, 1) == 1
+    );
+    ReportTestResult(
+      "Select exact miss",
+      avd_rh_select_entry_index(updates, update_count, 25, 1) == -1
+    );
+    ReportTestResult(
+      "Select nearest below first",
+      avd_rh_select_entry_index(updates, update_count, 5, 0) == 0
+    );
+    ReportTestResult(
+      "Select nearest interior",
+      avd_rh_select_entry_index(updates, update_count, 25, 0) == 1
+    );
+    ReportTestResult(
+      "Select nearest above last",
+      avd_rh_select_entry_index(updates, update_count, 40, 0) == 2
+    );
+    ReportTestResult(
+      "Select empty input",
+      avd_rh_select_entry_index(NULL, 0, 25, 0) == -1
+    );
+
+    const double values[] = {1.25, 2.5};
+    const int value_count = sizeof(values) / sizeof(values[0]);
+    ReportTestResult(
+      "Value lookup in range",
+      fabs(avd_rh_value_at_or_zero(values, value_count, 1) - 2.5) < 1e-15
+    );
+    ReportTestResult(
+      "Value lookup negative index defaults zero",
+      avd_rh_value_at_or_zero(values, value_count, -1) == 0.0
+    );
+    ReportTestResult(
+      "Value lookup overflow index defaults zero",
+      avd_rh_value_at_or_zero(values, value_count, value_count) == 0.0
+    );
+    ReportTestResult(
+      "Value lookup null input defaults zero",
+      avd_rh_value_at_or_zero(NULL, value_count, 0) == 0.0
+    );
+  }
+};
+
 
 
 
@@ -954,6 +1010,7 @@ int main(int argc, const char* argv[])
   TEST(cResourceCountLookupHelper);
   TEST(cResourceCountPrecalcHelper);
   TEST(cResourceCountSchedulingHelper);
+  TEST(cResourceHistoryHelper);
   
   if (failed == 0)
     cout << "All unit tests passed." << endl;
