@@ -308,10 +308,7 @@ double cSpatialResCount::SumAll() const{
 
 void cSpatialResCount::Source(double amount) const {
   int     i, j, elem;
-  double  totalcells;
-
-  totalcells = (inflowY2 - inflowY1 + 1) * (inflowX2 - inflowX1 + 1) * 1.0;
-  amount /= totalcells;
+  amount = avd_src_source_per_cell(amount, inflowX1, inflowX2, inflowY1, inflowY2);
 
   for (i = inflowY1; i <= inflowY2; i++) {
     for (j = inflowX1; j <= inflowX2; j++) {
@@ -341,15 +338,14 @@ void cSpatialResCount::CellInflow() const {
 void cSpatialResCount::Sink(double decay) const {
 
   int     i, j, elem;
-  double  deltaamount;
 
   if (outflowX1 == cResource::NONE || outflowY1 == cResource::NONE || outflowX2 == cResource::NONE || outflowY2 == cResource::NONE) return;
   
   for (i = outflowY1; i <= outflowY2; i++) {
     for (j = outflowX1; j <= outflowX2; j++) {
       elem = (Mod(i,world_y) * world_x) + Mod(j,world_x);
-      deltaamount = Apto::Max((GetAmount(elem) * (1.0 - decay)), 0.0);
-      Rate(elem,-deltaamount); 
+      const double deltaamount = avd_src_sink_delta(GetAmount(elem), decay);
+      Rate(elem,-deltaamount);
     }
   }
 }
@@ -358,16 +354,15 @@ void cSpatialResCount::Sink(double decay) const {
 
 void cSpatialResCount::CellOutflow() const {
 
-  double deltaamount = 0.0;
-
   for (int i=0; i < cell_list_ptr->GetSize(); i++) {
     const int cell_id = (*cell_list_ptr)[i].GetId();
+    double deltaamount = 0.0;
     
     /* Be sure the user entered a valid cell id or if the the program is loading
        the resource for the testCPU that does not have a grid set up */
        
     if (cell_id >= 0 && cell_id < grid.GetSize()) {
-      deltaamount = Apto::Max((GetAmount(cell_id) * (*cell_list_ptr)[i].GetOutflow()), 0.0);
+      deltaamount = avd_src_cell_outflow_delta(GetAmount(cell_id), (*cell_list_ptr)[i].GetOutflow());
     }                     
     Rate((*cell_list_ptr)[i].GetId(), -deltaamount); 
   }

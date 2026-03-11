@@ -20,6 +20,20 @@ fn normalize_span_internal(start: c_int, end: c_int, bound: c_int) -> (c_int, c_
     (normalized_start, normalized_end)
 }
 
+fn source_per_cell_internal(amount: f64, x1: c_int, x2: c_int, y1: c_int, y2: c_int) -> f64 {
+    let width = f64::from(x2 - x1 + 1);
+    let height = f64::from(y2 - y1 + 1);
+    amount / (width * height)
+}
+
+fn sink_delta_internal(current_amount: f64, decay: f64) -> f64 {
+    (current_amount * (1.0 - decay)).max(0.0)
+}
+
+fn cell_outflow_delta_internal(current_amount: f64, outflow: f64) -> f64 {
+    (current_amount * outflow).max(0.0)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn compute_flow_scalar_internal(
     elem1_amount: f64,
@@ -111,6 +125,27 @@ pub extern "C" fn avd_src_compute_flow_scalar(
     )
 }
 
+#[no_mangle]
+pub extern "C" fn avd_src_source_per_cell(
+    amount: f64,
+    x1: c_int,
+    x2: c_int,
+    y1: c_int,
+    y2: c_int,
+) -> f64 {
+    source_per_cell_internal(amount, x1, x2, y1, y2)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_sink_delta(current_amount: f64, decay: f64) -> f64 {
+    sink_delta_internal(current_amount, decay)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_cell_outflow_delta(current_amount: f64, outflow: f64) -> f64 {
+    cell_outflow_delta_internal(current_amount, outflow)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +184,19 @@ mod tests {
 
         let guarded = avd_src_compute_flow_scalar(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0);
         assert_eq!(guarded, 0.0);
+    }
+
+    #[test]
+    fn source_per_cell_matches_reference_formula() {
+        assert!((avd_src_source_per_cell(12.0, 0, 1, 0, 2) - 2.0).abs() < 1e-15);
+        assert!((avd_src_source_per_cell(5.0, 2, 2, 3, 3) - 5.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn sink_and_outflow_delta_match_legacy_clamp() {
+        assert!((avd_src_sink_delta(10.0, 0.2) - 8.0).abs() < 1e-15);
+        assert_eq!(avd_src_sink_delta(10.0, 1.5), 0.0);
+        assert!((avd_src_cell_outflow_delta(10.0, 0.2) - 2.0).abs() < 1e-15);
+        assert_eq!(avd_src_cell_outflow_delta(10.0, -0.2), 0.0);
     }
 }

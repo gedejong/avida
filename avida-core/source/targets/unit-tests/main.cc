@@ -1175,6 +1175,30 @@ protected:
       "Flow scalar legacy zero guard",
       avd_src_compute_flow_scalar(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0) == 0.0
     );
+    ReportTestResult(
+      "Source per-cell scalar parity",
+      fabs(avd_src_source_per_cell(12.0, 0, 1, 0, 2) - (12.0 / 6.0)) < 1e-15
+    );
+    ReportTestResult(
+      "Source per-cell single-cell passthrough",
+      fabs(avd_src_source_per_cell(5.0, 2, 2, 3, 3) - 5.0) < 1e-15
+    );
+    ReportTestResult(
+      "Sink delta parity",
+      fabs(avd_src_sink_delta(10.0, 0.2) - 8.0) < 1e-15
+    );
+    ReportTestResult(
+      "Sink delta clamps at zero",
+      avd_src_sink_delta(10.0, 1.5) == 0.0
+    );
+    ReportTestResult(
+      "Cell outflow delta parity",
+      fabs(avd_src_cell_outflow_delta(10.0, 0.2) - 2.0) < 1e-15
+    );
+    ReportTestResult(
+      "Cell outflow delta clamps at zero",
+      avd_src_cell_outflow_delta(10.0, -0.2) == 0.0
+    );
   }
 };
 
