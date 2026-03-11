@@ -71,11 +71,14 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+    - name: Install llvm-tools-preview
+      run: rustup component add llvm-tools-preview
     - name: Install cargo-llvm-cov
       run: cargo install cargo-llvm-cov
     - name: Run Rust coverage gate (80%)
       run: |
         cd rust/avida-rust
+        mkdir -p target
         ./scripts/ci_coverage_check.sh 80 | tee target/coverage-summary.txt
     - name: Upload coverage artifacts
       if: always()
@@ -84,7 +87,7 @@ jobs:
         name: rust-coverage-artifacts
         path: |
           rust/avida-rust/target/coverage-summary.txt
-          rust/avida-rust/target/llvm-cov
+          rust/avida-rust/target/llvm-cov-target
         if-no-files-found: warn
 
   # tests-windows:
