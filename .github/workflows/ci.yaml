@@ -28,11 +28,13 @@ jobs:
     - name: Run tests
       run: |
         set -o pipefail
-        TESTS="$(./run_tests --list-tests | python3 - <<'PY'
+        python3 - <<'PY' > selected-tests.txt
         import re
+        import subprocess
         exclude = {"sex", "shaded_green_beard_instructions"}
         tests = []
-        for line in __import__("sys").stdin:
+        listed = subprocess.check_output(["./run_tests", "--list-tests"], text=True)
+        for line in listed.splitlines():
             line = line.strip()
             if not line or line.startswith("available tests") or line.startswith("---"):
                 continue
@@ -46,8 +48,7 @@ jobs:
                 tests.append(name)
         print(" ".join(tests))
         PY
-        )"
-        printf '%s\n' "${TESTS}" > selected-tests.txt
+        TESTS="$(< selected-tests.txt)"
         ./run_tests --mode=slave ${TESTS} 2>&1 | tee run_tests.log
     - name: Run known flaky consistency diagnostics (non-blocking)
       if: always()
@@ -110,11 +111,13 @@ jobs:
     - name: Run tests (Rust-enabled)
       run: |
         set -o pipefail
-        TESTS="$(./run_tests --list-tests | python3 - <<'PY'
+        python3 - <<'PY' > selected-tests-rust.txt
         import re
+        import subprocess
         exclude = {"sex", "shaded_green_beard_instructions"}
         tests = []
-        for line in __import__("sys").stdin:
+        listed = subprocess.check_output(["./run_tests", "--list-tests"], text=True)
+        for line in listed.splitlines():
             line = line.strip()
             if not line or line.startswith("available tests") or line.startswith("---"):
                 continue
@@ -128,8 +131,7 @@ jobs:
                 tests.append(name)
         print(" ".join(tests))
         PY
-        )"
-        printf '%s\n' "${TESTS}" > selected-tests-rust.txt
+        TESTS="$(< selected-tests-rust.txt)"
         ./run_tests --mode=slave ${TESTS} 2>&1 | tee run_tests-rust.log
     - name: Run known flaky consistency diagnostics on Rust-enabled build (non-blocking)
       if: always()
