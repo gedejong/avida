@@ -175,6 +175,8 @@ double avd_src_source_per_cell(double amount, int x1, int x2, int y1, int y2);
 double avd_src_sink_delta(double current_amount, double decay);
 double avd_src_cell_outflow_delta(double current_amount, double outflow);
 int avd_src_wrapped_elem_index(int x, int y, int world_x, int world_y);
+int avd_src_cell_id_in_bounds_strict(int cell_id, int grid_size);
+int avd_src_cell_id_in_bounds_legacy_setcell(int cell_id, int grid_size);
 int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
 double avd_rh_value_at_or_zero(const double* values, int count, int index);
 int avd_event_parse_trigger(const char* token);

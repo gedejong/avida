@@ -173,7 +173,7 @@ void cSpatialResCount::SetCellList(Apto::Array<cCellResource>* in_cell_list_ptr)
     /* Be sure the user entered a valid cell id or if the the program is loading
        the resource for the testCPU that does not have a grid set up */
        
-    if (cell_id >= 0 && cell_id <= grid.GetSize()) {
+    if (avd_src_cell_id_in_bounds_legacy_setcell(cell_id, grid.GetSize()) != 0) {
       Rate((*cell_list_ptr)[i].GetId(), (*cell_list_ptr)[i].GetInitial());
       State((*cell_list_ptr)[i].GetId());
       Element(cell_id).SetInitial((*cell_list_ptr)[i].GetInitial());
@@ -328,7 +328,7 @@ void cSpatialResCount::CellInflow() const {
     /* Be sure the user entered a valid cell id or if the the program is loading
        the resource for the testCPU that does not have a grid set up */
        
-    if (cell_id >= 0 && cell_id < grid.GetSize()) {
+    if (avd_src_cell_id_in_bounds_strict(cell_id, grid.GetSize()) != 0) {
       Rate(cell_id, (*cell_list_ptr)[i].GetInflow());
     }
   }
@@ -363,7 +363,7 @@ void cSpatialResCount::CellOutflow() const {
     /* Be sure the user entered a valid cell id or if the the program is loading
        the resource for the testCPU that does not have a grid set up */
        
-    if (cell_id >= 0 && cell_id < grid.GetSize()) {
+    if (avd_src_cell_id_in_bounds_strict(cell_id, grid.GetSize()) != 0) {
       deltaamount = avd_src_cell_outflow_delta(GetAmount(cell_id), (*cell_list_ptr)[i].GetOutflow());
     }                     
     Rate((*cell_list_ptr)[i].GetId(), -deltaamount); 

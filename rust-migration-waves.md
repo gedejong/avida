@@ -60,6 +60,7 @@ Focus:
 - `cResourceCount` non-spatial step-application kernel (completed): Rust-backed deterministic helper for chunked + remainder recurrence application used by `DoNonSpatialUpdates`, preserving C++ ownership while centralizing update math parity
 - `cSpatialResCount` source/sink scalar helper extraction (completed): Rust-backed additive helpers now compute source per-cell distribution and clamped sink/cell-outflow deltas used by `Source`/`Sink`/`CellOutflow`, while C++ retains grid traversal, index resolution, and state mutation ownership
 - `cSpatialResCount` wrapped index helper extraction (completed): Rust-backed additive helper now computes wrapped rectangle coordinate-to-element index mapping used by `Source`/`Sink`, while C++ retains loop traversal, mutation calls, and state ownership
+- `cSpatialResCount` cell-list valid-id helper extraction (completed): Rust-backed additive helpers now centralize strict (`< size`) and legacy SetCellList (`<= size`) cell-id bounds policies used by `CellInflow`/`CellOutflow`/`SetCellList`, while C++ retains list traversal and state mutation ownership.
 - `cResourceHistory` deterministic entry helpers (completed): Rust-backed exact/non-exact update selection and bounds-safe value lookup used by `getEntryForUpdate`, `GetResourceCountForUpdate`, and `GetResourceLevelsForUpdate` while keeping file loading and state ownership in C++
 - `cEventList` deterministic parse helpers (completed): Rust-backed trigger classification and timing tuple parsing (`begin`/`all`/`once`/`end` and numeric forms) routed through additive C ABI while preserving C++ event creation/state mutation ownership
 - `Data::TimeSeriesRecorder` typed parse-policy parity hardening (completed): Rust typed getter coercion now matches legacy `Apto::StrAs` semantics (`bool` exact true aliases only; `int`/`double` C-style coercion including partial/hex/exponent forms) with shared Rust+C++ matrix fixtures and unchanged ABI surface
@@ -77,4 +78,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cSpatialResCount` cell-list bounds/valid-id decision helper math behind additive Rust helpers while preserving C++ traversal/state ownership.
+- Next candidate: extract deterministic `cSpatialResCount::SetPointers` neighbor-link row derivation/masking helper math behind additive Rust helpers while preserving C++ pointer ownership and traversal loops.

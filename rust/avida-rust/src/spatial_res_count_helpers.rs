@@ -56,6 +56,22 @@ fn wrapped_elem_index_internal(x: c_int, y: c_int, world_x: c_int, world_y: c_in
     index as c_int
 }
 
+fn cell_id_in_bounds_strict_internal(cell_id: c_int, grid_size: c_int) -> c_int {
+    if cell_id >= 0 && cell_id < grid_size {
+        1
+    } else {
+        0
+    }
+}
+
+fn cell_id_in_bounds_legacy_setcell_internal(cell_id: c_int, grid_size: c_int) -> c_int {
+    if cell_id >= 0 && cell_id <= grid_size {
+        1
+    } else {
+        0
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn compute_flow_scalar_internal(
     elem1_amount: f64,
@@ -178,6 +194,19 @@ pub extern "C" fn avd_src_wrapped_elem_index(
     wrapped_elem_index_internal(x, y, world_x, world_y)
 }
 
+#[no_mangle]
+pub extern "C" fn avd_src_cell_id_in_bounds_strict(cell_id: c_int, grid_size: c_int) -> c_int {
+    cell_id_in_bounds_strict_internal(cell_id, grid_size)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_cell_id_in_bounds_legacy_setcell(
+    cell_id: c_int,
+    grid_size: c_int,
+) -> c_int {
+    cell_id_in_bounds_legacy_setcell_internal(cell_id, grid_size)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -248,5 +277,21 @@ mod tests {
         assert_eq!(avd_src_wrapped_elem_index(1, 2, 4, 0), -1);
         assert_eq!(avd_src_wrapped_elem_index(1, 2, -4, 4), -1);
         assert_eq!(avd_src_wrapped_elem_index(1, 2, 4, -4), -1);
+    }
+
+    #[test]
+    fn cell_id_bounds_policies_match_legacy_callsite_rules() {
+        assert_eq!(avd_src_cell_id_in_bounds_strict(-1, 5), 0);
+        assert_eq!(avd_src_cell_id_in_bounds_strict(0, 5), 1);
+        assert_eq!(avd_src_cell_id_in_bounds_strict(4, 5), 1);
+        assert_eq!(avd_src_cell_id_in_bounds_strict(5, 5), 0);
+        assert_eq!(avd_src_cell_id_in_bounds_strict(0, 0), 0);
+
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(-1, 5), 0);
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(0, 5), 1);
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(5, 5), 1);
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(6, 5), 0);
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(0, 0), 1);
+        assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(1, 0), 0);
     }
 }

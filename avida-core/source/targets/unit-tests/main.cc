@@ -1232,6 +1232,34 @@ protected:
       "Wrapped elem index invalid world_y guard",
       avd_src_wrapped_elem_index(1, 2, 4, 0) == -1
     );
+    ReportTestResult(
+      "Cell-id strict rejects lower bound underflow",
+      avd_src_cell_id_in_bounds_strict(-1, 5) == 0
+    );
+    ReportTestResult(
+      "Cell-id strict allows interior range",
+      avd_src_cell_id_in_bounds_strict(4, 5) == 1
+    );
+    ReportTestResult(
+      "Cell-id strict rejects upper bound",
+      avd_src_cell_id_in_bounds_strict(5, 5) == 0
+    );
+    ReportTestResult(
+      "Cell-id strict rejects zero-size grid",
+      avd_src_cell_id_in_bounds_strict(0, 0) == 0
+    );
+    ReportTestResult(
+      "Cell-id legacy SetCellList allows equal-to-size",
+      avd_src_cell_id_in_bounds_legacy_setcell(5, 5) == 1
+    );
+    ReportTestResult(
+      "Cell-id legacy SetCellList rejects above-size",
+      avd_src_cell_id_in_bounds_legacy_setcell(6, 5) == 0
+    );
+    ReportTestResult(
+      "Cell-id legacy SetCellList keeps zero-size quirk",
+      avd_src_cell_id_in_bounds_legacy_setcell(0, 0) == 1
+    );
   }
 };
 
