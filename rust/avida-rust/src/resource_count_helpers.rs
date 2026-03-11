@@ -1,4 +1,4 @@
-use crate::common::{with_cstr, with_slice};
+use crate::common::{with_cstr, with_mut_slice, with_slice};
 use std::ffi::{c_char, c_int};
 
 #[no_mangle]
@@ -101,6 +101,44 @@ pub extern "C" fn avd_rc_remainder_update_time(
     num_steps: c_int,
 ) -> f64 {
     update_time - (num_steps as f64) * update_step
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_fill_precalc_tables(
+    decay_rate: f64,
+    inflow: f64,
+    update_step: f64,
+    precalc_distance: c_int,
+    out_decay: *mut f64,
+    out_inflow: *mut f64,
+) {
+    if precalc_distance < 0 || out_decay.is_null() || out_inflow.is_null() {
+        return;
+    }
+    let count = match precalc_distance.checked_add(1) {
+        Some(v) => v,
+        None => return,
+    };
+    let mut prepared_decay = vec![0.0_f64; count as usize];
+    let mut prepared_inflow = vec![0.0_f64; count as usize];
+
+    let step_decay = avd_rc_step_decay(decay_rate, update_step);
+    let step_inflow = avd_rc_step_inflow(inflow, update_step);
+
+    prepared_decay[0] = 1.0;
+    prepared_inflow[0] = 0.0;
+    for i in 1..prepared_decay.len() {
+        prepared_decay[i] = avd_rc_decay_precalc_next(prepared_decay[i - 1], step_decay);
+        prepared_inflow[i] =
+            avd_rc_inflow_precalc_next(prepared_inflow[i - 1], step_decay, step_inflow);
+    }
+
+    with_mut_slice(out_decay, count, |decay_slice| {
+        decay_slice.copy_from_slice(&prepared_decay);
+    });
+    with_mut_slice(out_inflow, count, |inflow_slice| {
+        inflow_slice.copy_from_slice(&prepared_inflow);
+    });
 }
 
 #[cfg(test)]
@@ -229,5 +267,48 @@ mod tests {
         assert_eq!(avd_rc_num_spatial_updates(4, 10), -6);
         assert_eq!(avd_rc_num_spatial_updates(c_int::MAX, -1), c_int::MAX);
         assert_eq!(avd_rc_num_spatial_updates(c_int::MIN, 1), c_int::MIN);
+    }
+
+    #[test]
+    fn rc_fill_precalc_tables_matches_reference_math() {
+        let distance = 12;
+        let mut decay = vec![0.0; (distance + 1) as usize];
+        let mut inflow = vec![0.0; (distance + 1) as usize];
+        let decay_rate = 0.91;
+        let inflow_rate = 1.75;
+        let step = 1.0 / 10000.0;
+        avd_rc_fill_precalc_tables(
+            decay_rate,
+            inflow_rate,
+            step,
+            distance,
+            decay.as_mut_ptr(),
+            inflow.as_mut_ptr(),
+        );
+        assert!((decay[0] - 1.0).abs() < 1e-15);
+        assert!((inflow[0] - 0.0).abs() < 1e-15);
+
+        let step_decay = decay_rate.powf(step);
+        let step_inflow = inflow_rate * step;
+        let mut decay_ref = 1.0;
+        let mut inflow_ref = 0.0;
+        for i in 1..=distance as usize {
+            decay_ref *= step_decay;
+            inflow_ref = inflow_ref * step_decay + step_inflow;
+            assert!((decay[i] - decay_ref).abs() < 1e-12);
+            assert!((inflow[i] - inflow_ref).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn rc_fill_precalc_tables_rejects_invalid_inputs() {
+        let mut decay = vec![123.0; 4];
+        let mut inflow = vec![456.0; 4];
+        avd_rc_fill_precalc_tables(0.9, 1.0, 0.1, -1, decay.as_mut_ptr(), inflow.as_mut_ptr());
+        assert_eq!(decay, vec![123.0; 4]);
+        assert_eq!(inflow, vec![456.0; 4]);
+
+        avd_rc_fill_precalc_tables(0.9, 1.0, 0.1, 3, std::ptr::null_mut(), inflow.as_mut_ptr());
+        assert_eq!(inflow, vec![456.0; 4]);
     }
 }

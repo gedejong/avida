@@ -852,6 +852,28 @@ protected:
 
     ReportTestResult("Inflow recurrence parity", fabs(inflow_ref - inflow_rust) < 1e-12);
     ReportTestResult("Decay recurrence parity", fabs(decay_ref - decay_rust) < 1e-12);
+
+    double decay_table[13];
+    double inflow_table[13];
+    avd_rc_fill_precalc_tables(decay_rate, inflow, update_step, 12, decay_table, inflow_table);
+    bool table_parity_ok = true;
+    for (int i = 0; i <= 12; ++i) {
+      if (fabs(decay_table[i] - pow(decay_rate, update_step * i)) > 1e-12) {
+        table_parity_ok = false;
+      }
+      double inflow_ref_i = 0.0;
+      for (int j = 0; j < i; ++j) {
+        inflow_ref_i = inflow_ref_i * step_decay_ref + step_inflow_ref;
+      }
+      if (fabs(inflow_table[i] - inflow_ref_i) > 1e-12) {
+        table_parity_ok = false;
+      }
+    }
+    ReportTestResult("Precalc table fill helper parity", table_parity_ok);
+
+    double unchanged_inflow[2] = {9.0, 9.0};
+    avd_rc_fill_precalc_tables(decay_rate, inflow, update_step, 1, NULL, unchanged_inflow);
+    ReportTestResult("Precalc table fill null decay output no-op", unchanged_inflow[0] == 9.0 && unchanged_inflow[1] == 9.0);
   }
 };
 
@@ -987,6 +1009,83 @@ protected:
   }
 };
 
+class cEventListParsingHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cEventList Parsing Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "Trigger parse immediate alias",
+      avd_event_parse_trigger("immediate") == 2
+    );
+    ReportTestResult(
+      "Trigger parse update alias",
+      avd_event_parse_trigger("u") == 0
+    );
+    ReportTestResult(
+      "Trigger parse generation alias",
+      avd_event_parse_trigger("generation") == 1
+    );
+    ReportTestResult(
+      "Trigger parse births alias",
+      avd_event_parse_trigger("births") == 3
+    );
+    ReportTestResult(
+      "Trigger parse org_id alias",
+      avd_event_parse_trigger("org_id") == 5
+    );
+    ReportTestResult(
+      "Trigger parse invalid token",
+      avd_event_parse_trigger("unknown") == -1
+    );
+    ReportTestResult(
+      "Trigger parse null token",
+      avd_event_parse_trigger(NULL) == -1
+    );
+
+    double start = 0.0;
+    double interval = 0.0;
+    double stop = 0.0;
+    ReportTestResult(
+      "Timing parse begin defaults",
+      avd_event_parse_timing("begin", &start, &interval, &stop) == 1 &&
+        start == std::numeric_limits<double>::min() &&
+        interval == std::numeric_limits<double>::max() &&
+        stop == std::numeric_limits<double>::max()
+    );
+    ReportTestResult(
+      "Timing parse start all",
+      avd_event_parse_timing("10:all", &start, &interval, &stop) == 1 &&
+        fabs(start - 10.0) < 1e-15 &&
+        interval == 0.0 &&
+        stop == std::numeric_limits<double>::max()
+    );
+    ReportTestResult(
+      "Timing parse full tuple",
+      avd_event_parse_timing("10:2:20", &start, &interval, &stop) == 1 &&
+        fabs(start - 10.0) < 1e-15 &&
+        fabs(interval - 2.0) < 1e-15 &&
+        fabs(stop - 20.0) < 1e-15
+    );
+    ReportTestResult(
+      "Timing parse invalid first token",
+      avd_event_parse_timing("bad:1:2", &start, &interval, &stop) == 0
+    );
+    ReportTestResult(
+      "Timing parse null output pointer guard",
+      avd_event_parse_timing("10:all", NULL, &interval, &stop) == 0
+    );
+    ReportTestResult(
+      "Timing parse legacy fallback on invalid interval",
+      avd_event_parse_timing("10:notnum:end", &start, &interval, &stop) == 1 &&
+        fabs(interval - 0.0) < 1e-15 &&
+        stop == std::numeric_limits<double>::max()
+    );
+  }
+};
+
 
 
 
@@ -1023,6 +1122,7 @@ int main(int argc, const char* argv[])
   TEST(cResourceCountPrecalcHelper);
   TEST(cResourceCountSchedulingHelper);
   TEST(cResourceHistoryHelper);
+  TEST(cEventListParsingHelper);
   
   if (failed == 0)
     cout << "All unit tests passed." << endl;

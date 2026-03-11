@@ -351,15 +351,9 @@ void cResourceCount::Setup(cWorld* world, const int& res_index, const cString& n
   spatial_resource_count[res_index]->SetPointers();
   spatial_resource_count[res_index]->SetCellList(in_cell_list_ptr);
 
-  double step_decay = pow(decay, UPDATE_STEP);
-  double step_inflow = inflow * UPDATE_STEP;
-  
-  decay_precalc(res_index, 0) = 1.0;
-  inflow_precalc(res_index, 0) = 0.0;
-  for (int i = 1; i <= PRECALC_DISTANCE; i++) {
-    decay_precalc(res_index, i)  = decay_precalc(res_index, i-1) * step_decay;
-    inflow_precalc(res_index, i) = inflow_precalc(res_index, i-1) * step_decay + step_inflow;
-  }
+  avd_rc_fill_precalc_tables(decay, inflow, UPDATE_STEP, PRECALC_DISTANCE,
+                             &decay_precalc(res_index, 0),
+                             &inflow_precalc(res_index, 0));
   spatial_resource_count[res_index]->SetXdiffuse(in_xdiffuse);
   spatial_resource_count[res_index]->SetXgravity(in_xgravity);
   spatial_resource_count[res_index]->SetYdiffuse(in_ydiffuse);

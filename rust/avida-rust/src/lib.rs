@@ -16,6 +16,7 @@
 pub mod bit_array;
 pub mod common;
 pub mod double_sum;
+pub mod event_list_helpers;
 pub mod histogram;
 pub mod ordered_weighted_index;
 pub mod package;

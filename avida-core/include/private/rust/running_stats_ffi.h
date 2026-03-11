@@ -163,12 +163,15 @@ double avd_rc_step_inflow(double inflow, double update_step);
 double avd_rc_step_decay(double decay_rate, double update_step);
 double avd_rc_inflow_precalc_next(double previous, double step_decay, double step_inflow);
 double avd_rc_decay_precalc_next(double previous, double step_decay);
+void avd_rc_fill_precalc_tables(double decay_rate, double inflow, double update_step, int precalc_distance, double* out_decay, double* out_inflow);
 double avd_rc_accumulate_update_time(double current, double delta);
 int avd_rc_num_steps(double update_time, double update_step);
 int avd_rc_num_spatial_updates(int current_update, int previous_update);
 double avd_rc_remainder_update_time(double update_time, double update_step, int num_steps);
 int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
 double avd_rh_value_at_or_zero(const double* values, int count, int index);
+int avd_event_parse_trigger(const char* token);
+int avd_event_parse_timing(const char* timing, double* out_start, double* out_interval, double* out_stop);
 
 #ifdef __cplusplus
 }

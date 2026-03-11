@@ -29,6 +29,7 @@
 #include "cStats.h"
 #include "cString.h"
 #include "cWorld.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cfloat>           // for DBL_MIN
 #include <iostream>
@@ -397,25 +398,23 @@ bool cEventList::AddEventFileFormat(const cString& in_line, Feedback& feedback)
   cString name;
   cString arg_list;
   
-  cString tmp;
-  
   cString cur_word = cur_line.PopWord();
   
-  // Get the trigger variable if there
-  if (cur_word == "i" || cur_word == "immediate") {
+  const int trigger_kind = avd_event_parse_trigger((const char*) cur_word);
+  if (trigger_kind == (int) IMMEDIATE) {
     trigger = IMMEDIATE;
     name = cur_line.PopWord();
     return AddEvent(IMMEDIATE, TRIGGER_BEGIN, TRIGGER_ONCE, TRIGGER_END, name, cur_line, feedback);
-  } else if (cur_word == "u" || cur_word == "update") {
+  } else if (trigger_kind == (int) UPDATE) {
     trigger = UPDATE;
     cur_word = cur_line.PopWord();
-  } else if( cur_word == "g" || cur_word == "generation") {
+  } else if (trigger_kind == (int) GENERATION) {
     trigger = GENERATION;
     cur_word = cur_line.PopWord();
-  } else if (cur_word == "b" || cur_word == "births") {
+  } else if (trigger_kind == (int) BIRTHS) {
     trigger = BIRTHS;
     cur_word = cur_line.PopWord();
-  } else if (cur_word == "o"  || cur_word == "org_id") {
+  } else if (trigger_kind == (int) BIRTHS_INTERRUPT) {
     trigger = BIRTHS_INTERRUPT;
 		cur_word = cur_line.PopWord();
   } else {
@@ -423,44 +422,12 @@ bool cEventList::AddEventFileFormat(const cString& in_line, Feedback& feedback)
     return false;
   }
   
-  // Do we now have timing specified?
-  // Parse the Timing
   cString timing_str = cur_word;
-  
-  // Get the start:interval:stop
-  tmp = timing_str.Pop(':');
-  
-  // If first value is valid, we are getting a timing.
-  if (tmp.IsNumber() || tmp == "begin") {
-    
-    // First number is start
-    if (tmp == "begin") start = TRIGGER_BEGIN;
-    else start = tmp.AsDouble();
-    
-    // If no other words... is "start" syntax
-    if (timing_str.GetSize() == 0) {
-      interval = TRIGGER_ONCE;
-      stop = TRIGGER_END;
-    } else {
-      // Second word is interval
-      tmp = timing_str.Pop(':');
-      if (tmp == "all") interval = TRIGGER_ALL;
-      else if (tmp == "once") interval = TRIGGER_ONCE;
-      else interval = tmp.AsDouble();
 
-      // If no other words... is "start:interval" syntax
-      if (timing_str.GetSize() == 0) stop = TRIGGER_END;
-      else {
-        // We have "start:interval:stop" syntax
-        tmp = timing_str;
-        if (tmp == "end") stop = TRIGGER_END;
-        else stop = tmp.AsDouble();
-      }
-    }
+  if (avd_event_parse_timing((const char*) timing_str, &start, &interval, &stop)) {
     cur_word = cur_line.PopWord(); // timing provided, so get next word
-    
   } else { 
-    cerr << "error: invalid event timing '" << tmp << "'" << endl;
+    cerr << "error: invalid event timing '" << timing_str << "'" << endl;
     return false;
   }
   

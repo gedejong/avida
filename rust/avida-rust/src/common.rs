@@ -92,3 +92,17 @@ pub(crate) fn with_slice<T, R>(
     let slice = unsafe { std::slice::from_raw_parts(ptr, count_usize) };
     f(slice)
 }
+
+pub(crate) fn with_mut_slice<T>(ptr: *mut T, count: c_int, f: impl FnOnce(&mut [T])) -> bool {
+    if ptr.is_null() || count <= 0 {
+        return false;
+    }
+    let count_usize = match usize::try_from(count) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    // SAFETY: pointer is checked for null and used mutably for count elements.
+    let slice = unsafe { std::slice::from_raw_parts_mut(ptr, count_usize) };
+    f(slice);
+    true
+}
