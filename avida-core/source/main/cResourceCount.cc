@@ -72,45 +72,9 @@ void FlowMatter(cSpatialCountElem &elem1, cSpatialCountElem &elem2,
      the movement of material.
   */
 
-  double  diff, flowamt, xgravity, xdiffuse, ygravity,  ydiffuse;
-
-  if (((elem1.amount == 0.0) && (elem2.amount == 0.0)) && (dist < 0.0)) return;
-  diff = (elem1.amount - elem2.amount);
-  if (xdist != 0) {
-
-    /* if there is material to be effected by x gravity */
-
-    if (((xdist>0) && (inxgravity>0.0)) || ((xdist<0) && (inxgravity<0.0))) {
-      xgravity = elem1.amount * fabs(inxgravity)/3.0;
-    } else {
-      xgravity = -elem2.amount * fabs(inxgravity)/3.0;
-    }
-    
-    /* Diffusion uses the diffusion constant x half the difference (as the 
-       elements attempt to equalize) / the number of possible neighbors (8) */
-
-    xdiffuse = inxdiffuse * diff / 16.0;
-  } else {
-    xdiffuse = 0.0;
-    xgravity = 0.0;
-  }  
-  if (ydist != 0) {
-
-    /* if there is material to be effected by y gravity */
-
-    if (((ydist>0) && (inygravity>0.0)) || ((ydist<0) && (inygravity<0.0))) {
-      ygravity = elem1.amount * fabs(inygravity)/3.0;
-    } else {
-      ygravity = -elem2.amount * fabs(inygravity)/3.0;
-    }
-    ydiffuse = inydiffuse * diff / 16.0;
-  } else {
-    ydiffuse = 0.0;
-    ygravity = 0.0;
-  }  
-
-  flowamt = ((xdiffuse + ydiffuse + xgravity + ygravity)/
-             (fabs(xdist*1.0) + fabs(ydist*1.0)))/dist;
+  const double flowamt = avd_src_compute_flow_scalar(
+    elem1.amount, elem2.amount, inxdiffuse, inydiffuse, inxgravity, inygravity, xdist, ydist, dist
+  );
   elem1.delta -= flowamt;
   elem2.delta += flowamt;
 }

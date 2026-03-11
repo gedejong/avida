@@ -23,6 +23,7 @@
 
 #include "AvidaTools.h"
 #include "nGeometry.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cmath>
 
@@ -155,60 +156,10 @@ void cSpatialResCount::CheckRanges()
 
   // Check that the x, y ranges of the inflow and outflow rectangles 
   // are valid
-
-  /* check range of inputs */
-
-  if (inflowX1 < 0) { 
-    inflowX1 = 0; 
-  } else if (inflowX1 > world_x) { 
-    inflowX1 = world_x; 
-  }
-  if (inflowX2 < 0) { 
-     inflowX2 = 0; 
-  } else if (inflowX2 > world_x) { 
-     inflowX2 = world_x; 
-  }
-  if (inflowY1 < 0) { 
-    inflowY1 = 0; 
-  } else if (inflowY1 > world_y) { 
-    inflowY1 = world_y; 
-  }
-  if (inflowY2 < 0) { 
-    inflowY2 = 0; 
-  } else if (inflowY2 > world_y) { 
-    inflowY2 = world_y; 
-  }
-
-  /* allow for rectangles that cross over the zero X or zero Y boundry */
-
-  if (inflowX2 < inflowX1) { inflowX2 += world_x; }
-  if (inflowY2 < inflowY1) { inflowY2 += world_y; }
-
-  if (outflowX1 < 0) { 
-    outflowX1 = 0; 
-  } else if (outflowX1 > world_x) { 
-    outflowX1 = world_x; 
-  }
-  if (outflowX2 < 0) { 
-     outflowX2 = 0; 
-  } else if (outflowX2 > world_x) { 
-     outflowX2 = world_x; 
-  }
-  if (outflowY1 < 0) { 
-    outflowY1 = 0; 
-  } else if (outflowY1 > world_y) { 
-    outflowY1 = world_y; 
-  }
-  if (outflowY2 < 0) { 
-    outflowY2 = 0; 
-  } else if (outflowY2 > world_y) { 
-    outflowY2 = world_y; 
-  }
-
-  /* allow for rectangles that cross over the zero X or zero Y boundry */
-
-  if (outflowX2 < outflowX1) { outflowX2 += world_x; }
-  if (outflowY2 < outflowY1) { outflowY2 += world_y; }
+  avd_src_normalize_span(inflowX1, inflowX2, world_x, &inflowX1, &inflowX2);
+  avd_src_normalize_span(inflowY1, inflowY2, world_y, &inflowY1, &inflowY2);
+  avd_src_normalize_span(outflowX1, outflowX2, world_x, &outflowX1, &outflowX2);
+  avd_src_normalize_span(outflowY1, outflowY2, world_y, &outflowY1, &outflowY2);
 
 }
 

@@ -1130,6 +1130,54 @@ protected:
   }
 };
 
+class cSpatialResCountHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cSpatialResCount Helpers"; }
+protected:
+  void RunTests()
+  {
+    int start = -99;
+    int end = -99;
+    ReportTestResult(
+      "Normalize span clamps to bounds",
+      avd_src_normalize_span(-5, 42, 10, &start, &end) == 1 && start == 0 && end == 10
+    );
+    ReportTestResult(
+      "Normalize span wraps crossing ranges",
+      avd_src_normalize_span(8, 3, 10, &start, &end) == 1 && start == 8 && end == 13
+    );
+    ReportTestResult(
+      "Normalize span null output guard",
+      avd_src_normalize_span(1, 2, 10, NULL, &end) == 0
+    );
+
+    const double dist = sqrt(2.0);
+    const double elem1_amount = 10.0;
+    const double elem2_amount = 4.0;
+    const double inxdiffuse = 1.0;
+    const double inydiffuse = 1.0;
+    const double inxgravity = 0.5;
+    const double inygravity = -0.25;
+    const int xdist = 1;
+    const int ydist = -1;
+    const double diff = elem1_amount - elem2_amount;
+    const double xgravity = elem1_amount * fabs(inxgravity) / 3.0;
+    const double ygravity = elem1_amount * fabs(inygravity) / 3.0;
+    const double expected =
+      ((inxdiffuse * diff / 16.0 + inydiffuse * diff / 16.0 + xgravity + ygravity) /
+       (fabs(xdist * 1.0) + fabs(ydist * 1.0))) / dist;
+    const double got = avd_src_compute_flow_scalar(
+      elem1_amount, elem2_amount, inxdiffuse, inydiffuse, inxgravity, inygravity, xdist, ydist, dist
+    );
+    ReportTestResult("Flow scalar parity", fabs(got - expected) < 1e-12);
+    ReportTestResult(
+      "Flow scalar legacy zero guard",
+      avd_src_compute_flow_scalar(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0) == 0.0
+    );
+  }
+};
+
 class cEventListParsingHelperTests : public cUnitTest
 {
 public:
@@ -1243,6 +1291,7 @@ int main(int argc, const char* argv[])
   TEST(cResourceCountPrecalcHelper);
   TEST(cResourceCountSchedulingHelper);
   TEST(cResourceHistoryHelper);
+  TEST(cSpatialResCountHelper);
   TEST(cEventListParsingHelper);
   
   if (failed == 0)

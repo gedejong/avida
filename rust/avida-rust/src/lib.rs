@@ -25,6 +25,7 @@ pub mod resource_count_helpers;
 pub mod resource_history_helpers;
 pub mod running_average;
 pub mod running_stats;
+pub mod spatial_res_count_helpers;
 pub mod time_series_recorder;
 pub mod weighted_index;
 

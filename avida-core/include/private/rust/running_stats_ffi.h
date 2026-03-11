@@ -169,6 +169,8 @@ int avd_rc_num_steps(double update_time, double update_step);
 int avd_rc_num_spatial_updates(int current_update, int previous_update);
 double avd_rc_remainder_update_time(double update_time, double update_step, int num_steps);
 double avd_rc_apply_nonspatial_steps(double current, const double* decay_precalc, const double* inflow_precalc, int precalc_distance, int num_steps);
+int avd_src_normalize_span(int start, int end, int bound, int* out_start, int* out_end);
+double avd_src_compute_flow_scalar(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist);
 int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
 double avd_rh_value_at_or_zero(const double* values, int count, int index);
 int avd_event_parse_trigger(const char* token);

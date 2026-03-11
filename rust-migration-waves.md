@@ -64,6 +64,7 @@ Focus:
 - `Data::Package` primitive formatting parity hardening (completed): Rust-backed `Wrap<bool/int/double>::StringValue` paths now have expanded boundary/threshold parity matrices (signed zero, denormals, exponent cutovers, integer limits, NaN/Inf) locked against legacy `Apto::AsStr` behavior
 - `cBitArray` selective `bitvec` evaluation (completed, no-adopt): Added focused Criterion benchmark matrix for `shift`/`increment`/`count` workloads plus expanded Rust parity matrices across binary/unary ops and edge widths; benchmark deltas were mixed/marginal, so production internals remain on the current custom bit-field path with stronger decision evidence.
 - Backtrace-enabled CI validation (completed): Added a dedicated CI smoke leg that explicitly sets `AVIDA_ENABLE_BACKTRACE=1` for configure/reconfigure + build coverage, and hardened vendored `backward-cpp` alias-target creation to avoid duplicate-target failures when backtrace mode is enabled.
+- `cSpatialResCount` deterministic helper extraction (completed): Rust-backed additive helpers now normalize inflow/outflow spans and compute per-neighbor flow scalar math used by `CheckRanges` and `FlowMatter`, with C++ retaining traversal/state mutation ownership and parity guards in Rust+C++ unit tests.
 - Build/configure robustness hardening (completed): default low-noise configure path with optional backtrace opt-in, CI reconfigure smoke check, and stable Linux static link-order preservation for `aptostatic` resolution
 - Consistency fixture hardening (completed): cross-platform determinism stabilizations for `sex` and `shaded_green_beard_instructions` via fixture-local knob pinning, narrower intent-focused output assertions, and richer CI diagnostics artifacts
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
@@ -71,4 +72,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cSpatialResCount` flow scalar and range-normalization helper math behind additive Rust helpers while keeping spatial traversal/state mutation in C++.
+- Next candidate: add lightweight reviewer checklist + guardrails to keep new Rust FFI modules aligned with shared `common.rs` pointer-accessor and CString/output-pointer helper conventions.
