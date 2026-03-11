@@ -2,8 +2,9 @@
 
 set -e
 
-git submodule init
-git submodule update
+# Keep required build dependencies strict, but don't hard-fail on docs/wiki sync.
+git submodule update --init libs/apto libs/backward-cpp
+git submodule update --init documentation || echo "warning: unable to update optional documentation submodule"
 
 RUST_CMAKE_ARGS=""
 (
