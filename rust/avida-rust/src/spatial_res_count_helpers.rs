@@ -34,6 +34,28 @@ fn cell_outflow_delta_internal(current_amount: f64, outflow: f64) -> f64 {
     (current_amount * outflow).max(0.0)
 }
 
+fn wrap_coord(coord: c_int, bound: c_int) -> Option<c_int> {
+    if bound <= 0 {
+        return None;
+    }
+    let rem = coord % bound;
+    Some(if rem < 0 { rem + bound } else { rem })
+}
+
+fn wrapped_elem_index_internal(x: c_int, y: c_int, world_x: c_int, world_y: c_int) -> c_int {
+    let Some(mx) = wrap_coord(x, world_x) else {
+        return -1;
+    };
+    let Some(my) = wrap_coord(y, world_y) else {
+        return -1;
+    };
+    let index = i64::from(my) * i64::from(world_x) + i64::from(mx);
+    if index < 0 || index > i64::from(c_int::MAX) {
+        return -1;
+    }
+    index as c_int
+}
+
 #[allow(clippy::too_many_arguments)]
 fn compute_flow_scalar_internal(
     elem1_amount: f64,
@@ -146,6 +168,16 @@ pub extern "C" fn avd_src_cell_outflow_delta(current_amount: f64, outflow: f64) 
     cell_outflow_delta_internal(current_amount, outflow)
 }
 
+#[no_mangle]
+pub extern "C" fn avd_src_wrapped_elem_index(
+    x: c_int,
+    y: c_int,
+    world_x: c_int,
+    world_y: c_int,
+) -> c_int {
+    wrapped_elem_index_internal(x, y, world_x, world_y)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,5 +230,23 @@ mod tests {
         assert_eq!(avd_src_sink_delta(10.0, 1.5), 0.0);
         assert!((avd_src_cell_outflow_delta(10.0, 0.2) - 2.0).abs() < 1e-15);
         assert_eq!(avd_src_cell_outflow_delta(10.0, -0.2), 0.0);
+    }
+
+    #[test]
+    fn wrapped_elem_index_wraps_and_matches_reference() {
+        let world_x = 5;
+        let world_y = 4;
+        assert_eq!(avd_src_wrapped_elem_index(2, 1, world_x, world_y), 7);
+        assert_eq!(avd_src_wrapped_elem_index(-1, 0, world_x, world_y), 4);
+        assert_eq!(avd_src_wrapped_elem_index(6, -1, world_x, world_y), 16);
+        assert_eq!(avd_src_wrapped_elem_index(-13, 9, world_x, world_y), 7);
+    }
+
+    #[test]
+    fn wrapped_elem_index_rejects_invalid_dimensions() {
+        assert_eq!(avd_src_wrapped_elem_index(1, 2, 0, 4), -1);
+        assert_eq!(avd_src_wrapped_elem_index(1, 2, 4, 0), -1);
+        assert_eq!(avd_src_wrapped_elem_index(1, 2, -4, 4), -1);
+        assert_eq!(avd_src_wrapped_elem_index(1, 2, 4, -4), -1);
     }
 }

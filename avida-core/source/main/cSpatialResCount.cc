@@ -312,7 +312,8 @@ void cSpatialResCount::Source(double amount) const {
 
   for (i = inflowY1; i <= inflowY2; i++) {
     for (j = inflowX1; j <= inflowX2; j++) {
-      elem = (Mod(i,world_y) * world_x) + Mod(j,world_x);
+      elem = avd_src_wrapped_elem_index(j, i, world_x, world_y);
+      if (elem < 0) continue;
       Rate(elem,amount); 
     }
   }
@@ -343,7 +344,8 @@ void cSpatialResCount::Sink(double decay) const {
   
   for (i = outflowY1; i <= outflowY2; i++) {
     for (j = outflowX1; j <= outflowX2; j++) {
-      elem = (Mod(i,world_y) * world_x) + Mod(j,world_x);
+      elem = avd_src_wrapped_elem_index(j, i, world_x, world_y);
+      if (elem < 0) continue;
       const double deltaamount = avd_src_sink_delta(GetAmount(elem), decay);
       Rate(elem,-deltaamount);
     }

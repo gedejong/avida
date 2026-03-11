@@ -1199,6 +1199,39 @@ protected:
       "Cell outflow delta clamps at zero",
       avd_src_cell_outflow_delta(10.0, -0.2) == 0.0
     );
+
+    struct WrappedIndexCase {
+      int x;
+      int y;
+      int world_x;
+      int world_y;
+    };
+    const WrappedIndexCase wrapped_cases[] = {
+      {2, 1, 5, 4},
+      {-1, 0, 5, 4},
+      {6, -1, 5, 4},
+      {-13, 9, 5, 4}
+    };
+    const auto wrap = [](int value, int bound) {
+      int rem = value % bound;
+      return (rem < 0) ? (rem + bound) : rem;
+    };
+    bool wrapped_index_parity_ok = true;
+    for (size_t i = 0; i < sizeof(wrapped_cases) / sizeof(wrapped_cases[0]); ++i) {
+      const WrappedIndexCase& c = wrapped_cases[i];
+      const int expected = (wrap(c.y, c.world_y) * c.world_x) + wrap(c.x, c.world_x);
+      const int got = avd_src_wrapped_elem_index(c.x, c.y, c.world_x, c.world_y);
+      if (got != expected) wrapped_index_parity_ok = false;
+    }
+    ReportTestResult("Wrapped elem index parity matrix", wrapped_index_parity_ok);
+    ReportTestResult(
+      "Wrapped elem index invalid world_x guard",
+      avd_src_wrapped_elem_index(1, 2, 0, 4) == -1
+    );
+    ReportTestResult(
+      "Wrapped elem index invalid world_y guard",
+      avd_src_wrapped_elem_index(1, 2, 4, 0) == -1
+    );
   }
 };
 
