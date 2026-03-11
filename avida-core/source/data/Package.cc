@@ -53,6 +53,39 @@ Avida::Data::ConstPackagePtr Avida::Data::Package::GetComponent(int) const { ret
 // Data::ArrayPackage
 // --------------------------------------------------------------------------------------------------------------
 
+template<>
+Apto::String Avida::Data::Wrap<bool>::StringValue() const
+{
+  return RustOwnedStringToApto(avd_pkg_bool_to_string(m_value ? 1 : 0));
+}
+
+template<>
+Apto::String Avida::Data::Wrap<int>::StringValue() const
+{
+  return RustOwnedStringToApto(avd_pkg_int_to_string(m_value));
+}
+
+template<>
+Apto::String Avida::Data::Wrap<double>::StringValue() const
+{
+  return RustOwnedStringToApto(avd_pkg_double_to_string(m_value));
+}
+
+bool Avida::Data::Wrap<Apto::String>::BoolValue() const
+{
+  return avd_pkg_str_as_bool((const char*) m_value) != 0;
+}
+
+int Avida::Data::Wrap<Apto::String>::IntValue() const
+{
+  return avd_pkg_str_as_int((const char*) m_value);
+}
+
+double Avida::Data::Wrap<Apto::String>::DoubleValue() const
+{
+  return avd_pkg_str_as_double((const char*) m_value);
+}
+
 bool Avida::Data::ArrayPackage::BoolValue() const { return avd_pkg_array_bool_value(m_entries.GetSize()) != 0; }
 int Avida::Data::ArrayPackage::IntValue() const { return avd_pkg_array_int_value(m_entries.GetSize()); }
 double Avida::Data::ArrayPackage::DoubleValue() const { return avd_pkg_array_double_value(); }

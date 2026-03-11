@@ -35,10 +35,10 @@ Focus:
 
 - Selected modules in `source/analyze`
 - Selected modules in `source/data`
-- `Data::Package` (Rust-backed deterministic `ArrayPackage` conversion/format path via C ABI)
-- `Data::TimeSeriesRecorder` (Rust-backed deterministic parse/serialize + append path via C ABI)
-- `Data::Provider` deterministic helper dispatch/parse path (Rust-backed C ABI helpers; C++ API unchanged)
-- `Data::Manager` deterministic argumented-ID split path (Rust-backed C ABI helpers for parse/classify reuse)
+- `Data::Package` (Rust-backed deterministic `ArrayPackage` conversion/format, `Wrap<Apto::String>` parse helpers, and primitive `Wrap<bool/int/double>::StringValue` formatting via C ABI)
+- `Data::TimeSeriesRecorder` (Rust-authoritative state for parse/serialize + append + typed reads via C ABI; C++ mirror state removed)
+- `Data::Provider` deterministic helper dispatch/parse path (Rust-backed C ABI helpers; classify/split dispatch now centralized through `avd_provider_classify_id`)
+- `Data::Manager` deterministic argumented-ID classify/split path (Rust-backed C ABI helpers reused across active/describe/attach/get/register flows, including provider registration/activation mapping)
 
 Focus:
 - Define narrow ABI seams around pure computation and deterministic transforms.
@@ -46,12 +46,16 @@ Focus:
 - Keep `rust/avida-rust/src/lib.rs` as a thin hub with per-domain module ownership.
 - Evaluate mature external crates first for each slice; keep custom code only when parity/ABI constraints require it.
 - Reuse shared Rust helper parsers across `source/data` modules to eliminate duplicated C++ bracket parsing logic.
+- Consolidate duplicated FFI CString/output-pointer handling through shared `common.rs` helpers (`provider_helpers`, `time_series_recorder`, `package`) to reduce repeated unsafe patterns.
 
 ## Wave 5: Runtime and execution core
 
 - Selected modules in `source/main`
 - Selected modules in `source/cpu`
+- `cResourceCount` deterministic helper paths (Rust-backed FFI lookup, inflow/decay precalc helper math, and update-step scheduling helper math used by `GetResourceCountID`/`GetResourceByName`/`SetInflow`/`SetDecay`/`Update`/`DoUpdates` step derivation)
+- Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
+- Next medium-priority candidate: define and lock explicit boundary policy for `cResourceCount` scheduling helper math (rounding/clamping + boundary fixtures).

@@ -71,6 +71,10 @@ namespace Avida {
       LIB_EXPORT double DoubleValue() const { return m_value; }
       LIB_EXPORT Apto::String StringValue() const { return Apto::AsStr(m_value); }
     };
+
+    template <> LIB_EXPORT Apto::String Wrap<bool>::StringValue() const;
+    template <> LIB_EXPORT Apto::String Wrap<int>::StringValue() const;
+    template <> LIB_EXPORT Apto::String Wrap<double>::StringValue() const;
     
     template <> class Wrap<Apto::String> : public Package
     {
@@ -80,9 +84,9 @@ namespace Avida {
     public:
       LIB_EXPORT inline Wrap(Apto::String value) : m_value(value) { ; }
       
-      LIB_EXPORT bool BoolValue() const { return Apto::StrAs(m_value); }
-      LIB_EXPORT int IntValue() const { return Apto::StrAs(m_value); }
-      LIB_EXPORT double DoubleValue() const { return Apto::StrAs(m_value); }
+      LIB_EXPORT bool BoolValue() const;
+      LIB_EXPORT int IntValue() const;
+      LIB_EXPORT double DoubleValue() const;
       LIB_EXPORT Apto::String StringValue() const { return m_value; }
     };
         

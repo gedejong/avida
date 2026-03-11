@@ -33,7 +33,13 @@
 #include <cassert>
 
 namespace {
-bool SplitArgumentedDataID(
+enum DataIDKind {
+  DATA_ID_INVALID = 0,
+  DATA_ID_STANDARD = 1,
+  DATA_ID_ARGUMENTED = 2
+};
+
+int ClassifyDataID(
   const Avida::Data::DataID& data_id,
   Avida::Data::DataID& raw_id,
   Avida::Data::Argument& argument
@@ -41,15 +47,23 @@ bool SplitArgumentedDataID(
 {
   char* raw_id_cstr = NULL;
   char* argument_cstr = NULL;
-  if (avd_provider_split_argumented_id((const char*) data_id, &raw_id_cstr, &argument_cstr) == 0) {
-    return false;
+  int kind = avd_provider_classify_id((const char*) data_id, &raw_id_cstr, &argument_cstr);
+  if (kind != DATA_ID_ARGUMENTED) {
+    return kind;
   }
 
   raw_id = (raw_id_cstr != NULL) ? raw_id_cstr : "";
   argument = (argument_cstr != NULL) ? argument_cstr : "";
   avd_provider_string_free(raw_id_cstr);
   avd_provider_string_free(argument_cstr);
-  return true;
+  return kind;
+}
+
+bool IsArgumentedDataID(const Avida::Data::DataID& data_id)
+{
+  Avida::Data::DataID raw_id;
+  Avida::Data::Argument argument;
+  return ClassifyDataID(data_id, raw_id, argument) == DATA_ID_ARGUMENTED;
 }
 }
 
@@ -93,10 +107,13 @@ bool Avida::Data::Manager::IsAvailable(const DataID& data_id) const
 bool Avida::Data::Manager::IsActive(const DataID& data_id) const
 {
   bool is_available = false;
+  DataID raw_id;
+  Argument argument;
+  int kind = ClassifyDataID(data_id, raw_id, argument);
   m_rwlock.ReadLock();
-  if (data_id[data_id.GetSize() - 1] == ']') {
-    is_available = m_active_arg_provider_map.Has(data_id);
-  } else {
+  if (kind == DATA_ID_ARGUMENTED) {
+    is_available = m_active_arg_provider_map.Has(raw_id);
+  } else if (kind == DATA_ID_STANDARD) {
     is_available = m_active_provider_map.Has(data_id);
   }
   m_rwlock.ReadUnlock();
@@ -110,18 +127,17 @@ Apto::String Avida::Data::Manager::Describe(const DataID& data_id) const
   
   // Check for invalid data id
   if (!data_id.GetSize()) return rtn;
-  
-  if (data_id[data_id.GetSize() - 1] == ']') {
-    DataID raw_id;
-    Argument argument;
-    if (!SplitArgumentedDataID(data_id, raw_id, argument)) return "";  // argument start not found
-    
+
+  DataID raw_id;
+  Argument argument;
+  int kind = ClassifyDataID(data_id, raw_id, argument);
+  if (kind == DATA_ID_ARGUMENTED) {
     // Check if argumented provider exists for requested data
     ArgumentedProviderPtr provider;
     if (m_active_arg_provider_map.Get(raw_id, provider)) {
       rtn = provider->DescribeProvidedValue(data_id);
     }
-  } else {
+  } else if (kind == DATA_ID_STANDARD) {
     // Check for standard data value availability
     ProviderPtr provider;
     if (m_active_provider_map.Get(data_id, provider)) {
@@ -145,12 +161,11 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
     
     // Check for invalid data id
     if (!data_id.GetSize()) return false;
-    
-    if (data_id[data_id.GetSize() - 1] == ']') {
-      DataID raw_id;
-      Argument argument;
-      if (!SplitArgumentedDataID(data_id, raw_id, argument)) return false;  // argument start not found
-      
+
+    DataID raw_id;
+    Argument argument;
+    int kind = ClassifyDataID(data_id, raw_id, argument);
+    if (kind == DATA_ID_ARGUMENTED) {
       // Check if argumented provider exists for requested data
       if (!m_arg_provider_map.Has(raw_id)) return false;
       
@@ -164,7 +179,7 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
         ConstDataSetPtr provided = arg_provider->Provides();
         for (ConstDataSetIterator pit = provided->Begin(); pit.Next();) {
           const DataID& pdid = *pit.Get();
-          if (pdid[pdid.GetSize() - 1] == ']') {
+          if (IsArgumentedDataID(pdid)) {
             if (!m_active_arg_provider_map.Has(pdid)) m_active_arg_provider_map[pdid] = arg_provider;
           } else {
             if (!m_active_provider_map.Has(pdid)) m_active_provider_map[pdid] = arg_provider;
@@ -173,11 +188,13 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
       }
       
       if (!m_active_arg_provider_map[raw_id]->IsValidArgument(raw_id, argument)) return false;
-    } else {
+    } else if (kind == DATA_ID_STANDARD) {
       // Check for standard data value availability
       if (!m_provider_map.Has(data_id)) {
         return false;
       }
+    } else {
+      return false;
     }
   }
   
@@ -187,14 +204,13 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
   // Make sure that all requested data values are active
   for (ConstDataSetIterator it = requested->Begin(); it.Next();) {
     const DataID& rdid = *it.Get();
-    
-    if (rdid[rdid.GetSize() - 1] == ']') {
-      
-      // Handle argumented data value      
-      DataID raw_id;
-      Argument argument;
-      if (!SplitArgumentedDataID(rdid, raw_id, argument)) return false;  // argument start not found
 
+    DataID raw_id;
+    Argument argument;
+    int kind = ClassifyDataID(rdid, raw_id, argument);
+    if (kind == DATA_ID_ARGUMENTED) {
+
+      // Handle argumented data value      
       ArgumentedProviderPtr provider = m_active_arg_provider_map[raw_id];
       if (!provider) return false; // Argumented providers should be activated above, whaa??
       
@@ -214,9 +230,9 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
       ArgumentSetPtr basic_arg_set(new ArgumentSet);  // Active arguments are a basic set, convert as such
       *basic_arg_set = *arg_set;
       provider->SetActiveArguments(raw_id, basic_arg_set);
-      
-    } else {
-      
+
+    } else if (kind == DATA_ID_STANDARD) {
+
       // Handle standard data value
       
       // If already active, no further action necessary
@@ -246,7 +262,7 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
         ConstDataSetPtr provided = arg_provider->Provides();
         for (ConstDataSetIterator pit = provided->Begin(); pit.Next();) {
           const DataID& pdid = *pit.Get();
-          if (pdid[pdid.GetSize() - 1] == ']') {
+          if (IsArgumentedDataID(pdid)) {
             if (!m_active_arg_provider_map.Has(pdid)) {
               m_active_arg_provider_map[pdid] = arg_provider;
               is_providing = true;
@@ -267,7 +283,7 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
         ConstDataSetPtr provided = provider->Provides();
         for (ConstDataSetIterator pit = provided->Begin(); pit.Next();) {
           const DataID& pdid = *pit.Get();
-          if (pdid[pdid.GetSize() - 1] == ']') {
+          if (IsArgumentedDataID(pdid)) {
             // Argumented data from a non-argumented provider, whaa??
             continue;
           } else {
@@ -281,6 +297,8 @@ bool Avida::Data::Manager::AttachRecorder(RecorderPtr recorder, bool concurrent_
         // Only retain provider if it is actively providing new values
         if (is_providing) m_active_providers.Push(provider);
       }
+    } else {
+      return false;
     }
   }
   
@@ -324,7 +342,9 @@ bool Avida::Data::Manager::DetachRecorder(RecorderPtr recorder)
 
 bool Avida::Data::Manager::Register(const DataID& data_id, ProviderActivateFunctor functor)
 {
-  if (data_id.GetSize() == 0 || data_id[data_id.GetSize() - 1] == ']') return false;
+  DataID raw_id;
+  Argument argument;
+  if (ClassifyDataID(data_id, raw_id, argument) != DATA_ID_STANDARD) return false;
   
   bool success = false;
   m_rwlock.WriteLock();
@@ -347,16 +367,18 @@ static Avida::Data::ProviderPtr convertArgumentedPtr(Avida::Data::ArgumentedProv
 
 bool Avida::Data::Manager::Register(const DataID& data_id, ArgumentedProviderActivateFunctor functor)
 {
-  const int id_size = data_id.GetSize();
-  
+  DataID raw_id;
+  Argument argument;
+  int kind = ClassifyDataID(data_id, raw_id, argument);
+
   bool success = false;
   m_rwlock.WriteLock();
-  if (id_size > 0 && data_id[id_size - 1] != ']' && !m_provider_map.Has(data_id)) {
+  if (kind == DATA_ID_STANDARD && !m_provider_map.Has(data_id)) {
     Apto::Functor<ProviderPtr, Apto::TL::Create<ArgumentedProviderActivateFunctor, World*> > conv_func(convertArgumentedPtr);
     m_provider_map[data_id] = Apto::BindFirst(conv_func, functor);
     m_available->Insert(data_id);
     success = true;
-  } else if (id_size > 2 && data_id[id_size - 2] == '[' && data_id[id_size - 1] == ']' && !m_arg_provider_map.Has(data_id)) {
+  } else if (kind == DATA_ID_ARGUMENTED && raw_id == data_id && argument == "" && !m_arg_provider_map.Has(data_id)) {
     m_arg_provider_map[data_id] = functor;
     m_available->Insert(data_id);
     success = true;
@@ -440,12 +462,11 @@ Avida::Data::PackagePtr Avida::Data::Manager::GetCurrentValue(const DataID& data
   
   if (m_current_values.Get(data_id, rtn)) return rtn;
   if (!data_id.GetSize()) return rtn;
-  
-  if (data_id[data_id.GetSize() - 1] == ']') {
-    DataID raw_id;
-    Argument argument;
-    if (!SplitArgumentedDataID(data_id, raw_id, argument)) return rtn;  // argument start not found
-    
+
+  DataID raw_id;
+  Argument argument;
+  int kind = ClassifyDataID(data_id, raw_id, argument);
+  if (kind == DATA_ID_ARGUMENTED) {
     m_rwlock.ReadLock();
     ArgumentedProviderPtr arg_provider;
     if (m_active_arg_provider_map.Get(raw_id, arg_provider)) {
@@ -453,7 +474,7 @@ Avida::Data::PackagePtr Avida::Data::Manager::GetCurrentValue(const DataID& data
       if (rtn) m_current_values[data_id] = rtn;
     }
     m_rwlock.ReadUnlock();
-  } else {
+  } else if (kind == DATA_ID_STANDARD) {
     m_rwlock.ReadLock();
     ProviderPtr provider;
     if (m_active_provider_map.Get(data_id, provider)) {

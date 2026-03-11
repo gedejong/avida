@@ -28,6 +28,13 @@
 #include "avida/data/Util.h"
 #include "rust/running_stats_ffi.h"
 
+namespace {
+enum DataIDKind {
+  DATA_ID_INVALID = 0,
+  DATA_ID_STANDARD = 1,
+  DATA_ID_ARGUMENTED = 2
+};
+}
 
 bool Avida::Data::Provider::SupportsConcurrentUpdate() const
 {
@@ -50,21 +57,23 @@ Avida::Data::PackagePtr Avida::Data::ArgumentedProvider::GetProvidedValuesForArg
 Avida::Data::PackagePtr Avida::Data::ArgumentedProvider::GetProvidedValue(const DataID& data_id) const
 {
   PackagePtr pkg;
-  Apto::String argument;
-  
-  if (avd_provider_is_standard_id((const char*) data_id) != 0) {
-    return GetProvidedValueForArgument(data_id, argument);
-  } else if (avd_provider_is_argumented_id((const char*) data_id) != 0) {
-    char* raw_id = NULL;
-    char* arg = NULL;
-    if (avd_provider_split_argumented_id((const char*) data_id, &raw_id, &arg) != 0) {
-      DataID parsed_raw((raw_id) ? raw_id : "");
-      argument = (arg) ? arg : "";
-      avd_provider_string_free(raw_id);
-      avd_provider_string_free(arg);
-      return GetProvidedValueForArgument(parsed_raw, argument);
-    }
+  char* raw_id = NULL;
+  char* arg = NULL;
+  int id_kind = avd_provider_classify_id((const char*) data_id, &raw_id, &arg);
+  if (id_kind == DATA_ID_STANDARD) {
+    avd_provider_string_free(raw_id);
+    avd_provider_string_free(arg);
+    return GetProvidedValueForArgument(data_id, "");
   }
-  
+  if (id_kind == DATA_ID_ARGUMENTED) {
+    DataID parsed_raw((raw_id) ? raw_id : "");
+    Argument argument = (arg) ? arg : "";
+    avd_provider_string_free(raw_id);
+    avd_provider_string_free(arg);
+    return GetProvidedValueForArgument(parsed_raw, argument);
+  }
+
+  avd_provider_string_free(raw_id);
+  avd_provider_string_free(arg);
   return pkg;
 }

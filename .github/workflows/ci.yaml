@@ -43,6 +43,27 @@ jobs:
         cargo fmt --check
         cargo clippy --all-targets -- -D warnings
 
+  perf-rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Run Rust critical path benchmarks
+      run: |
+        cd rust/avida-rust
+        cargo bench --bench critical_paths
+    - name: Soft-gate benchmark regressions
+      run: |
+        cd rust/avida-rust
+        python3 scripts/ci_perf_check.py --threshold 0.20
+    - name: Upload benchmark artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-critical-path-benchmarks
+        path: rust/avida-rust/target/criterion
+        if-no-files-found: error
+
   # tests-windows:
   #   runs-on: windows-latest
   #   steps:
@@ -84,7 +105,7 @@ jobs:
     name: Docker Image Build
     runs-on: ubuntu-22.04
     needs: tests
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: false
     steps:
       - uses: actions/checkout@v2
       - name: Build and Push to GitHub Container Registry

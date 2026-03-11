@@ -53,6 +53,7 @@ public:
 
 
 #include "cBitArray.h"
+#include "apto/core/Map.h"
 #include "avida/data/Package.h"
 #include "avida/data/Provider.h"
 #include "avida/data/TimeSeriesRecorder.h"
@@ -346,6 +347,37 @@ protected:
     hash_b.Set(4, true);
     int hash_c_val = Apto::HashKey<cBitArray, 101>::Hash(hash_b);
     ReportTestResult("MapKey Equality/Hash Compatibility", (hash_a == cBitArray(hash_a) && hash_a_val == hash_b_val && hash_c_val != hash_a_val));
+
+    Apto::Map<cBitArray, int> phenotype_table;
+    cBitArray phen_a(8);
+    phen_a.Clear();
+    phen_a.Set(0, true); // viability bit
+    phen_a.Set(3, true); // one task bit
+
+    cBitArray phen_a_same(8);
+    phen_a_same.Clear();
+    phen_a_same.Set(0, true);
+    phen_a_same.Set(3, true);
+
+    int cpu_count = 0;
+    ReportTestResult("MapKey New Phenotype Missing", phenotype_table.Get(phen_a, cpu_count) == false);
+    phenotype_table.Set(phen_a, 1);
+    ReportTestResult("MapKey Grouping Reuses Equal Key", phenotype_table.Get(phen_a_same, cpu_count) && cpu_count == 1);
+
+    // Mutating the external key object must not mutate the key stored in the map.
+    phen_a.Resize(9);
+    phen_a.Set(8, true);
+    ReportTestResult("MapKey Stored Entry Survives External Key Mutation",
+      phenotype_table.Get(phen_a_same, cpu_count) && cpu_count == 1);
+
+    cBitArray phen_b(8);
+    phen_b.Clear();
+    phen_b.Set(0, true);
+    phen_b.Set(4, true); // different phenotype from phen_a_same
+    ReportTestResult("MapKey Distinguishes Different Phenotypes", phenotype_table.Get(phen_b, cpu_count) == false);
+    phenotype_table.Set(phen_b, 3);
+    ReportTestResult("MapKey Independent Buckets Preserve Counts",
+      phenotype_table.Get(phen_a_same, cpu_count) && cpu_count == 1 && phenotype_table.Get(phen_b, cpu_count) && cpu_count == 3);
   }
 };
 
@@ -529,6 +561,54 @@ protected:
   }
 };
 
+class cPackageTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "Data::Package"; }
+protected:
+  void RunTests()
+  {
+    Avida::Data::Wrap<Apto::String> truthy("true");
+    Avida::Data::Wrap<Apto::String> truthy_short("T");
+    Avida::Data::Wrap<Apto::String> falsey("false");
+    Avida::Data::Wrap<Apto::String> hex_value("0x10");
+    Avida::Data::Wrap<Apto::String> double_value("2.5");
+    Avida::Data::Wrap<Apto::String> malformed("not_a_number");
+
+    ReportTestResult("Wrap<String> BoolValue true", truthy.BoolValue());
+    ReportTestResult("Wrap<String> BoolValue short true", truthy_short.BoolValue());
+    ReportTestResult("Wrap<String> BoolValue false", !falsey.BoolValue());
+    ReportTestResult("Wrap<String> IntValue hex parse", hex_value.IntValue() == 16);
+    ReportTestResult("Wrap<String> DoubleValue parse", fabs(double_value.DoubleValue() - 2.5) < 1e-12);
+    ReportTestResult("Wrap<String> malformed numeric fallback",
+      malformed.IntValue() == 0 && fabs(malformed.DoubleValue()) < 1e-12);
+
+    Avida::Data::Wrap<bool> wrapped_bool(true);
+    Avida::Data::Wrap<int> wrapped_int(-42);
+    Avida::Data::Wrap<double> wrapped_double(1234567.0);
+    Avida::Data::Wrap<double> wrapped_nan(std::numeric_limits<double>::quiet_NaN());
+    ReportTestResult("Wrap<bool> StringValue parity", wrapped_bool.StringValue() == Apto::AsStr(true));
+    ReportTestResult("Wrap<int> StringValue parity", wrapped_int.StringValue() == Apto::AsStr(-42));
+    ReportTestResult("Wrap<double> StringValue parity", wrapped_double.StringValue() == Apto::AsStr(1234567.0));
+    ReportTestResult("Wrap<double> NaN StringValue parity", wrapped_nan.StringValue() == Apto::AsStr(std::numeric_limits<double>::quiet_NaN()));
+
+    Avida::Data::ArrayPackage arr;
+    ReportTestResult("ArrayPackage empty conversions",
+      arr.BoolValue() == false &&
+      arr.IntValue() == 0 &&
+      arr.StringValue() == "" &&
+      Apto::String(arr.GetAggregateDescriptor()) == "array(0)" &&
+      std::isnan(arr.DoubleValue()));
+
+    arr.AddComponent(Avida::Data::PackagePtr(new Avida::Data::Wrap<Apto::String>("a")));
+    arr.AddComponent(Avida::Data::PackagePtr(new Avida::Data::Wrap<Apto::String>("b")));
+    ReportTestResult("ArrayPackage deterministic formatting",
+      arr.NumComponents() == 2 &&
+      Apto::String(arr.GetAggregateDescriptor()) == "array(2)" &&
+      arr.StringValue() == "'a','b'");
+  }
+};
+
 class cTimeSeriesRecorderDouble : public Avida::Data::TimeSeriesRecorder<double>
 {
 public:
@@ -555,12 +635,22 @@ protected:
     rec.NotifyData(10, retrieve);
     rec.NotifyData(12, retrieve);
     ReportTestResult("NotifyData + AsString", (rec.AsString() == "10:1.250000,12:1.250000"));
+    ReportTestResult("NotifyData count from Rust authority", (rec.NumPoints() == 2));
+    ReportTestResult("NotifyData typed retrieval parity",
+      (fabs(rec.DataPoint(0) - 1.25) < 1e-12) &&
+      (fabs(rec.DataPoint(1) - 1.25) < 1e-12) &&
+      (rec.DataTime(0) == 10) &&
+      (rec.DataTime(1) == 12));
 
     cTimeSeriesRecorderDouble loaded(data_id, "3:2.500000,5:4.000000");
     ReportTestResult("String Constructor Parses Count", (loaded.NumPoints() == 2));
     ReportTestResult("String Constructor Parses Data", (fabs(loaded.DataPoint(0) - 2.5) < 1e-12 && fabs(loaded.DataPoint(1) - 4.0) < 1e-12));
     ReportTestResult("String Constructor Parses Time", (loaded.DataTime(0) == 3 && loaded.DataTime(1) == 5));
     ReportTestResult("String Constructor Roundtrip", (loaded.AsString() == "3:2.500000,5:4.000000"));
+
+    cTimeSeriesRecorderDouble malformed(data_id, "7:bad,8:3.000000");
+    ReportTestResult("Malformed numeric entry defaults safely", (fabs(malformed.DataPoint(0) - 0.0) < 1e-12));
+    ReportTestResult("Malformed constructor keeps timeline", (malformed.NumPoints() == 2 && malformed.DataTime(0) == 7 && malformed.DataTime(1) == 8));
   }
 };
 
@@ -591,17 +681,58 @@ public:
 protected:
   void RunTests()
   {
+    const int kInvalid = 0;
+    const int kStandard = 1;
+    const int kArgumented = 2;
+
+    struct ProviderCase {
+      const char* data_id;
+      int expected_kind;
+      const char* expected_raw;
+      const char* expected_arg;
+      bool expect_package;
+      const char* expected_provider_id;
+      const char* expected_provider_arg;
+    };
+
+    const ProviderCase cases[] = {
+      {"core.demo", kStandard, NULL, NULL, true, "core.demo", ""},
+      {"demo[]", kArgumented, "demo[]", "", true, "demo[]", ""},
+      {"demo[value]", kArgumented, "demo[]", "value", true, "demo[]", "value"},
+      {"demo]", kInvalid, NULL, NULL, false, NULL, NULL}
+    };
+
     cMockArgumentedProvider provider;
-    Avida::Data::PackagePtr pkg;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+      const ProviderCase& test_case = cases[i];
+      char* raw_id = NULL;
+      char* arg = NULL;
+      int kind = avd_provider_classify_id(test_case.data_id, &raw_id, &arg);
+      bool classify_ok = kind == test_case.expected_kind;
+      if (test_case.expected_raw) {
+        classify_ok = classify_ok && raw_id && Apto::String(raw_id) == test_case.expected_raw;
+      } else {
+        classify_ok = classify_ok && raw_id == NULL;
+      }
+      if (test_case.expected_arg) {
+        classify_ok = classify_ok && arg && Apto::String(arg) == test_case.expected_arg;
+      } else {
+        classify_ok = classify_ok && arg == NULL;
+      }
+      ReportTestResult("Provider classify matrix case", classify_ok);
+      avd_provider_string_free(raw_id);
+      avd_provider_string_free(arg);
 
-    pkg = provider.GetProvidedValue("demo[]");
-    ReportTestResult("Argumented empty argument dispatch", pkg && provider.last_id == "demo[]" && provider.last_arg == "" && pkg->IntValue() == 0);
-
-    pkg = provider.GetProvidedValue("demo[value]");
-    ReportTestResult("Argumented parse dispatch", pkg && provider.last_id == "demo[]" && provider.last_arg == "value" && pkg->IntValue() == 5);
-
-    pkg = provider.GetProvidedValue("demo]");
-    ReportTestResult("Malformed argumented id returns null", !pkg);
+      Avida::Data::PackagePtr pkg = provider.GetProvidedValue(test_case.data_id);
+      bool dispatch_ok = (pkg != NULL) == test_case.expect_package;
+      if (test_case.expect_package) {
+        dispatch_ok = dispatch_ok &&
+          provider.last_id == test_case.expected_provider_id &&
+          provider.last_arg == test_case.expected_provider_arg &&
+          pkg->IntValue() == (int)Apto::String(test_case.expected_provider_arg).GetSize();
+      }
+      ReportTestResult("Provider dispatch matrix case", dispatch_ok);
+    }
   }
 };
 
@@ -612,6 +743,10 @@ public:
 protected:
   void RunTests()
   {
+    const int kInvalid = 0;
+    const int kStandard = 1;
+    const int kArgumented = 2;
+
     char* raw_id = NULL;
     char* arg = NULL;
 
@@ -631,6 +766,127 @@ protected:
     ReportTestResult("Standard ID classification", avd_provider_is_standard_id("core.demo") == 1);
     ReportTestResult("Argumented ID classification", avd_provider_is_argumented_id("core.demo[]") == 1);
     ReportTestResult("Malformed trailing bracket classification", avd_provider_is_argumented_id("x]") == 0);
+
+    raw_id = NULL;
+    arg = NULL;
+    int kind = avd_provider_classify_id("core.demo", &raw_id, &arg);
+    ReportTestResult("Classify standard ID", kind == kStandard && raw_id == NULL && arg == NULL);
+
+    kind = avd_provider_classify_id("demo[value]", &raw_id, &arg);
+    bool classify_argumented_ok = (kind == kArgumented) && raw_id && arg &&
+      Apto::String(raw_id) == "demo[]" &&
+      Apto::String(arg) == "value";
+    ReportTestResult("Classify argumented ID", classify_argumented_ok);
+    avd_provider_string_free(raw_id);
+    avd_provider_string_free(arg);
+
+    raw_id = NULL;
+    arg = NULL;
+    kind = avd_provider_classify_id("demo]", &raw_id, &arg);
+    ReportTestResult("Classify malformed ID", kind == kInvalid && raw_id == NULL && arg == NULL);
+  }
+};
+
+class cResourceCountLookupHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cResourceCount Lookup Helpers"; }
+protected:
+  void RunTests()
+  {
+    const char* names[] = {"resA", "resB", "resA"};
+    ReportTestResult(
+      "Lookup first match",
+      avd_rc_lookup_resource_index(names, 3, "resA") == 0
+    );
+    ReportTestResult(
+      "Lookup later match",
+      avd_rc_lookup_resource_index(names, 3, "resB") == 1
+    );
+    ReportTestResult(
+      "Lookup missing name",
+      avd_rc_lookup_resource_index(names, 3, "resX") == -1
+    );
+    ReportTestResult(
+      "Lookup invalid input",
+      avd_rc_lookup_resource_index(NULL, 3, "resA") == -1
+    );
+  }
+};
+
+class cResourceCountPrecalcHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cResourceCount Precalc Helpers"; }
+protected:
+  void RunTests()
+  {
+    const double update_step = 1.0 / 10000.0;
+    const double decay_rate = 0.91;
+    const double inflow = 1.75;
+    const int rounds = 64;
+
+    double step_decay_ref = pow(decay_rate, update_step);
+    double step_inflow_ref = inflow * update_step;
+    double step_decay_rust = avd_rc_step_decay(decay_rate, update_step);
+    double step_inflow_rust = avd_rc_step_inflow(inflow, update_step);
+
+    ReportTestResult("Step decay parity", fabs(step_decay_ref - step_decay_rust) < 1e-15);
+    ReportTestResult("Step inflow parity", fabs(step_inflow_ref - step_inflow_rust) < 1e-15);
+
+    double inflow_ref = 0.0;
+    double inflow_rust = 0.0;
+    double decay_ref = 1.0;
+    double decay_rust = 1.0;
+    for (int i = 0; i < rounds; ++i) {
+      inflow_ref = inflow_ref * step_decay_ref + step_inflow_ref;
+      inflow_rust = avd_rc_inflow_precalc_next(inflow_rust, step_decay_rust, step_inflow_rust);
+      decay_ref = decay_ref * step_decay_ref;
+      decay_rust = avd_rc_decay_precalc_next(decay_rust, step_decay_rust);
+    }
+
+    ReportTestResult("Inflow recurrence parity", fabs(inflow_ref - inflow_rust) < 1e-12);
+    ReportTestResult("Decay recurrence parity", fabs(decay_ref - decay_rust) < 1e-12);
+  }
+};
+
+class cResourceCountSchedulingHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cResourceCount Scheduling Helpers"; }
+protected:
+  void RunTests()
+  {
+    const double step = 1.0 / 10000.0;
+    struct Case {
+      double update_time;
+      int expected_steps;
+    };
+    const Case cases[] = {
+      {0.0, 0},
+      {0.5 * step, 0},
+      {step, 1},
+      {2.9 * step, 2},
+      {25.0 * step, 25}
+    };
+
+    ReportTestResult(
+      "Scheduling accumulate parity",
+      fabs(avd_rc_accumulate_update_time(0.25, 0.125) - (0.25 + 0.125)) < 1e-15
+    );
+
+    bool steps_ok = true;
+    bool remainder_ok = true;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+      int got = avd_rc_num_steps(cases[i].update_time, step);
+      if (got != cases[i].expected_steps) steps_ok = false;
+      double rem = avd_rc_remainder_update_time(cases[i].update_time, step, got);
+      double expected_rem = cases[i].update_time - cases[i].expected_steps * step;
+      if (fabs(rem - expected_rem) > 1e-15) remainder_ok = false;
+    }
+
+    ReportTestResult("Scheduling num_steps parity", steps_ok);
+    ReportTestResult("Scheduling remainder parity", remainder_ok);
   }
 };
 
@@ -662,9 +918,13 @@ int main(int argc, const char* argv[])
   TEST(cWeightedIndex);
   TEST(cOrderedWeightedIndex);
   TEST(cHistogram);
+  TEST(cPackage);
   TEST(cTimeSeriesRecorder);
   TEST(cProvider);
   TEST(cManagerDataIdHelper);
+  TEST(cResourceCountLookupHelper);
+  TEST(cResourceCountPrecalcHelper);
+  TEST(cResourceCountSchedulingHelper);
   
   if (failed == 0)
     cout << "All unit tests passed." << endl;

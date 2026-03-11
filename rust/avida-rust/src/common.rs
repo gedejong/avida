@@ -3,178 +3,74 @@ use crate::{
     AvidaRawBitArrayHandle, AvidaRunningAverageHandle, AvidaRunningStatsHandle,
     AvidaWeightedIndexHandle,
 };
+use std::ffi::{c_char, CStr, CString};
 
-pub(crate) fn with_ref<T>(
-    handle: *const AvidaRunningStatsHandle,
-    default: T,
-    f: impl FnOnce(&AvidaRunningStatsHandle) -> T,
-) -> T {
-    if handle.is_null() {
+macro_rules! define_handle_accessors {
+    ($ref_name:ident, $mut_name:ident, $handle_ty:ty) => {
+        pub(crate) fn $ref_name<T>(
+            handle: *const $handle_ty,
+            default: T,
+            f: impl FnOnce(&$handle_ty) -> T,
+        ) -> T {
+            if handle.is_null() {
+                return default;
+            }
+            // SAFETY: pointer was checked for null and is only read.
+            let h = unsafe { &*handle };
+            f(h)
+        }
+
+        pub(crate) fn $mut_name(handle: *mut $handle_ty, f: impl FnOnce(&mut $handle_ty)) {
+            if handle.is_null() {
+                return;
+            }
+            // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
+            let h = unsafe { &mut *handle };
+            f(h);
+        }
+    };
+}
+
+define_handle_accessors!(with_ref, with_mut, AvidaRunningStatsHandle);
+define_handle_accessors!(with_ra_ref, with_ra_mut, AvidaRunningAverageHandle);
+define_handle_accessors!(with_ds_ref, with_ds_mut, AvidaDoubleSumHandle);
+define_handle_accessors!(with_wi_ref, with_wi_mut, AvidaWeightedIndexHandle);
+define_handle_accessors!(with_owi_ref, with_owi_mut, AvidaOrderedWeightedIndexHandle);
+define_handle_accessors!(with_hist_ref, with_hist_mut, AvidaHistogramHandle);
+define_handle_accessors!(with_rba_ref, with_rba_mut, AvidaRawBitArrayHandle);
+
+pub(crate) fn with_cstr<T>(ptr: *const c_char, default: T, f: impl FnOnce(&CStr) -> T) -> T {
+    if ptr.is_null() {
         return default;
     }
     // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
+    let cstr = unsafe { CStr::from_ptr(ptr) };
+    f(cstr)
 }
 
-pub(crate) fn with_mut(
-    handle: *mut AvidaRunningStatsHandle,
-    f: impl FnOnce(&mut AvidaRunningStatsHandle),
-) {
-    if handle.is_null() {
+pub(crate) fn alloc_c_string(value: String) -> *mut c_char {
+    let sanitized: Vec<u8> = value.bytes().filter(|b| *b != 0).collect();
+    match CString::new(sanitized) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+pub(crate) fn free_c_string(value: *mut c_char) {
+    if value.is_null() {
         return;
     }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
+    // SAFETY: pointer was allocated by CString::into_raw in this crate.
+    unsafe {
+        drop(CString::from_raw(value));
+    }
 }
 
-pub(crate) fn with_ra_ref<T>(
-    handle: *const AvidaRunningAverageHandle,
-    default: T,
-    f: impl FnOnce(&AvidaRunningAverageHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
+pub(crate) fn set_out<T>(out: *mut T, value: T) -> bool {
+    if out.is_null() {
+        return false;
     }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_ra_mut(
-    handle: *mut AvidaRunningAverageHandle,
-    f: impl FnOnce(&mut AvidaRunningAverageHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
-}
-
-pub(crate) fn with_ds_ref<T>(
-    handle: *const AvidaDoubleSumHandle,
-    default: T,
-    f: impl FnOnce(&AvidaDoubleSumHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_ds_mut(
-    handle: *mut AvidaDoubleSumHandle,
-    f: impl FnOnce(&mut AvidaDoubleSumHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
-}
-
-pub(crate) fn with_wi_ref<T>(
-    handle: *const AvidaWeightedIndexHandle,
-    default: T,
-    f: impl FnOnce(&AvidaWeightedIndexHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_wi_mut(
-    handle: *mut AvidaWeightedIndexHandle,
-    f: impl FnOnce(&mut AvidaWeightedIndexHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
-}
-
-pub(crate) fn with_owi_ref<T>(
-    handle: *const AvidaOrderedWeightedIndexHandle,
-    default: T,
-    f: impl FnOnce(&AvidaOrderedWeightedIndexHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_owi_mut(
-    handle: *mut AvidaOrderedWeightedIndexHandle,
-    f: impl FnOnce(&mut AvidaOrderedWeightedIndexHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
-}
-
-pub(crate) fn with_hist_ref<T>(
-    handle: *const AvidaHistogramHandle,
-    default: T,
-    f: impl FnOnce(&AvidaHistogramHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_hist_mut(
-    handle: *mut AvidaHistogramHandle,
-    f: impl FnOnce(&mut AvidaHistogramHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
-}
-
-pub(crate) fn with_rba_ref<T>(
-    handle: *const AvidaRawBitArrayHandle,
-    default: T,
-    f: impl FnOnce(&AvidaRawBitArrayHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-pub(crate) fn with_rba_mut(
-    handle: *mut AvidaRawBitArrayHandle,
-    f: impl FnOnce(&mut AvidaRawBitArrayHandle),
-) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and is only mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h);
+    // SAFETY: output pointer checked for null and written exactly once.
+    unsafe { *out = value };
+    true
 }

@@ -1,0 +1,17 @@
+;--- Begin Test Configuration File (test_list) ---
+[main]
+args = -a
+
+app = %(default_app)s
+nonzeroexit = disallow
+createdby = Cursor
+email = noreply@example.com
+
+[consistency]
+enabled = yes
+long = no
+
+[performance]
+enabled = no
+long = no
+;--- End Test Configuration File ---

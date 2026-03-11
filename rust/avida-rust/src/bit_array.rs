@@ -442,6 +442,54 @@ pub extern "C" fn avd_rba_increment(handle: *mut AvidaRawBitArrayHandle, num_bit
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bitvec::prelude::{BitVec, Lsb0};
+
+    fn bitvec_from_handle(handle: &AvidaRawBitArrayHandle, num_bits: i32) -> BitVec<u32, Lsb0> {
+        let mut out = BitVec::<u32, Lsb0>::repeat(false, num_bits as usize);
+        for i in 0..num_bits {
+            out.set(
+                i as usize,
+                AvidaRawBitArrayHandle::get_bit_from(&handle.bit_fields, i),
+            );
+        }
+        out
+    }
+
+    fn shift_bitvec(src: &BitVec<u32, Lsb0>, num_bits: i32, shift_size: i32) -> BitVec<u32, Lsb0> {
+        let mut out = BitVec::<u32, Lsb0>::repeat(false, num_bits as usize);
+        if shift_size > 0 {
+            for i in (0..num_bits).rev() {
+                let src_idx = i - shift_size;
+                if src_idx >= 0 {
+                    out.set(i as usize, src[src_idx as usize]);
+                }
+            }
+        } else if shift_size < 0 {
+            let right = -shift_size;
+            for i in 0..num_bits {
+                let src_idx = i + right;
+                if src_idx < num_bits {
+                    out.set(i as usize, src[src_idx as usize]);
+                }
+            }
+        } else {
+            out.clone_from(src);
+        }
+        out
+    }
+
+    fn increment_bitvec(bits: &mut BitVec<u32, Lsb0>) {
+        let mut carry = true;
+        for i in 0..bits.len() {
+            if !carry {
+                break;
+            }
+            let next = !bits[i];
+            bits.set(i, next);
+            carry = !next;
+        }
+    }
+
     #[test]
     fn raw_bit_array_shift_and_increment_semantics() {
         let mut bits = AvidaRawBitArrayHandle {
@@ -450,5 +498,45 @@ mod tests {
         AvidaRawBitArrayHandle::set_bit_in(&mut bits.bit_fields, 0, true);
         avd_rba_shift(&mut bits, 34, 33);
         assert!(AvidaRawBitArrayHandle::get_bit_from(&bits.bit_fields, 33));
+    }
+
+    #[test]
+    fn bitvec_shift_increment_count_parity_experiment() {
+        let num_bits = 37;
+        let mut handle = AvidaRawBitArrayHandle {
+            bit_fields: vec![0_u32; AvidaRawBitArrayHandle::num_fields(num_bits)],
+        };
+        for idx in [0, 1, 5, 31, 36] {
+            AvidaRawBitArrayHandle::set_bit_in(&mut handle.bit_fields, idx, true);
+        }
+
+        for shift in [-40, -7, -1, 0, 1, 7, 40] {
+            let before = bitvec_from_handle(&handle, num_bits);
+            avd_rba_shift(&mut handle, num_bits, shift);
+            let expected = shift_bitvec(&before, num_bits, shift);
+            for i in 0..num_bits {
+                assert_eq!(
+                    AvidaRawBitArrayHandle::get_bit_from(&handle.bit_fields, i),
+                    expected[i as usize]
+                );
+            }
+        }
+
+        let mut expected = bitvec_from_handle(&handle, num_bits);
+        for _ in 0..100 {
+            avd_rba_increment(&mut handle, num_bits);
+            increment_bitvec(&mut expected);
+        }
+        for i in 0..num_bits {
+            assert_eq!(
+                AvidaRawBitArrayHandle::get_bit_from(&handle.bit_fields, i),
+                expected[i as usize]
+            );
+        }
+
+        let count = avd_rba_count_bits(&handle, num_bits);
+        let count2 = avd_rba_count_bits2(&handle, num_bits);
+        assert_eq!(count as usize, expected.count_ones());
+        assert_eq!(count2 as usize, expected.count_ones());
     }
 }

@@ -27,10 +27,28 @@
 #include "cStats.h"
 
 #include "nGeometry.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cmath>
+#include <vector>
 
 using namespace std;
+
+namespace {
+int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cString& query)
+{
+  const int count = resource_names.GetSize();
+  if (count <= 0) return -1;
+
+  std::vector<const char*> names;
+  names.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    names.push_back((const char*) resource_names[i]);
+  }
+
+  return avd_rc_lookup_resource_index(names.data(), count, (const char*) query);
+}
+}
 
 const double cResourceCount::UPDATE_STEP(1.0 / 10000.0);
 const double cResourceCount::EPSILON (1.0e-15);
@@ -482,11 +500,11 @@ void cResourceCount::SetProbabilisticResource(cAvidaContext& ctx, const int& res
  */
 int cResourceCount::GetResourceCountID(const cString& res_name)
 {
-    for (int i = 0; i < resource_name.GetSize(); i++) {
-      if (resource_name[i] == res_name) return i;
-    }
+  int result = LookupResourceIndex(resource_name, res_name);
+  if (result == -1) {
     cerr << "Error: Unknown resource '" << res_name << "'." << endl;
-    return -1;
+  }
+  return result;
 }
 
 double cResourceCount::GetInflow(const cString& name)
@@ -503,12 +521,12 @@ void cResourceCount::SetInflow(const cString& name, const double _inflow)
   if (id == -1) return;
 
   inflow_rate[id] = _inflow;
-  double step_inflow = _inflow * UPDATE_STEP;
-  double step_decay = pow(decay_rate[id], UPDATE_STEP);
+  double step_inflow = avd_rc_step_inflow(_inflow, UPDATE_STEP);
+  double step_decay = avd_rc_step_decay(decay_rate[id], UPDATE_STEP);
 
   inflow_precalc(id, 0) = 0.0;
   for (int i = 1; i <= PRECALC_DISTANCE; i++) {
-    inflow_precalc(id, i) = inflow_precalc(id, i-1) * step_decay + step_inflow;
+    inflow_precalc(id, i) = avd_rc_inflow_precalc_next(inflow_precalc(id, i-1), step_decay, step_inflow);
   }
 }
 
@@ -526,17 +544,17 @@ void cResourceCount::SetDecay(const cString& name, const double _decay)
   if (id == -1) return;
 
   decay_rate[id] = _decay;
-  double step_decay = pow(_decay, UPDATE_STEP);
+  double step_decay = avd_rc_step_decay(_decay, UPDATE_STEP);
   decay_precalc(id, 0) = 1.0;
   for (int i = 1; i <= PRECALC_DISTANCE; i++) {
-    decay_precalc(id, i)  = decay_precalc(id, i-1) * step_decay;
+    decay_precalc(id, i)  = avd_rc_decay_precalc_next(decay_precalc(id, i-1), step_decay);
   }
 }
 
 void cResourceCount::Update(double in_time) 
 { 
-  update_time += in_time;
-  spatial_update_time += in_time;
+  update_time = avd_rc_accumulate_update_time(update_time, in_time);
+  spatial_update_time = avd_rc_accumulate_update_time(spatial_update_time, in_time);
  }
 
  
@@ -777,11 +795,11 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
   // the roundoff error.
   assert(update_time >= -EPSILON);
   // Determine how many resource steps we wish to process
-  const int num_steps = (int) (update_time / UPDATE_STEP);
+  const int num_steps = avd_rc_num_steps(update_time, UPDATE_STEP);
   
   // Preserve remainder of update_time for use on the next DoUpdates as
   // we may not get around to calculating them this round
-  update_time -=  num_steps * UPDATE_STEP;
+  update_time = avd_rc_remainder_update_time(update_time, UPDATE_STEP, num_steps);
   
   
   // SPATIAL CALCULATION VALUES ==================================
@@ -866,18 +884,7 @@ void cResourceCount::ReinitializeResources(cAvidaContext& ctx, double additional
  */
 int cResourceCount::GetResourceByName(cString name) const
 {
-  int result = -1;
-  
-  for(int i = 0; i < resource_name.GetSize(); i++)
-  {
-    if(resource_name[i] == name)
-    {
-      result = i;
-    }
-  }
-  
-  return result;
-  
+  return LookupResourceIndex(resource_name, name);
 }
 
 

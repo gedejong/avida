@@ -25,7 +25,6 @@
 #ifndef AvidaDataTimeSeriesRecorder_h
 #define AvidaDataTimeSeriesRecorder_h
 
-#include "apto/core/Array.h"
 #include "avida/core/Types.h"
 #include "avida/data/Recorder.h"
 
@@ -43,9 +42,6 @@ namespace Avida {
       DataID m_data_id;
       ConstDataSetPtr m_requested;
       
-      struct DataEntry;
-      Apto::Array<DataEntry, Apto::Smart> m_data;
-      
     public:
       LIB_EXPORT TimeSeriesRecorder(const DataID& data_id);
       LIB_EXPORT TimeSeriesRecorder(const DataID& data_id, Apto::String str);
@@ -58,9 +54,9 @@ namespace Avida {
       // Value Access
       LIB_EXPORT inline const DataID& RecordedDataID() const { return m_data_id; }
       
-      LIB_EXPORT inline int NumPoints() const { return m_data.GetSize(); }
-      LIB_EXPORT inline T DataPoint(int idx) const { return m_data[idx].data; }
-      LIB_EXPORT inline Update DataTime(int idx) const { return m_data[idx].update; }
+      LIB_EXPORT int NumPoints() const;
+      LIB_EXPORT T DataPoint(int idx) const;
+      LIB_EXPORT Update DataTime(int idx) const;
       
       LIB_EXPORT Apto::String AsString() const;
       
@@ -71,15 +67,6 @@ namespace Avida {
       
     private:
       AvidaTimeSeriesHandle* m_rust_handle;
-
-      struct DataEntry
-      {
-        T data;
-        Update update;
-        
-        LIB_LOCAL inline DataEntry() : update(-1) { ; }
-        LIB_LOCAL inline DataEntry(Update in_update, const T& in_data) : data(in_data), update(in_update) { ; }
-      };
     };
     
   };

@@ -99,13 +99,6 @@ namespace Avida {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
       m_requested = ds;
-      
-      while (str.GetSize()) {
-        Apto::String entry_str = str.Pop(',');
-        Update update = Apto::StrAs(entry_str.Pop(':'));
-        PackagePtr package(new Wrap<Apto::String>(entry_str));
-        m_data.Push(DataEntry(update, package));
-      }
     }
     
     template <>
@@ -116,13 +109,6 @@ namespace Avida {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
       m_requested = ds;
-
-      while (str.GetSize()) {
-        Apto::String entry_str = str.Pop(',');
-        Update update = Apto::StrAs(entry_str.Pop(':'));
-        bool value = Apto::StrAs(entry_str);
-        m_data.Push(DataEntry(update, value));
-      }
     }
     
     template <>
@@ -133,13 +119,6 @@ namespace Avida {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
       m_requested = ds;
-      
-      while (str.GetSize()) {
-        Apto::String entry_str = str.Pop(',');
-        Update update = Apto::StrAs(entry_str.Pop(':'));
-        int value = Apto::StrAs(entry_str);
-        m_data.Push(DataEntry(update, value));
-      }
     }
     
     template <>
@@ -150,13 +129,6 @@ namespace Avida {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
       m_requested = ds;
-      
-      while (str.GetSize()) {
-        Apto::String entry_str = str.Pop(',');
-        Update update = Apto::StrAs(entry_str.Pop(':'));
-        double value = Apto::StrAs(entry_str);
-        m_data.Push(DataEntry(update, value));
-      }
     }
     
     template <>
@@ -167,12 +139,6 @@ namespace Avida {
       DataSetPtr ds(new DataSet);
       ds->Insert(m_data_id);
       m_requested = ds;
-      
-      while (str.GetSize()) {
-        Apto::String entry_str = str.Pop(',');
-        Update update = Apto::StrAs(entry_str.Pop(':'));
-        m_data.Push(DataEntry(update, entry_str));
-      }
     }
     
     template <class T>
@@ -180,6 +146,18 @@ namespace Avida {
     {
       avd_tsr_free(m_rust_handle);
       m_rust_handle = NULL;
+    }
+
+    template <class T>
+    int TimeSeriesRecorder<T>::NumPoints() const
+    {
+      return avd_tsr_len(m_rust_handle);
+    }
+
+    template <class T>
+    Update TimeSeriesRecorder<T>::DataTime(int idx) const
+    {
+      return avd_tsr_update_at(m_rust_handle, idx);
     }
     
 
@@ -189,7 +167,6 @@ namespace Avida {
     {
       if (shouldRecordValue(update)) {
         PackagePtr value = retrieve_data(m_data_id);
-        m_data.Push(DataEntry(update, value));
         avd_tsr_push_string(m_rust_handle, update, (const char*) value->StringValue());
         didRecordValue();
       }
@@ -201,7 +178,6 @@ namespace Avida {
     {
       if (shouldRecordValue(update)) {
         bool value = retrieve_data(m_data_id)->BoolValue();
-        m_data.Push(DataEntry(update, value));
         avd_tsr_push_bool(m_rust_handle, update, value ? 1 : 0);
         didRecordValue();
       }
@@ -212,7 +188,6 @@ namespace Avida {
     {
       if (shouldRecordValue(update)) {
         int value = retrieve_data(m_data_id)->IntValue();
-        m_data.Push(DataEntry(update, value));
         avd_tsr_push_int(m_rust_handle, update, value);
         didRecordValue();
       }
@@ -223,7 +198,6 @@ namespace Avida {
     {
       if (shouldRecordValue(update)) {
         double value = retrieve_data(m_data_id)->DoubleValue();
-        m_data.Push(DataEntry(update, value));
         avd_tsr_push_double(m_rust_handle, update, value);
         didRecordValue();
       }
@@ -234,10 +208,46 @@ namespace Avida {
     {
       if (shouldRecordValue(update)) {
         Apto::String value = retrieve_data(m_data_id)->StringValue();
-        m_data.Push(DataEntry(update, value));
         avd_tsr_push_string(m_rust_handle, update, (const char*) value);
         didRecordValue();
       }
+    }
+
+    template <>
+    PackagePtr TimeSeriesRecorder<PackagePtr>::DataPoint(int idx) const
+    {
+      Apto::String value = RustOwnedStringToApto(avd_tsr_value_as_cstr(m_rust_handle, idx));
+      return PackagePtr(new Wrap<Apto::String>(value));
+    }
+
+    template <>
+    bool TimeSeriesRecorder<bool>::DataPoint(int idx) const
+    {
+      int value = 0;
+      if (avd_tsr_value_as_bool(m_rust_handle, idx, &value) == 0) return false;
+      return value != 0;
+    }
+
+    template <>
+    int TimeSeriesRecorder<int>::DataPoint(int idx) const
+    {
+      int value = 0;
+      if (avd_tsr_value_as_int(m_rust_handle, idx, &value) == 0) return 0;
+      return value;
+    }
+
+    template <>
+    double TimeSeriesRecorder<double>::DataPoint(int idx) const
+    {
+      double value = 0.0;
+      if (avd_tsr_value_as_double(m_rust_handle, idx, &value) == 0) return 0.0;
+      return value;
+    }
+
+    template <>
+    Apto::String TimeSeriesRecorder<Apto::String>::DataPoint(int idx) const
+    {
+      return RustOwnedStringToApto(avd_tsr_value_as_cstr(m_rust_handle, idx));
     }
     
     

@@ -20,6 +20,7 @@ pub mod histogram;
 pub mod ordered_weighted_index;
 pub mod package;
 pub mod provider_helpers;
+pub mod resource_count_helpers;
 pub mod running_average;
 pub mod running_stats;
 pub mod time_series_recorder;

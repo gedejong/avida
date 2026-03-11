@@ -1,4 +1,5 @@
-use std::ffi::{c_char, c_int, CStr, CString};
+use crate::common::{alloc_c_string, free_c_string, set_out, with_cstr};
+use std::ffi::{c_char, c_int};
 
 use nom::{
     bytes::complete::take_till,
@@ -8,13 +9,9 @@ use nom::{
     IResult, Parser,
 };
 
-fn alloc_c_string(value: String) -> *mut c_char {
-    let sanitized: Vec<u8> = value.bytes().filter(|b| *b != 0).collect();
-    match CString::new(sanitized) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
-}
+const PROVIDER_ID_KIND_INVALID: c_int = 0;
+const PROVIDER_ID_KIND_STANDARD: c_int = 1;
+const PROVIDER_ID_KIND_ARGUMENTED: c_int = 2;
 
 fn parse_id(input: &str) -> (bool, bool, String, String) {
     let size = input.len();
@@ -43,14 +40,8 @@ fn parse_argumented_id_nom(input: &str) -> IResult<&str, (&str, &str)> {
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_provider_is_standard_id(data_id: *const c_char) -> c_int {
-    if data_id.is_null() {
-        return 0;
-    }
-    // SAFETY: pointer checked for null and read-only.
-    let id = unsafe { CStr::from_ptr(data_id) }.to_string_lossy();
-    if parse_id(&id).0 {
+    if with_cstr(data_id, false, |id| parse_id(&id.to_string_lossy()).0) {
         1
     } else {
         0
@@ -58,14 +49,8 @@ pub extern "C" fn avd_provider_is_standard_id(data_id: *const c_char) -> c_int {
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_provider_is_argumented_id(data_id: *const c_char) -> c_int {
-    if data_id.is_null() {
-        return 0;
-    }
-    // SAFETY: pointer checked for null and read-only.
-    let id = unsafe { CStr::from_ptr(data_id) }.to_string_lossy();
-    if parse_id(&id).1 {
+    if with_cstr(data_id, false, |id| parse_id(&id.to_string_lossy()).1) {
         1
     } else {
         0
@@ -73,44 +58,67 @@ pub extern "C" fn avd_provider_is_argumented_id(data_id: *const c_char) -> c_int
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_provider_split_argumented_id(
     data_id: *const c_char,
     out_raw_id: *mut *mut c_char,
     out_argument: *mut *mut c_char,
 ) -> c_int {
-    if data_id.is_null() || out_raw_id.is_null() || out_argument.is_null() {
+    if out_raw_id.is_null() || out_argument.is_null() {
         return 0;
     }
-    // SAFETY: pointer checked for null and read-only.
-    let id = unsafe { CStr::from_ptr(data_id) }.to_string_lossy();
-    let (_, is_argumented, raw_id, argument) = parse_id(&id);
+    let (is_argumented, raw_id, argument) =
+        with_cstr(data_id, (false, String::new(), String::new()), |id| {
+            let (_, is_arg, raw, arg) = parse_id(&id.to_string_lossy());
+            (is_arg, raw, arg)
+        });
     if !is_argumented || raw_id.is_empty() {
         return 0;
     }
-    // SAFETY: output pointers checked for null and written exactly once.
-    unsafe {
-        *out_raw_id = alloc_c_string(raw_id);
-        *out_argument = alloc_c_string(argument);
-    }
+    set_out(out_raw_id, alloc_c_string(raw_id));
+    set_out(out_argument, alloc_c_string(argument));
     1
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_provider_classify_id(
+    data_id: *const c_char,
+    out_raw_id: *mut *mut c_char,
+    out_argument: *mut *mut c_char,
+) -> c_int {
+    set_out(out_raw_id, std::ptr::null_mut());
+    set_out(out_argument, std::ptr::null_mut());
+    if data_id.is_null() {
+        return PROVIDER_ID_KIND_INVALID;
+    }
+
+    let (is_standard, is_argumented, raw_id, argument) = with_cstr(
+        data_id,
+        (false, false, String::new(), String::new()),
+        |id| parse_id(&id.to_string_lossy()),
+    );
+    if is_standard {
+        return PROVIDER_ID_KIND_STANDARD;
+    }
+    if is_argumented && !raw_id.is_empty() {
+        if out_raw_id.is_null() || out_argument.is_null() {
+            return PROVIDER_ID_KIND_INVALID;
+        }
+        set_out(out_raw_id, alloc_c_string(raw_id));
+        set_out(out_argument, alloc_c_string(argument));
+        return PROVIDER_ID_KIND_ARGUMENTED;
+    }
+    PROVIDER_ID_KIND_INVALID
+}
+
+#[no_mangle]
 pub extern "C" fn avd_provider_string_free(value: *mut c_char) {
-    if value.is_null() {
-        return;
-    }
-    // SAFETY: pointer was allocated by CString::into_raw in this crate.
-    unsafe {
-        drop(CString::from_raw(value));
-    }
+    free_c_string(value);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::{CStr, CString};
     #[test]
     fn provider_id_split_matches_cpp_expectation() {
         let mut raw: *mut c_char = std::ptr::null_mut();
@@ -151,5 +159,41 @@ mod tests {
         assert_eq!(avd_provider_is_standard_id(standard.as_ptr()), 1);
         assert_eq!(avd_provider_is_argumented_id(argumented.as_ptr()), 1);
         assert_eq!(avd_provider_is_argumented_id(malformed.as_ptr()), 0);
+    }
+
+    #[test]
+    fn provider_id_classify_roundtrips_for_dispatch() {
+        let standard = CString::new("core.demo").expect("literal has no NUL");
+        let argumented = CString::new("demo[value]").expect("literal has no NUL");
+        let malformed = CString::new("demo]").expect("literal has no NUL");
+
+        let mut raw: *mut c_char = std::ptr::null_mut();
+        let mut arg: *mut c_char = std::ptr::null_mut();
+        let kind = avd_provider_classify_id(standard.as_ptr(), &mut raw, &mut arg);
+        assert_eq!(kind, PROVIDER_ID_KIND_STANDARD);
+        assert!(raw.is_null());
+        assert!(arg.is_null());
+
+        let kind = avd_provider_classify_id(argumented.as_ptr(), &mut raw, &mut arg);
+        assert_eq!(kind, PROVIDER_ID_KIND_ARGUMENTED);
+        // SAFETY: raw/arg were produced by helper allocs.
+        let raw_s = unsafe { CStr::from_ptr(raw) }
+            .to_string_lossy()
+            .into_owned();
+        // SAFETY: raw/arg were produced by helper allocs.
+        let arg_s = unsafe { CStr::from_ptr(arg) }
+            .to_string_lossy()
+            .into_owned();
+        assert_eq!(raw_s, "demo[]");
+        assert_eq!(arg_s, "value");
+        avd_provider_string_free(raw);
+        avd_provider_string_free(arg);
+
+        raw = std::ptr::null_mut();
+        arg = std::ptr::null_mut();
+        let kind = avd_provider_classify_id(malformed.as_ptr(), &mut raw, &mut arg);
+        assert_eq!(kind, PROVIDER_ID_KIND_INVALID);
+        assert!(raw.is_null());
+        assert!(arg.is_null());
     }
 }

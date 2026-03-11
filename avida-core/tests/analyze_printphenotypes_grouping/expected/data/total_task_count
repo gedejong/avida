@@ -1,0 +1,10 @@
+# 1: Number of organisms of this phenotype
+# 2: Number of genotypes of this phenotye
+# 3: Average Genome Length
+# 4: Average Gestation Time
+# 5: Viability of Phenotype
+# 6: Total # of tasks performed by this phenotype
+# 7+: Tasks performed in this phenotype
+
+2 2 49 110 1  5 1 1 1 0 0 1 1 0 0 
+1 1 52 0 0  0 0 0 0 0 0 0 0 0 0 
