@@ -1,4 +1,6 @@
-use crate::common::{alloc_c_string, free_c_string, set_out, with_cstr};
+use crate::common::{
+    alloc_c_string, free_c_string, set_out, with_cstr, with_tsr_mut, with_tsr_ref,
+};
 use std::ffi::{c_char, c_double, c_int, c_long, CString};
 
 unsafe extern "C" {
@@ -132,28 +134,6 @@ impl AvidaTimeSeriesHandle {
     }
 }
 
-fn with_tsr_ref<T>(
-    handle: *const AvidaTimeSeriesHandle,
-    default: T,
-    f: impl FnOnce(&AvidaTimeSeriesHandle) -> T,
-) -> T {
-    if handle.is_null() {
-        return default;
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let h = unsafe { &*handle };
-    f(h)
-}
-
-fn with_tsr_mut(handle: *mut AvidaTimeSeriesHandle, f: impl FnOnce(&mut AvidaTimeSeriesHandle)) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer was checked for null and mutably borrowed for this call.
-    let h = unsafe { &mut *handle };
-    f(h)
-}
-
 #[no_mangle]
 pub extern "C" fn avd_tsr_new() -> *mut AvidaTimeSeriesHandle {
     Box::into_raw(Box::new(AvidaTimeSeriesHandle::new()))
@@ -180,39 +160,38 @@ pub extern "C" fn avd_tsr_free(handle: *mut AvidaTimeSeriesHandle) {
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_len(handle: *const AvidaTimeSeriesHandle) -> c_int {
-    if handle.is_null() {
-        return 0;
-    }
-    // SAFETY: pointer checked for null and read-only.
-    let h = unsafe { &*handle };
-    h.len()
+    with_tsr_ref(handle, 0, |h| h.len())
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_update_at(handle: *const AvidaTimeSeriesHandle, index: c_int) -> c_int {
-    if handle.is_null() {
-        return -1;
-    }
-    // SAFETY: pointer checked for null and read-only.
-    let h = unsafe { &*handle };
-    h.update_at(index)
+    with_tsr_ref(handle, -1, |h| h.update_at(index))
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_value_as_cstr(
     handle: *const AvidaTimeSeriesHandle,
     index: c_int,
 ) -> *mut c_char {
-    if handle.is_null() {
-        return alloc_c_string(String::new());
+    with_tsr_ref(handle, alloc_c_string(String::new()), |h| {
+        alloc_c_string(h.value_at(index).unwrap_or_default().to_owned())
+    })
+}
+
+fn write_typed_value<T: Copy>(out_value: *mut T, parsed: Option<T>) -> c_int {
+    if out_value.is_null() {
+        return 0;
     }
-    // SAFETY: pointer checked for null and read-only.
-    let h = unsafe { &*handle };
-    alloc_c_string(h.value_at(index).unwrap_or_default().to_owned())
+    match parsed {
+        Some(v) => {
+            if !set_out(out_value, v) {
+                return 0;
+            }
+            1
+        }
+        None => 0,
+    }
 }
 
 #[no_mangle]
@@ -221,17 +200,8 @@ pub extern "C" fn avd_tsr_value_as_bool(
     index: c_int,
     out_value: *mut c_int,
 ) -> c_int {
-    if out_value.is_null() {
-        return 0;
-    }
     let parsed = with_tsr_ref(handle, None, |h| h.value_as_bool(index));
-    match parsed {
-        Some(v) => {
-            set_out(out_value, v);
-            1
-        }
-        None => 0,
-    }
+    write_typed_value(out_value, parsed)
 }
 
 #[no_mangle]
@@ -240,17 +210,8 @@ pub extern "C" fn avd_tsr_value_as_int(
     index: c_int,
     out_value: *mut c_int,
 ) -> c_int {
-    if out_value.is_null() {
-        return 0;
-    }
     let parsed = with_tsr_ref(handle, None, |h| h.value_as_int(index));
-    match parsed {
-        Some(v) => {
-            set_out(out_value, v);
-            1
-        }
-        None => 0,
-    }
+    write_typed_value(out_value, parsed)
 }
 
 #[no_mangle]
@@ -259,17 +220,8 @@ pub extern "C" fn avd_tsr_value_as_double(
     index: c_int,
     out_value: *mut c_double,
 ) -> c_int {
-    if out_value.is_null() {
-        return 0;
-    }
     let parsed = with_tsr_ref(handle, None, |h| h.value_as_double(index));
-    match parsed {
-        Some(v) => {
-            set_out(out_value, v);
-            1
-        }
-        None => 0,
-    }
+    write_typed_value(out_value, parsed)
 }
 
 #[no_mangle]
@@ -316,14 +268,10 @@ pub extern "C" fn avd_tsr_push_string(
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_as_string(handle: *const AvidaTimeSeriesHandle) -> *mut c_char {
-    if handle.is_null() {
-        return alloc_c_string(String::new());
-    }
-    // SAFETY: pointer checked for null and read-only.
-    let h = unsafe { &*handle };
-    alloc_c_string(h.serialize())
+    with_tsr_ref(handle, alloc_c_string(String::new()), |h| {
+        alloc_c_string(h.serialize())
+    })
 }
 
 #[no_mangle]
@@ -379,6 +327,7 @@ mod tests {
     fn typed_getters_validate_pointer_and_index() {
         let mut out_i: c_int = 99;
         assert_eq!(avd_tsr_value_as_int(std::ptr::null(), 0, &mut out_i), 0);
+        assert_eq!(out_i, 99);
         assert_eq!(
             avd_tsr_value_as_int(std::ptr::null(), 0, std::ptr::null_mut()),
             0
@@ -388,7 +337,19 @@ mod tests {
         avd_tsr_push_int(handle, 3, 42);
         assert_eq!(avd_tsr_value_as_int(handle, -1, &mut out_i), 0);
         assert_eq!(avd_tsr_value_as_int(handle, 7, &mut out_i), 0);
+        assert_eq!(out_i, 99);
         avd_tsr_free(handle);
+    }
+
+    #[test]
+    fn string_getters_return_empty_for_null_handle() {
+        let value_ptr = avd_tsr_value_as_cstr(std::ptr::null(), 0);
+        assert!(!value_ptr.is_null());
+        avd_tsr_string_free(value_ptr);
+
+        let serialized_ptr = avd_tsr_as_string(std::ptr::null());
+        assert!(!serialized_ptr.is_null());
+        avd_tsr_string_free(serialized_ptr);
     }
 
     #[test]

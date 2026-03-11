@@ -268,11 +268,10 @@ jobs:
         if [ ! -x "${HOME}/.cargo/bin/cargo-llvm-cov" ]; then
           cargo install cargo-llvm-cov
         fi
-    - name: Run Rust coverage gate (80%)
+    - name: Run Rust coverage gate (82% + scope check)
       run: |
         cd rust/avida-rust
-        mkdir -p target
-        ./scripts/ci_coverage_check.sh 80 | tee target/coverage-summary.txt
+        ./scripts/ci_coverage_check.sh 82 target/coverage-summary.txt
     - name: Upload coverage artifacts
       if: always()
       uses: actions/upload-artifact@v4

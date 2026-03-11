@@ -1,3 +1,4 @@
+use crate::time_series_recorder::AvidaTimeSeriesHandle;
 use crate::{
     AvidaDoubleSumHandle, AvidaHistogramHandle, AvidaOrderedWeightedIndexHandle,
     AvidaRawBitArrayHandle, AvidaRunningAverageHandle, AvidaRunningStatsHandle,
@@ -38,6 +39,7 @@ define_handle_accessors!(with_wi_ref, with_wi_mut, AvidaWeightedIndexHandle);
 define_handle_accessors!(with_owi_ref, with_owi_mut, AvidaOrderedWeightedIndexHandle);
 define_handle_accessors!(with_hist_ref, with_hist_mut, AvidaHistogramHandle);
 define_handle_accessors!(with_rba_ref, with_rba_mut, AvidaRawBitArrayHandle);
+define_handle_accessors!(with_tsr_ref, with_tsr_mut, AvidaTimeSeriesHandle);
 
 pub(crate) fn with_cstr<T>(ptr: *const c_char, default: T, f: impl FnOnce(&CStr) -> T) -> T {
     if ptr.is_null() {

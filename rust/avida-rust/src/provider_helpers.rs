@@ -13,19 +13,41 @@ const PROVIDER_ID_KIND_INVALID: c_int = 0;
 const PROVIDER_ID_KIND_STANDARD: c_int = 1;
 const PROVIDER_ID_KIND_ARGUMENTED: c_int = 2;
 
-fn parse_id(input: &str) -> (bool, bool, String, String) {
+#[derive(Default)]
+struct ProviderIdParse {
+    is_standard: bool,
+    is_argumented: bool,
+    raw_id: String,
+    argument: String,
+}
+
+fn parse_id(input: &str) -> ProviderIdParse {
     let size = input.len();
     let is_argumented = size > 2 && input.as_bytes()[size - 1] == b']';
     let is_standard = size != 0 && (size < 3 || input.as_bytes()[size - 1] != b']');
     if !is_argumented {
-        return (is_standard, false, String::new(), String::new());
+        return ProviderIdParse {
+            is_standard,
+            is_argumented: false,
+            raw_id: String::new(),
+            argument: String::new(),
+        };
     }
 
     if let Ok((_, (prefix, argument))) = parse_argumented_id_nom(input) {
-        let raw_id = format!("{prefix}[]");
-        return (is_standard, true, raw_id, argument.to_owned());
+        return ProviderIdParse {
+            is_standard,
+            is_argumented: true,
+            raw_id: format!("{prefix}[]"),
+            argument: argument.to_owned(),
+        };
     }
-    (is_standard, true, String::new(), String::new())
+    ProviderIdParse {
+        is_standard,
+        is_argumented: true,
+        raw_id: String::new(),
+        argument: String::new(),
+    }
 }
 
 fn parse_argumented_id_nom(input: &str) -> IResult<&str, (&str, &str)> {
@@ -41,7 +63,9 @@ fn parse_argumented_id_nom(input: &str) -> IResult<&str, (&str, &str)> {
 
 #[no_mangle]
 pub extern "C" fn avd_provider_is_standard_id(data_id: *const c_char) -> c_int {
-    if with_cstr(data_id, false, |id| parse_id(&id.to_string_lossy()).0) {
+    if with_cstr(data_id, false, |id| {
+        parse_id(&id.to_string_lossy()).is_standard
+    }) {
         1
     } else {
         0
@@ -50,7 +74,9 @@ pub extern "C" fn avd_provider_is_standard_id(data_id: *const c_char) -> c_int {
 
 #[no_mangle]
 pub extern "C" fn avd_provider_is_argumented_id(data_id: *const c_char) -> c_int {
-    if with_cstr(data_id, false, |id| parse_id(&id.to_string_lossy()).1) {
+    if with_cstr(data_id, false, |id| {
+        parse_id(&id.to_string_lossy()).is_argumented
+    }) {
         1
     } else {
         0
@@ -66,16 +92,14 @@ pub extern "C" fn avd_provider_split_argumented_id(
     if out_raw_id.is_null() || out_argument.is_null() {
         return 0;
     }
-    let (is_argumented, raw_id, argument) =
-        with_cstr(data_id, (false, String::new(), String::new()), |id| {
-            let (_, is_arg, raw, arg) = parse_id(&id.to_string_lossy());
-            (is_arg, raw, arg)
-        });
-    if !is_argumented || raw_id.is_empty() {
+    let parsed = with_cstr(data_id, ProviderIdParse::default(), |id| {
+        parse_id(&id.to_string_lossy())
+    });
+    if !parsed.is_argumented || parsed.raw_id.is_empty() {
         return 0;
     }
-    set_out(out_raw_id, alloc_c_string(raw_id));
-    set_out(out_argument, alloc_c_string(argument));
+    set_out(out_raw_id, alloc_c_string(parsed.raw_id));
+    set_out(out_argument, alloc_c_string(parsed.argument));
     1
 }
 
@@ -91,20 +115,18 @@ pub extern "C" fn avd_provider_classify_id(
         return PROVIDER_ID_KIND_INVALID;
     }
 
-    let (is_standard, is_argumented, raw_id, argument) = with_cstr(
-        data_id,
-        (false, false, String::new(), String::new()),
-        |id| parse_id(&id.to_string_lossy()),
-    );
-    if is_standard {
+    let parsed = with_cstr(data_id, ProviderIdParse::default(), |id| {
+        parse_id(&id.to_string_lossy())
+    });
+    if parsed.is_standard {
         return PROVIDER_ID_KIND_STANDARD;
     }
-    if is_argumented && !raw_id.is_empty() {
+    if parsed.is_argumented && !parsed.raw_id.is_empty() {
         if out_raw_id.is_null() || out_argument.is_null() {
             return PROVIDER_ID_KIND_INVALID;
         }
-        set_out(out_raw_id, alloc_c_string(raw_id));
-        set_out(out_argument, alloc_c_string(argument));
+        set_out(out_raw_id, alloc_c_string(parsed.raw_id));
+        set_out(out_argument, alloc_c_string(parsed.argument));
         return PROVIDER_ID_KIND_ARGUMENTED;
     }
     PROVIDER_ID_KIND_INVALID

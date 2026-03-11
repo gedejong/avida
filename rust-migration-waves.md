@@ -66,6 +66,9 @@ Focus:
 - `cBitArray` selective `bitvec` evaluation (completed, no-adopt): Added focused Criterion benchmark matrix for `shift`/`increment`/`count` workloads plus expanded Rust parity matrices across binary/unary ops and edge widths; benchmark deltas were mixed/marginal, so production internals remain on the current custom bit-field path with stronger decision evidence.
 - Backtrace-enabled CI validation (completed): Added a dedicated CI smoke leg that explicitly sets `AVIDA_ENABLE_BACKTRACE=1` for configure/reconfigure + build coverage, and hardened vendored `backward-cpp` alias-target creation to avoid duplicate-target failures when backtrace mode is enabled.
 - `cSpatialResCount` deterministic helper extraction (completed): Rust-backed additive helpers now normalize inflow/outflow spans and compute per-neighbor flow scalar math used by `CheckRanges` and `FlowMatter`, with C++ retaining traversal/state mutation ownership and parity guards in Rust+C++ unit tests.
+- `Data::TimeSeriesRecorder` FFI guardrail cleanup (completed): Rust FFI entry points now consistently use shared handle access/output patterns from `common.rs` for typed/string getters, preserving ABI/coercion behavior while tightening null-handle/out-param stability checks.
+- Provider/history deterministic readability hardening (completed): Refactored `provider_helpers` parsing internals to a structured parse result and clarified `resource_history_helpers` nearest-index iteration semantics, preserving C ABI/return policies with expanded duplicate-index parity coverage.
+- Rust coverage scope expansion gate (completed): Coverage gating now writes a reusable summary artifact, enforces representative module presence checks to prevent accidental scope drift, and raises the CI line threshold from 80% to 82% with passing evidence.
 - Build/configure robustness hardening (completed): default low-noise configure path with optional backtrace opt-in, CI reconfigure smoke check, and stable Linux static link-order preservation for `aptostatic` resolution
 - Consistency fixture hardening (completed): cross-platform determinism stabilizations for `sex` and `shaded_green_beard_instructions` via fixture-local knob pinning, narrower intent-focused output assertions, and richer CI diagnostics artifacts
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
@@ -73,4 +76,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cSpatialResCount` rectangle-iteration index helpers (including wrapped element addressing) behind additive Rust helpers while keeping loop/state ownership in C++.
+- Next candidate: extract deterministic `cSpatialResCount` rectangle-iteration index helpers (including wrapped element addressing) behind additive Rust helpers while preserving C++ traversal/state ownership.

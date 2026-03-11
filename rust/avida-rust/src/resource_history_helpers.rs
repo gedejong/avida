@@ -15,18 +15,14 @@ fn select_entry_index_internal(updates: &[c_int], update: c_int, exact: bool) ->
         return -1;
     }
 
-    let mut entry: c_int = 0;
-    while (entry as usize) < updates.len() {
-        if updates[entry as usize] > update {
+    let mut best_idx: usize = 0;
+    for (idx, value) in updates.iter().enumerate() {
+        if *value > update {
             break;
         }
-        entry += 1;
+        best_idx = idx;
     }
-    if entry > 0 {
-        entry - 1
-    } else {
-        0
-    }
+    best_idx as c_int
 }
 
 #[no_mangle]
@@ -68,6 +64,13 @@ mod tests {
         assert_eq!(avd_rh_select_entry_index(updates.as_ptr(), 3, 10, 0), 0);
         assert_eq!(avd_rh_select_entry_index(updates.as_ptr(), 3, 25, 0), 1);
         assert_eq!(avd_rh_select_entry_index(updates.as_ptr(), 3, 40, 0), 2);
+    }
+
+    #[test]
+    fn select_entry_nearest_keeps_last_lte_on_duplicates() {
+        let updates = [10, 20, 20, 30];
+        assert_eq!(avd_rh_select_entry_index(updates.as_ptr(), 4, 20, 0), 2);
+        assert_eq!(avd_rh_select_entry_index(updates.as_ptr(), 4, 21, 0), 2);
     }
 
     #[test]
