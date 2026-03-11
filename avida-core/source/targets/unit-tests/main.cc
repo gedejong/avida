@@ -652,6 +652,27 @@ protected:
     cTimeSeriesRecorderDouble malformed(data_id, "7:bad,8:3.000000");
     ReportTestResult("Malformed numeric entry defaults safely", (fabs(malformed.DataPoint(0) - 0.0) < 1e-12));
     ReportTestResult("Malformed constructor keeps timeline", (malformed.NumPoints() == 2 && malformed.DataTime(0) == 7 && malformed.DataTime(1) == 8));
+
+    AvidaTimeSeriesHandle* matrix = avd_tsr_from_string("1:1,2:T,3:true,4: true,5:2,6:0x10,7:7x,8:1e2,9:nan");
+    int out_i = -99;
+    int out_b = -99;
+    double out_d = -99.0;
+
+    ReportTestResult("TSR bool exact true literal",
+      avd_tsr_value_as_bool(matrix, 2, &out_b) == 1 && out_b == 1);
+    ReportTestResult("TSR bool leading-space false",
+      avd_tsr_value_as_bool(matrix, 3, &out_b) == 1 && out_b == 0);
+    ReportTestResult("TSR bool non-canonical nonzero false",
+      avd_tsr_value_as_bool(matrix, 4, &out_b) == 1 && out_b == 0);
+    ReportTestResult("TSR int hex coercion parity",
+      avd_tsr_value_as_int(matrix, 5, &out_i) == 1 && out_i == 16);
+    ReportTestResult("TSR int partial parse parity",
+      avd_tsr_value_as_int(matrix, 6, &out_i) == 1 && out_i == 7);
+    ReportTestResult("TSR double exponent parse parity",
+      avd_tsr_value_as_double(matrix, 7, &out_d) == 1 && fabs(out_d - 100.0) < 1e-12);
+    ReportTestResult("TSR double nan parse parity",
+      avd_tsr_value_as_double(matrix, 8, &out_d) == 1 && std::isnan(out_d));
+    avd_tsr_free(matrix);
   }
 };
 

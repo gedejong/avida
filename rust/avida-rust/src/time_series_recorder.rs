@@ -1,5 +1,50 @@
 use crate::common::{alloc_c_string, free_c_string, set_out, with_cstr};
-use std::ffi::{c_char, c_double, c_int};
+use std::ffi::{c_char, c_double, c_int, c_long, CString};
+
+unsafe extern "C" {
+    fn strtol(nptr: *const c_char, endptr: *mut *mut c_char, base: c_int) -> c_long;
+    fn strtod(nptr: *const c_char, endptr: *mut *mut c_char) -> c_double;
+}
+
+fn apto_bool_from_str(value: &str) -> c_int {
+    let bytes = value.as_bytes();
+    if bytes.len() == 1 {
+        if bytes[0] == b'1' || bytes[0] == b'T' || bytes[0] == b't' {
+            return 1;
+        }
+        return 0;
+    }
+    if bytes.len() == 4
+        && (bytes[0] == b'T' || bytes[0] == b't')
+        && (bytes[1] == b'R' || bytes[1] == b'r')
+        && (bytes[2] == b'U' || bytes[2] == b'u')
+        && (bytes[3] == b'E' || bytes[3] == b'e')
+    {
+        return 1;
+    }
+    0
+}
+
+fn apto_int_from_str(value: &str) -> c_int {
+    let c_value = match CString::new(value) {
+        Ok(v) => v,
+        Err(_) => return 0,
+    };
+    // SAFETY: c_value is a valid NUL-terminated C string and we intentionally
+    // match legacy Apto::StrAs behavior by allowing partial parses with null endptr.
+    let parsed = unsafe { strtol(c_value.as_ptr(), std::ptr::null_mut(), 0) };
+    parsed as c_int
+}
+
+fn apto_double_from_str(value: &str) -> c_double {
+    let c_value = match CString::new(value) {
+        Ok(v) => v,
+        Err(_) => return 0.0,
+    };
+    // SAFETY: c_value is a valid NUL-terminated C string and we intentionally
+    // match legacy Apto::StrAs behavior by allowing partial parses with null endptr.
+    unsafe { strtod(c_value.as_ptr(), std::ptr::null_mut()) }
+}
 
 #[repr(C)]
 pub struct AvidaTimeSeriesHandle {
@@ -61,25 +106,18 @@ impl AvidaTimeSeriesHandle {
     }
 
     fn value_as_bool(&self, index: c_int) -> Option<c_int> {
-        let value = self.value_at(index)?.trim();
-        if value.eq_ignore_ascii_case("true") || value == "1" {
-            return Some(1);
-        }
-        if value.eq_ignore_ascii_case("false") || value == "0" {
-            return Some(0);
-        }
-        match value.parse::<i32>() {
-            Ok(v) => Some(if v == 0 { 0 } else { 1 }),
-            Err(_) => None,
-        }
+        let value = self.value_at(index)?;
+        Some(apto_bool_from_str(value))
     }
 
     fn value_as_int(&self, index: c_int) -> Option<c_int> {
-        self.value_at(index)?.trim().parse::<i32>().ok()
+        let value = self.value_at(index)?;
+        Some(apto_int_from_str(value))
     }
 
     fn value_as_double(&self, index: c_int) -> Option<c_double> {
-        self.value_at(index)?.trim().parse::<f64>().ok()
+        let value = self.value_at(index)?;
+        Some(apto_double_from_str(value))
     }
 
     fn serialize(&self) -> String {
@@ -328,7 +366,8 @@ mod tests {
         let mut out_i: c_int = 0;
         let mut out_d: c_double = 0.0;
         let mut out_b: c_int = 0;
-        assert_eq!(avd_tsr_value_as_int(handle, 0, &mut out_i), 0);
+        assert_eq!(avd_tsr_value_as_int(handle, 0, &mut out_i), 1);
+        assert_eq!(out_i, 0);
         assert_eq!(avd_tsr_value_as_double(handle, 1, &mut out_d), 1);
         assert!((out_d - 9.5).abs() < 1e-12);
         assert_eq!(avd_tsr_value_as_bool(handle, 2, &mut out_b), 1);
@@ -363,9 +402,44 @@ mod tests {
         assert_eq!(avd_tsr_update_at(handle, 0), 0);
         assert_eq!(avd_tsr_update_at(handle, 1), 4);
         let mut out_i: c_int = 0;
-        assert_eq!(avd_tsr_value_as_int(handle, 0, &mut out_i), 0);
+        assert_eq!(avd_tsr_value_as_int(handle, 0, &mut out_i), 1);
+        assert_eq!(out_i, 0);
         assert_eq!(avd_tsr_value_as_int(handle, 1, &mut out_i), 1);
         assert_eq!(out_i, 12);
+        avd_tsr_free(handle);
+    }
+
+    #[test]
+    fn typed_getters_match_apto_stras_coercion_matrix() {
+        let handle = avd_tsr_from_string(
+            CString::new("1:1,2:T,3:true,4: true,5:2,6:0x10,7:7x,8:1e2,9:nan")
+                .expect("literal has no NUL")
+                .as_ptr(),
+        );
+        let mut out_i: c_int = 0;
+        let mut out_d: c_double = 0.0;
+        let mut out_b: c_int = 0;
+
+        assert_eq!(avd_tsr_value_as_bool(handle, 0, &mut out_b), 1);
+        assert_eq!(out_b, 1);
+        assert_eq!(avd_tsr_value_as_bool(handle, 1, &mut out_b), 1);
+        assert_eq!(out_b, 1);
+        assert_eq!(avd_tsr_value_as_bool(handle, 2, &mut out_b), 1);
+        assert_eq!(out_b, 1);
+        assert_eq!(avd_tsr_value_as_bool(handle, 3, &mut out_b), 1);
+        assert_eq!(out_b, 0);
+        assert_eq!(avd_tsr_value_as_bool(handle, 4, &mut out_b), 1);
+        assert_eq!(out_b, 0);
+
+        assert_eq!(avd_tsr_value_as_int(handle, 5, &mut out_i), 1);
+        assert_eq!(out_i, 16);
+        assert_eq!(avd_tsr_value_as_int(handle, 6, &mut out_i), 1);
+        assert_eq!(out_i, 7);
+        assert_eq!(avd_tsr_value_as_int(handle, 7, &mut out_i), 1);
+        assert_eq!(out_i, 1);
+
+        assert_eq!(avd_tsr_value_as_double(handle, 8, &mut out_d), 1);
+        assert!(out_d.is_nan());
         avd_tsr_free(handle);
     }
 }
