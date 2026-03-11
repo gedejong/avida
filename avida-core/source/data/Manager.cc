@@ -48,12 +48,12 @@ int ClassifyDataID(
   char* raw_id_cstr = NULL;
   char* argument_cstr = NULL;
   int kind = avd_provider_classify_id((const char*) data_id, &raw_id_cstr, &argument_cstr);
-  if (kind != DATA_ID_ARGUMENTED) {
-    return kind;
+  raw_id = "";
+  argument = "";
+  if (kind == DATA_ID_ARGUMENTED) {
+    raw_id = (raw_id_cstr != NULL) ? raw_id_cstr : "";
+    argument = (argument_cstr != NULL) ? argument_cstr : "";
   }
-
-  raw_id = (raw_id_cstr != NULL) ? raw_id_cstr : "";
-  argument = (argument_cstr != NULL) ? argument_cstr : "";
   avd_provider_string_free(raw_id_cstr);
   avd_provider_string_free(argument_cstr);
   return kind;

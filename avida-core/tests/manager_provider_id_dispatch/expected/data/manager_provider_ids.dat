@@ -1,0 +1,12 @@
+#filetype population_data
+#format update generation num_cpus ave_fitness
+#  
+# Legend:
+#  1: Update
+#  2: Generation
+#  3: Count of Organisms in Population
+#  4: Average Fitness
+
+
+0 0 1 0 
+20 3 5 0.248649 

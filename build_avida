@@ -2,6 +2,12 @@
 
 set -e
 
+# Default to quieter builds: disable optional backward-cpp integration unless
+# the caller explicitly opts in (AVIDA_ENABLE_BACKTRACE=1).
+if [ "${AVIDA_ENABLE_BACKTRACE:-0}" != "1" ]; then
+  export AVIDA_DISABLE_BACKTRACE=1
+fi
+
 # Keep required build dependencies strict, but don't hard-fail on docs/wiki sync.
 git submodule update --init libs/apto libs/backward-cpp
 git submodule update --init documentation || echo "warning: unable to update optional documentation submodule"

@@ -700,6 +700,10 @@ protected:
       {"core.demo", kStandard, NULL, NULL, true, "core.demo", ""},
       {"demo[]", kArgumented, "demo[]", "", true, "demo[]", ""},
       {"demo[value]", kArgumented, "demo[]", "value", true, "demo[]", "value"},
+      {"demo[[x]]", kArgumented, "demo[]", "[x]", true, "demo[]", "[x]"},
+      {"demo[x][y]", kArgumented, "demo[]", "x][y", true, "demo[]", "x][y"},
+      {"[x]", kArgumented, "[]", "x", true, "[]", "x"},
+      {"demo[", kStandard, NULL, NULL, true, "demo[", ""},
       {"demo]", kInvalid, NULL, NULL, false, NULL, NULL}
     };
 
@@ -785,6 +789,40 @@ protected:
     arg = NULL;
     kind = avd_provider_classify_id("demo]", &raw_id, &arg);
     ReportTestResult("Classify malformed ID", kind == kInvalid && raw_id == NULL && arg == NULL);
+
+    struct MatrixCase {
+      const char* id;
+      int expected_kind;
+      const char* expected_raw;
+      const char* expected_arg;
+    };
+    const MatrixCase matrix_cases[] = {
+      {"", kInvalid, NULL, NULL},
+      {"demo", kStandard, NULL, NULL},
+      {"demo[]", kArgumented, "demo[]", ""},
+      {"demo[value]", kArgumented, "demo[]", "value"},
+      {"demo[[x]]", kArgumented, "demo[]", "[x]"},
+      {"demo[x][y]", kArgumented, "demo[]", "x][y"},
+      {"[x]", kArgumented, "[]", "x"},
+      {"demo[", kStandard, NULL, NULL},
+      {"demo]", kInvalid, NULL, NULL}
+    };
+    bool matrix_ok = true;
+    for (size_t i = 0; i < sizeof(matrix_cases) / sizeof(matrix_cases[0]); ++i) {
+      const MatrixCase& c = matrix_cases[i];
+      raw_id = NULL;
+      arg = NULL;
+      kind = avd_provider_classify_id(c.id, &raw_id, &arg);
+      bool case_ok = kind == c.expected_kind;
+      if (c.expected_raw) case_ok = case_ok && raw_id && Apto::String(raw_id) == c.expected_raw;
+      else case_ok = case_ok && raw_id == NULL;
+      if (c.expected_arg) case_ok = case_ok && arg && Apto::String(arg) == c.expected_arg;
+      else case_ok = case_ok && arg == NULL;
+      avd_provider_string_free(raw_id);
+      avd_provider_string_free(arg);
+      if (!case_ok) matrix_ok = false;
+    }
+    ReportTestResult("Classify edge-shape matrix", matrix_ok);
   }
 };
 
@@ -1165,5 +1203,5 @@ void cUnitTest::ReportTestResult(const char* test_name, bool successful)
   }
   cout << endl;
   
-  delete str;
+  delete[] str;
 }

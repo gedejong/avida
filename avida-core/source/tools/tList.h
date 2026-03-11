@@ -311,6 +311,11 @@ public:
   tListPlus() : tList<T>() { ; }
   explicit tListPlus(const tList<T>& in_list) : tList<T>(in_list) { ; }
   explicit tListPlus(const tListPlus& in_list) : tList<T>(in_list) { ; }
+  tListPlus& operator=(const tListPlus& in_list)
+  {
+    tList<T>::operator=(in_list);
+    return *this;
+  }
   
   
   

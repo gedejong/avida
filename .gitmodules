@@ -1,9 +1,9 @@
 [submodule "libs/apto"]
 	path = libs/apto
-	url = git@github.com:gedejong/apto.git
+	url = https://github.com/gedejong/apto.git
 [submodule "documentation"]
 	path = documentation
-	url = git@github.com:gedejong/avida-wiki.git
+	url = https://github.com/gedejong/avida-wiki.git
 [submodule "libs/backward-cpp"]
 	path = libs/backward-cpp
-	url = git@github.com:gedejong/backward-cpp.git
+	url = https://github.com/gedejong/backward-cpp.git

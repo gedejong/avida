@@ -93,6 +93,7 @@ private:
     
     inline DataValue() { Clear(); }
     inline void Clear() { value = 0; originated = 0; from_env = 0, from_sensor = 0, from_message = 0, oldest_component = 0; env_component = 0, sensor_component = 0, message_component = 0; }
+    inline DataValue(const DataValue& i) { *this = i; }
     inline DataValue& operator=(const DataValue& i);
   };
   

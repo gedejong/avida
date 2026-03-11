@@ -196,4 +196,102 @@ mod tests {
         assert!(raw.is_null());
         assert!(arg.is_null());
     }
+
+    #[test]
+    fn provider_id_matrix_covers_edge_shapes() {
+        struct Case {
+            id: &'static str,
+            kind: c_int,
+            raw: Option<&'static str>,
+            arg: Option<&'static str>,
+        }
+        let cases = [
+            Case {
+                id: "",
+                kind: PROVIDER_ID_KIND_INVALID,
+                raw: None,
+                arg: None,
+            },
+            Case {
+                id: "demo",
+                kind: PROVIDER_ID_KIND_STANDARD,
+                raw: None,
+                arg: None,
+            },
+            Case {
+                id: "demo[]",
+                kind: PROVIDER_ID_KIND_ARGUMENTED,
+                raw: Some("demo[]"),
+                arg: Some(""),
+            },
+            Case {
+                id: "demo[value]",
+                kind: PROVIDER_ID_KIND_ARGUMENTED,
+                raw: Some("demo[]"),
+                arg: Some("value"),
+            },
+            Case {
+                id: "demo[[x]]",
+                kind: PROVIDER_ID_KIND_ARGUMENTED,
+                raw: Some("demo[]"),
+                arg: Some("[x]"),
+            },
+            Case {
+                id: "demo[x][y]",
+                kind: PROVIDER_ID_KIND_ARGUMENTED,
+                raw: Some("demo[]"),
+                arg: Some("x][y"),
+            },
+            Case {
+                id: "[x]",
+                kind: PROVIDER_ID_KIND_ARGUMENTED,
+                raw: Some("[]"),
+                arg: Some("x"),
+            },
+            Case {
+                id: "demo]",
+                kind: PROVIDER_ID_KIND_INVALID,
+                raw: None,
+                arg: None,
+            },
+            Case {
+                id: "demo[",
+                kind: PROVIDER_ID_KIND_STANDARD,
+                raw: None,
+                arg: None,
+            },
+        ];
+
+        for case in cases {
+            let id = CString::new(case.id).expect("literal has no NUL");
+            let mut raw: *mut c_char = std::ptr::null_mut();
+            let mut arg: *mut c_char = std::ptr::null_mut();
+            let kind = avd_provider_classify_id(id.as_ptr(), &mut raw, &mut arg);
+            assert_eq!(kind, case.kind, "kind mismatch for {}", case.id);
+            match case.raw {
+                Some(expected_raw) => {
+                    assert!(!raw.is_null(), "raw should be set for {}", case.id);
+                    // SAFETY: raw is produced by helper allocs.
+                    let raw_s = unsafe { CStr::from_ptr(raw) }
+                        .to_string_lossy()
+                        .into_owned();
+                    assert_eq!(raw_s, expected_raw, "raw mismatch for {}", case.id);
+                }
+                None => assert!(raw.is_null(), "raw should be null for {}", case.id),
+            }
+            match case.arg {
+                Some(expected_arg) => {
+                    assert!(!arg.is_null(), "arg should be set for {}", case.id);
+                    // SAFETY: arg is produced by helper allocs.
+                    let arg_s = unsafe { CStr::from_ptr(arg) }
+                        .to_string_lossy()
+                        .into_owned();
+                    assert_eq!(arg_s, expected_arg, "arg mismatch for {}", case.id);
+                }
+                None => assert!(arg.is_null(), "arg should be null for {}", case.id),
+            }
+            avd_provider_string_free(raw);
+            avd_provider_string_free(arg);
+        }
+    }
 }

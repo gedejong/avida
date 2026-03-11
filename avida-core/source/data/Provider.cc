@@ -60,11 +60,6 @@ Avida::Data::PackagePtr Avida::Data::ArgumentedProvider::GetProvidedValue(const 
   char* raw_id = NULL;
   char* arg = NULL;
   int id_kind = avd_provider_classify_id((const char*) data_id, &raw_id, &arg);
-  if (id_kind == DATA_ID_STANDARD) {
-    avd_provider_string_free(raw_id);
-    avd_provider_string_free(arg);
-    return GetProvidedValueForArgument(data_id, "");
-  }
   if (id_kind == DATA_ID_ARGUMENTED) {
     DataID parsed_raw((raw_id) ? raw_id : "");
     Argument argument = (arg) ? arg : "";
@@ -72,8 +67,10 @@ Avida::Data::PackagePtr Avida::Data::ArgumentedProvider::GetProvidedValue(const 
     avd_provider_string_free(arg);
     return GetProvidedValueForArgument(parsed_raw, argument);
   }
-
   avd_provider_string_free(raw_id);
   avd_provider_string_free(arg);
+  if (id_kind == DATA_ID_STANDARD) {
+    return GetProvidedValueForArgument(data_id, "");
+  }
   return pkg;
 }

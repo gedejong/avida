@@ -38,8 +38,8 @@ Focus:
 - Selected modules in `source/data`
 - `Data::Package` (Rust-backed deterministic `ArrayPackage` conversion/format, `Wrap<Apto::String>` parse helpers, and primitive `Wrap<bool/int/double>::StringValue` formatting via C ABI)
 - `Data::TimeSeriesRecorder` (Rust-authoritative state for parse/serialize + append + typed reads via C ABI; C++ mirror state removed)
-- `Data::Provider` deterministic helper dispatch/parse path (Rust-backed C ABI helpers; classify/split dispatch now centralized through `avd_provider_classify_id`)
-- `Data::Manager` deterministic argumented-ID classify/split path (Rust-backed C ABI helpers reused across active/describe/attach/get/register flows, including provider registration/activation mapping)
+- `Data::Provider` deterministic helper dispatch/parse path (Rust-backed C ABI helpers; classify/split dispatch centralized through `avd_provider_classify_id` with expanded edge-shape matrix coverage and consistency fixture lock)
+- `Data::Manager` deterministic argumented-ID classify/split path (Rust-backed C ABI helpers reused across active/describe/attach/get/register flows, including provider registration/activation mapping and edge-shape parity fixtures)
 
 Focus:
 - Define narrow ABI seams around pure computation and deterministic transforms.

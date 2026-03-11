@@ -38,6 +38,7 @@ protected:
   
 public:
   cGermline() { ; }
+  cGermline& operator=(const cGermline&) = default;
     
 	Genome& GetLatest() { assert(m_germline.size() > 0); return m_germline.back(); }
 	void Add(const Genome& genome) { m_germline.push_back(genome); }

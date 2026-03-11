@@ -152,7 +152,7 @@ int cTestCPUInterface::GetStateGridID(cAvidaContext& ctx)
 Apto::Array<int> cTestCPUInterface::GetFormedGroupArray()
 {
   Apto::Array<int> null_array;
-  null_array.SetAll(NULL);
+  null_array.SetAll(0);
   return null_array;
 }
 
