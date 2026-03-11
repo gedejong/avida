@@ -22,6 +22,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <limits>
 
 using namespace std;
 
@@ -865,8 +866,10 @@ protected:
     const Case cases[] = {
       {0.0, 0},
       {0.5 * step, 0},
+      {-0.5 * step, 0},
       {step, 1},
       {2.9 * step, 2},
+      {-2.9 * step, -2},
       {25.0 * step, 25}
     };
 
@@ -887,6 +890,16 @@ protected:
 
     ReportTestResult("Scheduling num_steps parity", steps_ok);
     ReportTestResult("Scheduling remainder parity", remainder_ok);
+    ReportTestResult("Scheduling zero-step guard", avd_rc_num_steps(1.0, 0.0) == 0);
+    ReportTestResult("Scheduling NaN update_time guard", avd_rc_num_steps(nan(""), step) == 0);
+    ReportTestResult(
+      "Scheduling positive saturation",
+      avd_rc_num_steps(INFINITY, step) == std::numeric_limits<int>::max()
+    );
+    ReportTestResult(
+      "Scheduling negative saturation",
+      avd_rc_num_steps(-INFINITY, step) == std::numeric_limits<int>::min()
+    );
   }
 };
 

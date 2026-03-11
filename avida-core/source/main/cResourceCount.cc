@@ -794,8 +794,13 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
   // Make sure that our fraction of an update remaining is greater than twice
   // the roundoff error.
   assert(update_time >= -EPSILON);
+  // UPDATE_STEP is a fixed positive scheduling interval.
+  assert(UPDATE_STEP > 0.0);
   // Determine how many resource steps we wish to process
   const int num_steps = avd_rc_num_steps(update_time, UPDATE_STEP);
+  // Given the tolerated negative remainder bound above, scheduling never
+  // runs a negative number of non-spatial update steps.
+  assert(num_steps >= 0);
   
   // Preserve remainder of update_time for use on the next DoUpdates as
   // we may not get around to calculating them this round

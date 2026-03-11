@@ -53,9 +53,10 @@ Focus:
 - Selected modules in `source/main`
 - Selected modules in `source/cpu`
 - `cResourceCount` deterministic helper paths (Rust-backed FFI lookup, inflow/decay precalc helper math, and update-step scheduling helper math used by `GetResourceCountID`/`GetResourceByName`/`SetInflow`/`SetDecay`/`Update`/`DoUpdates` step derivation)
+- `cResourceCount` scheduling boundary policy lock (completed): explicit truncation/saturation/invalid-step semantics in Rust helper math with boundary parity fixtures (negative, exact-boundary, NaN/Inf, large-ratio saturation) in Rust+C++ unit tests
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next medium-priority candidate: define and lock explicit boundary policy for `cResourceCount` scheduling helper math (rounding/clamping + boundary fixtures).
+- Next medium-priority candidate: expand `cResourceCount` seam to deterministic spatial-update scheduling helper derivation (`m_spatial_update - m_last_updated` boundary handling) while keeping spatial mutation/state transitions in C++.

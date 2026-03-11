@@ -56,12 +56,29 @@ pub extern "C" fn avd_rc_accumulate_update_time(current: f64, delta: f64) -> f64
     current + delta
 }
 
-#[no_mangle]
-pub extern "C" fn avd_rc_num_steps(update_time: f64, update_step: f64) -> c_int {
-    if update_step == 0.0 {
+fn num_steps_from_ratio(update_time: f64, update_step: f64) -> c_int {
+    // Scheduling only supports finite, positive step sizes.
+    if !update_step.is_finite() || update_step <= 0.0 {
         return 0;
     }
-    (update_time / update_step) as c_int
+    // Mirror legacy cast behavior for non-finite update_time.
+    if update_time.is_nan() {
+        return 0;
+    }
+
+    let ratio = update_time / update_step;
+    if ratio >= c_int::MAX as f64 {
+        return c_int::MAX;
+    }
+    if ratio <= c_int::MIN as f64 {
+        return c_int::MIN;
+    }
+    ratio.trunc() as c_int
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_num_steps(update_time: f64, update_step: f64) -> c_int {
+    num_steps_from_ratio(update_time, update_step)
 }
 
 #[no_mangle]
@@ -165,8 +182,10 @@ mod tests {
         let cases = [
             (0.0, 0),
             (0.5 * step, 0),
+            (-0.5 * step, 0),
             (step, 1),
             (2.9 * step, 2),
+            (-2.9 * step, -2),
             (25.0 * step, 25),
         ];
         for (time, expected_steps) in cases {
@@ -176,5 +195,12 @@ mod tests {
             let expected = time - (expected_steps as f64) * step;
             assert!((rem - expected).abs() < 1e-15);
         }
+
+        assert_eq!(avd_rc_num_steps(1.0, 0.0), 0);
+        assert_eq!(avd_rc_num_steps(1.0, -step), 0);
+        assert_eq!(avd_rc_num_steps(1.0, f64::INFINITY), 0);
+        assert_eq!(avd_rc_num_steps(f64::NAN, step), 0);
+        assert_eq!(avd_rc_num_steps(f64::INFINITY, step), c_int::MAX);
+        assert_eq!(avd_rc_num_steps(f64::NEG_INFINITY, step), c_int::MIN);
     }
 }
