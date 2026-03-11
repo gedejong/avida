@@ -165,6 +165,7 @@ double avd_rc_inflow_precalc_next(double previous, double step_decay, double ste
 double avd_rc_decay_precalc_next(double previous, double step_decay);
 double avd_rc_accumulate_update_time(double current, double delta);
 int avd_rc_num_steps(double update_time, double update_step);
+int avd_rc_num_spatial_updates(int current_update, int previous_update);
 double avd_rc_remainder_update_time(double update_time, double update_step, int num_steps);
 
 #ifdef __cplusplus

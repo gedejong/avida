@@ -817,7 +817,7 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
     m_last_updated is the last update we calculated
     num_spatial_updates is how many updates we wish to calculate
   */
-  int num_spatial_updates = m_spatial_update - m_last_updated; 
+  const int num_spatial_updates = avd_rc_num_spatial_updates(m_spatial_update, m_last_updated);
   
   
   // DO UPDATE FOR EACH RESOURCE ================================================

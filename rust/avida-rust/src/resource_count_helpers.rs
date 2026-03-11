@@ -76,9 +76,21 @@ fn num_steps_from_ratio(update_time: f64, update_step: f64) -> c_int {
     ratio.trunc() as c_int
 }
 
+fn saturating_update_delta(current_update: c_int, previous_update: c_int) -> c_int {
+    current_update.saturating_sub(previous_update)
+}
+
 #[no_mangle]
 pub extern "C" fn avd_rc_num_steps(update_time: f64, update_step: f64) -> c_int {
     num_steps_from_ratio(update_time, update_step)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_num_spatial_updates(
+    current_update: c_int,
+    previous_update: c_int,
+) -> c_int {
+    saturating_update_delta(current_update, previous_update)
 }
 
 #[no_mangle]
@@ -202,5 +214,13 @@ mod tests {
         assert_eq!(avd_rc_num_steps(f64::NAN, step), 0);
         assert_eq!(avd_rc_num_steps(f64::INFINITY, step), c_int::MAX);
         assert_eq!(avd_rc_num_steps(f64::NEG_INFINITY, step), c_int::MIN);
+    }
+
+    #[test]
+    fn rc_spatial_scheduling_delta_saturates() {
+        assert_eq!(avd_rc_num_spatial_updates(10, 4), 6);
+        assert_eq!(avd_rc_num_spatial_updates(4, 10), -6);
+        assert_eq!(avd_rc_num_spatial_updates(c_int::MAX, -1), c_int::MAX);
+        assert_eq!(avd_rc_num_spatial_updates(c_int::MIN, 1), c_int::MIN);
     }
 }

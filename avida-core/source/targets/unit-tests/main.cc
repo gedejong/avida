@@ -900,6 +900,22 @@ protected:
       "Scheduling negative saturation",
       avd_rc_num_steps(-INFINITY, step) == std::numeric_limits<int>::min()
     );
+    ReportTestResult(
+      "Spatial scheduling positive delta",
+      avd_rc_num_spatial_updates(10, 4) == 6
+    );
+    ReportTestResult(
+      "Spatial scheduling negative delta",
+      avd_rc_num_spatial_updates(4, 10) == -6
+    );
+    ReportTestResult(
+      "Spatial scheduling positive saturation",
+      avd_rc_num_spatial_updates(std::numeric_limits<int>::max(), -1) == std::numeric_limits<int>::max()
+    );
+    ReportTestResult(
+      "Spatial scheduling negative saturation",
+      avd_rc_num_spatial_updates(std::numeric_limits<int>::min(), 1) == std::numeric_limits<int>::min()
+    );
   }
 };
 
