@@ -146,6 +146,17 @@ mod tests {
         s
     }
 
+    fn expected_c_g_format(value: c_double) -> String {
+        let mut buffer = [0 as c_char; 128];
+        // SAFETY: buffer is valid for writes and format string is a static C string.
+        unsafe {
+            snprintf(buffer.as_mut_ptr(), buffer.len(), c"%g".as_ptr(), value);
+            CStr::from_ptr(buffer.as_ptr())
+                .to_string_lossy()
+                .into_owned()
+        }
+    }
+
     #[test]
     fn package_array_formatting_and_descriptor() {
         let descriptor = avd_pkg_array_descriptor(2);
@@ -210,5 +221,51 @@ mod tests {
         assert_eq!(nan_s.to_ascii_lowercase(), "nan");
         assert_eq!(inf_s.to_ascii_lowercase(), "inf");
         assert_eq!(ninf_s.to_ascii_lowercase(), "-inf");
+    }
+
+    #[test]
+    fn package_string_format_matrix_covers_boundaries_and_thresholds() {
+        let bool_cases = [(0, "false"), (1, "true"), (-1, "true")];
+        for (input, expected) in bool_cases {
+            assert_eq!(
+                owned_c_string_to_rust(avd_pkg_bool_to_string(input)),
+                expected
+            );
+        }
+
+        let int_cases = [0, 1, -1, i32::MAX, i32::MIN];
+        for value in int_cases {
+            assert_eq!(
+                owned_c_string_to_rust(avd_pkg_int_to_string(value)),
+                value.to_string()
+            );
+        }
+
+        let double_cases = [
+            0.0,
+            -0.0,
+            f64::MIN_POSITIVE,
+            -f64::MIN_POSITIVE,
+            f64::MIN_POSITIVE / 2.0,
+            -(f64::MIN_POSITIVE / 2.0),
+            9.999_99e-5,
+            1.0e-4,
+            9.999_99e5,
+            1.0e6,
+            1.234_567_89,
+            -1.234_567_89,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NAN,
+        ];
+        for value in double_cases {
+            let got = owned_c_string_to_rust(avd_pkg_double_to_string(value));
+            let expected = expected_c_g_format(value);
+            if value.is_nan() {
+                assert_eq!(got.to_ascii_lowercase(), expected.to_ascii_lowercase());
+            } else {
+                assert_eq!(got, expected);
+            }
+        }
     }
 }

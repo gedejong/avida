@@ -607,6 +607,50 @@ protected:
       arr.NumComponents() == 2 &&
       Apto::String(arr.GetAggregateDescriptor()) == "array(2)" &&
       arr.StringValue() == "'a','b'");
+
+    const bool bool_matrix[] = {false, true};
+    bool bool_matrix_ok = true;
+    for (size_t i = 0; i < sizeof(bool_matrix) / sizeof(bool_matrix[0]); ++i) {
+      Avida::Data::Wrap<bool> wrapped(bool_matrix[i]);
+      if (wrapped.StringValue() != Apto::String(Apto::AsStr(bool_matrix[i]))) bool_matrix_ok = false;
+    }
+    ReportTestResult("Wrap<bool> parity matrix", bool_matrix_ok);
+
+    const int int_matrix[] = {
+      0, 1, -1, std::numeric_limits<int>::max(), std::numeric_limits<int>::min()
+    };
+    bool int_matrix_ok = true;
+    for (size_t i = 0; i < sizeof(int_matrix) / sizeof(int_matrix[0]); ++i) {
+      Avida::Data::Wrap<int> wrapped(int_matrix[i]);
+      if (wrapped.StringValue() != Apto::String(Apto::AsStr(int_matrix[i]))) int_matrix_ok = false;
+    }
+    ReportTestResult("Wrap<int> parity matrix", int_matrix_ok);
+
+    const double double_matrix[] = {
+      0.0,
+      -0.0,
+      std::numeric_limits<double>::min(),
+      -std::numeric_limits<double>::min(),
+      std::numeric_limits<double>::denorm_min(),
+      -std::numeric_limits<double>::denorm_min(),
+      9.99999e-5,
+      1.0e-4,
+      9.99999e5,
+      1.0e6,
+      1.23456789,
+      -1.23456789,
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::quiet_NaN()
+    };
+    bool double_matrix_ok = true;
+    for (size_t i = 0; i < sizeof(double_matrix) / sizeof(double_matrix[0]); ++i) {
+      Avida::Data::Wrap<double> wrapped(double_matrix[i]);
+      if (wrapped.StringValue() != Apto::String(Apto::AsStr(double_matrix[i]))) {
+        double_matrix_ok = false;
+      }
+    }
+    ReportTestResult("Wrap<double> parity matrix", double_matrix_ok);
   }
 };
 

@@ -60,10 +60,11 @@ Focus:
 - `cResourceHistory` deterministic entry helpers (completed): Rust-backed exact/non-exact update selection and bounds-safe value lookup used by `getEntryForUpdate`, `GetResourceCountForUpdate`, and `GetResourceLevelsForUpdate` while keeping file loading and state ownership in C++
 - `cEventList` deterministic parse helpers (completed): Rust-backed trigger classification and timing tuple parsing (`begin`/`all`/`once`/`end` and numeric forms) routed through additive C ABI while preserving C++ event creation/state mutation ownership
 - `Data::TimeSeriesRecorder` typed parse-policy parity hardening (completed): Rust typed getter coercion now matches legacy `Apto::StrAs` semantics (`bool` exact true aliases only; `int`/`double` C-style coercion including partial/hex/exponent forms) with shared Rust+C++ matrix fixtures and unchanged ABI surface
+- `Data::Package` primitive formatting parity hardening (completed): Rust-backed `Wrap<bool/int/double>::StringValue` paths now have expanded boundary/threshold parity matrices (signed zero, denormals, exponent cutovers, integer limits, NaN/Inf) locked against legacy `Apto::AsStr` behavior
 - Consistency fixture hardening (completed): cross-platform determinism stabilizations for `sex` and `shaded_green_beard_instructions` via fixture-local knob pinning, narrower intent-focused output assertions, and richer CI diagnostics artifacts
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: broaden `Data::Package` primitive formatting parity matrix coverage (boundary integers, denormals, exponent thresholds, signed zero) against `Apto::AsStr` output.
+- Next candidate: evaluate selective production adoption of `bitvec` for `bit_array` only where benchmarks show clear maintainability/performance wins.
