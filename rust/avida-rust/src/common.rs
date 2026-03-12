@@ -108,3 +108,18 @@ pub(crate) fn with_mut_slice<T>(ptr: *mut T, count: c_int, f: impl FnOnce(&mut [
     f(slice);
     true
 }
+
+pub(crate) fn boxed_new<T>(value: T) -> *mut T {
+    Box::into_raw(Box::new(value))
+}
+
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub(crate) fn boxed_free<T>(handle: *mut T) {
+    if handle.is_null() {
+        return;
+    }
+    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
+    unsafe {
+        drop(Box::from_raw(handle));
+    }
+}

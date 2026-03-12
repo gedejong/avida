@@ -1,7 +1,7 @@
 use std::ffi::c_int;
 
 use crate::{
-    common::{with_rba_mut, with_rba_ref},
+    common::{boxed_free, boxed_new, with_rba_mut, with_rba_ref},
     AvidaRawBitArrayHandle,
 };
 
@@ -66,36 +66,25 @@ impl AvidaRawBitArrayHandle {
 #[no_mangle]
 pub extern "C" fn avd_rba_new(num_bits: c_int) -> *mut AvidaRawBitArrayHandle {
     let num_fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-    Box::into_raw(Box::new(AvidaRawBitArrayHandle {
+    boxed_new(AvidaRawBitArrayHandle {
         bit_fields: vec![0_u32; num_fields],
-    }))
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_clone(
     other: *const AvidaRawBitArrayHandle,
 ) -> *mut AvidaRawBitArrayHandle {
-    if other.is_null() {
-        return std::ptr::null_mut();
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let other_ref = unsafe { &*other };
-    Box::into_raw(Box::new(AvidaRawBitArrayHandle {
-        bit_fields: other_ref.bit_fields.clone(),
-    }))
+    with_rba_ref(other, std::ptr::null_mut(), |other_ref| {
+        boxed_new(AvidaRawBitArrayHandle {
+            bit_fields: other_ref.bit_fields.clone(),
+        })
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_free(handle: *mut AvidaRawBitArrayHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]

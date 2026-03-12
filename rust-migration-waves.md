@@ -44,6 +44,7 @@ Focus:
 - Evaluate mature external crates first for each slice; keep custom code only when parity/ABI constraints require it.
 - Reuse shared Rust helper parsers across `source/data` modules to eliminate duplicated C++ bracket parsing logic.
 - Consolidate duplicated FFI CString/output-pointer handling through shared `common.rs` helpers (`provider_helpers`, `time_series_recorder`, `package`) to reduce repeated unsafe patterns.
+- Idiomatic Rust FFI hardening (completed): centralized handle lifecycle helpers in `common.rs`, normalized out-parameter write handling in selected FFI modules, and added CI artifacts for exported symbol map + LLVM call graph with an ABI removal guard.
 
 ## Wave 5: Runtime and execution core
 

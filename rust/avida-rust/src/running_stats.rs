@@ -1,7 +1,7 @@
 use std::ffi::c_double;
 
 use crate::{
-    common::{with_mut, with_ref},
+    common::{boxed_free, boxed_new, with_mut, with_ref},
     AvidaRunningStatsHandle,
 };
 
@@ -69,38 +69,27 @@ impl AvidaRunningStatsHandle {
 
 #[no_mangle]
 pub extern "C" fn avd_rs_new() -> *mut AvidaRunningStatsHandle {
-    Box::into_raw(Box::new(AvidaRunningStatsHandle::new()))
+    boxed_new(AvidaRunningStatsHandle::new())
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rs_clone(
     other: *const AvidaRunningStatsHandle,
 ) -> *mut AvidaRunningStatsHandle {
-    if other.is_null() {
-        return std::ptr::null_mut();
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let other_ref = unsafe { &*other };
-    Box::into_raw(Box::new(AvidaRunningStatsHandle {
-        n: other_ref.n,
-        m1: other_ref.m1,
-        m2: other_ref.m2,
-        m3: other_ref.m3,
-        m4: other_ref.m4,
-    }))
+    with_ref(other, std::ptr::null_mut(), |other_ref| {
+        boxed_new(AvidaRunningStatsHandle {
+            n: other_ref.n,
+            m1: other_ref.m1,
+            m2: other_ref.m2,
+            m3: other_ref.m3,
+            m4: other_ref.m4,
+        })
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rs_free(handle: *mut AvidaRunningStatsHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]

@@ -82,9 +82,15 @@ pub extern "C" fn avd_event_parse_timing(
         return 0;
     };
 
-    set_out(out_start, start);
-    set_out(out_interval, interval);
-    set_out(out_stop, stop);
+    if !set_out(out_start, start) {
+        return 0;
+    }
+    if !set_out(out_interval, interval) {
+        return 0;
+    }
+    if !set_out(out_stop, stop) {
+        return 0;
+    }
     1
 }
 

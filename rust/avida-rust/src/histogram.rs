@@ -1,7 +1,7 @@
 use std::ffi::{c_double, c_int};
 
 use crate::{
-    common::{with_hist_mut, with_hist_ref},
+    common::{boxed_free, boxed_new, with_hist_mut, with_hist_ref},
     AvidaHistogramHandle,
 };
 
@@ -174,21 +174,14 @@ impl AvidaHistogramHandle {
 #[no_mangle]
 pub extern "C" fn avd_hist_new(max_bin: c_int, min_bin: c_int) -> *mut AvidaHistogramHandle {
     match AvidaHistogramHandle::new(max_bin, min_bin) {
-        Some(h) => Box::into_raw(Box::new(h)),
+        Some(h) => boxed_new(h),
         None => std::ptr::null_mut(),
     }
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_hist_free(handle: *mut AvidaHistogramHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]

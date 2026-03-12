@@ -208,6 +208,43 @@ jobs:
       if: always()
       run: ccache -s || true
 
+  ffi-analysis-rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Restore Rust dependency/build cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          rust/avida-rust/target
+        key: ${{ runner.os }}-rust-${{ hashFiles('rust/avida-rust/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rust-
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Generate FFI symbol map and call graph artifacts
+      run: |
+        cd rust/avida-rust
+        python3 scripts/ci_ffi_analysis.py --output target/ffi-analysis
+    - name: ABI guard for avd_* exports
+      run: |
+        cd rust/avida-rust
+        python3 scripts/ci_abi_guard.py \
+          --baseline abi/avd_symbols_baseline.txt \
+          --current target/ffi-analysis/avd_symbols.txt
+    - name: Upload FFI analysis artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-ffi-analysis
+        path: |
+          rust/avida-rust/target/ffi-analysis/avd_symbols.txt
+          rust/avida-rust/target/ffi-analysis/extern_c_index.txt
+          rust/avida-rust/target/ffi-analysis/llvm_callgraph.dot
+        if-no-files-found: warn
+
   perf-rust:
     runs-on: ubuntu-latest
     steps:

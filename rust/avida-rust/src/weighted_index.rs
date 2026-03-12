@@ -1,7 +1,7 @@
 use std::ffi::{c_double, c_int};
 
 use crate::{
-    common::{with_wi_mut, with_wi_ref},
+    common::{boxed_free, boxed_new, with_wi_mut, with_wi_ref},
     AvidaWeightedIndexHandle,
 };
 
@@ -77,36 +77,25 @@ pub extern "C" fn avd_wi_new(size: c_int) -> *mut AvidaWeightedIndexHandle {
         Ok(s) => s,
         Err(_) => return std::ptr::null_mut(),
     };
-    Box::into_raw(Box::new(AvidaWeightedIndexHandle::new(valid_size)))
+    boxed_new(AvidaWeightedIndexHandle::new(valid_size))
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_wi_clone(
     other: *const AvidaWeightedIndexHandle,
 ) -> *mut AvidaWeightedIndexHandle {
-    if other.is_null() {
-        return std::ptr::null_mut();
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let other_ref = unsafe { &*other };
-    Box::into_raw(Box::new(AvidaWeightedIndexHandle {
-        size: other_ref.size,
-        item_weight: other_ref.item_weight.clone(),
-        subtree_weight: other_ref.subtree_weight.clone(),
-    }))
+    with_wi_ref(other, std::ptr::null_mut(), |other_ref| {
+        boxed_new(AvidaWeightedIndexHandle {
+            size: other_ref.size,
+            item_weight: other_ref.item_weight.clone(),
+            subtree_weight: other_ref.subtree_weight.clone(),
+        })
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_wi_free(handle: *mut AvidaWeightedIndexHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]

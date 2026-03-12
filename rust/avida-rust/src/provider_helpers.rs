@@ -61,6 +61,33 @@ fn parse_argumented_id_nom(input: &str) -> IResult<&str, (&str, &str)> {
     }
 }
 
+fn write_split_outputs(
+    out_raw_id: *mut *mut c_char,
+    out_argument: *mut *mut c_char,
+    raw_id: String,
+    argument: String,
+) -> bool {
+    let raw_ptr = alloc_c_string(raw_id);
+    let arg_ptr = alloc_c_string(argument);
+    if raw_ptr.is_null() || arg_ptr.is_null() {
+        free_c_string(raw_ptr);
+        free_c_string(arg_ptr);
+        return false;
+    }
+    if !set_out(out_raw_id, raw_ptr) {
+        free_c_string(raw_ptr);
+        free_c_string(arg_ptr);
+        return false;
+    }
+    if !set_out(out_argument, arg_ptr) {
+        free_c_string(raw_ptr);
+        let _ = set_out(out_raw_id, std::ptr::null_mut());
+        free_c_string(arg_ptr);
+        return false;
+    }
+    true
+}
+
 #[no_mangle]
 pub extern "C" fn avd_provider_is_standard_id(data_id: *const c_char) -> c_int {
     if with_cstr(data_id, false, |id| {
@@ -98,9 +125,11 @@ pub extern "C" fn avd_provider_split_argumented_id(
     if !parsed.is_argumented || parsed.raw_id.is_empty() {
         return 0;
     }
-    set_out(out_raw_id, alloc_c_string(parsed.raw_id));
-    set_out(out_argument, alloc_c_string(parsed.argument));
-    1
+    if write_split_outputs(out_raw_id, out_argument, parsed.raw_id, parsed.argument) {
+        1
+    } else {
+        0
+    }
 }
 
 #[no_mangle]
@@ -109,8 +138,12 @@ pub extern "C" fn avd_provider_classify_id(
     out_raw_id: *mut *mut c_char,
     out_argument: *mut *mut c_char,
 ) -> c_int {
-    set_out(out_raw_id, std::ptr::null_mut());
-    set_out(out_argument, std::ptr::null_mut());
+    if !out_raw_id.is_null() && !set_out(out_raw_id, std::ptr::null_mut()) {
+        return PROVIDER_ID_KIND_INVALID;
+    }
+    if !out_argument.is_null() && !set_out(out_argument, std::ptr::null_mut()) {
+        return PROVIDER_ID_KIND_INVALID;
+    }
     if data_id.is_null() {
         return PROVIDER_ID_KIND_INVALID;
     }
@@ -125,9 +158,9 @@ pub extern "C" fn avd_provider_classify_id(
         if out_raw_id.is_null() || out_argument.is_null() {
             return PROVIDER_ID_KIND_INVALID;
         }
-        set_out(out_raw_id, alloc_c_string(parsed.raw_id));
-        set_out(out_argument, alloc_c_string(parsed.argument));
-        return PROVIDER_ID_KIND_ARGUMENTED;
+        if write_split_outputs(out_raw_id, out_argument, parsed.raw_id, parsed.argument) {
+            return PROVIDER_ID_KIND_ARGUMENTED;
+        }
     }
     PROVIDER_ID_KIND_INVALID
 }
@@ -169,6 +202,23 @@ mod tests {
         let malformed = CString::new("demo]").expect("literal has no NUL");
         let ok = avd_provider_split_argumented_id(malformed.as_ptr(), &mut raw, &mut arg);
         assert_eq!(ok, 0);
+        assert!(raw.is_null());
+        assert!(arg.is_null());
+    }
+
+    #[test]
+    fn provider_id_split_rejects_null_outputs() {
+        let input = CString::new("demo[x]").expect("literal has no NUL");
+        let mut raw: *mut c_char = std::ptr::null_mut();
+        let mut arg: *mut c_char = std::ptr::null_mut();
+        assert_eq!(
+            avd_provider_split_argumented_id(input.as_ptr(), std::ptr::null_mut(), &mut arg),
+            0
+        );
+        assert_eq!(
+            avd_provider_split_argumented_id(input.as_ptr(), &mut raw, std::ptr::null_mut()),
+            0
+        );
         assert!(raw.is_null());
         assert!(arg.is_null());
     }
@@ -217,6 +267,19 @@ mod tests {
         assert_eq!(kind, PROVIDER_ID_KIND_INVALID);
         assert!(raw.is_null());
         assert!(arg.is_null());
+    }
+
+    #[test]
+    fn provider_id_classify_argumented_rejects_null_outputs() {
+        let argumented = CString::new("demo[value]").expect("literal has no NUL");
+        assert_eq!(
+            avd_provider_classify_id(
+                argumented.as_ptr(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut()
+            ),
+            PROVIDER_ID_KIND_INVALID
+        );
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use std::ffi::c_double;
 
 use crate::{
-    common::{with_ds_mut, with_ds_ref},
+    common::{boxed_free, boxed_new, with_ds_mut, with_ds_ref},
     AvidaDoubleSumHandle,
 };
 
@@ -70,35 +70,24 @@ impl AvidaDoubleSumHandle {
 
 #[no_mangle]
 pub extern "C" fn avd_ds_new() -> *mut AvidaDoubleSumHandle {
-    Box::into_raw(Box::new(AvidaDoubleSumHandle::new()))
+    boxed_new(AvidaDoubleSumHandle::new())
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_ds_clone(other: *const AvidaDoubleSumHandle) -> *mut AvidaDoubleSumHandle {
-    if other.is_null() {
-        return std::ptr::null_mut();
-    }
-    // SAFETY: pointer was checked for null and is only read.
-    let other_ref = unsafe { &*other };
-    Box::into_raw(Box::new(AvidaDoubleSumHandle {
-        s1: other_ref.s1,
-        s2: other_ref.s2,
-        n: other_ref.n,
-        max: other_ref.max,
-    }))
+    with_ds_ref(other, std::ptr::null_mut(), |other_ref| {
+        boxed_new(AvidaDoubleSumHandle {
+            s1: other_ref.s1,
+            s2: other_ref.s2,
+            n: other_ref.n,
+            max: other_ref.max,
+        })
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_ds_free(handle: *mut AvidaDoubleSumHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]
