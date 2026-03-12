@@ -104,48 +104,19 @@ void cSpatialResCount::SetPointers()
   /* Pointer 0 will point to the cell above and to the left the current cell
      and will go clockwise around the cell.                               */
 
-  int     i,ii;
-  double  SQRT2 = sqrt(2.0);
-
-  /* First treat all cells like they are in a torus */
-
-  for (i = 0; i < GetSize(); i++) {
-    grid[i].SetPtr(0 ,GridNeighbor(i, world_x, world_y, -1, -1), -1, -1, SQRT2);
-    grid[i].SetPtr(1 ,GridNeighbor(i, world_x, world_y,  0, -1),  0, -1, 1.0);
-    grid[i].SetPtr(2 ,GridNeighbor(i, world_x, world_y, +1, -1), +1, -1, SQRT2);
-    grid[i].SetPtr(3 ,GridNeighbor(i, world_x, world_y, +1,  0), +1,  0, 1.0);
-    grid[i].SetPtr(4 ,GridNeighbor(i, world_x, world_y, +1, +1), +1, +1, SQRT2);
-    grid[i].SetPtr(5 ,GridNeighbor(i, world_x, world_y,  0, +1),  0, +1, 1.0);
-    grid[i].SetPtr(6 ,GridNeighbor(i, world_x, world_y, -1, +1), -1, +1, SQRT2);
-    grid[i].SetPtr(7 ,GridNeighbor(i, world_x, world_y, -1,  0), -1,  0, 1.0);
-  }
- 
-  /* Fix links for top, bottom and sides for non-torus */
-  
-  if (geometry == nGeometry::GRID) {
-    /* Top and bottom */
-
-    for (i = 0; i < world_x; i++) {
-      grid[i].SetPtr(0, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[i].SetPtr(1, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[i].SetPtr(2, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      ii = num_cells-1-i;
-      grid[ii].SetPtr(4, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(5, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(6, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-    }
-
-    /* fix links for right and left sides */
-
-    for (i = 0; i < world_y; i++) {
-      ii = i * world_x;    
-      grid[ii].SetPtr(0, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(7, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(6, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      ii = ((i + 1) * world_x) - 1;
-      grid[ii].SetPtr(2, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(3, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
-      grid[ii].SetPtr(4, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
+  for (int i = 0; i < GetSize(); ++i) {
+    for (int slot = 0; slot < 8; ++slot) {
+      int elempt = cResource::NONE;
+      int xdist = cResource::NONE;
+      int ydist = cResource::NONE;
+      double dist = cResource::NONE;
+      if (avd_src_setpointer_entry(
+            i, world_x, world_y, geometry, slot, &elempt, &xdist, &ydist, &dist
+          ) == 0) {
+        grid[i].SetPtr(slot, cResource::NONE, cResource::NONE, cResource::NONE, cResource::NONE);
+        continue;
+      }
+      grid[i].SetPtr(slot, elempt, xdist, ydist, dist);
     }
   }
 }

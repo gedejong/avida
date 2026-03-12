@@ -56,6 +56,77 @@ fn wrapped_elem_index_internal(x: c_int, y: c_int, world_x: c_int, world_y: c_in
     index as c_int
 }
 
+const GEOMETRY_GRID: c_int = 1;
+const RESOURCE_NONE: c_int = -99;
+
+fn slot_deltas(slot: c_int) -> Option<(c_int, c_int, f64)> {
+    let sqrt2 = 2.0_f64.sqrt();
+    match slot {
+        0 => Some((-1, -1, sqrt2)),
+        1 => Some((0, -1, 1.0)),
+        2 => Some((1, -1, sqrt2)),
+        3 => Some((1, 0, 1.0)),
+        4 => Some((1, 1, sqrt2)),
+        5 => Some((0, 1, 1.0)),
+        6 => Some((-1, 1, sqrt2)),
+        7 => Some((-1, 0, 1.0)),
+        _ => None,
+    }
+}
+
+fn is_grid_masked_neighbor(cell_id: c_int, world_x: c_int, world_y: c_int, slot: c_int) -> bool {
+    if world_x <= 0 || world_y <= 0 {
+        return true;
+    }
+    let num_cells = world_x.saturating_mul(world_y);
+    if num_cells <= 0 {
+        return true;
+    }
+    if cell_id < 0 || cell_id >= num_cells {
+        return true;
+    }
+
+    let row = cell_id / world_x;
+    let col = cell_id % world_x;
+    let on_top = row == 0;
+    let on_bottom = row == world_y - 1;
+    let on_left = col == 0;
+    let on_right = col == world_x - 1;
+
+    (on_top && (slot == 0 || slot == 1 || slot == 2))
+        || (on_bottom && (slot == 4 || slot == 5 || slot == 6))
+        || (on_left && (slot == 0 || slot == 7 || slot == 6))
+        || (on_right && (slot == 2 || slot == 3 || slot == 4))
+}
+
+fn setpointer_entry_internal(
+    cell_id: c_int,
+    world_x: c_int,
+    world_y: c_int,
+    geometry: c_int,
+    slot: c_int,
+) -> Option<(c_int, c_int, c_int, f64)> {
+    if world_x <= 0 || world_y <= 0 || cell_id < 0 || cell_id >= world_x.saturating_mul(world_y) {
+        return None;
+    }
+    let (xdist, ydist, dist) = slot_deltas(slot)?;
+
+    if geometry == GEOMETRY_GRID && is_grid_masked_neighbor(cell_id, world_x, world_y, slot) {
+        return Some((
+            RESOURCE_NONE,
+            RESOURCE_NONE,
+            RESOURCE_NONE,
+            f64::from(RESOURCE_NONE),
+        ));
+    }
+
+    let x = cell_id % world_x;
+    let y = cell_id / world_x;
+    let nx = wrap_coord(x + xdist, world_x)?;
+    let ny = wrap_coord(y + ydist, world_y)?;
+    Some((ny * world_x + nx, xdist, ydist, dist))
+}
+
 fn cell_id_in_bounds_strict_internal(cell_id: c_int, grid_size: c_int) -> c_int {
     if cell_id >= 0 && cell_id < grid_size {
         1
@@ -207,6 +278,42 @@ pub extern "C" fn avd_src_cell_id_in_bounds_legacy_setcell(
     cell_id_in_bounds_legacy_setcell_internal(cell_id, grid_size)
 }
 
+#[no_mangle]
+pub extern "C" fn avd_src_setpointer_entry(
+    cell_id: c_int,
+    world_x: c_int,
+    world_y: c_int,
+    geometry: c_int,
+    slot: c_int,
+    out_elempt: *mut c_int,
+    out_xdist: *mut c_int,
+    out_ydist: *mut c_int,
+    out_dist: *mut f64,
+) -> c_int {
+    if out_elempt.is_null() || out_xdist.is_null() || out_ydist.is_null() || out_dist.is_null() {
+        return 0;
+    }
+    let Some((elempt, xdist, ydist, dist)) =
+        setpointer_entry_internal(cell_id, world_x, world_y, geometry, slot)
+    else {
+        return 0;
+    };
+
+    if !set_out(out_elempt, elempt) {
+        return 0;
+    }
+    if !set_out(out_xdist, xdist) {
+        return 0;
+    }
+    if !set_out(out_ydist, ydist) {
+        return 0;
+    }
+    if !set_out(out_dist, dist) {
+        return 0;
+    }
+    1
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -293,5 +400,180 @@ mod tests {
         assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(6, 5), 0);
         assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(0, 0), 1);
         assert_eq!(avd_src_cell_id_in_bounds_legacy_setcell(1, 0), 0);
+    }
+
+    #[test]
+    fn setpointer_entry_matches_torus_and_grid_masks() {
+        let mut elempt = 0;
+        let mut xdist = 0;
+        let mut ydist = 0;
+        let mut dist = 0.0;
+
+        assert_eq!(
+            avd_src_setpointer_entry(
+                4,
+                3,
+                3,
+                2,
+                0,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            1
+        );
+        assert_eq!(elempt, 0);
+        assert_eq!(xdist, -1);
+        assert_eq!(ydist, -1);
+        assert!((dist - 2.0_f64.sqrt()).abs() < 1e-12);
+
+        assert_eq!(
+            avd_src_setpointer_entry(
+                0,
+                3,
+                3,
+                GEOMETRY_GRID,
+                0,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            1
+        );
+        assert_eq!(elempt, RESOURCE_NONE);
+        assert_eq!(xdist, RESOURCE_NONE);
+        assert_eq!(ydist, RESOURCE_NONE);
+        assert_eq!(dist, f64::from(RESOURCE_NONE));
+    }
+
+    #[test]
+    fn setpointer_entry_guard_matrix() {
+        let mut elempt = 0;
+        let mut xdist = 0;
+        let mut ydist = 0;
+        let mut dist = 0.0;
+        assert_eq!(
+            avd_src_setpointer_entry(
+                -1,
+                3,
+                3,
+                GEOMETRY_GRID,
+                0,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            0
+        );
+        assert_eq!(
+            avd_src_setpointer_entry(
+                0,
+                0,
+                3,
+                GEOMETRY_GRID,
+                0,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            0
+        );
+        assert_eq!(
+            avd_src_setpointer_entry(
+                0,
+                3,
+                3,
+                GEOMETRY_GRID,
+                8,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            0
+        );
+        assert_eq!(
+            avd_src_setpointer_entry(
+                0,
+                3,
+                3,
+                GEOMETRY_GRID,
+                0,
+                std::ptr::null_mut(),
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn setpointer_entry_degenerate_grid_dimensions() {
+        let mut elempt = 0;
+        let mut xdist = 0;
+        let mut ydist = 0;
+        let mut dist = 0.0;
+
+        assert_eq!(
+            avd_src_setpointer_entry(
+                0,
+                1,
+                1,
+                GEOMETRY_GRID,
+                3,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            1
+        );
+        assert_eq!(elempt, RESOURCE_NONE);
+        assert_eq!(xdist, RESOURCE_NONE);
+        assert_eq!(ydist, RESOURCE_NONE);
+        assert_eq!(dist, f64::from(RESOURCE_NONE));
+
+        assert_eq!(
+            avd_src_setpointer_entry(
+                1,
+                1,
+                3,
+                GEOMETRY_GRID,
+                1,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            1
+        );
+        assert_eq!(elempt, 0);
+        assert_eq!(xdist, 0);
+        assert_eq!(ydist, -1);
+        assert!((dist - 1.0).abs() < 1e-12);
+
+        assert_eq!(
+            avd_src_setpointer_entry(
+                1,
+                3,
+                1,
+                GEOMETRY_GRID,
+                3,
+                &mut elempt,
+                &mut xdist,
+                &mut ydist,
+                &mut dist
+            ),
+            1
+        );
+        assert_eq!(elempt, 2);
+        assert_eq!(xdist, 1);
+        assert_eq!(ydist, 0);
+        assert!((dist - 1.0).abs() < 1e-12);
     }
 }

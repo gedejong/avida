@@ -1260,6 +1260,133 @@ protected:
       "Cell-id legacy SetCellList keeps zero-size quirk",
       avd_src_cell_id_in_bounds_legacy_setcell(0, 0) == 1
     );
+
+    const int kGeometryGrid = 1;
+    const int kGeometryTorus = 2;
+    const int kResourceNone = -99;
+    const auto wrap_coord_ref = [](int value, int bound) {
+      int rem = value % bound;
+      return (rem < 0) ? (rem + bound) : rem;
+    };
+    const auto slot_delta_ref = [](int slot, int& xdist_ref, int& ydist_ref, double& dist_ref) {
+      switch (slot) {
+        case 0: xdist_ref = -1; ydist_ref = -1; dist_ref = sqrt(2.0); break;
+        case 1: xdist_ref =  0; ydist_ref = -1; dist_ref = 1.0; break;
+        case 2: xdist_ref =  1; ydist_ref = -1; dist_ref = sqrt(2.0); break;
+        case 3: xdist_ref =  1; ydist_ref =  0; dist_ref = 1.0; break;
+        case 4: xdist_ref =  1; ydist_ref =  1; dist_ref = sqrt(2.0); break;
+        case 5: xdist_ref =  0; ydist_ref =  1; dist_ref = 1.0; break;
+        case 6: xdist_ref = -1; ydist_ref =  1; dist_ref = sqrt(2.0); break;
+        case 7: xdist_ref = -1; ydist_ref =  0; dist_ref = 1.0; break;
+        default: xdist_ref = 0; ydist_ref = 0; dist_ref = 0.0; break;
+      }
+    };
+    const auto grid_masked_ref = [](int cell_id, int world_x, int world_y, int slot) {
+      if (world_x <= 0 || world_y <= 0) return true;
+      const int row = cell_id / world_x;
+      const int col = cell_id % world_x;
+      const bool top = (row == 0);
+      const bool bottom = (row == world_y - 1);
+      const bool left = (col == 0);
+      const bool right = (col == world_x - 1);
+      if (top && (slot == 0 || slot == 1 || slot == 2)) return true;
+      if (bottom && (slot == 4 || slot == 5 || slot == 6)) return true;
+      if (left && (slot == 0 || slot == 7 || slot == 6)) return true;
+      if (right && (slot == 2 || slot == 3 || slot == 4)) return true;
+      return false;
+    };
+    const auto expected_setpointer_entry_ref =
+      [&](int cell_id, int world_x, int world_y, int geometry, int slot, int& elem_ref, int& xdist_ref, int& ydist_ref, double& dist_ref) {
+        slot_delta_ref(slot, xdist_ref, ydist_ref, dist_ref);
+        if (geometry == kGeometryGrid && grid_masked_ref(cell_id, world_x, world_y, slot)) {
+          elem_ref = kResourceNone;
+          xdist_ref = kResourceNone;
+          ydist_ref = kResourceNone;
+          dist_ref = kResourceNone;
+          return;
+        }
+        const int x = cell_id % world_x;
+        const int y = cell_id / world_x;
+        const int nx = wrap_coord_ref(x + xdist_ref, world_x);
+        const int ny = wrap_coord_ref(y + ydist_ref, world_y);
+        elem_ref = ny * world_x + nx;
+      };
+
+    struct SetPointerDims {
+      int world_x;
+      int world_y;
+    };
+    const SetPointerDims parity_dims[] = {
+      {4, 3},
+      {1, 1},
+      {1, 3},
+      {3, 1}
+    };
+    bool setpointer_grid_ok = true;
+    bool setpointer_torus_ok = true;
+    for (size_t di = 0; di < sizeof(parity_dims) / sizeof(parity_dims[0]); ++di) {
+      const int world_x = parity_dims[di].world_x;
+      const int world_y = parity_dims[di].world_y;
+      const int num_cells = world_x * world_y;
+      for (int cell_id = 0; cell_id < num_cells; ++cell_id) {
+        for (int slot = 0; slot < 8; ++slot) {
+          int elem = 0;
+          int xdelta = 0;
+          int ydelta = 0;
+          double d = 0.0;
+          int exp_elem = 0;
+          int exp_xdelta = 0;
+          int exp_ydelta = 0;
+          double exp_d = 0.0;
+
+          const int ok = avd_src_setpointer_entry(
+            cell_id, world_x, world_y, kGeometryGrid, slot, &elem, &xdelta, &ydelta, &d
+          );
+          if (ok != 1) {
+            setpointer_grid_ok = false;
+            continue;
+          }
+          expected_setpointer_entry_ref(
+            cell_id, world_x, world_y, kGeometryGrid, slot, exp_elem, exp_xdelta, exp_ydelta, exp_d
+          );
+          if (elem != exp_elem || xdelta != exp_xdelta || ydelta != exp_ydelta || fabs(d - exp_d) > 1e-12) {
+            setpointer_grid_ok = false;
+          }
+
+          const int ok_torus = avd_src_setpointer_entry(
+            cell_id, world_x, world_y, kGeometryTorus, slot, &elem, &xdelta, &ydelta, &d
+          );
+          if (ok_torus != 1) {
+            setpointer_torus_ok = false;
+            continue;
+          }
+          expected_setpointer_entry_ref(
+            cell_id, world_x, world_y, kGeometryTorus, slot, exp_elem, exp_xdelta, exp_ydelta, exp_d
+          );
+          if (elem != exp_elem || xdelta != exp_xdelta || ydelta != exp_ydelta || fabs(d - exp_d) > 1e-12) {
+            setpointer_torus_ok = false;
+          }
+        }
+      }
+    }
+    ReportTestResult("SetPointers GRID entry parity matrix", setpointer_grid_ok);
+    ReportTestResult("SetPointers TORUS entry parity matrix", setpointer_torus_ok);
+    int elem = 0;
+    int xdelta = 0;
+    int ydelta = 0;
+    double d = 0.0;
+    ReportTestResult(
+      "SetPointers entry guard invalid slot",
+      avd_src_setpointer_entry(0, 4, 3, kGeometryGrid, 8, &elem, &xdelta, &ydelta, &d) == 0
+    );
+    ReportTestResult(
+      "SetPointers entry guard invalid dimensions",
+      avd_src_setpointer_entry(0, 0, 3, kGeometryGrid, 0, &elem, &xdelta, &ydelta, &d) == 0
+    );
+    ReportTestResult(
+      "SetPointers entry guard null output",
+      avd_src_setpointer_entry(0, 4, 3, kGeometryGrid, 0, NULL, &xdelta, &ydelta, &d) == 0
+    );
   }
 };
 
