@@ -234,6 +234,44 @@ pub extern "C" fn avd_src_compute_flow_scalar(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
+#[no_mangle]
+pub extern "C" fn avd_src_compute_flow_pair_deltas(
+    elem1_amount: f64,
+    elem2_amount: f64,
+    inxdiffuse: f64,
+    inydiffuse: f64,
+    inxgravity: f64,
+    inygravity: f64,
+    xdist: c_int,
+    ydist: c_int,
+    dist: f64,
+    out_elem1_delta: *mut f64,
+    out_elem2_delta: *mut f64,
+) -> c_int {
+    if out_elem1_delta.is_null() || out_elem2_delta.is_null() {
+        return 0;
+    }
+    let flowamt = compute_flow_scalar_internal(
+        elem1_amount,
+        elem2_amount,
+        inxdiffuse,
+        inydiffuse,
+        inxgravity,
+        inygravity,
+        xdist,
+        ydist,
+        dist,
+    );
+    if !set_out(out_elem1_delta, -flowamt) {
+        return 0;
+    }
+    if !set_out(out_elem2_delta, flowamt) {
+        return 0;
+    }
+    1
+}
+
 #[no_mangle]
 pub extern "C" fn avd_src_source_per_cell(
     amount: f64,
@@ -352,6 +390,63 @@ mod tests {
 
         let guarded = avd_src_compute_flow_scalar(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0);
         assert_eq!(guarded, 0.0);
+    }
+
+    #[test]
+    fn flow_pair_deltas_match_scalar_and_conserve_mass() {
+        let mut d1 = 0.0;
+        let mut d2 = 0.0;
+        assert_eq!(
+            avd_src_compute_flow_pair_deltas(
+                10.0,
+                4.0,
+                1.0,
+                1.0,
+                0.5,
+                -0.25,
+                1,
+                -1,
+                2.0_f64.sqrt(),
+                &mut d1,
+                &mut d2
+            ),
+            1
+        );
+        let flow =
+            avd_src_compute_flow_scalar(10.0, 4.0, 1.0, 1.0, 0.5, -0.25, 1, -1, 2.0_f64.sqrt());
+        assert!((d1 + flow).abs() < 1e-12);
+        assert!((d2 - flow).abs() < 1e-12);
+        assert!((d1 + d2).abs() < 1e-12);
+
+        assert_eq!(
+            avd_src_compute_flow_pair_deltas(
+                0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0, &mut d1, &mut d2
+            ),
+            1
+        );
+        assert_eq!(d1, 0.0);
+        assert_eq!(d2, 0.0);
+    }
+
+    #[test]
+    fn flow_pair_deltas_guard_null_outputs() {
+        let mut d2 = 0.0;
+        assert_eq!(
+            avd_src_compute_flow_pair_deltas(
+                1.0,
+                2.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                1,
+                0,
+                1.0,
+                std::ptr::null_mut(),
+                &mut d2
+            ),
+            0
+        );
     }
 
     #[test]

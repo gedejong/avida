@@ -50,10 +50,11 @@ Focus:
 - Selected modules in `source/main`
 - Selected modules in `source/cpu`
 - `cResourceCount` deterministic helper paths (Rust-backed FFI lookup, inflow/decay precalc helper math, and update-step scheduling helper math used by `GetResourceCountID`/`GetResourceByName`/`SetInflow`/`SetDecay`/`Update`/`DoUpdates` step derivation)
+- `cSpatialResCount::FlowAll` per-neighbor transfer accumulation (completed): Rust-backed additive pair-delta helper now computes neighbor transfer deltas used by `FlowAll` while C++ retains grid traversal, neighbor lookup, and state mutation ordering.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cSpatialResCount::FlowAll` per-neighbor transfer accumulation helper math behind additive Rust helpers while preserving C++ grid traversal and state mutation ownership.
+- Next candidate: extract deterministic `cSpatialResCount` aggregate-update helper math (`StateAll`/`SumAll`) behind additive Rust helpers while preserving C++ traversal and state ownership.

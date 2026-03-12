@@ -254,8 +254,16 @@ void cSpatialResCount::FlowAll() {
       ydist = grid[i].GetPtrYdist(k);
       dist = grid[i].GetPtrDist(k);
       if (ii >= 0) {
-        FlowMatter(grid[i],grid[ii],xdiffuse,ydiffuse,xgravity,ygravity,
-                   xdist, ydist, dist);
+        double elem1_delta = 0.0;
+        double elem2_delta = 0.0;
+        if (avd_src_compute_flow_pair_deltas(
+              grid[i].GetAmount(), grid[ii].GetAmount(), xdiffuse, ydiffuse, xgravity, ygravity,
+              xdist, ydist, dist, &elem1_delta, &elem2_delta
+            ) == 0) {
+          continue;
+        }
+        grid[i].Rate(elem1_delta);
+        grid[ii].Rate(elem2_delta);
       }
     }
   }

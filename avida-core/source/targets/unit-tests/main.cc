@@ -1175,6 +1175,23 @@ protected:
       "Flow scalar legacy zero guard",
       avd_src_compute_flow_scalar(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1, 0, -1.0) == 0.0
     );
+    double out_elem1_delta = 0.0;
+    double out_elem2_delta = 0.0;
+    const int pair_status = avd_src_compute_flow_pair_deltas(
+      elem1_amount, elem2_amount, inxdiffuse, inydiffuse, inxgravity, inygravity, xdist, ydist, dist,
+      &out_elem1_delta, &out_elem2_delta
+    );
+    ReportTestResult("Flow pair helper success status", pair_status == 1);
+    ReportTestResult("Flow pair delta parity elem1", fabs(out_elem1_delta + expected) < 1e-12);
+    ReportTestResult("Flow pair delta parity elem2", fabs(out_elem2_delta - expected) < 1e-12);
+    ReportTestResult("Flow pair delta conservation", fabs(out_elem1_delta + out_elem2_delta) < 1e-12);
+    ReportTestResult(
+      "Flow pair helper null output guard",
+      avd_src_compute_flow_pair_deltas(
+        elem1_amount, elem2_amount, inxdiffuse, inydiffuse, inxgravity, inygravity, xdist, ydist, dist,
+        NULL, &out_elem2_delta
+      ) == 0
+    );
     ReportTestResult(
       "Source per-cell scalar parity",
       fabs(avd_src_source_per_cell(12.0, 0, 1, 0, 2) - (12.0 / 6.0)) < 1e-15
