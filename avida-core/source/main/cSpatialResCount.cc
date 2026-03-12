@@ -141,14 +141,24 @@ void cSpatialResCount::SetCellList(Apto::Array<cCellResource>* in_cell_list_ptr)
   cell_list_ptr = in_cell_list_ptr;
   for (int i = 0; i < cell_list_ptr->GetSize(); i++) {
     int cell_id = (*cell_list_ptr)[i].GetId();
+    const double cell_initial = (*cell_list_ptr)[i].GetInitial();
     
     /* Be sure the user entered a valid cell id or if the the program is loading
        the resource for the testCPU that does not have a grid set up */
        
     if (avd_src_cell_id_in_bounds_legacy_setcell(cell_id, grid.GetSize()) != 0) {
-      Rate((*cell_list_ptr)[i].GetId(), (*cell_list_ptr)[i].GetInitial());
-      State((*cell_list_ptr)[i].GetId());
-      Element(cell_id).SetInitial((*cell_list_ptr)[i].GetInitial());
+      double next_amount = 0.0;
+      double next_delta = 0.0;
+      if (avd_src_setcell_apply_initial(
+            Element(cell_id).GetAmount(), Element(cell_id).GetDelta(), cell_initial, &next_amount, &next_delta
+          ) == 0) {
+        Rate((*cell_list_ptr)[i].GetId(), cell_initial);
+        State((*cell_list_ptr)[i].GetId());
+      } else {
+        Element(cell_id).SetAmount(next_amount);
+        Element(cell_id).SetDelta(next_delta);
+      }
+      Element(cell_id).SetInitial(cell_initial);
     }
   }
 }

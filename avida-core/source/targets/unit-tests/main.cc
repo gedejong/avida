@@ -1237,6 +1237,18 @@ protected:
       "Reset-amount helper null output guard",
       avd_src_reset_amount(1.0, 2.0, NULL) == 0
     );
+    double setcell_amount = 0.0;
+    double setcell_delta = -1.0;
+    ReportTestResult(
+      "SetCell apply-initial helper parity",
+      avd_src_setcell_apply_initial(3.0, -0.25, 1.5, &setcell_amount, &setcell_delta) == 1 &&
+        fabs(setcell_amount - 4.25) < 1e-15 &&
+        setcell_delta == 0.0
+    );
+    ReportTestResult(
+      "SetCell apply-initial helper null output guard",
+      avd_src_setcell_apply_initial(1.0, 2.0, 3.0, NULL, &setcell_delta) == 0
+    );
     ReportTestResult(
       "Source per-cell scalar parity",
       fabs(avd_src_source_per_cell(12.0, 0, 1, 0, 2) - (12.0 / 6.0)) < 1e-15

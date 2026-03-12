@@ -155,6 +155,10 @@ fn reset_amount_internal(res_initial: f64, cell_initial: f64) -> f64 {
     res_initial + cell_initial
 }
 
+fn setcell_apply_initial_internal(amount: f64, delta: f64, cell_initial: f64) -> (f64, f64) {
+    (amount + delta + cell_initial, 0.0)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn compute_flow_scalar_internal(
     elem1_amount: f64,
@@ -414,6 +418,27 @@ pub extern "C" fn avd_src_reset_amount(
         return 0;
     }
     if !set_out(out_amount, reset_amount_internal(res_initial, cell_initial)) {
+        return 0;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_setcell_apply_initial(
+    amount: f64,
+    delta: f64,
+    cell_initial: f64,
+    out_amount: *mut f64,
+    out_delta: *mut f64,
+) -> c_int {
+    if out_amount.is_null() || out_delta.is_null() {
+        return 0;
+    }
+    let (next_amount, next_delta) = setcell_apply_initial_internal(amount, delta, cell_initial);
+    if !set_out(out_amount, next_amount) {
+        return 0;
+    }
+    if !set_out(out_delta, next_delta) {
         return 0;
     }
     1
@@ -778,5 +803,21 @@ mod tests {
         assert_eq!(avd_src_reset_amount(2.5, 1.25, &mut out), 1);
         assert!((out - 3.75).abs() < 1e-15);
         assert_eq!(avd_src_reset_amount(1.0, 2.0, std::ptr::null_mut()), 0);
+    }
+
+    #[test]
+    fn setcell_apply_initial_matches_reference_and_guards() {
+        let mut out_amount = -1.0;
+        let mut out_delta = -1.0;
+        assert_eq!(
+            avd_src_setcell_apply_initial(3.0, -0.25, 1.5, &mut out_amount, &mut out_delta),
+            1
+        );
+        assert!((out_amount - 4.25).abs() < 1e-15);
+        assert_eq!(out_delta, 0.0);
+        assert_eq!(
+            avd_src_setcell_apply_initial(1.0, 2.0, 3.0, std::ptr::null_mut(), &mut out_delta),
+            0
+        );
     }
 }

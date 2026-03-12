@@ -53,10 +53,11 @@ Focus:
 - `cSpatialResCount::FlowAll` per-neighbor transfer accumulation (completed): Rust-backed additive pair-delta helper now computes neighbor transfer deltas used by `FlowAll` while C++ retains grid traversal, neighbor lookup, and state mutation ordering.
 - `cSpatialResCount` aggregate-update helpers (completed): Rust-backed additive `StateAll` fold and `SumAll` reduction helpers now compute deterministic per-cell fold/reduction math while C++ retains container ownership and call sequencing.
 - `cSpatialResCount` bulk-rate/reset helpers (completed): Rust-backed additive helpers now compute deterministic per-cell `RateAll` delta progression and `ResetResourceCounts` amount reset math while C++ retains traversal order, ownership, and call sequencing.
+- `cSpatialResCount` SetCellList cell-init helpers (completed): Rust-backed additive helper now computes deterministic per-cell initialization fold used by `SetCellList` while C++ retains cell-list traversal, bounds policy, and state ownership/order.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cSpatialResCount` cell-list bulk transform helper math (`SetCellList` initialization and bounded per-cell writes) behind additive Rust helpers while preserving C++ traversal and ownership.
+- Next candidate: extract deterministic `cResourceCount` precalc table-fill recurrence helpers (`SetInflow`/`SetDecay` table population loops) behind additive Rust helpers while preserving C++ ownership and sequencing.

@@ -183,6 +183,7 @@ int avd_src_state_fold(double amount, double delta, double* out_amount, double* 
 double avd_src_sum_amounts(const double* values, int count);
 int avd_src_rate_next_delta(double current_delta, double rate_in, double* out_delta);
 int avd_src_reset_amount(double res_initial, double cell_initial, double* out_amount);
+int avd_src_setcell_apply_initial(double amount, double delta, double cell_initial, double* out_amount, double* out_delta);
 int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
 double avd_rh_value_at_or_zero(const double* values, int count, int index);
 int avd_event_parse_trigger(const char* token);
