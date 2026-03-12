@@ -192,6 +192,63 @@ pub extern "C" fn avd_rc_fill_precalc_tables(
     });
 }
 
+#[no_mangle]
+pub extern "C" fn avd_rc_fill_inflow_precalc_table(
+    decay_rate: f64,
+    inflow: f64,
+    update_step: f64,
+    precalc_distance: c_int,
+    out_inflow: *mut f64,
+) {
+    if precalc_distance < 0 || out_inflow.is_null() {
+        return;
+    }
+    let count = match precalc_distance.checked_add(1) {
+        Some(v) => v,
+        None => return,
+    };
+    let mut prepared_inflow = vec![0.0_f64; count as usize];
+
+    let step_decay = avd_rc_step_decay(decay_rate, update_step);
+    let step_inflow = avd_rc_step_inflow(inflow, update_step);
+    prepared_inflow[0] = 0.0;
+    for i in 1..prepared_inflow.len() {
+        prepared_inflow[i] =
+            avd_rc_inflow_precalc_next(prepared_inflow[i - 1], step_decay, step_inflow);
+    }
+
+    with_mut_slice(out_inflow, count, |inflow_slice| {
+        inflow_slice.copy_from_slice(&prepared_inflow);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_fill_decay_precalc_table(
+    decay_rate: f64,
+    update_step: f64,
+    precalc_distance: c_int,
+    out_decay: *mut f64,
+) {
+    if precalc_distance < 0 || out_decay.is_null() {
+        return;
+    }
+    let count = match precalc_distance.checked_add(1) {
+        Some(v) => v,
+        None => return,
+    };
+    let mut prepared_decay = vec![0.0_f64; count as usize];
+
+    let step_decay = avd_rc_step_decay(decay_rate, update_step);
+    prepared_decay[0] = 1.0;
+    for i in 1..prepared_decay.len() {
+        prepared_decay[i] = avd_rc_decay_precalc_next(prepared_decay[i - 1], step_decay);
+    }
+
+    with_mut_slice(out_decay, count, |decay_slice| {
+        decay_slice.copy_from_slice(&prepared_decay);
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -360,6 +417,62 @@ mod tests {
         assert_eq!(inflow, vec![456.0; 4]);
 
         avd_rc_fill_precalc_tables(0.9, 1.0, 0.1, 3, std::ptr::null_mut(), inflow.as_mut_ptr());
+        assert_eq!(inflow, vec![456.0; 4]);
+    }
+
+    #[test]
+    fn rc_fill_inflow_precalc_table_matches_reference_math() {
+        let distance = 8;
+        let mut inflow = vec![-1.0; (distance + 1) as usize];
+        let decay_rate = 0.87;
+        let inflow_rate = 1.25;
+        let step = 0.1;
+        avd_rc_fill_inflow_precalc_table(
+            decay_rate,
+            inflow_rate,
+            step,
+            distance,
+            inflow.as_mut_ptr(),
+        );
+
+        let step_decay = decay_rate.powf(step);
+        let step_inflow = inflow_rate * step;
+        let mut inflow_ref = 0.0;
+        assert!((inflow[0] - inflow_ref).abs() < 1e-15);
+        for value in inflow.iter().take(distance as usize + 1).skip(1) {
+            inflow_ref = inflow_ref * step_decay + step_inflow;
+            assert!((*value - inflow_ref).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn rc_fill_decay_precalc_table_matches_reference_math() {
+        let distance = 8;
+        let mut decay = vec![-1.0; (distance + 1) as usize];
+        let decay_rate = 0.93;
+        let step = 0.125;
+        avd_rc_fill_decay_precalc_table(decay_rate, step, distance, decay.as_mut_ptr());
+
+        let step_decay = decay_rate.powf(step);
+        let mut decay_ref = 1.0;
+        assert!((decay[0] - decay_ref).abs() < 1e-15);
+        for value in decay.iter().take(distance as usize + 1).skip(1) {
+            decay_ref *= step_decay;
+            assert!((*value - decay_ref).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn rc_fill_setter_precalc_tables_reject_invalid_inputs() {
+        let mut decay = vec![123.0; 4];
+        let mut inflow = vec![456.0; 4];
+
+        avd_rc_fill_inflow_precalc_table(0.9, 1.0, 0.1, -1, inflow.as_mut_ptr());
+        avd_rc_fill_decay_precalc_table(0.9, 0.1, -1, decay.as_mut_ptr());
+        avd_rc_fill_inflow_precalc_table(0.9, 1.0, 0.1, 3, std::ptr::null_mut());
+        avd_rc_fill_decay_precalc_table(0.9, 0.1, 3, std::ptr::null_mut());
+
+        assert_eq!(decay, vec![123.0; 4]);
         assert_eq!(inflow, vec![456.0; 4]);
     }
 

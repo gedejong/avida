@@ -164,6 +164,8 @@ double avd_rc_step_decay(double decay_rate, double update_step);
 double avd_rc_inflow_precalc_next(double previous, double step_decay, double step_inflow);
 double avd_rc_decay_precalc_next(double previous, double step_decay);
 void avd_rc_fill_precalc_tables(double decay_rate, double inflow, double update_step, int precalc_distance, double* out_decay, double* out_inflow);
+void avd_rc_fill_inflow_precalc_table(double decay_rate, double inflow, double update_step, int precalc_distance, double* out_inflow);
+void avd_rc_fill_decay_precalc_table(double decay_rate, double update_step, int precalc_distance, double* out_decay);
 double avd_rc_accumulate_update_time(double current, double delta);
 int avd_rc_num_steps(double update_time, double update_step);
 int avd_rc_num_spatial_updates(int current_update, int previous_update);

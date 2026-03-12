@@ -977,6 +977,29 @@ protected:
     double unchanged_inflow[2] = {9.0, 9.0};
     avd_rc_fill_precalc_tables(decay_rate, inflow, update_step, 1, NULL, unchanged_inflow);
     ReportTestResult("Precalc table fill null decay output no-op", unchanged_inflow[0] == 9.0 && unchanged_inflow[1] == 9.0);
+
+    double inflow_only_table[13];
+    avd_rc_fill_inflow_precalc_table(decay_rate, inflow, update_step, 12, inflow_only_table);
+    bool inflow_only_ok = true;
+    for (int i = 0; i <= 12; ++i) {
+      if (fabs(inflow_only_table[i] - inflow_table[i]) > 1e-12) inflow_only_ok = false;
+    }
+    ReportTestResult("Inflow-only precalc fill helper parity", inflow_only_ok);
+
+    double decay_only_table[13];
+    avd_rc_fill_decay_precalc_table(decay_rate, update_step, 12, decay_only_table);
+    bool decay_only_ok = true;
+    for (int i = 0; i <= 12; ++i) {
+      if (fabs(decay_only_table[i] - decay_table[i]) > 1e-12) decay_only_ok = false;
+    }
+    ReportTestResult("Decay-only precalc fill helper parity", decay_only_ok);
+
+    double unchanged_decay[2] = {7.0, 7.0};
+    avd_rc_fill_decay_precalc_table(decay_rate, update_step, 1, NULL);
+    avd_rc_fill_inflow_precalc_table(decay_rate, inflow, update_step, -1, unchanged_inflow);
+    avd_rc_fill_decay_precalc_table(decay_rate, update_step, -1, unchanged_decay);
+    ReportTestResult("Inflow-only precalc fill invalid distance no-op", unchanged_inflow[0] == 9.0 && unchanged_inflow[1] == 9.0);
+    ReportTestResult("Decay-only precalc fill invalid distance no-op", unchanged_decay[0] == 7.0 && unchanged_decay[1] == 7.0);
   }
 };
 

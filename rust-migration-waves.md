@@ -50,6 +50,7 @@ Focus:
 - Selected modules in `source/main`
 - Selected modules in `source/cpu`
 - `cResourceCount` deterministic helper paths (Rust-backed FFI lookup, inflow/decay precalc helper math, and update-step scheduling helper math used by `GetResourceCountID`/`GetResourceByName`/`SetInflow`/`SetDecay`/`Update`/`DoUpdates` step derivation)
+- `cResourceCount` setter-precalc table-fill helpers (completed): Rust-backed additive helpers now populate `SetInflow`/`SetDecay` recurrence tables per resource row while C++ retains setter sequencing, ownership, and lookup/error behavior.
 - `cSpatialResCount::FlowAll` per-neighbor transfer accumulation (completed): Rust-backed additive pair-delta helper now computes neighbor transfer deltas used by `FlowAll` while C++ retains grid traversal, neighbor lookup, and state mutation ordering.
 - `cSpatialResCount` aggregate-update helpers (completed): Rust-backed additive `StateAll` fold and `SumAll` reduction helpers now compute deterministic per-cell fold/reduction math while C++ retains container ownership and call sequencing.
 - `cSpatialResCount` bulk-rate/reset helpers (completed): Rust-backed additive helpers now compute deterministic per-cell `RateAll` delta progression and `ResetResourceCounts` amount reset math while C++ retains traversal order, ownership, and call sequencing.
@@ -60,4 +61,4 @@ Focus:
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` precalc table-fill recurrence helpers (`SetInflow`/`SetDecay` table population loops) behind additive Rust helpers while preserving C++ ownership and sequencing.
+- Next candidate: extract deterministic `cResourceCount` spatial update-step dispatch helper math (per-update cell-list branch decision and step iteration policy) behind additive Rust helpers while preserving C++ resource ownership and call order.

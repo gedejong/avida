@@ -479,13 +479,13 @@ void cResourceCount::SetInflow(const cString& name, const double _inflow)
   if (id == -1) return;
 
   inflow_rate[id] = _inflow;
-  double step_inflow = avd_rc_step_inflow(_inflow, UPDATE_STEP);
-  double step_decay = avd_rc_step_decay(decay_rate[id], UPDATE_STEP);
-
-  inflow_precalc(id, 0) = 0.0;
-  for (int i = 1; i <= PRECALC_DISTANCE; i++) {
-    inflow_precalc(id, i) = avd_rc_inflow_precalc_next(inflow_precalc(id, i-1), step_decay, step_inflow);
-  }
+  avd_rc_fill_inflow_precalc_table(
+    decay_rate[id],
+    _inflow,
+    UPDATE_STEP,
+    PRECALC_DISTANCE,
+    &inflow_precalc(id, 0)
+  );
 }
 
 double cResourceCount::GetDecay(const cString& name)
@@ -502,11 +502,12 @@ void cResourceCount::SetDecay(const cString& name, const double _decay)
   if (id == -1) return;
 
   decay_rate[id] = _decay;
-  double step_decay = avd_rc_step_decay(_decay, UPDATE_STEP);
-  decay_precalc(id, 0) = 1.0;
-  for (int i = 1; i <= PRECALC_DISTANCE; i++) {
-    decay_precalc(id, i)  = avd_rc_decay_precalc_next(decay_precalc(id, i-1), step_decay);
-  }
+  avd_rc_fill_decay_precalc_table(
+    _decay,
+    UPDATE_STEP,
+    PRECALC_DISTANCE,
+    &decay_precalc(id, 0)
+  );
 }
 
 void cResourceCount::Update(double in_time) 
