@@ -40,7 +40,9 @@ public:
   void Rate(double ratein) const { delta += ratein; }
   void State() { amount += delta; delta = 0.0; }
   double GetAmount() const { return amount; }
+  double GetDelta() const { return delta; }
   void SetAmount(double res) const { amount = res; }
+  void SetDelta(double res) const { delta = res; }
   void SetPtr(int innum, int inelempt, int inxdist, int  inydist, double indist);
   int GetElemPtr(int innum) { return elempt[innum]; }
   int GetPtrXdist(int innum) { return xdist[innum]; }

@@ -1,4 +1,4 @@
-use crate::common::set_out;
+use crate::common::{set_out, with_slice};
 use std::ffi::c_int;
 
 fn clamp_to_bound(value: c_int, bound: c_int) -> c_int {
@@ -141,6 +141,18 @@ fn cell_id_in_bounds_legacy_setcell_internal(cell_id: c_int, grid_size: c_int) -
     } else {
         0
     }
+}
+
+fn state_fold_internal(amount: f64, delta: f64) -> (f64, f64) {
+    (amount + delta, 0.0)
+}
+
+fn rate_next_delta_internal(current_delta: f64, rate_in: f64) -> f64 {
+    current_delta + rate_in
+}
+
+fn reset_amount_internal(res_initial: f64, cell_initial: f64) -> f64 {
+    res_initial + cell_initial
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -347,6 +359,61 @@ pub extern "C" fn avd_src_setpointer_entry(
         return 0;
     }
     if !set_out(out_dist, dist) {
+        return 0;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_state_fold(
+    amount: f64,
+    delta: f64,
+    out_amount: *mut f64,
+    out_delta: *mut f64,
+) -> c_int {
+    if out_amount.is_null() || out_delta.is_null() {
+        return 0;
+    }
+    let (next_amount, next_delta) = state_fold_internal(amount, delta);
+    if !set_out(out_amount, next_amount) {
+        return 0;
+    }
+    if !set_out(out_delta, next_delta) {
+        return 0;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_sum_amounts(values: *const f64, count: c_int) -> f64 {
+    with_slice(values, count, 0.0, |slice| slice.iter().sum())
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_rate_next_delta(
+    current_delta: f64,
+    rate_in: f64,
+    out_delta: *mut f64,
+) -> c_int {
+    if out_delta.is_null() {
+        return 0;
+    }
+    if !set_out(out_delta, rate_next_delta_internal(current_delta, rate_in)) {
+        return 0;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn avd_src_reset_amount(
+    res_initial: f64,
+    cell_initial: f64,
+    out_amount: *mut f64,
+) -> c_int {
+    if out_amount.is_null() {
+        return 0;
+    }
+    if !set_out(out_amount, reset_amount_internal(res_initial, cell_initial)) {
         return 0;
     }
     1
@@ -670,5 +737,46 @@ mod tests {
         assert_eq!(xdist, 1);
         assert_eq!(ydist, 0);
         assert!((dist - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn state_fold_matches_legacy_semantics_and_guards() {
+        let mut out_amount = -1.0;
+        let mut out_delta = -1.0;
+        assert_eq!(
+            avd_src_state_fold(7.25, -2.0, &mut out_amount, &mut out_delta),
+            1
+        );
+        assert!((out_amount - 5.25).abs() < 1e-15);
+        assert_eq!(out_delta, 0.0);
+
+        assert_eq!(
+            avd_src_state_fold(1.0, 2.0, std::ptr::null_mut(), &mut out_delta),
+            0
+        );
+    }
+
+    #[test]
+    fn sum_amounts_matches_reference_and_defaults_zero() {
+        let values = [1.5, -2.0, 4.25];
+        assert!((avd_src_sum_amounts(values.as_ptr(), values.len() as c_int) - 3.75).abs() < 1e-15);
+        assert_eq!(avd_src_sum_amounts(std::ptr::null(), 3), 0.0);
+        assert_eq!(avd_src_sum_amounts(values.as_ptr(), 0), 0.0);
+    }
+
+    #[test]
+    fn rate_next_delta_matches_reference_and_guards() {
+        let mut out = -1.0;
+        assert_eq!(avd_src_rate_next_delta(1.25, -0.5, &mut out), 1);
+        assert!((out - 0.75).abs() < 1e-15);
+        assert_eq!(avd_src_rate_next_delta(1.0, 2.0, std::ptr::null_mut()), 0);
+    }
+
+    #[test]
+    fn reset_amount_matches_reference_and_guards() {
+        let mut out = -1.0;
+        assert_eq!(avd_src_reset_amount(2.5, 1.25, &mut out), 1);
+        assert!((out - 3.75).abs() < 1e-15);
+        assert_eq!(avd_src_reset_amount(1.0, 2.0, std::ptr::null_mut()), 0);
     }
 }

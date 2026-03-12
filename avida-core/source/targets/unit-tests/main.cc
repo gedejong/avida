@@ -1192,6 +1192,51 @@ protected:
         NULL, &out_elem2_delta
       ) == 0
     );
+    double folded_amount = -1.0;
+    double folded_delta = -1.0;
+    ReportTestResult(
+      "State fold helper parity",
+      avd_src_state_fold(7.25, -2.0, &folded_amount, &folded_delta) == 1 &&
+        fabs(folded_amount - 5.25) < 1e-15 &&
+        folded_delta == 0.0
+    );
+    ReportTestResult(
+      "State fold helper null output guard",
+      avd_src_state_fold(1.0, 2.0, NULL, &folded_delta) == 0
+    );
+    const double sum_values[] = {1.5, -2.0, 4.25};
+    ReportTestResult(
+      "Sum helper parity",
+      fabs(avd_src_sum_amounts(sum_values, 3) - 3.75) < 1e-15
+    );
+    ReportTestResult(
+      "Sum helper null input defaults zero",
+      avd_src_sum_amounts(NULL, 3) == 0.0
+    );
+    ReportTestResult(
+      "Sum helper zero count defaults zero",
+      avd_src_sum_amounts(sum_values, 0) == 0.0
+    );
+    double next_delta = 0.0;
+    ReportTestResult(
+      "Rate-next-delta helper parity",
+      avd_src_rate_next_delta(1.25, -0.5, &next_delta) == 1 &&
+        fabs(next_delta - 0.75) < 1e-15
+    );
+    ReportTestResult(
+      "Rate-next-delta helper null output guard",
+      avd_src_rate_next_delta(1.0, 2.0, NULL) == 0
+    );
+    double reset_amount = 0.0;
+    ReportTestResult(
+      "Reset-amount helper parity",
+      avd_src_reset_amount(2.5, 1.25, &reset_amount) == 1 &&
+        fabs(reset_amount - 3.75) < 1e-15
+    );
+    ReportTestResult(
+      "Reset-amount helper null output guard",
+      avd_src_reset_amount(1.0, 2.0, NULL) == 0
+    );
     ReportTestResult(
       "Source per-cell scalar parity",
       fabs(avd_src_source_per_cell(12.0, 0, 1, 0, 2) - (12.0 / 6.0)) < 1e-15

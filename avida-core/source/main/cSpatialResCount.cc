@@ -26,6 +26,7 @@
 #include "rust/running_stats_ffi.h"
 
 #include <cmath>
+#include <vector>
 
 using namespace std;
 using namespace AvidaTools;
@@ -215,11 +216,13 @@ double cSpatialResCount::GetAmount(int x, int y) const {
 }
 
 void cSpatialResCount::RateAll(double ratein) {
-
-  int i;
- 
-  for (i = 0; i < num_cells; i++) {
-    grid[i].Rate(ratein);
+  for (int i = 0; i < num_cells; i++) {
+    double next_delta = 0.0;
+    if (avd_src_rate_next_delta(grid[i].GetDelta(), ratein, &next_delta) == 0) {
+      grid[i].Rate(ratein);
+      continue;
+    }
+    grid[i].SetDelta(next_delta);
   } 
 }
 
@@ -228,10 +231,15 @@ void cSpatialResCount::RateAll(double ratein) {
 
 void cSpatialResCount::StateAll() {
 
-  int i;
- 
-  for (i = 0; i < num_cells; i++) {
-    grid[i].State();
+  for (int i = 0; i < num_cells; i++) {
+    double next_amount = 0.0;
+    double next_delta = 0.0;
+    if (avd_src_state_fold(grid[i].GetAmount(), grid[i].GetDelta(), &next_amount, &next_delta) == 0) {
+      grid[i].State();
+      continue;
+    }
+    grid[i].SetAmount(next_amount);
+    grid[i].SetDelta(next_delta);
   } 
 }
 
@@ -273,13 +281,12 @@ void cSpatialResCount::FlowAll() {
 
 double cSpatialResCount::SumAll() const{
 
-  int i;
-  double sum = 0.0;
-
-  for (i = 0; i < num_cells; i++) {
-    sum += GetAmount(i);
-  } 
-  return sum;
+  std::vector<double> values;
+  values.reserve(num_cells);
+  for (int i = 0; i < num_cells; i++) {
+    values.push_back(GetAmount(i));
+  }
+  return avd_src_sum_amounts(values.empty() ? NULL : values.data(), static_cast<int>(values.size()));
 }
 
 /* Take a given amount of resource and spread it among all the cells in the 
@@ -360,5 +367,12 @@ void cSpatialResCount::SetCellAmount(int cell_id, double res)
 
 void cSpatialResCount::ResetResourceCounts()
 {
-  for (int i = 0; i < grid.GetSize(); i++) grid[i].ResetResourceCount(m_initial);
+  for (int i = 0; i < grid.GetSize(); i++) {
+    double next_amount = 0.0;
+    if (avd_src_reset_amount(m_initial, grid[i].GetInitial(), &next_amount) == 0) {
+      grid[i].ResetResourceCount(m_initial);
+      continue;
+    }
+    grid[i].SetAmount(next_amount);
+  }
 }
