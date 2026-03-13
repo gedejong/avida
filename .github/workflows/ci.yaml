@@ -242,6 +242,7 @@ jobs:
         path: |
           rust/avida-rust/target/ffi-analysis/avd_symbols.txt
           rust/avida-rust/target/ffi-analysis/extern_c_index.txt
+          rust/avida-rust/target/ffi-analysis/ffi_summary.txt
           rust/avida-rust/target/ffi-analysis/llvm_callgraph.dot
         if-no-files-found: warn
 

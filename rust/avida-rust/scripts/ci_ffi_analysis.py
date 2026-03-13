@@ -67,6 +67,16 @@ def extern_index(src_dir: pathlib.Path) -> list[str]:
     return entries
 
 
+def count_clippy_pointer_allow(src_dir: pathlib.Path) -> int:
+    count = 0
+    marker = "allow(clippy::not_unsafe_ptr_arg_deref)"
+    for path in sorted(src_dir.glob("*.rs")):
+        for line in path.read_text().splitlines():
+            if marker in line:
+                count += 1
+    return count
+
+
 def newest_ll_file(target_release_deps: pathlib.Path) -> pathlib.Path | None:
     ll_files = list(target_release_deps.glob("*.ll"))
     if not ll_files:
@@ -110,6 +120,25 @@ def write_dot(path: pathlib.Path, roots: list[str], edges: list[tuple[str, str]]
     path.write_text("\n".join(lines) + "\n")
 
 
+def write_summary(
+    path: pathlib.Path,
+    export_count: int,
+    extern_count: int,
+    pointer_allow_count: int,
+    callgraph_edge_count: int,
+    callgraph_note: str | None,
+) -> None:
+    lines = [
+        f"exported_avd_symbols={export_count}",
+        f"extern_c_exports_indexed={extern_count}",
+        f"clippy_not_unsafe_ptr_arg_deref_allows={pointer_allow_count}",
+        f"callgraph_edges_from_avd_exports={callgraph_edge_count}",
+    ]
+    if callgraph_note:
+        lines.append(f"callgraph_note={callgraph_note}")
+    path.write_text("\n".join(lines) + "\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True, help="Output directory for artifacts")
@@ -135,6 +164,7 @@ def main() -> int:
     (output_dir / "extern_c_index.txt").write_text(
         "\n".join(extern_entries) + ("\n" if extern_entries else "")
     )
+    pointer_allow_count = count_clippy_pointer_allow(crate_dir / "src")
 
     # Best-effort LLVM call graph.
     note = None
@@ -150,6 +180,14 @@ def main() -> int:
         note = f"LLVM call graph generation skipped: {exc}"
 
     write_dot(output_dir / "llvm_callgraph.dot", symbols, edges, note)
+    write_summary(
+        output_dir / "ffi_summary.txt",
+        export_count=len(symbols),
+        extern_count=len(extern_entries),
+        pointer_allow_count=pointer_allow_count,
+        callgraph_edge_count=len(edges),
+        callgraph_note=note,
+    )
     return 0
 
 

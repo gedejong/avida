@@ -153,28 +153,24 @@ pub extern "C" fn avd_rba_set_bit(handle: *mut AvidaRawBitArrayHandle, index: c_
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_is_equal(
     left: *const AvidaRawBitArrayHandle,
     right: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) -> c_int {
-    if left.is_null() || right.is_null() {
-        return 0;
-    }
-    // SAFETY: pointers checked for null and only read.
-    let l = unsafe { &*left };
-    // SAFETY: pointers checked for null and only read.
-    let r = unsafe { &*right };
-    let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-    if l.bit_fields.len() < fields || r.bit_fields.len() < fields {
-        return 0;
-    }
-    if l.bit_fields[..fields] == r.bit_fields[..fields] {
-        1
-    } else {
-        0
-    }
+    with_rba_ref(left, 0, |l| {
+        with_rba_ref(right, 0, |r| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            if l.bit_fields.len() < fields || r.bit_fields.len() < fields {
+                return 0;
+            }
+            if l.bit_fields[..fields] == r.bit_fields[..fields] {
+                1
+            } else {
+                0
+            }
+        })
+    })
 }
 
 #[no_mangle]
@@ -240,126 +236,102 @@ pub extern "C" fn avd_rba_not(handle: *mut AvidaRawBitArrayHandle, num_bits: c_i
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_and(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] &= rhs.bit_fields[i];
-        }
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] &= rhs.bit_fields[i];
+            }
+        });
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_or(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] |= rhs.bit_fields[i];
-        }
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] |= rhs.bit_fields[i];
+            }
+        });
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_nand(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] = !(h.bit_fields[i] & rhs.bit_fields[i]);
-        }
-        h.mask_tail(num_bits);
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] = !(h.bit_fields[i] & rhs.bit_fields[i]);
+            }
+            h.mask_tail(num_bits);
+        });
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_nor(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] = !(h.bit_fields[i] | rhs.bit_fields[i]);
-        }
-        h.mask_tail(num_bits);
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] = !(h.bit_fields[i] | rhs.bit_fields[i]);
+            }
+            h.mask_tail(num_bits);
+        });
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_xor(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] ^= rhs.bit_fields[i];
-        }
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] ^= rhs.bit_fields[i];
+            }
+        });
+    })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rba_equ(
     handle: *mut AvidaRawBitArrayHandle,
     other: *const AvidaRawBitArrayHandle,
     num_bits: c_int,
 ) {
-    if other.is_null() {
-        return;
-    }
-    // SAFETY: pointer checked for null and only read.
-    let rhs = unsafe { &*other };
-    with_rba_mut(handle, |h| {
-        let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
-        for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
-            h.bit_fields[i] = !(h.bit_fields[i] ^ rhs.bit_fields[i]);
-        }
-        h.mask_tail(num_bits);
-    });
+    with_rba_ref(other, (), |rhs| {
+        with_rba_mut(handle, |h| {
+            let fields = AvidaRawBitArrayHandle::num_fields(num_bits);
+            for i in 0..fields.min(h.bit_fields.len()).min(rhs.bit_fields.len()) {
+                h.bit_fields[i] = !(h.bit_fields[i] ^ rhs.bit_fields[i]);
+            }
+            h.mask_tail(num_bits);
+        });
+    })
 }
 
 #[no_mangle]

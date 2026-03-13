@@ -1,51 +1,11 @@
 use crate::common::{
-    alloc_c_string, free_c_string, set_out, with_cstr, with_tsr_mut, with_tsr_ref,
+    alloc_c_string, apto_bool_from_bytes, apto_double_from_str, apto_int_from_str, boxed_free,
+    boxed_new, free_c_string, set_out, with_cstr, with_tsr_mut, with_tsr_ref,
 };
-use std::ffi::{c_char, c_double, c_int, c_long, CString};
-
-unsafe extern "C" {
-    fn strtol(nptr: *const c_char, endptr: *mut *mut c_char, base: c_int) -> c_long;
-    fn strtod(nptr: *const c_char, endptr: *mut *mut c_char) -> c_double;
-}
+use std::ffi::{c_char, c_double, c_int};
 
 fn apto_bool_from_str(value: &str) -> c_int {
-    let bytes = value.as_bytes();
-    if bytes.len() == 1 {
-        if bytes[0] == b'1' || bytes[0] == b'T' || bytes[0] == b't' {
-            return 1;
-        }
-        return 0;
-    }
-    if bytes.len() == 4
-        && (bytes[0] == b'T' || bytes[0] == b't')
-        && (bytes[1] == b'R' || bytes[1] == b'r')
-        && (bytes[2] == b'U' || bytes[2] == b'u')
-        && (bytes[3] == b'E' || bytes[3] == b'e')
-    {
-        return 1;
-    }
-    0
-}
-
-fn apto_int_from_str(value: &str) -> c_int {
-    let c_value = match CString::new(value) {
-        Ok(v) => v,
-        Err(_) => return 0,
-    };
-    // SAFETY: c_value is a valid NUL-terminated C string and we intentionally
-    // match legacy Apto::StrAs behavior by allowing partial parses with null endptr.
-    let parsed = unsafe { strtol(c_value.as_ptr(), std::ptr::null_mut(), 0) };
-    parsed as c_int
-}
-
-fn apto_double_from_str(value: &str) -> c_double {
-    let c_value = match CString::new(value) {
-        Ok(v) => v,
-        Err(_) => return 0.0,
-    };
-    // SAFETY: c_value is a valid NUL-terminated C string and we intentionally
-    // match legacy Apto::StrAs behavior by allowing partial parses with null endptr.
-    unsafe { strtod(c_value.as_ptr(), std::ptr::null_mut()) }
+    apto_bool_from_bytes(value.as_bytes())
 }
 
 #[repr(C)]
@@ -136,27 +96,20 @@ impl AvidaTimeSeriesHandle {
 
 #[no_mangle]
 pub extern "C" fn avd_tsr_new() -> *mut AvidaTimeSeriesHandle {
-    Box::into_raw(Box::new(AvidaTimeSeriesHandle::new()))
+    boxed_new(AvidaTimeSeriesHandle::new())
 }
 
 #[no_mangle]
 pub extern "C" fn avd_tsr_from_string(serialized: *const c_char) -> *mut AvidaTimeSeriesHandle {
     with_cstr(serialized, avd_tsr_new(), |cstr| {
         let text = cstr.to_string_lossy();
-        Box::into_raw(Box::new(AvidaTimeSeriesHandle::from_serialized(&text)))
+        boxed_new(AvidaTimeSeriesHandle::from_serialized(&text))
     })
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_free(handle: *mut AvidaTimeSeriesHandle) {
-    if handle.is_null() {
-        return;
-    }
-    // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
-    unsafe {
-        drop(Box::from_raw(handle));
-    }
+    boxed_free(handle);
 }
 
 #[no_mangle]
@@ -225,7 +178,6 @@ pub extern "C" fn avd_tsr_value_as_double(
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_push_bool(
     handle: *mut AvidaTimeSeriesHandle,
     update: c_int,
@@ -236,7 +188,6 @@ pub extern "C" fn avd_tsr_push_bool(
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_push_int(
     handle: *mut AvidaTimeSeriesHandle,
     update: c_int,
@@ -246,7 +197,6 @@ pub extern "C" fn avd_tsr_push_int(
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_tsr_push_double(
     handle: *mut AvidaTimeSeriesHandle,
     update: c_int,
@@ -326,18 +276,34 @@ mod tests {
     #[test]
     fn typed_getters_validate_pointer_and_index() {
         let mut out_i: c_int = 99;
+        let out_b: c_int = 99;
+        let out_d: c_double = 99.0;
         assert_eq!(avd_tsr_value_as_int(std::ptr::null(), 0, &mut out_i), 0);
         assert_eq!(out_i, 99);
         assert_eq!(
             avd_tsr_value_as_int(std::ptr::null(), 0, std::ptr::null_mut()),
             0
         );
+        assert_eq!(
+            avd_tsr_value_as_bool(std::ptr::null(), 0, std::ptr::null_mut()),
+            0
+        );
+        assert_eq!(
+            avd_tsr_value_as_double(std::ptr::null(), 0, std::ptr::null_mut()),
+            0
+        );
 
         let handle = avd_tsr_new();
         avd_tsr_push_int(handle, 3, 42);
+        avd_tsr_push_bool(handle, 4, 1);
+        avd_tsr_push_double(handle, 5, 2.5);
         assert_eq!(avd_tsr_value_as_int(handle, -1, &mut out_i), 0);
         assert_eq!(avd_tsr_value_as_int(handle, 7, &mut out_i), 0);
+        assert_eq!(avd_tsr_value_as_bool(handle, 1, std::ptr::null_mut()), 0);
+        assert_eq!(avd_tsr_value_as_double(handle, 2, std::ptr::null_mut()), 0);
         assert_eq!(out_i, 99);
+        assert_eq!(out_b, 99);
+        assert_eq!(out_d, 99.0);
         avd_tsr_free(handle);
     }
 

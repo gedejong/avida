@@ -1,9 +1,10 @@
-use crate::common::{alloc_c_string, free_c_string, with_cstr};
-use std::ffi::{c_char, c_double, c_int, c_long, CStr};
+use crate::common::{
+    alloc_c_string, apto_bool_from_cstr, apto_double_from_cstr, apto_int_from_cstr, free_c_string,
+    with_cstr, with_slice,
+};
+use std::ffi::{c_char, c_double, c_int, CStr};
 
 unsafe extern "C" {
-    fn strtol(nptr: *const c_char, endptr: *mut *mut c_char, base: c_int) -> c_long;
-    fn strtod(nptr: *const c_char, endptr: *mut *mut c_char) -> c_double;
     fn snprintf(s: *mut c_char, n: usize, format: *const c_char, ...) -> c_int;
 }
 
@@ -28,46 +29,17 @@ pub extern "C" fn avd_pkg_array_double_value() -> c_double {
 
 #[no_mangle]
 pub extern "C" fn avd_pkg_str_as_bool(value: *const c_char) -> c_int {
-    with_cstr(value, 0, |c| {
-        let text = c.to_bytes();
-        if text.len() == 1 {
-            if text[0] == b'1' || text[0] == b'T' || text[0] == b't' {
-                return 1;
-            }
-            return 0;
-        }
-        if text.len() == 4
-            && (text[0] == b'T' || text[0] == b't')
-            && (text[1] == b'R' || text[1] == b'r')
-            && (text[2] == b'U' || text[2] == b'u')
-            && (text[3] == b'E' || text[3] == b'e')
-        {
-            return 1;
-        }
-        0
-    })
+    with_cstr(value, 0, apto_bool_from_cstr)
 }
 
 #[no_mangle]
 pub extern "C" fn avd_pkg_str_as_int(value: *const c_char) -> c_int {
-    with_cstr(value, 0, |c| {
-        // SAFETY: c points to a valid NUL-terminated C string.
-        let parsed = unsafe { strtol(c.as_ptr(), std::ptr::null_mut(), 0) };
-        parsed as c_int
-    })
+    with_cstr(value, 0, apto_int_from_cstr)
 }
 
 #[no_mangle]
 pub extern "C" fn avd_pkg_str_as_double(value: *const c_char) -> c_double {
-    with_cstr(value, 0.0, |c| {
-        // SAFETY: c points to a valid NUL-terminated C string.
-        unsafe { strtod(c.as_ptr(), std::ptr::null_mut()) }
-    })
-}
-
-fn entry_ptr_at(entries: *const *const c_char, index: usize) -> *const c_char {
-    // SAFETY: caller guarantees entries is valid for reads at index.
-    unsafe { *entries.add(index) }
+    with_cstr(value, 0.0, apto_double_from_cstr)
 }
 
 #[no_mangle]
@@ -104,27 +76,29 @@ pub extern "C" fn avd_pkg_array_string_value(
     entries: *const *const c_char,
     count: c_int,
 ) -> *mut c_char {
-    if count <= 0 || entries.is_null() {
-        return alloc_c_string(String::new());
-    }
-
-    let mut rendered = String::new();
-    for i in 0..count {
-        let entry_ptr = entry_ptr_at(entries, i as usize);
-        let text = with_cstr(entry_ptr, String::new(), |s| {
-            s.to_string_lossy().into_owned()
-        });
-        if i == 0 {
-            rendered.push('\'');
-            rendered.push_str(&text);
-            rendered.push('\'');
-        } else {
-            rendered.push_str(",'");
-            rendered.push_str(&text);
-            rendered.push('\'');
-        }
-    }
-    alloc_c_string(rendered)
+    with_slice(
+        entries,
+        count,
+        alloc_c_string(String::new()),
+        |entry_slice| {
+            let mut rendered = String::new();
+            for (i, entry_ptr) in entry_slice.iter().enumerate() {
+                let text = with_cstr(*entry_ptr, String::new(), |s| {
+                    s.to_string_lossy().into_owned()
+                });
+                if i == 0 {
+                    rendered.push('\'');
+                    rendered.push_str(&text);
+                    rendered.push('\'');
+                } else {
+                    rendered.push_str(",'");
+                    rendered.push_str(&text);
+                    rendered.push('\'');
+                }
+            }
+            alloc_c_string(rendered)
+        },
+    )
 }
 
 #[no_mangle]

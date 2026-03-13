@@ -126,7 +126,6 @@ pub extern "C" fn avd_rc_remainder_update_time(
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn avd_rc_apply_nonspatial_steps(
     current: f64,
     decay_precalc: *const f64,

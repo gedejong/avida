@@ -4,7 +4,12 @@ use crate::{
     AvidaRawBitArrayHandle, AvidaRunningAverageHandle, AvidaRunningStatsHandle,
     AvidaWeightedIndexHandle,
 };
-use std::ffi::{c_char, c_int, CStr, CString};
+use std::ffi::{c_char, c_double, c_int, c_long, CStr, CString};
+
+unsafe extern "C" {
+    fn strtol(nptr: *const c_char, endptr: *mut *mut c_char, base: c_int) -> c_long;
+    fn strtod(nptr: *const c_char, endptr: *mut *mut c_char) -> c_double;
+}
 
 macro_rules! define_handle_accessors {
     ($ref_name:ident, $mut_name:ident, $handle_ty:ty) => {
@@ -121,5 +126,52 @@ pub(crate) fn boxed_free<T>(handle: *mut T) {
     // SAFETY: pointer came from Box::into_raw in this crate and is freed exactly once here.
     unsafe {
         drop(Box::from_raw(handle));
+    }
+}
+
+pub(crate) fn apto_bool_from_bytes(text: &[u8]) -> c_int {
+    if text.len() == 1 {
+        if text[0] == b'1' || text[0] == b'T' || text[0] == b't' {
+            return 1;
+        }
+        return 0;
+    }
+    if text.len() == 4
+        && (text[0] == b'T' || text[0] == b't')
+        && (text[1] == b'R' || text[1] == b'r')
+        && (text[2] == b'U' || text[2] == b'u')
+        && (text[3] == b'E' || text[3] == b'e')
+    {
+        return 1;
+    }
+    0
+}
+
+pub(crate) fn apto_bool_from_cstr(value: &CStr) -> c_int {
+    apto_bool_from_bytes(value.to_bytes())
+}
+
+pub(crate) fn apto_int_from_cstr(value: &CStr) -> c_int {
+    // SAFETY: CStr guarantees a valid NUL-terminated pointer.
+    let parsed = unsafe { strtol(value.as_ptr(), std::ptr::null_mut(), 0) };
+    parsed as c_int
+}
+
+pub(crate) fn apto_double_from_cstr(value: &CStr) -> c_double {
+    // SAFETY: CStr guarantees a valid NUL-terminated pointer.
+    unsafe { strtod(value.as_ptr(), std::ptr::null_mut()) }
+}
+
+pub(crate) fn apto_int_from_str(value: &str) -> c_int {
+    match CString::new(value) {
+        Ok(v) => apto_int_from_cstr(&v),
+        Err(_) => 0,
+    }
+}
+
+pub(crate) fn apto_double_from_str(value: &str) -> c_double {
+    match CString::new(value) {
+        Ok(v) => apto_double_from_cstr(&v),
+        Err(_) => 0.0,
     }
 }

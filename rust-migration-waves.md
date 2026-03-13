@@ -45,6 +45,7 @@ Focus:
 - Reuse shared Rust helper parsers across `source/data` modules to eliminate duplicated C++ bracket parsing logic.
 - Consolidate duplicated FFI CString/output-pointer handling through shared `common.rs` helpers (`provider_helpers`, `time_series_recorder`, `package`) to reduce repeated unsafe patterns.
 - Idiomatic Rust FFI hardening (completed): centralized handle lifecycle helpers in `common.rs`, normalized out-parameter write handling in selected FFI modules, and added CI artifacts for exported symbol map + LLVM call graph with an ABI removal guard.
+- Idiomatic Rust FFI hardening phase 2 (completed): removed remaining `not_unsafe_ptr_arg_deref` allowances from `bit_array`, `time_series_recorder`, and `resource_count_helpers`; unified legacy bool/int/double coercion internals in `common.rs` for shared use by package/time-series helpers; added an FFI out-param policy note; and extended CI FFI artifacts with compact `ffi_summary.txt`.
 
 ## Wave 5: Runtime and execution core
 
