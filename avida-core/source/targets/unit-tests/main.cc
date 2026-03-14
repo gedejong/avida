@@ -1068,6 +1068,30 @@ protected:
       "Spatial scheduling negative saturation",
       avd_rc_num_spatial_updates(std::numeric_limits<int>::min(), 1) == std::numeric_limits<int>::min()
     );
+    ReportTestResult(
+      "Spatial step iteration positive passthrough",
+      avd_rc_spatial_step_iterations(6) == 6
+    );
+    ReportTestResult(
+      "Spatial step iteration zero passthrough",
+      avd_rc_spatial_step_iterations(0) == 0
+    );
+    ReportTestResult(
+      "Spatial step iteration negative clamps to zero",
+      avd_rc_spatial_step_iterations(-6) == 0
+    );
+    ReportTestResult(
+      "Spatial cell-list branch enabled",
+      avd_rc_use_cell_list_branch(4) == 1
+    );
+    ReportTestResult(
+      "Spatial cell-list branch disabled for zero",
+      avd_rc_use_cell_list_branch(0) == 0
+    );
+    ReportTestResult(
+      "Spatial cell-list branch disabled for negative",
+      avd_rc_use_cell_list_branch(-2) == 0
+    );
 
     const int precalc_distance = 4;
     const double decay[] = {1.0, 0.9, 0.81, 0.729, 0.6561};

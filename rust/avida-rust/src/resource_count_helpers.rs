@@ -81,6 +81,18 @@ fn saturating_update_delta(current_update: c_int, previous_update: c_int) -> c_i
     current_update.saturating_sub(previous_update)
 }
 
+fn spatial_step_iterations(num_updates: c_int) -> c_int {
+    num_updates.max(0)
+}
+
+fn use_cell_list_branch(cell_list_size: c_int) -> c_int {
+    if cell_list_size > 0 {
+        1
+    } else {
+        0
+    }
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -114,6 +126,16 @@ pub extern "C" fn avd_rc_num_spatial_updates(
     previous_update: c_int,
 ) -> c_int {
     saturating_update_delta(current_update, previous_update)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_spatial_step_iterations(num_updates: c_int) -> c_int {
+    spatial_step_iterations(num_updates)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_use_cell_list_branch(cell_list_size: c_int) -> c_int {
+    use_cell_list_branch(cell_list_size)
 }
 
 #[no_mangle]
@@ -374,6 +396,12 @@ mod tests {
         assert_eq!(avd_rc_num_spatial_updates(4, 10), -6);
         assert_eq!(avd_rc_num_spatial_updates(c_int::MAX, -1), c_int::MAX);
         assert_eq!(avd_rc_num_spatial_updates(c_int::MIN, 1), c_int::MIN);
+        assert_eq!(avd_rc_spatial_step_iterations(6), 6);
+        assert_eq!(avd_rc_spatial_step_iterations(0), 0);
+        assert_eq!(avd_rc_spatial_step_iterations(-6), 0);
+        assert_eq!(avd_rc_use_cell_list_branch(4), 1);
+        assert_eq!(avd_rc_use_cell_list_branch(0), 0);
+        assert_eq!(avd_rc_use_cell_list_branch(-2), 0);
     }
 
     #[test]

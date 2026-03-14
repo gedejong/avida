@@ -809,11 +809,13 @@ void cResourceCount::DoNonSpatialUpdates(cAvidaContext& ctx, const int res_id, i
 
 void cResourceCount::DoSpatialUpdates(cAvidaContext& ctx, const int res_id, int num_updates) const
 {
-  for (int kk=0; kk < num_updates; kk++){
+  const int iterations = avd_rc_spatial_step_iterations(num_updates);
+  const int use_cell_branch = avd_rc_use_cell_list_branch(spatial_resource_count[res_id]->GetCellListSize());
+  for (int kk = 0; kk < iterations; kk++) {
     spatial_resource_count[res_id]->UpdateCount(ctx);  //Only for Gradient Resources
     spatial_resource_count[res_id]->Source(inflow_rate[res_id]);  
     spatial_resource_count[res_id]->Sink(decay_rate[res_id]);   
-    if (spatial_resource_count[res_id]->GetCellListSize() > 0) {  // Only for CELL resources?
+    if (use_cell_branch != 0) {  // Only for CELL resources?
       spatial_resource_count[res_id]->CellInflow();
       spatial_resource_count[res_id]->CellOutflow();
     }

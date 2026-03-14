@@ -57,10 +57,11 @@ Focus:
 - `cSpatialResCount` aggregate-update helpers (completed): Rust-backed additive `StateAll` fold and `SumAll` reduction helpers now compute deterministic per-cell fold/reduction math while C++ retains container ownership and call sequencing.
 - `cSpatialResCount` bulk-rate/reset helpers (completed): Rust-backed additive helpers now compute deterministic per-cell `RateAll` delta progression and `ResetResourceCounts` amount reset math while C++ retains traversal order, ownership, and call sequencing.
 - `cSpatialResCount` SetCellList cell-init helpers (completed): Rust-backed additive helper now computes deterministic per-cell initialization fold used by `SetCellList` while C++ retains cell-list traversal, bounds policy, and state ownership/order.
+- `cResourceCount` spatial dispatch helpers (completed): Rust-backed additive helpers now compute spatial step iteration and cell-list branch policy used by `DoSpatialUpdates` while C++ retains update traversal and operation order (`UpdateCount/Source/Sink/CellInflow/CellOutflow/FlowAll/StateAll`).
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` spatial update-step dispatch helper math (per-update cell-list branch decision and step iteration policy) behind additive Rust helpers while preserving C++ resource ownership and call order.
+- Next candidate: extract deterministic `cResourceCount` per-resource update dispatch policy (non-spatial/spatial/global_only routing decision) behind additive Rust helpers while preserving C++ ownership and update sequencing.
