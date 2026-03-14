@@ -77,7 +77,6 @@ private:
 
   // Setup the update process to use lazy evaluation...
   mutable double update_time;     // Portion of an update compleated...
-  mutable double spatial_update_time;
   mutable int m_last_updated;
   mutable int m_spatial_update;
 

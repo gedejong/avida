@@ -61,33 +61,8 @@ const double cResourceCount::EPSILON (1.0e-15);
 const int cResourceCount::PRECALC_DISTANCE(100);
 
 
-void FlowMatter(cSpatialCountElem &elem1, cSpatialCountElem &elem2, 
-                double inxdiffuse, 
-                double inydiffuse, double inxgravity, double inygravity,
-                int xdist, int ydist, double dist) {
-
-  /* Routine to calculate the amount of flow from one Element to another.
-     Amount of flow is a function of:
-
-       1) Amount of material in each cell (will try to equalize)
-       2) Distance between each cell
-       3) x and y "gravity"
-
-     This method only effect the delta amount of each element.  The State
-     method will need to be called at the end of each time step to complete
-     the movement of material.
-  */
-
-  const double flowamt = avd_src_compute_flow_scalar(
-    elem1.amount, elem2.amount, inxdiffuse, inydiffuse, inxgravity, inygravity, xdist, ydist, dist
-  );
-  elem1.delta -= flowamt;
-  elem2.delta += flowamt;
-}
-
 cResourceCount::cResourceCount(int num_resources)
   : update_time(0.0)
-  , spatial_update_time(0.0)
   , m_last_updated(0)
   , m_spatial_update(0)
 {
@@ -122,7 +97,6 @@ const cResourceCount &cResourceCount::operator=(const cResourceCount &rc) {
   curr_grid_res_cnt = rc.curr_grid_res_cnt;
   curr_spatial_res_cnt = rc.curr_spatial_res_cnt;
   update_time = rc.update_time;
-  spatial_update_time = rc.spatial_update_time;
   cell_lists = rc.cell_lists;
 
   return *this;
@@ -519,7 +493,6 @@ void cResourceCount::SetDecay(const cString& name, const double _decay)
 void cResourceCount::Update(double in_time) 
 { 
   update_time = avd_rc_accumulate_update_time(update_time, in_time);
-  spatial_update_time = avd_rc_accumulate_update_time(spatial_update_time, in_time);
  }
 
  

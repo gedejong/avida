@@ -149,15 +149,13 @@ void cSpatialResCount::SetCellList(Apto::Array<cCellResource>* in_cell_list_ptr)
     if (avd_src_cell_id_in_bounds_legacy_setcell(cell_id, grid.GetSize()) != 0) {
       double next_amount = 0.0;
       double next_delta = 0.0;
-      if (avd_src_setcell_apply_initial(
-            Element(cell_id).GetAmount(), Element(cell_id).GetDelta(), cell_initial, &next_amount, &next_delta
-          ) == 0) {
-        Rate((*cell_list_ptr)[i].GetId(), cell_initial);
-        State((*cell_list_ptr)[i].GetId());
-      } else {
-        Element(cell_id).SetAmount(next_amount);
-        Element(cell_id).SetDelta(next_delta);
-      }
+      const int status = avd_src_setcell_apply_initial(
+        Element(cell_id).GetAmount(), Element(cell_id).GetDelta(), cell_initial, &next_amount, &next_delta
+      );
+      assert(status != 0);
+      if (status == 0) continue;
+      Element(cell_id).SetAmount(next_amount);
+      Element(cell_id).SetDelta(next_delta);
       Element(cell_id).SetInitial(cell_initial);
     }
   }
@@ -228,10 +226,9 @@ double cSpatialResCount::GetAmount(int x, int y) const {
 void cSpatialResCount::RateAll(double ratein) {
   for (int i = 0; i < num_cells; i++) {
     double next_delta = 0.0;
-    if (avd_src_rate_next_delta(grid[i].GetDelta(), ratein, &next_delta) == 0) {
-      grid[i].Rate(ratein);
-      continue;
-    }
+    const int status = avd_src_rate_next_delta(grid[i].GetDelta(), ratein, &next_delta);
+    assert(status != 0);
+    if (status == 0) continue;
     grid[i].SetDelta(next_delta);
   } 
 }
@@ -244,10 +241,9 @@ void cSpatialResCount::StateAll() {
   for (int i = 0; i < num_cells; i++) {
     double next_amount = 0.0;
     double next_delta = 0.0;
-    if (avd_src_state_fold(grid[i].GetAmount(), grid[i].GetDelta(), &next_amount, &next_delta) == 0) {
-      grid[i].State();
-      continue;
-    }
+    const int status = avd_src_state_fold(grid[i].GetAmount(), grid[i].GetDelta(), &next_amount, &next_delta);
+    assert(status != 0);
+    if (status == 0) continue;
     grid[i].SetAmount(next_amount);
     grid[i].SetDelta(next_delta);
   } 
@@ -274,12 +270,12 @@ void cSpatialResCount::FlowAll() {
       if (ii >= 0) {
         double elem1_delta = 0.0;
         double elem2_delta = 0.0;
-        if (avd_src_compute_flow_pair_deltas(
-              grid[i].GetAmount(), grid[ii].GetAmount(), xdiffuse, ydiffuse, xgravity, ygravity,
-              xdist, ydist, dist, &elem1_delta, &elem2_delta
-            ) == 0) {
-          continue;
-        }
+        const int status = avd_src_compute_flow_pair_deltas(
+          grid[i].GetAmount(), grid[ii].GetAmount(), xdiffuse, ydiffuse, xgravity, ygravity,
+          xdist, ydist, dist, &elem1_delta, &elem2_delta
+        );
+        assert(status != 0);
+        if (status == 0) continue;
         grid[i].Rate(elem1_delta);
         grid[ii].Rate(elem2_delta);
       }
@@ -379,10 +375,9 @@ void cSpatialResCount::ResetResourceCounts()
 {
   for (int i = 0; i < grid.GetSize(); i++) {
     double next_amount = 0.0;
-    if (avd_src_reset_amount(m_initial, grid[i].GetInitial(), &next_amount) == 0) {
-      grid[i].ResetResourceCount(m_initial);
-      continue;
-    }
+    const int status = avd_src_reset_amount(m_initial, grid[i].GetInitial(), &next_amount);
+    assert(status != 0);
+    if (status == 0) continue;
     grid[i].SetAmount(next_amount);
   }
 }

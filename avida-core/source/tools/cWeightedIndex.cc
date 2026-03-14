@@ -57,52 +57,10 @@ cWeightedIndex::~cWeightedIndex()
 }
 
 
-// The following method is subject to floating point rounding errors that can lead to weight mismatches
-// Instead, as implemented below, directly add the subtree weights to ensure that this doesn't happen. @DMB
-
-//void cWeightedIndex::AdjustSubtree(int id, double weight_change)
-//{
-//  subtree_weight[id] += weight_change;
-//  if(subtree_weight[id] < 0.0001)  //bb: added to catch round off error
-//    subtree_weight[id] = 0.0;
-//  if (id != 0) {
-//    AdjustSubtree(GetParent(id), weight_change);
-//  }
-//}
-//
-//void cWeightedIndex::SetWeight(int id, double in_weight)
-//{
-//  const double weight_change = in_weight - item_weight[id];
-//  item_weight[id] = in_weight;
-//  AdjustSubtree(id, weight_change);
-//}
-  
 void cWeightedIndex::SetWeight(int id, double in_weight)
 {
   avd_wi_set_weight(m_handle, id, in_weight);
 }
-
-// This order of testing is about 10% faster than the one used below.
-// Alas, it scans the array out of bounds...  For a real test we need to
-// look at timings in optimized mode.
-// int cWeightedIndex::FindPosition(double position, int root_id)
-// {
-//   // Check left...
-//   const int left_id = GetLeftChild(root_id);
-//   if (position < subtree_weight[left_id]) {
-//     return FindPosition(position, left_id);
-//   }
-
-//   // Then right...
-//   position -= subtree_weight[left_id];
-//   const int right_id = GetRightChild(root_id);
-//   if (position < subtree_weight[right_id]) {
-//     return FindPosition(position, right_id);
-//   }
-  
-//   // Then just return this!
-//   return root_id;
-// }
 
 int cWeightedIndex::FindPosition(double position, int root_id)
 {
