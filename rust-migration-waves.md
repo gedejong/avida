@@ -60,10 +60,11 @@ Focus:
 - `cResourceCount` spatial dispatch helpers (completed): Rust-backed additive helpers now compute spatial step iteration and cell-list branch policy used by `DoSpatialUpdates` while C++ retains update traversal and operation order (`UpdateCount/Source/Sink/CellInflow/CellOutflow/FlowAll/StateAll`).
 - `cResourceCount` per-resource dispatch policy helpers (completed): Rust-backed additive helpers now compute geometry-based spatial classification plus per-resource `DoUpdates` action selection and `m_last_updated` advance policy, while C++ retains resource iteration order, update scheduling, and state ownership/mutation sequencing.
 - `cResourceCount` update-time accumulation and wrapper-policy helpers (completed): Rust-backed additive helpers now define update-time delta passthrough and wrapper `global_only` mode mapping used by `Update`/`UpdateGlobalResources`/`UpdateRandomResources`/`UpdateResources`, while C++ retains call sequencing and state ownership.
+- `cResourceCount` read-path policy wiring (completed): C++ read entrypoints now route geometry-based global-vs-spatial selection through Rust helper `avd_rc_read_path_kind` (`ReadCellResourceValue` and aggregate `Get` path), preserving ownership and `DoUpdates` ordering with refreshed C++ parity checks for mapping and payload selection.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` read-path selection policy (`IsSpatialResource`/geometry-based branch choosing between global array and spatial cell accessors) behind additive Rust helpers while preserving C++ ownership and query ordering.
+- Next candidate: extract deterministic `cResourceCount` write-path selection policy (geometry-based global-vs-spatial branching in `Set`/`ModifyCell`) behind additive Rust helpers while preserving C++ mutation ordering and ownership.

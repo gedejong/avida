@@ -627,7 +627,7 @@ double cResourceCount::Get(cAvidaContext& ctx, int res_id) const
 {
   assert(res_id < resource_count.GetSize());
   DoUpdates(ctx);
-  if (!IsSpatialResource(res_id)) {
+  if (avd_rc_read_path_kind(geometry[res_id]) == AVD_RC_READ_PATH_GLOBAL) {
       return resource_count[res_id];
   } //else return spacial resource sum
   return spatial_resource_count[res_id]->SumAll();

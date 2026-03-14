@@ -1145,6 +1145,27 @@ protected:
       avd_rc_read_path_kind(1) == 1 && avd_rc_read_path_kind(2) == 1
     );
     ReportTestResult(
+      "Read path unknown geometry defaults spatial",
+      avd_rc_read_path_kind(42) == 1
+    );
+    const double global_read_payload = 17.25;
+    const double spatial_read_payload = 3.5;
+    const auto read_path_select_payload = [&](int geometry) {
+      return (avd_rc_read_path_kind(geometry) == 1) ? spatial_read_payload : global_read_payload;
+    };
+    ReportTestResult(
+      "Read payload policy global geometry",
+      fabs(read_path_select_payload(0) - global_read_payload) < 1e-15
+    );
+    ReportTestResult(
+      "Read payload policy partial geometry",
+      fabs(read_path_select_payload(5) - global_read_payload) < 1e-15
+    );
+    ReportTestResult(
+      "Read payload policy spatial geometry",
+      fabs(read_path_select_payload(1) - spatial_read_payload) < 1e-15
+    );
+    ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1
     );
