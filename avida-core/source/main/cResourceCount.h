@@ -84,6 +84,7 @@ private:
   
   void DoNonSpatialUpdates(cAvidaContext& ctx, const int res_id, int num_steps) const;
   void DoSpatialUpdates(cAvidaContext& ctx, const int res_id, int num_updates) const;
+  double ReadCellResourceValue(int cell_id, int res_id) const;
 
   // A few constants to describe update process...
   static const double UPDATE_STEP;   // Fraction of an update per step
@@ -180,7 +181,7 @@ public:
     int geom = geometry[res_id];
     return geom != nGeometry::GLOBAL && geom != nGeometry::PARTIAL; 
   }
-  int GetResourceByName(cString name) const;
+  int GetResourceByName(const cString& name) const;
   
   int GetCurrPeakX(cAvidaContext& ctx, int res_id) const;
   int GetCurrPeakY(cAvidaContext& ctx, int res_id) const;
@@ -193,9 +194,9 @@ public:
   int GetMaxUsedY(int res_id);
   
   void SetSpatialUpdate(int update) { m_spatial_update = update; }
-  void UpdateGlobalResources(cAvidaContext& ctx) { DoUpdates(ctx, true); }
-  void UpdateRandomResources(cAvidaContext& ctx) { DoUpdates(ctx, false); }
-  void UpdateResources(cAvidaContext& ctx) { DoUpdates(ctx, false); }
+  void UpdateGlobalResources(cAvidaContext& ctx);
+  void UpdateRandomResources(cAvidaContext& ctx);
+  void UpdateResources(cAvidaContext& ctx);
 };
 
 #endif

@@ -6,6 +6,7 @@ const RC_GEOMETRY_PARTIAL: c_int = 5;
 const RC_DISPATCH_NONE: c_int = 0;
 const RC_DISPATCH_NONSPATIAL: c_int = 1;
 const RC_DISPATCH_SPATIAL: c_int = 2;
+const RC_WRAPPER_GLOBAL: c_int = 0;
 
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
@@ -61,6 +62,18 @@ pub extern "C" fn avd_rc_decay_precalc_next(previous: f64, step_decay: f64) -> f
 #[no_mangle]
 pub extern "C" fn avd_rc_accumulate_update_time(current: f64, delta: f64) -> f64 {
     current + delta
+}
+
+fn update_time_delta(in_time: f64) -> f64 {
+    in_time
+}
+
+fn wrapper_global_only_flag(wrapper_mode: c_int) -> c_int {
+    if wrapper_mode == RC_WRAPPER_GLOBAL {
+        1
+    } else {
+        0
+    }
 }
 
 fn num_steps_from_ratio(update_time: f64, update_step: f64) -> c_int {
@@ -183,6 +196,16 @@ pub extern "C" fn avd_rc_dispatch_action(is_spatial: c_int, global_only: c_int) 
 #[no_mangle]
 pub extern "C" fn avd_rc_should_advance_last_updated(global_only: c_int) -> c_int {
     should_advance_last_updated(global_only)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_update_time_delta(in_time: f64) -> f64 {
+    update_time_delta(in_time)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_wrapper_global_only_flag(wrapper_mode: c_int) -> c_int {
+    wrapper_global_only_flag(wrapper_mode)
 }
 
 #[no_mangle]
@@ -470,6 +493,25 @@ mod tests {
         assert_eq!(avd_rc_should_advance_last_updated(0), 1);
         assert_eq!(avd_rc_should_advance_last_updated(1), 0);
         assert_eq!(avd_rc_should_advance_last_updated(-1), 0);
+    }
+
+    #[test]
+    fn rc_update_time_and_wrapper_policy_matrix() {
+        let time_cases = [0.0, -0.25, f64::NAN, f64::INFINITY, f64::NEG_INFINITY];
+        for input in time_cases {
+            let got = avd_rc_update_time_delta(input);
+            if input.is_nan() {
+                assert!(got.is_nan());
+            } else {
+                assert_eq!(got, input);
+            }
+        }
+
+        assert_eq!(avd_rc_wrapper_global_only_flag(RC_WRAPPER_GLOBAL), 1);
+        assert_eq!(avd_rc_wrapper_global_only_flag(1), 0);
+        assert_eq!(avd_rc_wrapper_global_only_flag(2), 0);
+        assert_eq!(avd_rc_wrapper_global_only_flag(-1), 0);
+        assert_eq!(avd_rc_wrapper_global_only_flag(99), 0);
     }
 
     #[test]

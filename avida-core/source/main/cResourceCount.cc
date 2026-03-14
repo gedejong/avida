@@ -41,6 +41,12 @@ enum DispatchAction {
   DISPATCH_SPATIAL = 2
 };
 
+enum WrapperMode {
+  WRAPPER_GLOBAL_ONLY = 0,
+  WRAPPER_RANDOM = 1,
+  WRAPPER_FULL = 2
+};
+
 int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cString& query)
 {
   const int count = resource_names.GetSize();
@@ -429,16 +435,9 @@ void cResourceCount::SetProbabilisticResource(cAvidaContext& ctx, const int& res
   spatial_resource_count[res_id]->SetProbabilisticResource(ctx, initial, inflow, outflow, lambda, theta, x, y, count);
 }
 
-/*
- * This is unnecessary now that a resource has an index
- * TODO: 
- *  - Change name to GetResourceCountIndex
- *  - Fix anything that breaks by just using the index of the resource (not id)
- *  - Get rid of this function
- */
 int cResourceCount::GetResourceCountID(const cString& res_name)
 {
-  int result = LookupResourceIndex(resource_name, res_name);
+  int result = GetResourceByName(res_name);
   if (result == -1) {
     cerr << "Error: Unknown resource '" << res_name << "'." << endl;
   }
@@ -492,8 +491,31 @@ void cResourceCount::SetDecay(const cString& name, const double _decay)
 
 void cResourceCount::Update(double in_time) 
 { 
-  update_time = avd_rc_accumulate_update_time(update_time, in_time);
+  update_time = avd_rc_accumulate_update_time(update_time, avd_rc_update_time_delta(in_time));
  }
+
+void cResourceCount::UpdateGlobalResources(cAvidaContext& ctx)
+{
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_GLOBAL_ONLY) != 0);
+}
+
+void cResourceCount::UpdateRandomResources(cAvidaContext& ctx)
+{
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_RANDOM) != 0);
+}
+
+void cResourceCount::UpdateResources(cAvidaContext& ctx)
+{
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_FULL) != 0);
+}
+
+double cResourceCount::ReadCellResourceValue(int cell_id, int res_id) const
+{
+  if (!IsSpatialResource(res_id)) {
+    return resource_count[res_id];
+  }
+  return spatial_resource_count[res_id]->GetAmount(cell_id);
+}
 
  
 const Apto::Array<double> & cResourceCount::GetResources(cAvidaContext& ctx) const
@@ -511,11 +533,7 @@ const Apto::Array<double> & cResourceCount::GetCellResources(int cell_id, cAvida
   DoUpdates(ctx);
               
   for (int i = 0; i < num_resources; i++) {
-     if (!IsSpatialResource(i)) {
-         curr_grid_res_cnt[i] = resource_count[i];
-    } else {
-      curr_grid_res_cnt[i] = spatial_resource_count[i]->GetAmount(cell_id);
-    }
+    curr_grid_res_cnt[i] = ReadCellResourceValue(cell_id, i);
   }
   return curr_grid_res_cnt;
 
@@ -530,11 +548,7 @@ const Apto::Array<double> & cResourceCount::GetFrozenResources(cAvidaContext&, i
   int num_resources = resource_count.GetSize();
   
   for (int i = 0; i < num_resources; i++) {
-    if (!IsSpatialResource(i)) {
-      curr_grid_res_cnt[i] = resource_count[i];
-    } else {
-      curr_grid_res_cnt[i] = spatial_resource_count[i]->GetAmount(cell_id);
-    }
+    curr_grid_res_cnt[i] = ReadCellResourceValue(cell_id, i);
   }
   return curr_grid_res_cnt;
 }
@@ -542,24 +556,15 @@ const Apto::Array<double> & cResourceCount::GetFrozenResources(cAvidaContext&, i
 double cResourceCount::GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id) const
 // This differs from GetFrozenCellResources by only pulling for res of interest.
 {
-  if (!IsSpatialResource(res_id)) 
-    return resource_count[res_id];
-  else 
-    return spatial_resource_count[res_id]->GetAmount(cell_id);
+  (void)ctx;
+  return ReadCellResourceValue(cell_id, res_id);
 }
 
 double cResourceCount::GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id) const
 // This differs from GetCellResources by only pulling for res of interest.
 {
   DoUpdates(ctx);
-
-  double res_val = 0;
-  if (!IsSpatialResource(res_id)) {
-    res_val = resource_count[res_id];
-  } else {
-    res_val = spatial_resource_count[res_id]->GetAmount(cell_id);
-  }
-  return res_val;
+  return ReadCellResourceValue(cell_id, res_id);
 }
 
 const Apto::Array<int> & cResourceCount::GetResourcesGeometry() const
@@ -823,11 +828,7 @@ void cResourceCount::ReinitializeResources(cAvidaContext& ctx, double additional
   } //End going through the resources
 }
 
-/* 
- * TODO: This is a duplicate of GetResourceCountID()
- * Follow the same steps to get rid of it.
- */
-int cResourceCount::GetResourceByName(cString name) const
+int cResourceCount::GetResourceByName(const cString& name) const
 {
   return LookupResourceIndex(resource_name, name);
 }

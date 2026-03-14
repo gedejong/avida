@@ -1029,6 +1029,30 @@ protected:
       "Scheduling accumulate parity",
       fabs(avd_rc_accumulate_update_time(0.25, 0.125) - (0.25 + 0.125)) < 1e-15
     );
+    ReportTestResult(
+      "Scheduling update-time delta passthrough",
+      fabs(avd_rc_update_time_delta(0.125) - 0.125) < 1e-15
+    );
+    ReportTestResult(
+      "Scheduling update-time delta NaN passthrough",
+      isnan(avd_rc_update_time_delta(nan("")))
+    );
+    ReportTestResult(
+      "Scheduling wrapper global-only flag",
+      avd_rc_wrapper_global_only_flag(0) == 1
+    );
+    ReportTestResult(
+      "Scheduling wrapper random flag",
+      avd_rc_wrapper_global_only_flag(1) == 0
+    );
+    ReportTestResult(
+      "Scheduling wrapper full flag",
+      avd_rc_wrapper_global_only_flag(2) == 0
+    );
+    ReportTestResult(
+      "Scheduling wrapper unknown defaults full",
+      avd_rc_wrapper_global_only_flag(99) == 0
+    );
 
     bool steps_ok = true;
     bool remainder_ok = true;

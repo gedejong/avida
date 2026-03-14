@@ -167,6 +167,8 @@ void avd_rc_fill_precalc_tables(double decay_rate, double inflow, double update_
 void avd_rc_fill_inflow_precalc_table(double decay_rate, double inflow, double update_step, int precalc_distance, double* out_inflow);
 void avd_rc_fill_decay_precalc_table(double decay_rate, double update_step, int precalc_distance, double* out_decay);
 double avd_rc_accumulate_update_time(double current, double delta);
+double avd_rc_update_time_delta(double in_time);
+int avd_rc_wrapper_global_only_flag(int wrapper_mode);
 int avd_rc_num_steps(double update_time, double update_step);
 int avd_rc_num_spatial_updates(int current_update, int previous_update);
 double avd_rc_remainder_update_time(double update_time, double update_step, int num_steps);

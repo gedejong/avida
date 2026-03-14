@@ -59,10 +59,11 @@ Focus:
 - `cSpatialResCount` SetCellList cell-init helpers (completed): Rust-backed additive helper now computes deterministic per-cell initialization fold used by `SetCellList` while C++ retains cell-list traversal, bounds policy, and state ownership/order.
 - `cResourceCount` spatial dispatch helpers (completed): Rust-backed additive helpers now compute spatial step iteration and cell-list branch policy used by `DoSpatialUpdates` while C++ retains update traversal and operation order (`UpdateCount/Source/Sink/CellInflow/CellOutflow/FlowAll/StateAll`).
 - `cResourceCount` per-resource dispatch policy helpers (completed): Rust-backed additive helpers now compute geometry-based spatial classification plus per-resource `DoUpdates` action selection and `m_last_updated` advance policy, while C++ retains resource iteration order, update scheduling, and state ownership/mutation sequencing.
+- `cResourceCount` update-time accumulation and wrapper-policy helpers (completed): Rust-backed additive helpers now define update-time delta passthrough and wrapper `global_only` mode mapping used by `Update`/`UpdateGlobalResources`/`UpdateRandomResources`/`UpdateResources`, while C++ retains call sequencing and state ownership.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` resource update-time accumulation policy (`update_time`/`spatial_update_time` increment and wrapper entrypoint decisions) behind additive Rust helpers while preserving C++ call sequencing and state ownership.
+- Next candidate: extract deterministic `cResourceCount` read-path selection policy (`IsSpatialResource`/geometry-based branch choosing between global array and spatial cell accessors) behind additive Rust helpers while preserving C++ ownership and query ordering.
