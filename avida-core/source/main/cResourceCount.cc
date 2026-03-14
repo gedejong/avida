@@ -35,6 +35,12 @@
 using namespace std;
 
 namespace {
+enum DispatchAction {
+  DISPATCH_NONE = 0,
+  DISPATCH_NONSPATIAL = 1,
+  DISPATCH_SPATIAL = 2
+};
+
 int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cString& query)
 {
   const int count = resource_names.GetSize();
@@ -781,14 +787,16 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
   
   // DO UPDATE FOR EACH RESOURCE ================================================
   for (int res_id = 0; res_id < resource_count.GetSize(); res_id++) {
-    if (!IsSpatialResource(res_id)) {
+    const int is_spatial = avd_rc_is_spatial_geometry(geometry[res_id]);
+    const int action = avd_rc_dispatch_action(is_spatial, global_only ? 1 : 0);
+    if (action == DISPATCH_NONSPATIAL) {
       DoNonSpatialUpdates(ctx, res_id, num_steps);
-    } else if (!global_only){
+    } else if (action == DISPATCH_SPATIAL) {
       DoSpatialUpdates(ctx, res_id, num_spatial_updates);
     }
   }
   
-  if (!global_only){
+  if (avd_rc_should_advance_last_updated(global_only ? 1 : 0) != 0) {
     m_last_updated = m_spatial_update;
   }
 }

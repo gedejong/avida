@@ -1,6 +1,12 @@
 use crate::common::{with_cstr, with_mut_slice, with_slice};
 use std::ffi::{c_char, c_int};
 
+const RC_GEOMETRY_GLOBAL: c_int = 0;
+const RC_GEOMETRY_PARTIAL: c_int = 5;
+const RC_DISPATCH_NONE: c_int = 0;
+const RC_DISPATCH_NONSPATIAL: c_int = 1;
+const RC_DISPATCH_SPATIAL: c_int = 2;
+
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
     names: *const *const c_char,
@@ -93,6 +99,32 @@ fn use_cell_list_branch(cell_list_size: c_int) -> c_int {
     }
 }
 
+fn is_spatial_geometry(geometry: c_int) -> c_int {
+    if geometry == RC_GEOMETRY_GLOBAL || geometry == RC_GEOMETRY_PARTIAL {
+        0
+    } else {
+        1
+    }
+}
+
+fn dispatch_action(is_spatial: c_int, global_only: c_int) -> c_int {
+    if is_spatial == 0 {
+        RC_DISPATCH_NONSPATIAL
+    } else if global_only != 0 {
+        RC_DISPATCH_NONE
+    } else {
+        RC_DISPATCH_SPATIAL
+    }
+}
+
+fn should_advance_last_updated(global_only: c_int) -> c_int {
+    if global_only == 0 {
+        1
+    } else {
+        0
+    }
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -136,6 +168,21 @@ pub extern "C" fn avd_rc_spatial_step_iterations(num_updates: c_int) -> c_int {
 #[no_mangle]
 pub extern "C" fn avd_rc_use_cell_list_branch(cell_list_size: c_int) -> c_int {
     use_cell_list_branch(cell_list_size)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_is_spatial_geometry(geometry: c_int) -> c_int {
+    is_spatial_geometry(geometry)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_dispatch_action(is_spatial: c_int, global_only: c_int) -> c_int {
+    dispatch_action(is_spatial, global_only)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_should_advance_last_updated(global_only: c_int) -> c_int {
+    should_advance_last_updated(global_only)
 }
 
 #[no_mangle]
@@ -402,6 +449,27 @@ mod tests {
         assert_eq!(avd_rc_use_cell_list_branch(4), 1);
         assert_eq!(avd_rc_use_cell_list_branch(0), 0);
         assert_eq!(avd_rc_use_cell_list_branch(-2), 0);
+    }
+
+    #[test]
+    fn rc_dispatch_policy_matrix_matches_do_updates_semantics() {
+        assert_eq!(avd_rc_is_spatial_geometry(0), 0);
+        assert_eq!(avd_rc_is_spatial_geometry(5), 0);
+        assert_eq!(avd_rc_is_spatial_geometry(1), 1);
+        assert_eq!(avd_rc_is_spatial_geometry(2), 1);
+        assert_eq!(avd_rc_is_spatial_geometry(42), 1);
+        assert_eq!(avd_rc_is_spatial_geometry(-7), 1);
+
+        assert_eq!(avd_rc_dispatch_action(0, 0), RC_DISPATCH_NONSPATIAL);
+        assert_eq!(avd_rc_dispatch_action(0, 1), RC_DISPATCH_NONSPATIAL);
+        assert_eq!(avd_rc_dispatch_action(1, 0), RC_DISPATCH_SPATIAL);
+        assert_eq!(avd_rc_dispatch_action(1, 1), RC_DISPATCH_NONE);
+        assert_eq!(avd_rc_dispatch_action(-1, 0), RC_DISPATCH_SPATIAL);
+        assert_eq!(avd_rc_dispatch_action(2, 1), RC_DISPATCH_NONE);
+
+        assert_eq!(avd_rc_should_advance_last_updated(0), 1);
+        assert_eq!(avd_rc_should_advance_last_updated(1), 0);
+        assert_eq!(avd_rc_should_advance_last_updated(-1), 0);
     }
 
     #[test]

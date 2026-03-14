@@ -1092,6 +1092,42 @@ protected:
       "Spatial cell-list branch disabled for negative",
       avd_rc_use_cell_list_branch(-2) == 0
     );
+    ReportTestResult(
+      "Dispatch geometry global classified non-spatial",
+      avd_rc_is_spatial_geometry(0) == 0
+    );
+    ReportTestResult(
+      "Dispatch geometry partial classified non-spatial",
+      avd_rc_is_spatial_geometry(5) == 0
+    );
+    ReportTestResult(
+      "Dispatch geometry grid classified spatial",
+      avd_rc_is_spatial_geometry(1) == 1
+    );
+    ReportTestResult(
+      "Dispatch geometry torus classified spatial",
+      avd_rc_is_spatial_geometry(2) == 1
+    );
+    ReportTestResult(
+      "Dispatch action non-spatial ignores global-only",
+      avd_rc_dispatch_action(0, 1) == 1
+    );
+    ReportTestResult(
+      "Dispatch action spatial runs for non-global-only",
+      avd_rc_dispatch_action(1, 0) == 2
+    );
+    ReportTestResult(
+      "Dispatch action spatial skipped for global-only",
+      avd_rc_dispatch_action(1, 1) == 0
+    );
+    ReportTestResult(
+      "Dispatch last-updated advances when not global-only",
+      avd_rc_should_advance_last_updated(0) == 1
+    );
+    ReportTestResult(
+      "Dispatch last-updated held when global-only",
+      avd_rc_should_advance_last_updated(1) == 0
+    );
 
     const int precalc_distance = 4;
     const double decay[] = {1.0, 0.9, 0.81, 0.729, 0.6561};
