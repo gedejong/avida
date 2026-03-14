@@ -7,6 +7,8 @@ const RC_DISPATCH_NONE: c_int = 0;
 const RC_DISPATCH_NONSPATIAL: c_int = 1;
 const RC_DISPATCH_SPATIAL: c_int = 2;
 const RC_WRAPPER_GLOBAL: c_int = 0;
+const RC_READ_PATH_GLOBAL: c_int = 0;
+const RC_READ_PATH_SPATIAL: c_int = 1;
 
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
@@ -138,6 +140,14 @@ fn should_advance_last_updated(global_only: c_int) -> c_int {
     }
 }
 
+fn read_path_kind(geometry: c_int) -> c_int {
+    if is_spatial_geometry(geometry) != 0 {
+        RC_READ_PATH_SPATIAL
+    } else {
+        RC_READ_PATH_GLOBAL
+    }
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -196,6 +206,11 @@ pub extern "C" fn avd_rc_dispatch_action(is_spatial: c_int, global_only: c_int) 
 #[no_mangle]
 pub extern "C" fn avd_rc_should_advance_last_updated(global_only: c_int) -> c_int {
     should_advance_last_updated(global_only)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_read_path_kind(geometry: c_int) -> c_int {
+    read_path_kind(geometry)
 }
 
 #[no_mangle]
@@ -493,6 +508,11 @@ mod tests {
         assert_eq!(avd_rc_should_advance_last_updated(0), 1);
         assert_eq!(avd_rc_should_advance_last_updated(1), 0);
         assert_eq!(avd_rc_should_advance_last_updated(-1), 0);
+        assert_eq!(avd_rc_read_path_kind(0), RC_READ_PATH_GLOBAL);
+        assert_eq!(avd_rc_read_path_kind(5), RC_READ_PATH_GLOBAL);
+        assert_eq!(avd_rc_read_path_kind(1), RC_READ_PATH_SPATIAL);
+        assert_eq!(avd_rc_read_path_kind(2), RC_READ_PATH_SPATIAL);
+        assert_eq!(avd_rc_read_path_kind(42), RC_READ_PATH_SPATIAL);
     }
 
     #[test]

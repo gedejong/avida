@@ -14,6 +14,17 @@ typedef struct AvidaHistogramHandle AvidaHistogramHandle;
 typedef struct AvidaRawBitArrayHandle AvidaRawBitArrayHandle;
 typedef struct AvidaTimeSeriesHandle AvidaTimeSeriesHandle;
 
+enum {
+  AVD_RC_DISPATCH_NONE = 0,
+  AVD_RC_DISPATCH_NONSPATIAL = 1,
+  AVD_RC_DISPATCH_SPATIAL = 2,
+  AVD_RC_WRAPPER_GLOBAL_ONLY = 0,
+  AVD_RC_WRAPPER_RANDOM = 1,
+  AVD_RC_WRAPPER_FULL = 2,
+  AVD_RC_READ_PATH_GLOBAL = 0,
+  AVD_RC_READ_PATH_SPATIAL = 1
+};
+
 AvidaRunningStatsHandle* avd_rs_new(void);
 AvidaRunningStatsHandle* avd_rs_clone(const AvidaRunningStatsHandle* other);
 void avd_rs_free(AvidaRunningStatsHandle* handle);
@@ -178,6 +189,7 @@ int avd_rc_use_cell_list_branch(int cell_list_size);
 int avd_rc_is_spatial_geometry(int geometry);
 int avd_rc_dispatch_action(int is_spatial, int global_only);
 int avd_rc_should_advance_last_updated(int global_only);
+int avd_rc_read_path_kind(int geometry);
 int avd_src_normalize_span(int start, int end, int bound, int* out_start, int* out_end);
 double avd_src_compute_flow_scalar(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist);
 int avd_src_compute_flow_pair_deltas(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist, double* out_elem1_delta, double* out_elem2_delta);

@@ -35,18 +35,6 @@
 using namespace std;
 
 namespace {
-enum DispatchAction {
-  DISPATCH_NONE = 0,
-  DISPATCH_NONSPATIAL = 1,
-  DISPATCH_SPATIAL = 2
-};
-
-enum WrapperMode {
-  WRAPPER_GLOBAL_ONLY = 0,
-  WRAPPER_RANDOM = 1,
-  WRAPPER_FULL = 2
-};
-
 int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cString& query)
 {
   const int count = resource_names.GetSize();
@@ -496,22 +484,22 @@ void cResourceCount::Update(double in_time)
 
 void cResourceCount::UpdateGlobalResources(cAvidaContext& ctx)
 {
-  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_GLOBAL_ONLY) != 0);
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(AVD_RC_WRAPPER_GLOBAL_ONLY) != 0);
 }
 
 void cResourceCount::UpdateRandomResources(cAvidaContext& ctx)
 {
-  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_RANDOM) != 0);
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(AVD_RC_WRAPPER_RANDOM) != 0);
 }
 
 void cResourceCount::UpdateResources(cAvidaContext& ctx)
 {
-  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(WRAPPER_FULL) != 0);
+  DoUpdates(ctx, avd_rc_wrapper_global_only_flag(AVD_RC_WRAPPER_FULL) != 0);
 }
 
 double cResourceCount::ReadCellResourceValue(int cell_id, int res_id) const
 {
-  if (!IsSpatialResource(res_id)) {
+  if (avd_rc_read_path_kind(geometry[res_id]) == AVD_RC_READ_PATH_GLOBAL) {
     return resource_count[res_id];
   }
   return spatial_resource_count[res_id]->GetAmount(cell_id);
@@ -767,9 +755,9 @@ void cResourceCount::DoUpdates(cAvidaContext& ctx, bool global_only) const
   for (int res_id = 0; res_id < resource_count.GetSize(); res_id++) {
     const int is_spatial = avd_rc_is_spatial_geometry(geometry[res_id]);
     const int action = avd_rc_dispatch_action(is_spatial, global_only ? 1 : 0);
-    if (action == DISPATCH_NONSPATIAL) {
+    if (action == AVD_RC_DISPATCH_NONSPATIAL) {
       DoNonSpatialUpdates(ctx, res_id, num_steps);
-    } else if (action == DISPATCH_SPATIAL) {
+    } else if (action == AVD_RC_DISPATCH_SPATIAL) {
       DoSpatialUpdates(ctx, res_id, num_spatial_updates);
     }
   }

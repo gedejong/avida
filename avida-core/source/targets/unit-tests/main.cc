@@ -1133,6 +1133,18 @@ protected:
       avd_rc_is_spatial_geometry(2) == 1
     );
     ReportTestResult(
+      "Read path global geometry selects global",
+      avd_rc_read_path_kind(0) == 0
+    );
+    ReportTestResult(
+      "Read path partial geometry selects global",
+      avd_rc_read_path_kind(5) == 0
+    );
+    ReportTestResult(
+      "Read path spatial geometry selects spatial",
+      avd_rc_read_path_kind(1) == 1 && avd_rc_read_path_kind(2) == 1
+    );
+    ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1
     );
