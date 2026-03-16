@@ -63,10 +63,11 @@ Focus:
 - `cResourceCount` read-path policy wiring (completed): C++ read entrypoints now route geometry-based global-vs-spatial selection through Rust helper `avd_rc_read_path_kind` (`ReadCellResourceValue` and aggregate `Get` path), preserving ownership and `DoUpdates` ordering with refreshed C++ parity checks for mapping and payload selection.
 - `cResourceCount` write-path policy wiring (completed): C++ write entrypoints now route geometry-based global-vs-spatial selection through Rust helper `avd_rc_is_spatial_geometry` in `Set`/`ModifyCell`, preserving mutation ordering, `SetModified` side effects, and ownership with refreshed C++ policy-matrix parity checks.
 - `cResourceCount` `SetCellResources` write-path policy wiring (completed): C++ `SetCellResources` now routes geometry-based global/partial no-op vs spatial write selection through Rust helper `avd_rc_setcell_write_path_kind`, preserving traversal order, ownership, and intentional global no-op semantics with refreshed Rust and C++ policy-matrix parity checks.
+- `cResourceCount` spatial setup/resize policy wiring (completed): C++ `Setup` and `ResizeSpatialGrids` now route geometry bucket classification, spatial rectangle logging policy, and resize cell-count derivation through Rust helpers (`avd_rc_setup_path_kind`, `avd_rc_should_log_spatial_rectangles`, `avd_rc_resize_cell_count`) while preserving allocation ownership, traversal order, and legacy branch semantics.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` spatial resource initialization/setup/resize policy (`ResizeSpatialGrids` + `Setup` geometry/size flow) behind additive Rust helpers while preserving C++ ownership, allocation lifecycle, and call ordering.
+- Next candidate: extract deterministic `cResourceCount` gradient configuration assignment policy (setter sequencing in `SetGradientCount`) behind additive Rust helpers while preserving C++ ownership and `ResetGradRes` ordering.

@@ -198,14 +198,15 @@ void cResourceCount::Setup(cWorld* world, const int& res_index, const cString& n
   int tempx = spatial_resource_count[res_index]->GetX();
   int tempy = spatial_resource_count[res_index]->GetY();
 
+  const int setup_path_kind = avd_rc_setup_path_kind(in_geometry);
   cString geo_name;
-  if (in_geometry == nGeometry::GLOBAL) {
+  if (setup_path_kind == AVD_RC_SETUP_PATH_GLOBAL) {
     geo_name = "GLOBAL";
   } else if (in_geometry == nGeometry::GRID) {
     geo_name = "GRID";
   } else if (in_geometry == nGeometry::TORUS) {
     geo_name = "TORUS";
-  } else if (in_geometry == nGeometry::PARTIAL) {
+  } else if (setup_path_kind == AVD_RC_SETUP_PATH_PARTIAL) {
     geo_name = "PARTIAL";
   }
   else {
@@ -223,7 +224,7 @@ void cResourceCount::Setup(cWorld* world, const int& res_index, const cString& n
          << ", decay=" << decay
          << ", inflow=" << inflow
          << endl;
-    if ((in_geometry == nGeometry::GRID) || (in_geometry == nGeometry::TORUS)) {
+    if (avd_rc_should_log_spatial_rectangles(in_geometry) != 0) {
       cout << "  Inflow rectangle (" << in_inflowX1 
            << "," << in_inflowY1 
            << ") to (" << in_inflowX2 
@@ -247,11 +248,11 @@ void cResourceCount::Setup(cWorld* world, const int& res_index, const cString& n
 
   resource_name[res_index] = name;
   resource_initial[res_index] = initial;
-  if (in_geometry == nGeometry::GLOBAL) {
+  if (setup_path_kind == AVD_RC_SETUP_PATH_GLOBAL) {
     resource_count[res_index] = initial;
     spatial_resource_count[res_index]->RateAll(0);
   } 
-  else if (in_geometry == nGeometry::PARTIAL) {
+  else if (setup_path_kind == AVD_RC_SETUP_PATH_PARTIAL) {
     resource_count[res_index]=initial;
     
     spatial_resource_count[res_index]->RateAll(0);
@@ -650,7 +651,7 @@ void cResourceCount::ResizeSpatialGrids(int in_x, int in_y)
 {
   for (int i = 0; i < resource_count.GetSize(); i++) {
     spatial_resource_count[i]->ResizeClear(in_x, in_y, geometry[i]);
-    curr_spatial_res_cnt[i].Resize(in_x * in_y);
+    curr_spatial_res_cnt[i].Resize(avd_rc_resize_cell_count(in_x, in_y));
   }
 }
 

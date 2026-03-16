@@ -1201,6 +1201,35 @@ protected:
       "SetCell write path unknown geometry defaults write",
       avd_rc_setcell_write_path_kind(42) == 1
     );
+    ReportTestResult(
+      "Setup path global geometry",
+      avd_rc_setup_path_kind(0) == 0
+    );
+    ReportTestResult(
+      "Setup path partial geometry",
+      avd_rc_setup_path_kind(5) == 1
+    );
+    ReportTestResult(
+      "Setup path spatial geometry",
+      avd_rc_setup_path_kind(1) == 2 && avd_rc_setup_path_kind(2) == 2
+    );
+    ReportTestResult(
+      "Setup path unknown geometry defaults spatial",
+      avd_rc_setup_path_kind(42) == 2
+    );
+    ReportTestResult(
+      "Setup logging rectangles only for grid and torus",
+      avd_rc_should_log_spatial_rectangles(1) == 1 &&
+      avd_rc_should_log_spatial_rectangles(2) == 1 &&
+      avd_rc_should_log_spatial_rectangles(0) == 0 &&
+      avd_rc_should_log_spatial_rectangles(5) == 0
+    );
+    ReportTestResult(
+      "Resize cell count multiplication policy",
+      avd_rc_resize_cell_count(40, 30) == 1200 &&
+      avd_rc_resize_cell_count(0, 30) == 0 &&
+      avd_rc_resize_cell_count(-2, 7) == -14
+    );
     const double global_write_payload = -2.0;
     const double spatial_write_payload = 6.0;
     const auto write_path_select_payload = [&](int geometry) {

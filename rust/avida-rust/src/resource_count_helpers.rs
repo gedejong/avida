@@ -2,6 +2,8 @@ use crate::common::{with_cstr, with_mut_slice, with_slice};
 use std::ffi::{c_char, c_int};
 
 const RC_GEOMETRY_GLOBAL: c_int = 0;
+const RC_GEOMETRY_GRID: c_int = 1;
+const RC_GEOMETRY_TORUS: c_int = 2;
 const RC_GEOMETRY_PARTIAL: c_int = 5;
 const RC_DISPATCH_NONE: c_int = 0;
 const RC_DISPATCH_NONSPATIAL: c_int = 1;
@@ -11,6 +13,9 @@ const RC_READ_PATH_GLOBAL: c_int = 0;
 const RC_READ_PATH_SPATIAL: c_int = 1;
 const RC_SETCELL_GLOBAL_NOOP: c_int = 0;
 const RC_SETCELL_SPATIAL_WRITE: c_int = 1;
+const RC_SETUP_PATH_GLOBAL: c_int = 0;
+const RC_SETUP_PATH_PARTIAL: c_int = 1;
+const RC_SETUP_PATH_SPATIAL: c_int = 2;
 
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
@@ -158,6 +163,28 @@ fn setcell_write_path_kind(geometry: c_int) -> c_int {
     }
 }
 
+fn setup_path_kind(geometry: c_int) -> c_int {
+    if geometry == RC_GEOMETRY_GLOBAL {
+        RC_SETUP_PATH_GLOBAL
+    } else if geometry == RC_GEOMETRY_PARTIAL {
+        RC_SETUP_PATH_PARTIAL
+    } else {
+        RC_SETUP_PATH_SPATIAL
+    }
+}
+
+fn should_log_spatial_rectangles(geometry: c_int) -> c_int {
+    if geometry == RC_GEOMETRY_GRID || geometry == RC_GEOMETRY_TORUS {
+        1
+    } else {
+        0
+    }
+}
+
+fn resize_cell_count(world_x: c_int, world_y: c_int) -> c_int {
+    world_x.wrapping_mul(world_y)
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -226,6 +253,21 @@ pub extern "C" fn avd_rc_read_path_kind(geometry: c_int) -> c_int {
 #[no_mangle]
 pub extern "C" fn avd_rc_setcell_write_path_kind(geometry: c_int) -> c_int {
     setcell_write_path_kind(geometry)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_setup_path_kind(geometry: c_int) -> c_int {
+    setup_path_kind(geometry)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_should_log_spatial_rectangles(geometry: c_int) -> c_int {
+    should_log_spatial_rectangles(geometry)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_resize_cell_count(world_x: c_int, world_y: c_int) -> c_int {
+    resize_cell_count(world_x, world_y)
 }
 
 #[no_mangle]
@@ -533,6 +575,19 @@ mod tests {
         assert_eq!(avd_rc_setcell_write_path_kind(1), RC_SETCELL_SPATIAL_WRITE);
         assert_eq!(avd_rc_setcell_write_path_kind(2), RC_SETCELL_SPATIAL_WRITE);
         assert_eq!(avd_rc_setcell_write_path_kind(42), RC_SETCELL_SPATIAL_WRITE);
+        assert_eq!(avd_rc_setup_path_kind(0), RC_SETUP_PATH_GLOBAL);
+        assert_eq!(avd_rc_setup_path_kind(5), RC_SETUP_PATH_PARTIAL);
+        assert_eq!(avd_rc_setup_path_kind(1), RC_SETUP_PATH_SPATIAL);
+        assert_eq!(avd_rc_setup_path_kind(2), RC_SETUP_PATH_SPATIAL);
+        assert_eq!(avd_rc_setup_path_kind(42), RC_SETUP_PATH_SPATIAL);
+        assert_eq!(avd_rc_should_log_spatial_rectangles(0), 0);
+        assert_eq!(avd_rc_should_log_spatial_rectangles(5), 0);
+        assert_eq!(avd_rc_should_log_spatial_rectangles(1), 1);
+        assert_eq!(avd_rc_should_log_spatial_rectangles(2), 1);
+        assert_eq!(avd_rc_should_log_spatial_rectangles(42), 0);
+        assert_eq!(avd_rc_resize_cell_count(40, 30), 1200);
+        assert_eq!(avd_rc_resize_cell_count(0, 30), 0);
+        assert_eq!(avd_rc_resize_cell_count(-2, 7), -14);
     }
 
     #[test]
