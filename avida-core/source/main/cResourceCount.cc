@@ -322,49 +322,58 @@ void cResourceCount::SetGradientCount(cAvidaContext& ctx, cWorld* world, const i
   
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  int worldx = spatial_resource_count[res_id]->GetX();
-  int worldy = spatial_resource_count[res_id]->GetY();
-  
-  spatial_resource_count[res_id]->SetGradPeakX(peakx);
-  spatial_resource_count[res_id]->SetGradPeakY(peaky);
-  spatial_resource_count[res_id]->SetGradHeight(height);
-  spatial_resource_count[res_id]->SetGradSpread(spread);
-  spatial_resource_count[res_id]->SetGradPlateau(plateau);
-  spatial_resource_count[res_id]->SetGradInitialPlat(plat_val);
-  spatial_resource_count[res_id]->SetGradDecay(decay);
-  spatial_resource_count[res_id]->SetGradMaxX(max_x);
-  spatial_resource_count[res_id]->SetGradMaxY(max_y);
-  spatial_resource_count[res_id]->SetGradMinX(min_x);
-  spatial_resource_count[res_id]->SetGradMinY(min_y);
-  spatial_resource_count[res_id]->SetGradMoveScaler(move_a_scaler);
-  spatial_resource_count[res_id]->SetGradUpdateStep(updatestep);
+  cGradientCount* const gradient = static_cast<cGradientCount*>(spatial_resource_count[res_id]);
+  const int worldx = gradient->GetX();
+  const int worldy = gradient->GetY();
 
-  spatial_resource_count[res_id]->SetGradIsHalo(halo);
-  spatial_resource_count[res_id]->SetGradHaloInnerRad(halo_inner_radius);
-  spatial_resource_count[res_id]->SetGradHaloWidth(halo_width);
-  spatial_resource_count[res_id]->SetGradHaloX(halo_anchor_x);
-  spatial_resource_count[res_id]->SetGradHaloY(halo_anchor_y);
-  spatial_resource_count[res_id]->SetGradMoveSpeed(move_speed);
-  spatial_resource_count[res_id]->SetGradMoveResistance(move_resistance);
-  spatial_resource_count[res_id]->SetGradPlatInflow(plateau_inflow);
-  spatial_resource_count[res_id]->SetGradPlatOutflow(plateau_outflow);
-  spatial_resource_count[res_id]->SetGradConeInflow(cone_inflow);
-  spatial_resource_count[res_id]->SetGradConeOutflow(cone_outflow);
-  spatial_resource_count[res_id]->SetGradientInflow(gradient_inflow);
-  spatial_resource_count[res_id]->SetGradPlatIsCommon(is_plateau_common);
-  spatial_resource_count[res_id]->SetGradFloor(floor);
-  spatial_resource_count[res_id]->SetGradHabitat(habitat);
-  spatial_resource_count[res_id]->SetGradMinSize(min_size);
-  spatial_resource_count[res_id]->SetGradMaxSize(max_size);
-  spatial_resource_count[res_id]->SetGradConfig(config);
-  spatial_resource_count[res_id]->SetGradCount(count);
-  spatial_resource_count[res_id]->SetGradResistance(resistance);
-  spatial_resource_count[res_id]->SetGradDamage(damage);
-  spatial_resource_count[res_id]->SetGradThreshold(threshold);
-  spatial_resource_count[res_id]->SetGradRefuge(refuge);
-  spatial_resource_count[res_id]->SetGradDeathOdds(death_odds);
-  
-  spatial_resource_count[res_id]->ResetGradRes(ctx, worldx, worldy);
+  const int setter_count = avd_rc_gradient_setter_count();
+  for (int setter_idx = 0; setter_idx < setter_count; ++setter_idx) {
+    const int setter = avd_rc_gradient_setter_opcode(setter_idx);
+    switch (setter) {
+      case AVD_RC_GRAD_SETTER_PEAK_X: gradient->SetGradPeakX(peakx); break;
+      case AVD_RC_GRAD_SETTER_PEAK_Y: gradient->SetGradPeakY(peaky); break;
+      case AVD_RC_GRAD_SETTER_HEIGHT: gradient->SetGradHeight(height); break;
+      case AVD_RC_GRAD_SETTER_SPREAD: gradient->SetGradSpread(spread); break;
+      case AVD_RC_GRAD_SETTER_PLATEAU: gradient->SetGradPlateau(plateau); break;
+      case AVD_RC_GRAD_SETTER_INITIAL_PLAT: gradient->SetGradInitialPlat(plat_val); break;
+      case AVD_RC_GRAD_SETTER_DECAY: gradient->SetGradDecay(decay); break;
+      case AVD_RC_GRAD_SETTER_MAX_X: gradient->SetGradMaxX(max_x); break;
+      case AVD_RC_GRAD_SETTER_MAX_Y: gradient->SetGradMaxY(max_y); break;
+      case AVD_RC_GRAD_SETTER_MIN_X: gradient->SetGradMinX(min_x); break;
+      case AVD_RC_GRAD_SETTER_MIN_Y: gradient->SetGradMinY(min_y); break;
+      case AVD_RC_GRAD_SETTER_MOVE_SCALER: gradient->SetGradMoveScaler(move_a_scaler); break;
+      case AVD_RC_GRAD_SETTER_UPDATE_STEP: gradient->SetGradUpdateStep(updatestep); break;
+      case AVD_RC_GRAD_SETTER_IS_HALO: gradient->SetGradIsHalo(halo); break;
+      case AVD_RC_GRAD_SETTER_HALO_INNER_RADIUS: gradient->SetGradHaloInnerRad(halo_inner_radius); break;
+      case AVD_RC_GRAD_SETTER_HALO_WIDTH: gradient->SetGradHaloWidth(halo_width); break;
+      case AVD_RC_GRAD_SETTER_HALO_ANCHOR_X: gradient->SetGradHaloX(halo_anchor_x); break;
+      case AVD_RC_GRAD_SETTER_HALO_ANCHOR_Y: gradient->SetGradHaloY(halo_anchor_y); break;
+      case AVD_RC_GRAD_SETTER_MOVE_SPEED: gradient->SetGradMoveSpeed(move_speed); break;
+      case AVD_RC_GRAD_SETTER_MOVE_RESISTANCE: gradient->SetGradMoveResistance(move_resistance); break;
+      case AVD_RC_GRAD_SETTER_PLATEAU_INFLOW: gradient->SetGradPlatInflow(plateau_inflow); break;
+      case AVD_RC_GRAD_SETTER_PLATEAU_OUTFLOW: gradient->SetGradPlatOutflow(plateau_outflow); break;
+      case AVD_RC_GRAD_SETTER_CONE_INFLOW: gradient->SetGradConeInflow(cone_inflow); break;
+      case AVD_RC_GRAD_SETTER_CONE_OUTFLOW: gradient->SetGradConeOutflow(cone_outflow); break;
+      case AVD_RC_GRAD_SETTER_GRADIENT_INFLOW: gradient->SetGradientInflow(gradient_inflow); break;
+      case AVD_RC_GRAD_SETTER_PLATEAU_COMMON: gradient->SetGradPlatIsCommon(is_plateau_common); break;
+      case AVD_RC_GRAD_SETTER_FLOOR: gradient->SetGradFloor(floor); break;
+      case AVD_RC_GRAD_SETTER_HABITAT: gradient->SetGradHabitat(habitat); break;
+      case AVD_RC_GRAD_SETTER_MIN_SIZE: gradient->SetGradMinSize(min_size); break;
+      case AVD_RC_GRAD_SETTER_MAX_SIZE: gradient->SetGradMaxSize(max_size); break;
+      case AVD_RC_GRAD_SETTER_CONFIG: gradient->SetGradConfig(config); break;
+      case AVD_RC_GRAD_SETTER_COUNT: gradient->SetGradCount(count); break;
+      case AVD_RC_GRAD_SETTER_RESISTANCE: gradient->SetGradResistance(resistance); break;
+      case AVD_RC_GRAD_SETTER_DAMAGE: gradient->SetGradDamage(damage); break;
+      case AVD_RC_GRAD_SETTER_THRESHOLD: gradient->SetGradThreshold(threshold); break;
+      case AVD_RC_GRAD_SETTER_REFUGE: gradient->SetGradRefuge(refuge); break;
+      case AVD_RC_GRAD_SETTER_DEATH_ODDS: gradient->SetGradDeathOdds(death_odds); break;
+      default:
+        assert(setter == AVD_RC_GRAD_SETTER_INVALID && "Unexpected gradient setter opcode");
+        break;
+    }
+  }
+
+  gradient->ResetGradRes(ctx, worldx, worldy);
 }
 
 void cResourceCount::SetGradientPlatInflow(const int& res_id, const double& inflow) 

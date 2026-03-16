@@ -1251,6 +1251,66 @@ protected:
       "Write payload policy unknown geometry",
       fabs(write_path_select_payload(42) - spatial_write_payload) < 1e-15
     );
+    const int expected_gradient_sequence[] = {
+      AVD_RC_GRAD_SETTER_PEAK_X,
+      AVD_RC_GRAD_SETTER_PEAK_Y,
+      AVD_RC_GRAD_SETTER_HEIGHT,
+      AVD_RC_GRAD_SETTER_SPREAD,
+      AVD_RC_GRAD_SETTER_PLATEAU,
+      AVD_RC_GRAD_SETTER_INITIAL_PLAT,
+      AVD_RC_GRAD_SETTER_DECAY,
+      AVD_RC_GRAD_SETTER_MAX_X,
+      AVD_RC_GRAD_SETTER_MAX_Y,
+      AVD_RC_GRAD_SETTER_MIN_X,
+      AVD_RC_GRAD_SETTER_MIN_Y,
+      AVD_RC_GRAD_SETTER_MOVE_SCALER,
+      AVD_RC_GRAD_SETTER_UPDATE_STEP,
+      AVD_RC_GRAD_SETTER_IS_HALO,
+      AVD_RC_GRAD_SETTER_HALO_INNER_RADIUS,
+      AVD_RC_GRAD_SETTER_HALO_WIDTH,
+      AVD_RC_GRAD_SETTER_HALO_ANCHOR_X,
+      AVD_RC_GRAD_SETTER_HALO_ANCHOR_Y,
+      AVD_RC_GRAD_SETTER_MOVE_SPEED,
+      AVD_RC_GRAD_SETTER_MOVE_RESISTANCE,
+      AVD_RC_GRAD_SETTER_PLATEAU_INFLOW,
+      AVD_RC_GRAD_SETTER_PLATEAU_OUTFLOW,
+      AVD_RC_GRAD_SETTER_CONE_INFLOW,
+      AVD_RC_GRAD_SETTER_CONE_OUTFLOW,
+      AVD_RC_GRAD_SETTER_GRADIENT_INFLOW,
+      AVD_RC_GRAD_SETTER_PLATEAU_COMMON,
+      AVD_RC_GRAD_SETTER_FLOOR,
+      AVD_RC_GRAD_SETTER_HABITAT,
+      AVD_RC_GRAD_SETTER_MIN_SIZE,
+      AVD_RC_GRAD_SETTER_MAX_SIZE,
+      AVD_RC_GRAD_SETTER_CONFIG,
+      AVD_RC_GRAD_SETTER_COUNT,
+      AVD_RC_GRAD_SETTER_RESISTANCE,
+      AVD_RC_GRAD_SETTER_DAMAGE,
+      AVD_RC_GRAD_SETTER_THRESHOLD,
+      AVD_RC_GRAD_SETTER_REFUGE,
+      AVD_RC_GRAD_SETTER_DEATH_ODDS
+    };
+    const int expected_gradient_count = sizeof(expected_gradient_sequence) / sizeof(expected_gradient_sequence[0]);
+    ReportTestResult(
+      "Gradient setter sequence count policy",
+      avd_rc_gradient_setter_count() == expected_gradient_count
+    );
+    bool gradient_sequence_ok = (avd_rc_gradient_setter_count() == expected_gradient_count);
+    for (int i = 0; i < expected_gradient_count; ++i) {
+      if (avd_rc_gradient_setter_opcode(i) != expected_gradient_sequence[i]) {
+        gradient_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult("Gradient setter sequence order policy", gradient_sequence_ok);
+    ReportTestResult(
+      "Gradient setter sequence negative index guard",
+      avd_rc_gradient_setter_opcode(-1) == AVD_RC_GRAD_SETTER_INVALID
+    );
+    ReportTestResult(
+      "Gradient setter sequence out-of-range index guard",
+      avd_rc_gradient_setter_opcode(avd_rc_gradient_setter_count()) == AVD_RC_GRAD_SETTER_INVALID
+    );
     ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1

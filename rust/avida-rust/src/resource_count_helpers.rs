@@ -16,6 +16,83 @@ const RC_SETCELL_SPATIAL_WRITE: c_int = 1;
 const RC_SETUP_PATH_GLOBAL: c_int = 0;
 const RC_SETUP_PATH_PARTIAL: c_int = 1;
 const RC_SETUP_PATH_SPATIAL: c_int = 2;
+const RC_GRAD_SETTER_PEAK_X: c_int = 0;
+const RC_GRAD_SETTER_PEAK_Y: c_int = 1;
+const RC_GRAD_SETTER_HEIGHT: c_int = 2;
+const RC_GRAD_SETTER_SPREAD: c_int = 3;
+const RC_GRAD_SETTER_PLATEAU: c_int = 4;
+const RC_GRAD_SETTER_INITIAL_PLAT: c_int = 5;
+const RC_GRAD_SETTER_DECAY: c_int = 6;
+const RC_GRAD_SETTER_MAX_X: c_int = 7;
+const RC_GRAD_SETTER_MAX_Y: c_int = 8;
+const RC_GRAD_SETTER_MIN_X: c_int = 9;
+const RC_GRAD_SETTER_MIN_Y: c_int = 10;
+const RC_GRAD_SETTER_MOVE_SCALER: c_int = 11;
+const RC_GRAD_SETTER_UPDATE_STEP: c_int = 12;
+const RC_GRAD_SETTER_IS_HALO: c_int = 13;
+const RC_GRAD_SETTER_HALO_INNER_RADIUS: c_int = 14;
+const RC_GRAD_SETTER_HALO_WIDTH: c_int = 15;
+const RC_GRAD_SETTER_HALO_ANCHOR_X: c_int = 16;
+const RC_GRAD_SETTER_HALO_ANCHOR_Y: c_int = 17;
+const RC_GRAD_SETTER_MOVE_SPEED: c_int = 18;
+const RC_GRAD_SETTER_MOVE_RESISTANCE: c_int = 19;
+const RC_GRAD_SETTER_PLATEAU_INFLOW: c_int = 20;
+const RC_GRAD_SETTER_PLATEAU_OUTFLOW: c_int = 21;
+const RC_GRAD_SETTER_CONE_INFLOW: c_int = 22;
+const RC_GRAD_SETTER_CONE_OUTFLOW: c_int = 23;
+const RC_GRAD_SETTER_GRADIENT_INFLOW: c_int = 24;
+const RC_GRAD_SETTER_PLATEAU_COMMON: c_int = 25;
+const RC_GRAD_SETTER_FLOOR: c_int = 26;
+const RC_GRAD_SETTER_HABITAT: c_int = 27;
+const RC_GRAD_SETTER_MIN_SIZE: c_int = 28;
+const RC_GRAD_SETTER_MAX_SIZE: c_int = 29;
+const RC_GRAD_SETTER_CONFIG: c_int = 30;
+const RC_GRAD_SETTER_COUNT: c_int = 31;
+const RC_GRAD_SETTER_RESISTANCE: c_int = 32;
+const RC_GRAD_SETTER_DAMAGE: c_int = 33;
+const RC_GRAD_SETTER_THRESHOLD: c_int = 34;
+const RC_GRAD_SETTER_REFUGE: c_int = 35;
+const RC_GRAD_SETTER_DEATH_ODDS: c_int = 36;
+const RC_GRAD_SETTER_INVALID: c_int = -1;
+const RC_GRADIENT_SETTER_SEQUENCE: [c_int; 37] = [
+    RC_GRAD_SETTER_PEAK_X,
+    RC_GRAD_SETTER_PEAK_Y,
+    RC_GRAD_SETTER_HEIGHT,
+    RC_GRAD_SETTER_SPREAD,
+    RC_GRAD_SETTER_PLATEAU,
+    RC_GRAD_SETTER_INITIAL_PLAT,
+    RC_GRAD_SETTER_DECAY,
+    RC_GRAD_SETTER_MAX_X,
+    RC_GRAD_SETTER_MAX_Y,
+    RC_GRAD_SETTER_MIN_X,
+    RC_GRAD_SETTER_MIN_Y,
+    RC_GRAD_SETTER_MOVE_SCALER,
+    RC_GRAD_SETTER_UPDATE_STEP,
+    RC_GRAD_SETTER_IS_HALO,
+    RC_GRAD_SETTER_HALO_INNER_RADIUS,
+    RC_GRAD_SETTER_HALO_WIDTH,
+    RC_GRAD_SETTER_HALO_ANCHOR_X,
+    RC_GRAD_SETTER_HALO_ANCHOR_Y,
+    RC_GRAD_SETTER_MOVE_SPEED,
+    RC_GRAD_SETTER_MOVE_RESISTANCE,
+    RC_GRAD_SETTER_PLATEAU_INFLOW,
+    RC_GRAD_SETTER_PLATEAU_OUTFLOW,
+    RC_GRAD_SETTER_CONE_INFLOW,
+    RC_GRAD_SETTER_CONE_OUTFLOW,
+    RC_GRAD_SETTER_GRADIENT_INFLOW,
+    RC_GRAD_SETTER_PLATEAU_COMMON,
+    RC_GRAD_SETTER_FLOOR,
+    RC_GRAD_SETTER_HABITAT,
+    RC_GRAD_SETTER_MIN_SIZE,
+    RC_GRAD_SETTER_MAX_SIZE,
+    RC_GRAD_SETTER_CONFIG,
+    RC_GRAD_SETTER_COUNT,
+    RC_GRAD_SETTER_RESISTANCE,
+    RC_GRAD_SETTER_DAMAGE,
+    RC_GRAD_SETTER_THRESHOLD,
+    RC_GRAD_SETTER_REFUGE,
+    RC_GRAD_SETTER_DEATH_ODDS,
+];
 
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
@@ -185,6 +262,20 @@ fn resize_cell_count(world_x: c_int, world_y: c_int) -> c_int {
     world_x.wrapping_mul(world_y)
 }
 
+fn gradient_setter_count() -> c_int {
+    RC_GRADIENT_SETTER_SEQUENCE.len() as c_int
+}
+
+fn gradient_setter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_GRAD_SETTER_INVALID;
+    };
+    RC_GRADIENT_SETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_GRAD_SETTER_INVALID)
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -268,6 +359,16 @@ pub extern "C" fn avd_rc_should_log_spatial_rectangles(geometry: c_int) -> c_int
 #[no_mangle]
 pub extern "C" fn avd_rc_resize_cell_count(world_x: c_int, world_y: c_int) -> c_int {
     resize_cell_count(world_x, world_y)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_setter_count() -> c_int {
+    gradient_setter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_setter_opcode(index: c_int) -> c_int {
+    gradient_setter_opcode(index)
 }
 
 #[no_mangle]
@@ -588,6 +689,27 @@ mod tests {
         assert_eq!(avd_rc_resize_cell_count(40, 30), 1200);
         assert_eq!(avd_rc_resize_cell_count(0, 30), 0);
         assert_eq!(avd_rc_resize_cell_count(-2, 7), -14);
+    }
+
+    #[test]
+    fn rc_gradient_setter_sequence_policy() {
+        assert_eq!(
+            avd_rc_gradient_setter_count(),
+            RC_GRADIENT_SETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_GRADIENT_SETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(avd_rc_gradient_setter_opcode(i as c_int), *expected);
+        }
+    }
+
+    #[test]
+    fn rc_gradient_setter_sequence_guards() {
+        assert_eq!(avd_rc_gradient_setter_opcode(-1), RC_GRAD_SETTER_INVALID);
+        assert_eq!(
+            avd_rc_gradient_setter_opcode(avd_rc_gradient_setter_count()),
+            RC_GRAD_SETTER_INVALID
+        );
+        assert_eq!(avd_rc_gradient_setter_opcode(999), RC_GRAD_SETTER_INVALID);
     }
 
     #[test]

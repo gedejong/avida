@@ -27,7 +27,45 @@ enum {
   AVD_RC_SETCELL_SPATIAL_WRITE = 1,
   AVD_RC_SETUP_PATH_GLOBAL = 0,
   AVD_RC_SETUP_PATH_PARTIAL = 1,
-  AVD_RC_SETUP_PATH_SPATIAL = 2
+  AVD_RC_SETUP_PATH_SPATIAL = 2,
+  AVD_RC_GRAD_SETTER_PEAK_X = 0,
+  AVD_RC_GRAD_SETTER_PEAK_Y = 1,
+  AVD_RC_GRAD_SETTER_HEIGHT = 2,
+  AVD_RC_GRAD_SETTER_SPREAD = 3,
+  AVD_RC_GRAD_SETTER_PLATEAU = 4,
+  AVD_RC_GRAD_SETTER_INITIAL_PLAT = 5,
+  AVD_RC_GRAD_SETTER_DECAY = 6,
+  AVD_RC_GRAD_SETTER_MAX_X = 7,
+  AVD_RC_GRAD_SETTER_MAX_Y = 8,
+  AVD_RC_GRAD_SETTER_MIN_X = 9,
+  AVD_RC_GRAD_SETTER_MIN_Y = 10,
+  AVD_RC_GRAD_SETTER_MOVE_SCALER = 11,
+  AVD_RC_GRAD_SETTER_UPDATE_STEP = 12,
+  AVD_RC_GRAD_SETTER_IS_HALO = 13,
+  AVD_RC_GRAD_SETTER_HALO_INNER_RADIUS = 14,
+  AVD_RC_GRAD_SETTER_HALO_WIDTH = 15,
+  AVD_RC_GRAD_SETTER_HALO_ANCHOR_X = 16,
+  AVD_RC_GRAD_SETTER_HALO_ANCHOR_Y = 17,
+  AVD_RC_GRAD_SETTER_MOVE_SPEED = 18,
+  AVD_RC_GRAD_SETTER_MOVE_RESISTANCE = 19,
+  AVD_RC_GRAD_SETTER_PLATEAU_INFLOW = 20,
+  AVD_RC_GRAD_SETTER_PLATEAU_OUTFLOW = 21,
+  AVD_RC_GRAD_SETTER_CONE_INFLOW = 22,
+  AVD_RC_GRAD_SETTER_CONE_OUTFLOW = 23,
+  AVD_RC_GRAD_SETTER_GRADIENT_INFLOW = 24,
+  AVD_RC_GRAD_SETTER_PLATEAU_COMMON = 25,
+  AVD_RC_GRAD_SETTER_FLOOR = 26,
+  AVD_RC_GRAD_SETTER_HABITAT = 27,
+  AVD_RC_GRAD_SETTER_MIN_SIZE = 28,
+  AVD_RC_GRAD_SETTER_MAX_SIZE = 29,
+  AVD_RC_GRAD_SETTER_CONFIG = 30,
+  AVD_RC_GRAD_SETTER_COUNT = 31,
+  AVD_RC_GRAD_SETTER_RESISTANCE = 32,
+  AVD_RC_GRAD_SETTER_DAMAGE = 33,
+  AVD_RC_GRAD_SETTER_THRESHOLD = 34,
+  AVD_RC_GRAD_SETTER_REFUGE = 35,
+  AVD_RC_GRAD_SETTER_DEATH_ODDS = 36,
+  AVD_RC_GRAD_SETTER_INVALID = -1
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -199,6 +237,8 @@ int avd_rc_setcell_write_path_kind(int geometry);
 int avd_rc_setup_path_kind(int geometry);
 int avd_rc_should_log_spatial_rectangles(int geometry);
 int avd_rc_resize_cell_count(int world_x, int world_y);
+int avd_rc_gradient_setter_count(void);
+int avd_rc_gradient_setter_opcode(int index);
 int avd_src_normalize_span(int start, int end, int bound, int* out_start, int* out_end);
 double avd_src_compute_flow_scalar(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist);
 int avd_src_compute_flow_pair_deltas(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist, double* out_elem1_delta, double* out_elem2_delta);
