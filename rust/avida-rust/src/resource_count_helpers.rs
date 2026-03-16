@@ -9,6 +9,8 @@ const RC_DISPATCH_SPATIAL: c_int = 2;
 const RC_WRAPPER_GLOBAL: c_int = 0;
 const RC_READ_PATH_GLOBAL: c_int = 0;
 const RC_READ_PATH_SPATIAL: c_int = 1;
+const RC_SETCELL_GLOBAL_NOOP: c_int = 0;
+const RC_SETCELL_SPATIAL_WRITE: c_int = 1;
 
 #[no_mangle]
 pub extern "C" fn avd_rc_lookup_resource_index(
@@ -148,6 +150,14 @@ fn read_path_kind(geometry: c_int) -> c_int {
     }
 }
 
+fn setcell_write_path_kind(geometry: c_int) -> c_int {
+    if is_spatial_geometry(geometry) != 0 {
+        RC_SETCELL_SPATIAL_WRITE
+    } else {
+        RC_SETCELL_GLOBAL_NOOP
+    }
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -211,6 +221,11 @@ pub extern "C" fn avd_rc_should_advance_last_updated(global_only: c_int) -> c_in
 #[no_mangle]
 pub extern "C" fn avd_rc_read_path_kind(geometry: c_int) -> c_int {
     read_path_kind(geometry)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_setcell_write_path_kind(geometry: c_int) -> c_int {
+    setcell_write_path_kind(geometry)
 }
 
 #[no_mangle]
@@ -513,6 +528,11 @@ mod tests {
         assert_eq!(avd_rc_read_path_kind(1), RC_READ_PATH_SPATIAL);
         assert_eq!(avd_rc_read_path_kind(2), RC_READ_PATH_SPATIAL);
         assert_eq!(avd_rc_read_path_kind(42), RC_READ_PATH_SPATIAL);
+        assert_eq!(avd_rc_setcell_write_path_kind(0), RC_SETCELL_GLOBAL_NOOP);
+        assert_eq!(avd_rc_setcell_write_path_kind(5), RC_SETCELL_GLOBAL_NOOP);
+        assert_eq!(avd_rc_setcell_write_path_kind(1), RC_SETCELL_SPATIAL_WRITE);
+        assert_eq!(avd_rc_setcell_write_path_kind(2), RC_SETCELL_SPATIAL_WRITE);
+        assert_eq!(avd_rc_setcell_write_path_kind(42), RC_SETCELL_SPATIAL_WRITE);
     }
 
     #[test]

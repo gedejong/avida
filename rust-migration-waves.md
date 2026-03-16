@@ -61,10 +61,12 @@ Focus:
 - `cResourceCount` per-resource dispatch policy helpers (completed): Rust-backed additive helpers now compute geometry-based spatial classification plus per-resource `DoUpdates` action selection and `m_last_updated` advance policy, while C++ retains resource iteration order, update scheduling, and state ownership/mutation sequencing.
 - `cResourceCount` update-time accumulation and wrapper-policy helpers (completed): Rust-backed additive helpers now define update-time delta passthrough and wrapper `global_only` mode mapping used by `Update`/`UpdateGlobalResources`/`UpdateRandomResources`/`UpdateResources`, while C++ retains call sequencing and state ownership.
 - `cResourceCount` read-path policy wiring (completed): C++ read entrypoints now route geometry-based global-vs-spatial selection through Rust helper `avd_rc_read_path_kind` (`ReadCellResourceValue` and aggregate `Get` path), preserving ownership and `DoUpdates` ordering with refreshed C++ parity checks for mapping and payload selection.
+- `cResourceCount` write-path policy wiring (completed): C++ write entrypoints now route geometry-based global-vs-spatial selection through Rust helper `avd_rc_is_spatial_geometry` in `Set`/`ModifyCell`, preserving mutation ordering, `SetModified` side effects, and ownership with refreshed C++ policy-matrix parity checks.
+- `cResourceCount` `SetCellResources` write-path policy wiring (completed): C++ `SetCellResources` now routes geometry-based global/partial no-op vs spatial write selection through Rust helper `avd_rc_setcell_write_path_kind`, preserving traversal order, ownership, and intentional global no-op semantics with refreshed Rust and C++ policy-matrix parity checks.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` write-path selection policy (geometry-based global-vs-spatial branching in `Set`/`ModifyCell`) behind additive Rust helpers while preserving C++ mutation ordering and ownership.
+- Next candidate: extract deterministic `cResourceCount` spatial resource initialization/setup/resize policy (`ResizeSpatialGrids` + `Setup` geometry/size flow) behind additive Rust helpers while preserving C++ ownership, allocation lifecycle, and call ordering.

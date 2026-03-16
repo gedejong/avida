@@ -146,9 +146,7 @@ void cResourceCount::SetCellResources(int cell_id, const Apto::Array<double> & r
   assert(resource_count.GetSize() == res.GetSize());
 
   for (int i = 0; i < resource_count.GetSize(); i++) {
-     if (!IsSpatialResource(i)) {
-        // Set global quantity of resource
-    } else {
+    if (avd_rc_setcell_write_path_kind(geometry[i]) == AVD_RC_SETCELL_SPATIAL_WRITE) {
       spatial_resource_count[i]->SetCellAmount(cell_id, res[i]);
 
       /* Ideally the state of the cell's resource should not be set till
@@ -156,6 +154,8 @@ void cResourceCount::SetCellResources(int cell_id, const Apto::Array<double> & r
          diffision, gravity and organism demand) have the same weight.  However
          waiting can cause problems with negative resources so we allow
          the organism demand to work immediately on the state of the resource */ 
+    } else {
+      // Global/partial resources intentionally no-op here.
     }
   }
 }
@@ -602,7 +602,7 @@ void cResourceCount::ModifyCell(cAvidaContext& ctx, const Apto::Array<double> & 
 
   DoUpdates(ctx);
   for (int i = 0; i < resource_count.GetSize(); i++) {
-  if (!IsSpatialResource(i)) {
+    if (avd_rc_is_spatial_geometry(geometry[i]) == 0) {
         resource_count[i] += res_change[i];
       assert(resource_count[i] >= 0.0);
     } else {
@@ -637,7 +637,7 @@ void cResourceCount::Set(cAvidaContext& ctx, int res_id, double new_level)
 {
   assert(res_id < resource_count.GetSize());
   DoUpdates(ctx);
-  if (!IsSpatialResource(res_id)) {
+  if (avd_rc_is_spatial_geometry(geometry[res_id]) == 0) {
      resource_count[res_id] = new_level;
   } else {
     for(int i = 0; i < spatial_resource_count[res_id]->GetSize(); i++) {

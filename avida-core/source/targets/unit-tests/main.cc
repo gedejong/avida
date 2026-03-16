@@ -1166,6 +1166,63 @@ protected:
       fabs(read_path_select_payload(1) - spatial_read_payload) < 1e-15
     );
     ReportTestResult(
+      "Write path global geometry selects non-spatial",
+      avd_rc_is_spatial_geometry(0) == 0
+    );
+    ReportTestResult(
+      "Write path partial geometry selects non-spatial",
+      avd_rc_is_spatial_geometry(5) == 0
+    );
+    ReportTestResult(
+      "Write path grid geometry selects spatial",
+      avd_rc_is_spatial_geometry(1) == 1
+    );
+    ReportTestResult(
+      "Write path torus geometry selects spatial",
+      avd_rc_is_spatial_geometry(2) == 1
+    );
+    ReportTestResult(
+      "Write path unknown geometry defaults spatial",
+      avd_rc_is_spatial_geometry(42) == 1
+    );
+    ReportTestResult(
+      "SetCell write path global geometry no-op",
+      avd_rc_setcell_write_path_kind(0) == 0
+    );
+    ReportTestResult(
+      "SetCell write path partial geometry no-op",
+      avd_rc_setcell_write_path_kind(5) == 0
+    );
+    ReportTestResult(
+      "SetCell write path spatial geometry write",
+      avd_rc_setcell_write_path_kind(1) == 1 && avd_rc_setcell_write_path_kind(2) == 1
+    );
+    ReportTestResult(
+      "SetCell write path unknown geometry defaults write",
+      avd_rc_setcell_write_path_kind(42) == 1
+    );
+    const double global_write_payload = -2.0;
+    const double spatial_write_payload = 6.0;
+    const auto write_path_select_payload = [&](int geometry) {
+      return (avd_rc_setcell_write_path_kind(geometry) == 0) ? global_write_payload : spatial_write_payload;
+    };
+    ReportTestResult(
+      "Write payload policy global geometry",
+      fabs(write_path_select_payload(0) - global_write_payload) < 1e-15
+    );
+    ReportTestResult(
+      "Write payload policy partial geometry",
+      fabs(write_path_select_payload(5) - global_write_payload) < 1e-15
+    );
+    ReportTestResult(
+      "Write payload policy spatial geometry",
+      fabs(write_path_select_payload(1) - spatial_write_payload) < 1e-15
+    );
+    ReportTestResult(
+      "Write payload policy unknown geometry",
+      fabs(write_path_select_payload(42) - spatial_write_payload) < 1e-15
+    );
+    ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1
     );
