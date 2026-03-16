@@ -65,10 +65,11 @@ Focus:
 - `cResourceCount` `SetCellResources` write-path policy wiring (completed): C++ `SetCellResources` now routes geometry-based global/partial no-op vs spatial write selection through Rust helper `avd_rc_setcell_write_path_kind`, preserving traversal order, ownership, and intentional global no-op semantics with refreshed Rust and C++ policy-matrix parity checks.
 - `cResourceCount` spatial setup/resize policy wiring (completed): C++ `Setup` and `ResizeSpatialGrids` now route geometry bucket classification, spatial rectangle logging policy, and resize cell-count derivation through Rust helpers (`avd_rc_setup_path_kind`, `avd_rc_should_log_spatial_rectangles`, `avd_rc_resize_cell_count`) while preserving allocation ownership, traversal order, and legacy branch semantics.
 - `cResourceCount` `SetGradientCount` setter-sequence policy wiring (completed): C++ `SetGradientCount` now routes deterministic gradient setter ordering through Rust helpers (`avd_rc_gradient_setter_count`, `avd_rc_gradient_setter_opcode`) while preserving C++ object ownership, per-setter mutation calls, and final `ResetGradRes(ctx, worldx, worldy)` ordering with refreshed Rust/C++ sequence parity checks.
+- `cResourceCount` gradient scalar setter policy wiring (completed): C++ scalar gradient setter wrappers now route deterministic setter opcode selection through Rust helpers (`avd_rc_gradient_scalar_setter_count`, `avd_rc_gradient_scalar_setter_opcode`) while preserving C++ assertions, direct setter side effects, and ownership semantics with refreshed Rust/C++ parity and guard checks.
 - Completed Wave 5 slice history archived in `documentation/archive/rust-migration-waves-completed.md`.
 - Starter seam definition remains in `documentation/Wave5-cResourceCount-Starter-Seam.md` for follow-on expansion
 
 Focus:
 - Migrate only after FFI and release-process maturity from waves 1-4.
 - Introduce migration slices that can be toggled independently in CI.
-- Next candidate: extract deterministic `cResourceCount` gradient scalar setter call policy (`SetGradientPlatInflow`/`SetGradientPlatOutflow`/`SetGradientConeInflow`/`SetGradientConeOutflow`/`SetGradientInflow`) behind additive Rust helpers while preserving C++ ownership and direct setter semantics.
+- Next candidate: extract deterministic `cResourceCount` gradient variable inflow setter call policy (`SetGradPlatVarInflow`) behind additive Rust helpers while preserving C++ ownership, context threading, and direct setter semantics.

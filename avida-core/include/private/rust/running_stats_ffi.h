@@ -65,7 +65,13 @@ enum {
   AVD_RC_GRAD_SETTER_THRESHOLD = 34,
   AVD_RC_GRAD_SETTER_REFUGE = 35,
   AVD_RC_GRAD_SETTER_DEATH_ODDS = 36,
-  AVD_RC_GRAD_SETTER_INVALID = -1
+  AVD_RC_GRAD_SETTER_INVALID = -1,
+  AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_INFLOW = 0,
+  AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_OUTFLOW = 1,
+  AVD_RC_GRAD_SCALAR_SETTER_CONE_INFLOW = 2,
+  AVD_RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW = 3,
+  AVD_RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW = 4,
+  AVD_RC_GRAD_SCALAR_SETTER_INVALID = -1
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -239,6 +245,8 @@ int avd_rc_should_log_spatial_rectangles(int geometry);
 int avd_rc_resize_cell_count(int world_x, int world_y);
 int avd_rc_gradient_setter_count(void);
 int avd_rc_gradient_setter_opcode(int index);
+int avd_rc_gradient_scalar_setter_count(void);
+int avd_rc_gradient_scalar_setter_opcode(int index);
 int avd_src_normalize_span(int start, int end, int bound, int* out_start, int* out_end);
 double avd_src_compute_flow_scalar(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist);
 int avd_src_compute_flow_pair_deltas(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist, double* out_elem1_delta, double* out_elem2_delta);

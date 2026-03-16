@@ -54,6 +54,12 @@ const RC_GRAD_SETTER_THRESHOLD: c_int = 34;
 const RC_GRAD_SETTER_REFUGE: c_int = 35;
 const RC_GRAD_SETTER_DEATH_ODDS: c_int = 36;
 const RC_GRAD_SETTER_INVALID: c_int = -1;
+const RC_GRAD_SCALAR_SETTER_PLATEAU_INFLOW: c_int = 0;
+const RC_GRAD_SCALAR_SETTER_PLATEAU_OUTFLOW: c_int = 1;
+const RC_GRAD_SCALAR_SETTER_CONE_INFLOW: c_int = 2;
+const RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW: c_int = 3;
+const RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW: c_int = 4;
+const RC_GRAD_SCALAR_SETTER_INVALID: c_int = -1;
 const RC_GRADIENT_SETTER_SEQUENCE: [c_int; 37] = [
     RC_GRAD_SETTER_PEAK_X,
     RC_GRAD_SETTER_PEAK_Y,
@@ -92,6 +98,13 @@ const RC_GRADIENT_SETTER_SEQUENCE: [c_int; 37] = [
     RC_GRAD_SETTER_THRESHOLD,
     RC_GRAD_SETTER_REFUGE,
     RC_GRAD_SETTER_DEATH_ODDS,
+];
+const RC_GRADIENT_SCALAR_SETTER_SEQUENCE: [c_int; 5] = [
+    RC_GRAD_SCALAR_SETTER_PLATEAU_INFLOW,
+    RC_GRAD_SCALAR_SETTER_PLATEAU_OUTFLOW,
+    RC_GRAD_SCALAR_SETTER_CONE_INFLOW,
+    RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW,
+    RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW,
 ];
 
 #[no_mangle]
@@ -276,6 +289,20 @@ fn gradient_setter_opcode(index: c_int) -> c_int {
         .unwrap_or(RC_GRAD_SETTER_INVALID)
 }
 
+fn gradient_scalar_setter_count() -> c_int {
+    RC_GRADIENT_SCALAR_SETTER_SEQUENCE.len() as c_int
+}
+
+fn gradient_scalar_setter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_GRAD_SCALAR_SETTER_INVALID;
+    };
+    RC_GRADIENT_SCALAR_SETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_GRAD_SCALAR_SETTER_INVALID)
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -369,6 +396,16 @@ pub extern "C" fn avd_rc_gradient_setter_count() -> c_int {
 #[no_mangle]
 pub extern "C" fn avd_rc_gradient_setter_opcode(index: c_int) -> c_int {
     gradient_setter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_scalar_setter_count() -> c_int {
+    gradient_scalar_setter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_scalar_setter_opcode(index: c_int) -> c_int {
+    gradient_scalar_setter_opcode(index)
 }
 
 #[no_mangle]
@@ -710,6 +747,33 @@ mod tests {
             RC_GRAD_SETTER_INVALID
         );
         assert_eq!(avd_rc_gradient_setter_opcode(999), RC_GRAD_SETTER_INVALID);
+    }
+
+    #[test]
+    fn rc_gradient_scalar_setter_sequence_policy() {
+        assert_eq!(
+            avd_rc_gradient_scalar_setter_count(),
+            RC_GRADIENT_SCALAR_SETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_GRADIENT_SCALAR_SETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(avd_rc_gradient_scalar_setter_opcode(i as c_int), *expected);
+        }
+    }
+
+    #[test]
+    fn rc_gradient_scalar_setter_sequence_guards() {
+        assert_eq!(
+            avd_rc_gradient_scalar_setter_opcode(-1),
+            RC_GRAD_SCALAR_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_gradient_scalar_setter_opcode(avd_rc_gradient_scalar_setter_count()),
+            RC_GRAD_SCALAR_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_gradient_scalar_setter_opcode(999),
+            RC_GRAD_SCALAR_SETTER_INVALID
+        );
     }
 
     #[test]

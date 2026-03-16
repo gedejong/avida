@@ -1311,6 +1311,46 @@ protected:
       "Gradient setter sequence out-of-range index guard",
       avd_rc_gradient_setter_opcode(avd_rc_gradient_setter_count()) == AVD_RC_GRAD_SETTER_INVALID
     );
+    const int expected_gradient_scalar_sequence[] = {
+      AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_INFLOW,
+      AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_OUTFLOW,
+      AVD_RC_GRAD_SCALAR_SETTER_CONE_INFLOW,
+      AVD_RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW,
+      AVD_RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW
+    };
+    const int expected_gradient_scalar_count = sizeof(expected_gradient_scalar_sequence) / sizeof(expected_gradient_scalar_sequence[0]);
+    ReportTestResult(
+      "Gradient scalar setter sequence count policy",
+      avd_rc_gradient_scalar_setter_count() == expected_gradient_scalar_count
+    );
+    bool gradient_scalar_sequence_ok = (avd_rc_gradient_scalar_setter_count() == expected_gradient_scalar_count);
+    for (int i = 0; i < expected_gradient_scalar_count; ++i) {
+      if (avd_rc_gradient_scalar_setter_opcode(i) != expected_gradient_scalar_sequence[i]) {
+        gradient_scalar_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult("Gradient scalar setter sequence order policy", gradient_scalar_sequence_ok);
+    ReportTestResult(
+      "Gradient scalar setter negative index guard",
+      avd_rc_gradient_scalar_setter_opcode(-1) == AVD_RC_GRAD_SCALAR_SETTER_INVALID
+    );
+    ReportTestResult(
+      "Gradient scalar setter out-of-range index guard",
+      avd_rc_gradient_scalar_setter_opcode(avd_rc_gradient_scalar_setter_count()) == AVD_RC_GRAD_SCALAR_SETTER_INVALID
+    );
+    const double scalar_payload[] = {0.11, 0.22, 0.33, 0.44, 0.55};
+    double scalar_payload_sum = 0.0;
+    for (int i = 0; i < avd_rc_gradient_scalar_setter_count(); ++i) {
+      const int opcode = avd_rc_gradient_scalar_setter_opcode(i);
+      if (opcode >= 0 && opcode < avd_rc_gradient_scalar_setter_count()) {
+        scalar_payload_sum += scalar_payload[opcode];
+      }
+    }
+    ReportTestResult(
+      "Gradient scalar setter payload selection parity",
+      fabs(scalar_payload_sum - (0.11 + 0.22 + 0.33 + 0.44 + 0.55)) < 1e-15
+    );
     ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1

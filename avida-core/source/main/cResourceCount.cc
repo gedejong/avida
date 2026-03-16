@@ -48,6 +48,20 @@ int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cStrin
 
   return avd_rc_lookup_resource_index(names.data(), count, (const char*) query);
 }
+
+void ApplyGradientScalarSetter(cSpatialResCount* spatial_res, int opcode, double value)
+{
+  switch (opcode) {
+    case AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_INFLOW: spatial_res->SetGradPlatInflow(value); break;
+    case AVD_RC_GRAD_SCALAR_SETTER_PLATEAU_OUTFLOW: spatial_res->SetGradPlatOutflow(value); break;
+    case AVD_RC_GRAD_SCALAR_SETTER_CONE_INFLOW: spatial_res->SetGradConeInflow(value); break;
+    case AVD_RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW: spatial_res->SetGradConeOutflow(value); break;
+    case AVD_RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW: spatial_res->SetGradientInflow(value); break;
+    default:
+      assert(opcode == AVD_RC_GRAD_SCALAR_SETTER_INVALID && "Unexpected gradient scalar setter opcode");
+      break;
+  }
+}
 }
 
 const double cResourceCount::UPDATE_STEP(1.0 / 10000.0);
@@ -380,35 +394,40 @@ void cResourceCount::SetGradientPlatInflow(const int& res_id, const double& infl
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradPlatInflow(inflow);
+  const int opcode = avd_rc_gradient_scalar_setter_opcode(0);
+  ApplyGradientScalarSetter(spatial_resource_count[res_id], opcode, inflow);
 }
 
 void cResourceCount::SetGradientPlatOutflow(const int& res_id, const double& outflow) 
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradPlatOutflow(outflow);
+  const int opcode = avd_rc_gradient_scalar_setter_opcode(1);
+  ApplyGradientScalarSetter(spatial_resource_count[res_id], opcode, outflow);
 }
 
 void cResourceCount::SetGradientConeInflow(const int& res_id, const double& inflow) 
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradConeInflow(inflow);
+  const int opcode = avd_rc_gradient_scalar_setter_opcode(2);
+  ApplyGradientScalarSetter(spatial_resource_count[res_id], opcode, inflow);
 }
 
 void cResourceCount::SetGradientConeOutflow(const int& res_id, const double& outflow) 
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradConeOutflow(outflow);
+  const int opcode = avd_rc_gradient_scalar_setter_opcode(3);
+  ApplyGradientScalarSetter(spatial_resource_count[res_id], opcode, outflow);
 }
 
 void cResourceCount::SetGradientInflow(const int& res_id, const double& inflow) 
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradientInflow(inflow);
+  const int opcode = avd_rc_gradient_scalar_setter_opcode(4);
+  ApplyGradientScalarSetter(spatial_resource_count[res_id], opcode, inflow);
 }
 
 void cResourceCount::SetGradPlatVarInflow(cAvidaContext& ctx, const int& res_id, const double& mean, const double& variance, const int& type) 
