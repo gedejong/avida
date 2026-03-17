@@ -153,6 +153,70 @@ pub extern "C" fn avd_cpop_is_merit_bonus_enabled(rewarded_instruction: c_int) -
     }
 }
 
+// --- CopyParentFT loophole guard ---
+
+/// Returns 1 if the parent forage target should be copied to the offspring.
+/// Returns 0 (block copy) when the loophole condition is met:
+/// pred_prey_switch <= 0 or == 2, AND parent is prey (> -2), AND current ft is predatory (< -1).
+#[no_mangle]
+pub extern "C" fn avd_cpop_should_copy_parent_ft(
+    pred_prey_switch: c_int,
+    parent_ft: c_int,
+    forage_target: c_int,
+) -> c_int {
+    if (pred_prey_switch <= 0 || pred_prey_switch == 2) && parent_ft > -2 && forage_target < -1 {
+        0 // block copy
+    } else {
+        1 // allow copy
+    }
+}
+
+// --- Max-pred kill gate ---
+
+/// Returns 1 if a random predator should be killed to enforce max_pred cap.
+/// Active when parent_ft <= -2 AND max_pred > 0 AND num_total_pred >= max_pred.
+#[no_mangle]
+pub extern "C" fn avd_cpop_should_kill_rand_pred(
+    parent_ft: c_int,
+    max_pred: c_int,
+    num_total_pred: c_int,
+) -> c_int {
+    if parent_ft <= -2 && max_pred > 0 && num_total_pred >= max_pred {
+        1
+    } else {
+        0
+    }
+}
+
+// --- Message buffer behavior classification ---
+const CPOP_MSG_BUFFER_DROP_OLDEST: c_int = 0;
+const CPOP_MSG_BUFFER_DROP_NEW: c_int = 1;
+const CPOP_MSG_BUFFER_INVALID: c_int = -1;
+
+/// Classify message receive buffer overflow behavior.
+/// 0 = drop oldest, 1 = drop new message, other = invalid/error.
+#[no_mangle]
+pub extern "C" fn avd_cpop_msg_buffer_overflow_action(behavior: c_int) -> c_int {
+    match behavior {
+        0 => CPOP_MSG_BUFFER_DROP_OLDEST,
+        1 => CPOP_MSG_BUFFER_DROP_NEW,
+        _ => CPOP_MSG_BUFFER_INVALID,
+    }
+}
+
+// --- Message buffer full check ---
+
+/// Returns 1 if the message receive buffer is full and needs overflow handling.
+/// buffer_size == -1 means unlimited. Returns 0 if not full or unlimited.
+#[no_mangle]
+pub extern "C" fn avd_cpop_is_msg_buffer_full(buffer_size: c_int, current_count: c_int) -> c_int {
+    if buffer_size != -1 && buffer_size <= current_count {
+        1
+    } else {
+        0
+    }
+}
+
 // --- Forage target transition classification ---
 // Given (new_ft, old_ft), classify the population counter transition.
 const CPOP_FT_TRANSITION_NONE: c_int = 0;
@@ -406,6 +470,61 @@ mod tests {
         assert_eq!(avd_cpop_is_merit_bonus_enabled(0), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(5), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(-2), 1);
+    }
+
+    // --- CopyParentFT loophole guard tests ---
+
+    #[test]
+    fn should_copy_parent_ft_policy() {
+        // Loophole blocked: switch<=0 or ==2, parent prey (>-2), current predatory (<-1)
+        assert_eq!(avd_cpop_should_copy_parent_ft(0, 0, -2), 0);
+        assert_eq!(avd_cpop_should_copy_parent_ft(-2, 1, -2), 0);
+        assert_eq!(avd_cpop_should_copy_parent_ft(2, 0, -2), 0);
+        // forage_target == -1 is NOT < -1, so copy is allowed
+        assert_eq!(avd_cpop_should_copy_parent_ft(0, 0, -1), 1);
+        // Allowed: switch == 1 (not matching condition)
+        assert_eq!(avd_cpop_should_copy_parent_ft(1, 0, -2), 1);
+        // Allowed: parent is predator
+        assert_eq!(avd_cpop_should_copy_parent_ft(0, -2, -2), 1);
+        // Allowed: current is prey
+        assert_eq!(avd_cpop_should_copy_parent_ft(0, 0, 0), 1);
+    }
+
+    // --- Max-pred kill gate tests ---
+
+    #[test]
+    fn should_kill_rand_pred_policy() {
+        assert_eq!(avd_cpop_should_kill_rand_pred(-2, 50, 50), 1);
+        assert_eq!(avd_cpop_should_kill_rand_pred(-3, 50, 60), 1);
+        assert_eq!(avd_cpop_should_kill_rand_pred(-1, 50, 50), 0); // not pred parent
+        assert_eq!(avd_cpop_should_kill_rand_pred(-2, 0, 50), 0); // disabled
+        assert_eq!(avd_cpop_should_kill_rand_pred(-2, 50, 49), 0); // under cap
+    }
+
+    // --- Message buffer tests ---
+
+    #[test]
+    fn msg_buffer_overflow_action_policy() {
+        assert_eq!(
+            avd_cpop_msg_buffer_overflow_action(0),
+            CPOP_MSG_BUFFER_DROP_OLDEST
+        );
+        assert_eq!(
+            avd_cpop_msg_buffer_overflow_action(1),
+            CPOP_MSG_BUFFER_DROP_NEW
+        );
+        assert_eq!(
+            avd_cpop_msg_buffer_overflow_action(2),
+            CPOP_MSG_BUFFER_INVALID
+        );
+    }
+
+    #[test]
+    fn msg_buffer_full_check_policy() {
+        assert_eq!(avd_cpop_is_msg_buffer_full(10, 10), 1);
+        assert_eq!(avd_cpop_is_msg_buffer_full(10, 15), 1);
+        assert_eq!(avd_cpop_is_msg_buffer_full(10, 5), 0);
+        assert_eq!(avd_cpop_is_msg_buffer_full(-1, 100), 0); // unlimited
     }
 
     // --- Forage target transition tests ---

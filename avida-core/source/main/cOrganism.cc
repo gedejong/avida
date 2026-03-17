@@ -1037,14 +1037,13 @@ void cOrganism::ReceiveMessage(cOrgMessage& msg)
   InitMessaging();
 	// don't store more messages than we're configured to.
 	const int bsize = m_world->GetConfig().MESSAGE_RECV_BUFFER_SIZE.Get();
-	if((bsize != -1) && (bsize <= static_cast<int>(m_msg->received.size()))) {
-		switch (m_world->GetConfig().MESSAGE_RECV_BUFFER_BEHAVIOR.Get()) {
-			case 0: // drop oldest message
-				m_msg->received.pop_front();
-				break;
-			case 1: // drop this message
-				return;
-			default: // error
+	if(avd_cpop_is_msg_buffer_full(bsize, static_cast<int>(m_msg->received.size()))) {
+		const int action = avd_cpop_msg_buffer_overflow_action(m_world->GetConfig().MESSAGE_RECV_BUFFER_BEHAVIOR.Get());
+		if (action == AVD_CPOP_MSG_BUFFER_DROP_OLDEST) {
+			m_msg->received.pop_front();
+		} else if (action == AVD_CPOP_MSG_BUFFER_DROP_NEW) {
+			return;
+		} else {
         m_world->GetDriver().Feedback().Error("MESSAGE_RECV_BUFFER_BEHAVIOR is set to an invalid value.");
         m_world->GetDriver().Abort(Avida::INVALID_CONFIG);
 				assert(false);
@@ -1231,8 +1230,8 @@ bool cOrganism::HasOpinion() {
 }
 
 void cOrganism::SetForageTarget(cAvidaContext& ctx, int forage_target, bool inject) {
-  if (m_parent_ft <= -2 && m_world->GetConfig().MAX_PRED.Get() && m_world->GetStats().GetNumTotalPredCreatures() >= m_world->GetConfig().MAX_PRED.Get()) m_interface->KillRandPred(ctx, this);
-  else if (forage_target > -2 && m_world->GetConfig().MAX_PREY.Get() && m_world->GetStats().GetNumPreyCreatures() >= m_world->GetConfig().MAX_PREY.Get()) m_interface->KillRandPrey(ctx, this);
+  if (avd_cpop_should_kill_rand_pred(m_parent_ft, m_world->GetConfig().MAX_PRED.Get(), m_world->GetStats().GetNumTotalPredCreatures())) m_interface->KillRandPred(ctx, this);
+  else if (avd_cpop_should_kill_rand_prey(m_world->GetConfig().MAX_PREY.Get(), m_world->GetStats().GetNumPreyCreatures(), (forage_target > -2) ? 1 : 0)) m_interface->KillRandPrey(ctx, this);
 
   // if using avatars, make sure you swap avatar lists if the org type changes!
   if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
@@ -1271,15 +1270,11 @@ void cOrganism::SetForageTarget(cAvidaContext& ctx, int forage_target, bool inje
 }
 
 void cOrganism::CopyParentFT(cAvidaContext& ctx) {
-  bool copy_ft = true;
   // close potential loop-hole allowing orgs to switch ft to prey at birth, collect res,
   // switch ft to pred, and then copy parent to become prey again.
-  if (m_world->GetConfig().PRED_PREY_SWITCH.Get() <= 0 || m_world->GetConfig().PRED_PREY_SWITCH.Get() == 2) {
-    if (m_parent_ft > -2 && m_forage_target < -1) {
-      copy_ft = false;
-    }
+  if (avd_cpop_should_copy_parent_ft(m_world->GetConfig().PRED_PREY_SWITCH.Get(), m_parent_ft, m_forage_target)) {
+    SetForageTarget(ctx, m_parent_ft);
   }
-  if (copy_ft) SetForageTarget(ctx, m_parent_ft);
 }
 
 /*! Called when an organism receives a flash from a neighbor. */

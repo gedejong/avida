@@ -208,7 +208,10 @@ enum {
   AVD_CPOP_FT_TRANSITION_PREY_TO_TOP_PRED = 3,
   AVD_CPOP_FT_TRANSITION_PRED_TO_TOP_PRED = 4,
   AVD_CPOP_FT_TRANSITION_PRED_TO_PREY = 5,
-  AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PREY = 6
+  AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PREY = 6,
+  AVD_CPOP_MSG_BUFFER_DROP_OLDEST = 0,
+  AVD_CPOP_MSG_BUFFER_DROP_NEW = 1,
+  AVD_CPOP_MSG_BUFFER_INVALID = -1
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -413,6 +416,10 @@ int avd_cpop_deme_reset_resources_kind(int config_value);
 int avd_cpop_should_kill_rand_prey(int max_prey, int num_prey, int is_prey_ft);
 int avd_cpop_should_kill_test_birth(int birth_method, int is_inject);
 int avd_cpop_forage_target_transition(int new_ft, int old_ft);
+int avd_cpop_should_copy_parent_ft(int pred_prey_switch, int parent_ft, int forage_target);
+int avd_cpop_should_kill_rand_pred(int parent_ft, int max_pred, int num_total_pred);
+int avd_cpop_msg_buffer_overflow_action(int behavior);
+int avd_cpop_is_msg_buffer_full(int buffer_size, int current_count);
 int avd_analyze_relation_mask(const char* relation);
 int avd_analyze_is_html_extension(const char* extension);
 int avd_analyze_is_html_filename_token(const char* filename_token);

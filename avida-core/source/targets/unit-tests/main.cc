@@ -2766,6 +2766,38 @@ protected:
       avd_cpop_is_merit_bonus_enabled(5) == 1
     );
 
+    // CopyParentFT loophole guard
+    ReportTestResult(
+      "cPopulation CopyParentFT loophole guard",
+      avd_cpop_should_copy_parent_ft(0, 0, -2) == 0 &&
+      avd_cpop_should_copy_parent_ft(2, 0, -2) == 0 &&
+      avd_cpop_should_copy_parent_ft(1, 0, -2) == 1 &&
+      avd_cpop_should_copy_parent_ft(0, -2, -2) == 1 &&
+      avd_cpop_should_copy_parent_ft(0, 0, 0) == 1
+    );
+
+    // Max-pred kill gate
+    ReportTestResult(
+      "cPopulation max pred kill gate",
+      avd_cpop_should_kill_rand_pred(-2, 50, 50) == 1 &&
+      avd_cpop_should_kill_rand_pred(-1, 50, 50) == 0 &&
+      avd_cpop_should_kill_rand_pred(-2, 0, 50) == 0
+    );
+
+    // Message buffer overflow
+    ReportTestResult(
+      "cPopulation msg buffer overflow action",
+      avd_cpop_msg_buffer_overflow_action(0) == AVD_CPOP_MSG_BUFFER_DROP_OLDEST &&
+      avd_cpop_msg_buffer_overflow_action(1) == AVD_CPOP_MSG_BUFFER_DROP_NEW &&
+      avd_cpop_msg_buffer_overflow_action(2) == AVD_CPOP_MSG_BUFFER_INVALID
+    );
+    ReportTestResult(
+      "cPopulation msg buffer full check",
+      avd_cpop_is_msg_buffer_full(10, 10) == 1 &&
+      avd_cpop_is_msg_buffer_full(10, 5) == 0 &&
+      avd_cpop_is_msg_buffer_full(-1, 100) == 0
+    );
+
     // Forage target transition
     ReportTestResult(
       "cPopulation forage target transition classification",
