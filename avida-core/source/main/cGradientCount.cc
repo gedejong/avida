@@ -195,8 +195,8 @@ void cGradientCount::updatePeakRes(cAvidaContext& ctx)
   // to speed things up, we only check cells within the possible spread of the peak
   // and we only do this if the resource is set to actually move, has inflow/outflow to update, or
   // we just reset a non-moving resource
-  if (m_move_a_scaler > 1 || m_plateau_inflow != 0 || m_plateau_outflow != 0 || m_cone_inflow != 0 || m_cone_outflow != 0
-  || m_gradient_inflow != 0 || (m_move_a_scaler == 1 && m_just_reset)) fillinResourceValues();
+  if (avd_env_gradient_should_fillin(m_move_a_scaler, m_plateau_inflow, m_plateau_outflow, m_cone_inflow, m_cone_outflow,
+      m_gradient_inflow, m_just_reset ? 1 : 0)) fillinResourceValues();
 
   if (m_predator) UpdatePredatoryRes(ctx);
   if (m_damage) UpdateDamagingRes(ctx);
@@ -207,9 +207,7 @@ void cGradientCount::generatePeak(cAvidaContext& ctx)
 {
   // Get initial peak cell x, y coordinates and movement directions.
   Apto::Random& rng = ctx.GetRandom();
-  int temp_height = 0;
-  if (m_plateau < 0) temp_height = 1;
-  else temp_height = m_height;
+  int temp_height = avd_env_gradient_temp_height(m_plateau, m_height);
   // If no initial config set m_peakx and m_peaky, get a random location
   if (!m_halo) {
     if (m_peakx == -1) m_peakx = rng.GetUInt(m_min_x + temp_height, m_max_x - temp_height + 1);
@@ -403,9 +401,7 @@ void cGradientCount::fillinResourceValues()
 
 void cGradientCount::getCurrentPlatValues()
 { 
-  int temp_height = 0;
-  if (m_plateau < 0) temp_height = 1;
-  else temp_height = m_height;
+  int temp_height = avd_env_gradient_temp_height(m_plateau, m_height);
   int plateau_box_min_x = m_peakx - temp_height - 1;
   int plateau_box_max_x = m_peakx + temp_height + 1;
   int plateau_box_min_y = m_peaky - temp_height - 1;
@@ -477,9 +473,7 @@ int cGradientCount::setHaloOrbit(cAvidaContext& ctx, int current_orbit)
   int random_shift = ctx.GetRandom().GetUInt(0,2);
   // if changing orbit, choose to go in or out one orbit
   // then figure out if we need change the x or the y to shift orbit (based on what quadrant we're in)
-  int temp_height = 0;
-  if (m_plateau < 0) temp_height = 1;
-  else temp_height = m_height;
+  int temp_height = avd_env_gradient_temp_height(m_plateau, m_height);
 
   if (random_shift == 0) {
     //do nothing unless there's room to change orbit
@@ -622,9 +616,7 @@ void cGradientCount::confirmHaloPeak()
 void cGradientCount::movePeak()
 {
   // for non-halo peaks keep cones inside their bounding boxes, bouncing them if they hit the edge
-  int temp_height = 0;
-  if (m_plateau < 0) temp_height = 1;
-  else temp_height = m_height;
+  int temp_height = avd_env_gradient_temp_height(m_plateau, m_height);
   
   int num_steps = m_move_speed > 1 ? m_move_speed : 1;
   for (int i = 0; i < num_steps; i++) {

@@ -480,6 +480,8 @@ int avd_env_process_type(const char* type_str);
 int avd_env_phenplast_bonus_method(const char* method_str);
 int avd_env_reaction_entry_type(const char* entry_str);
 int avd_env_gradient_update_action(int habitat, int is_probabilistic);
+int avd_env_gradient_temp_height(double plateau, int height);
+int avd_env_gradient_should_fillin(double move_a_scaler, double plateau_inflow, double plateau_outflow, double cone_inflow, double cone_outflow, double gradient_inflow, int just_reset);
 int avd_env_geometry_type(const char* geometry_str);
 int avd_sensor_normalize_search_type(int habitat_used, int search_type, int pred_experiment, int is_predator);
 int avd_sensor_clamp_distance(int distance_sought, int max_dist);

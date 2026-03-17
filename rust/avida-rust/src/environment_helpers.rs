@@ -88,6 +88,48 @@ pub extern "C" fn avd_env_gradient_update_action(habitat: c_int, is_probabilisti
     }
 }
 
+// --- Gradient temp height computation ---
+
+/// Compute effective height for gradient boundary calculations.
+/// If plateau < 0, returns 1; otherwise returns height.
+#[no_mangle]
+pub extern "C" fn avd_env_gradient_temp_height(plateau: f64, height: c_int) -> c_int {
+    if plateau < 0.0 {
+        1
+    } else {
+        height
+    }
+}
+
+// --- Should-fillin-resource-values gate ---
+
+/// Returns 1 if gradient resource values need updating this tick.
+/// Active when: move_a_scaler > 1, or any inflow/outflow is nonzero,
+/// or (non-moving resource that was just reset).
+#[no_mangle]
+pub extern "C" fn avd_env_gradient_should_fillin(
+    move_a_scaler: f64,
+    plateau_inflow: f64,
+    plateau_outflow: f64,
+    cone_inflow: f64,
+    cone_outflow: f64,
+    gradient_inflow: f64,
+    just_reset: c_int,
+) -> c_int {
+    if move_a_scaler > 1.0
+        || plateau_inflow != 0.0
+        || plateau_outflow != 0.0
+        || cone_inflow != 0.0
+        || cone_outflow != 0.0
+        || gradient_inflow != 0.0
+        || (move_a_scaler == 1.0 && just_reset != 0)
+    {
+        1
+    } else {
+        0
+    }
+}
+
 // --- Resource geometry string classifier ---
 // nGeometry: GLOBAL=0, GRID=1, TORUS=2, CLIQUE=3, HEX=4, PARTIAL=5
 
@@ -134,6 +176,42 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Gradient temp height tests ---
+
+    #[test]
+    fn gradient_temp_height_policy() {
+        assert_eq!(avd_env_gradient_temp_height(-1.0, 5), 1);
+        assert_eq!(avd_env_gradient_temp_height(-0.5, 5), 1);
+        assert_eq!(avd_env_gradient_temp_height(0.0, 5), 5);
+        assert_eq!(avd_env_gradient_temp_height(1.0, 10), 10);
+    }
+
+    // --- Should-fillin gate tests ---
+
+    #[test]
+    fn gradient_should_fillin_policy() {
+        // moving resource
+        assert_eq!(
+            avd_env_gradient_should_fillin(2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0),
+            1
+        );
+        // has inflow
+        assert_eq!(
+            avd_env_gradient_should_fillin(1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0),
+            1
+        );
+        // non-moving just reset
+        assert_eq!(
+            avd_env_gradient_should_fillin(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1),
+            1
+        );
+        // nothing active
+        assert_eq!(
+            avd_env_gradient_should_fillin(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0),
+            0
+        );
     }
 
     // --- Gradient update action tests ---

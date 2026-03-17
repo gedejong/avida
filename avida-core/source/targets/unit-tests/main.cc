@@ -3062,6 +3062,23 @@ protected:
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
     );
 
+    // Gradient temp height
+    ReportTestResult(
+      "Env gradient temp height policy",
+      avd_env_gradient_temp_height(-1.0, 5) == 1 &&
+      avd_env_gradient_temp_height(0.0, 5) == 5 &&
+      avd_env_gradient_temp_height(1.0, 10) == 10
+    );
+
+    // Gradient should-fillin gate
+    ReportTestResult(
+      "Env gradient should fillin policy",
+      avd_env_gradient_should_fillin(2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0) == 1 &&
+      avd_env_gradient_should_fillin(1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0) == 1 &&
+      avd_env_gradient_should_fillin(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1) == 1 &&
+      avd_env_gradient_should_fillin(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0) == 0
+    );
+
     // Gradient update action
     ReportTestResult(
       "Env gradient update action policy",
