@@ -38,6 +38,8 @@
 #include "cStateGrid.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include "tInstLibEntry.h"
 
 #include <climits>
@@ -1229,7 +1231,7 @@ inline int cHardwareBCR::FindModifiedNextRegister(int default_register)
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + 1) % NUM_REGISTERS;
+    default_register = avd_cpu_next_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1237,13 +1239,13 @@ inline int cHardwareBCR::FindModifiedNextRegister(int default_register)
 inline int cHardwareBCR::FindModifiedPreviousRegister(int default_register)
 {
   assert(default_register < NUM_REGISTERS);  // Reg ID too high.
-  
+
   if (m_inst_set->IsNop(getIP().NextInst())) {
     getIP().Advance();
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + NUM_REGISTERS - 1) % NUM_REGISTERS;
+    default_register = avd_cpu_prev_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1264,7 +1266,7 @@ inline int cHardwareBCR::FindModifiedHead(int default_head)
 
 inline int cHardwareBCR::FindNextRegister(int base_reg)
 {
-  return (base_reg + 1) % NUM_REGISTERS;
+  return avd_cpu_next_register(base_reg, NUM_REGISTERS);
 }
 
 inline int cHardwareBCR::FindUpstreamModifiedRegister(int offset, int default_register)
@@ -1763,14 +1765,16 @@ bool cHardwareBCR::Inst_Div(cAvidaContext&)
   const int op2 = FindModifiedNextRegister(op1);
   DataValue& r1 = m_threads[m_cur_thread].reg[op1];
   DataValue& r2 = m_threads[m_cur_thread].reg[op2];
-  if (r2.value != 0) {
-    if (0 - INT_MAX > r1.value && r2.value == -1)
-      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
-    else
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
       setRegister(dst, r1.value / r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
-    return false;
+    } else if (dg == AVD_CPU_DIV_OVERFLOW) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -1782,11 +1786,14 @@ bool cHardwareBCR::Inst_Mod(cAvidaContext&)
   const int op2 = FindModifiedNextRegister(op1);
   DataValue& r1 = m_threads[m_cur_thread].reg[op1];
   DataValue& r2 = m_threads[m_cur_thread].reg[op2];
-  if (r2.value != 0) {
-    setRegister(dst, r1.value % r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
-    return false;
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
+      setRegister(dst, r1.value % r2.value, r1, r2);
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -2538,15 +2545,8 @@ bool cHardwareBCR::Inst_RotateHome(cAvidaContext& ctx)
   // to face the 'marked' spot where those instructions were executed.
   int easterly = m_organism->GetEasterly();
   int northerly = m_organism->GetNortherly();
-  int correct_facing = 0;
-  if (northerly > 0 && easterly == 0) correct_facing = 0; // rotate N    
-  else if (northerly > 0 && easterly < 0) correct_facing = 1; // rotate NE
-  else if (northerly == 0 && easterly < 0) correct_facing = 2; // rotate E
-  else if (northerly < 0 && easterly < 0) correct_facing = 3; // rotate SE
-  else if (northerly < 0 && easterly == 0) correct_facing = 4; // rotate S
-  else if (northerly < 0 && easterly > 0) correct_facing = 5; // rotate SW
-  else if (northerly == 0 && easterly > 0) correct_facing = 6; // rotate W
-  else if (northerly > 0 && easterly > 0) correct_facing = 7; // rotate NW  
+  int correct_facing = avd_cpu_gradient_facing(northerly, easterly);
+  if (correct_facing < 0) correct_facing = 0; // zero vector defaults to N
   
   int rotates = m_organism->GetNeighborhoodSize();
   if (m_use_avatar == 2) rotates = m_organism->GetOrgInterface().GetAVNumNeighbors();

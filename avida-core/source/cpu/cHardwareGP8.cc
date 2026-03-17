@@ -38,6 +38,8 @@
 #include "cStateGrid.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include "tInstLibEntry.h"
 
 #include <climits>
@@ -1254,7 +1256,7 @@ inline int cHardwareGP8::FindModifiedNextRegister(int default_register, bool acc
     default_register = m_inst_set->GetLibFunctionIndex(inst);
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + 1) % NUM_REGISTERS;
+    default_register = avd_cpu_next_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1262,7 +1264,7 @@ inline int cHardwareGP8::FindModifiedNextRegister(int default_register, bool acc
 inline int cHardwareGP8::FindModifiedPreviousRegister(int default_register, bool accept_immediate)
 {
   assert(default_register < NUM_REGISTERS);  // Reg ID too high.
-  
+
   Instruction inst = getIP().NextInst();
   if (m_inst_set->IsNop(inst)) {
     getIP().Advance();
@@ -1273,7 +1275,7 @@ inline int cHardwareGP8::FindModifiedPreviousRegister(int default_register, bool
     default_register = m_inst_set->GetLibFunctionIndex(inst);
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + NUM_REGISTERS - 1) % NUM_REGISTERS;
+    default_register = avd_cpu_prev_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1294,7 +1296,7 @@ inline int cHardwareGP8::FindModifiedHead(int default_head)
 
 inline int cHardwareGP8::FindNextRegister(int base_reg)
 {
-  return (base_reg + 1) % NUM_REGISTERS;
+  return avd_cpu_next_register(base_reg, NUM_REGISTERS);
 }
 
 inline int cHardwareGP8::FindUpstreamModifiedRegister(int offset, int default_register)
@@ -1692,14 +1694,16 @@ bool cHardwareGP8::Inst_Div(cAvidaContext& ctx)
   const int op2 = FindModifiedNextRegister((op1 < NUM_REGISTERS) ? op1 : dst, true);
   DataValue r1 = getRegisterData(ctx, op1);
   DataValue r2 = getRegisterData(ctx, op2);
-  if (r2.value != 0) {
-    if (0 - INT_MAX > r1.value && r2.value == -1)
-      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
-    else
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
       setRegister(dst, r1.value / r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
-    return false;
+    } else if (dg == AVD_CPU_DIV_OVERFLOW) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -1711,11 +1715,14 @@ bool cHardwareGP8::Inst_Mod(cAvidaContext& ctx)
   const int op2 = FindModifiedNextRegister((op1 < NUM_REGISTERS) ? op1 : dst, true);
   DataValue r1 = getRegisterData(ctx, op1);
   DataValue r2 = getRegisterData(ctx, op2);
-  if (r2.value != 0) {
-    setRegister(dst, r1.value % r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
-    return false;
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
+      setRegister(dst, r1.value % r2.value, r1, r2);
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -2300,16 +2307,8 @@ bool cHardwareGP8::Inst_RotateHome(cAvidaContext& ctx)
   int easterly = m_organism->GetEasterly();
   int northerly = m_organism->GetNortherly();
   
-  if (northerly == 0 && easterly == 0) return true;
-  int correct_facing = 0;
-  if (northerly > 0 && easterly == 0) correct_facing = 0; // rotate N
-  else if (northerly > 0 && easterly < 0) correct_facing = 1; // rotate NE
-  else if (northerly == 0 && easterly < 0) correct_facing = 2; // rotate E
-  else if (northerly < 0 && easterly < 0) correct_facing = 3; // rotate SE
-  else if (northerly < 0 && easterly == 0) correct_facing = 4; // rotate S
-  else if (northerly < 0 && easterly > 0) correct_facing = 5; // rotate SW
-  else if (northerly == 0 && easterly > 0) correct_facing = 6; // rotate W
-  else if (northerly > 0 && easterly > 0) correct_facing = 7; // rotate NW
+  int correct_facing = avd_cpu_gradient_facing(northerly, easterly);
+  if (correct_facing < 0) return true; // zero vector — no rotation needed
   
   int rotates = m_organism->GetNeighborhoodSize();
   if (m_use_avatar) rotates = m_organism->GetOrgInterface().GetAVNumNeighbors();

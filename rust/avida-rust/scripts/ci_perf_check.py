@@ -10,16 +10,18 @@ from typing import Dict, List, Tuple
 
 
 BASELINES_NS: Dict[str, float] = {
-    "resource_scheduling_helpers/num_steps+remainder_pipeline": 53_402.540,
-    "resource_update_dispatch_helpers/mixed_geometry_dispatch_pipeline": 9_218.728,
-    "cpu_dispatch_helpers/dispatch_family_and_counted_opcode": 14_167.329,
-    "provider_id_helpers/classify_standard": 22.438,
-    "provider_id_helpers/classify_argumented_with_outputs": 205.364,
-    "provider_id_helpers/classify_malformed": 26.152,
-    "package_helpers/str_as_bool": 4.669,
-    "package_helpers/str_as_int": 10.096,
-    "package_helpers/str_as_double": 70.987,
-    "package_helpers/double_to_string": 255.216,
+    # Baselines captured from CI runner (2026-03-17), with headroom for
+    # GitHub-Actions shared-runner variance (~1.5-2x vs local).
+    "resource_scheduling_helpers/num_steps+remainder_pipeline": 69_225.0,
+    "resource_update_dispatch_helpers/mixed_geometry_dispatch_pipeline": 16_066.0,
+    "cpu_dispatch_helpers/dispatch_family_and_counted_opcode": 23_546.0,
+    "provider_id_helpers/classify_standard": 22.5,
+    "provider_id_helpers/classify_argumented_with_outputs": 218.0,
+    "provider_id_helpers/classify_malformed": 26.2,
+    "package_helpers/str_as_bool": 4.7,
+    "package_helpers/str_as_int": 10.0,
+    "package_helpers/str_as_double": 71.0,
+    "package_helpers/double_to_string": 255.0,
 }
 
 
