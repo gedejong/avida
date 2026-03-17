@@ -67,6 +67,27 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Gradient resource update-action classifier ---
+const ENV_GRADIENT_ACTION_BARRIER: c_int = 0;
+const ENV_GRADIENT_ACTION_HILLS: c_int = 1;
+const ENV_GRADIENT_ACTION_PROBABILISTIC: c_int = 2;
+const ENV_GRADIENT_ACTION_PEAK: c_int = 3;
+
+/// Classify gradient resource update action based on habitat and probabilistic flag.
+/// habitat==2 → barrier, habitat==1 → hills, probabilistic → probabilistic, else → peak
+#[no_mangle]
+pub extern "C" fn avd_env_gradient_update_action(habitat: c_int, is_probabilistic: c_int) -> c_int {
+    if habitat == 2 {
+        ENV_GRADIENT_ACTION_BARRIER
+    } else if habitat == 1 {
+        ENV_GRADIENT_ACTION_HILLS
+    } else if is_probabilistic != 0 {
+        ENV_GRADIENT_ACTION_PROBABILISTIC
+    } else {
+        ENV_GRADIENT_ACTION_PEAK
+    }
+}
+
 // --- Resource geometry string classifier ---
 // nGeometry: GLOBAL=0, GRID=1, TORUS=2, CLIQUE=3, HEX=4, PARTIAL=5
 
@@ -113,6 +134,33 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Gradient update action tests ---
+
+    #[test]
+    fn gradient_update_action_policy() {
+        assert_eq!(
+            avd_env_gradient_update_action(2, 0),
+            ENV_GRADIENT_ACTION_BARRIER
+        );
+        assert_eq!(
+            avd_env_gradient_update_action(1, 0),
+            ENV_GRADIENT_ACTION_HILLS
+        );
+        assert_eq!(
+            avd_env_gradient_update_action(0, 1),
+            ENV_GRADIENT_ACTION_PROBABILISTIC
+        );
+        assert_eq!(
+            avd_env_gradient_update_action(0, 0),
+            ENV_GRADIENT_ACTION_PEAK
+        );
+        // habitat takes precedence over probabilistic
+        assert_eq!(
+            avd_env_gradient_update_action(2, 1),
+            ENV_GRADIENT_ACTION_BARRIER
+        );
     }
 
     // --- Process type tests ---

@@ -3062,6 +3062,16 @@ protected:
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
     );
 
+    // Gradient update action
+    ReportTestResult(
+      "Env gradient update action policy",
+      avd_env_gradient_update_action(2, 0) == AVD_ENV_GRADIENT_ACTION_BARRIER &&
+      avd_env_gradient_update_action(1, 0) == AVD_ENV_GRADIENT_ACTION_HILLS &&
+      avd_env_gradient_update_action(0, 1) == AVD_ENV_GRADIENT_ACTION_PROBABILISTIC &&
+      avd_env_gradient_update_action(0, 0) == AVD_ENV_GRADIENT_ACTION_PEAK &&
+      avd_env_gradient_update_action(2, 1) == AVD_ENV_GRADIENT_ACTION_BARRIER
+    );
+
     // Geometry type classification
     ReportTestResult(
       "Env geometry type known values",

@@ -31,6 +31,8 @@
 #include "cStats.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include <cmath>
 #include <iostream>
 
@@ -134,9 +136,10 @@ void cGradientCount::UpdateCount(cAvidaContext& ctx)
 { 
   m_old_peakx = m_peakx;
   m_old_peaky = m_peaky;
-  if (m_habitat == 2) generateBarrier(ctx);
-  else if (m_habitat == 1) generateHills(ctx);
-  else if (m_probabilistic) UpdateProbabilisticRes();
+  const int action = avd_env_gradient_update_action(m_habitat, m_probabilistic ? 1 : 0);
+  if (action == AVD_ENV_GRADIENT_ACTION_BARRIER) generateBarrier(ctx);
+  else if (action == AVD_ENV_GRADIENT_ACTION_HILLS) generateHills(ctx);
+  else if (action == AVD_ENV_GRADIENT_ACTION_PROBABILISTIC) UpdateProbabilisticRes();
   else updatePeakRes(ctx);
 }
 
