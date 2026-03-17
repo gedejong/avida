@@ -597,7 +597,7 @@ bool cHardwareGP8::SingleProcess(cAvidaContext& ctx, bool speculative)
 
   // Kill creatures who have reached their max num of instructions executed
   const int max_executed = m_organism->GetMaxExecuted();
-  if ((max_executed > 0 && phenotype.GetTimeUsed() >= max_executed) || phenotype.GetToDie() == true) {
+  if (avd_cpu_should_die_max_executed(max_executed, phenotype.GetTimeUsed(), phenotype.GetToDie() ? 1 : 0)) {
     if (speculative) m_spec_die = true;
     else m_organism->Die(ctx);
   }

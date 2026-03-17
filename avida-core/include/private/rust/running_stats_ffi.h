@@ -185,7 +185,19 @@ enum {
   AVD_CPU_MATH_FAULT_NEGATIVE = 2,
   AVD_CPU_DIV_OK = 0,
   AVD_CPU_DIV_ZERO = 1,
-  AVD_CPU_DIV_OVERFLOW = 2
+  AVD_CPU_DIV_OVERFLOW = 2,
+  AVD_CPOP_DEME_RESET_BOTH = 0,
+  AVD_CPOP_DEME_RESET_TARGET_ONLY = 1,
+  AVD_CPOP_DEME_RESET_NEITHER = 2,
+  AVD_CPOP_DEME_RESET_INVALID = -1,
+  AVD_ENV_GEOMETRY_GLOBAL = 0,
+  AVD_ENV_GEOMETRY_GRID = 1,
+  AVD_ENV_GEOMETRY_TORUS = 2,
+  AVD_ENV_GEOMETRY_PARTIAL = 5,
+  AVD_ENV_GEOMETRY_UNKNOWN = -1,
+  AVD_ENV_BOOL_FALSE = 0,
+  AVD_ENV_BOOL_TRUE = 1,
+  AVD_ENV_BOOL_INVALID = -1
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -386,6 +398,9 @@ int avd_cpop_forager_type_kind(int is_prey_ft, int is_top_pred_ft);
 int avd_cpop_is_deadly_boundary(int deadly_boundaries, int geometry, int dest_x, int dest_y, int world_x, int world_y);
 int avd_cpop_is_valid_prey_target(int forage_target, int parent_ft);
 int avd_cpop_is_merit_bonus_enabled(int rewarded_instruction);
+int avd_cpop_deme_reset_resources_kind(int config_value);
+int avd_cpop_should_kill_rand_prey(int max_prey, int num_prey, int is_prey_ft);
+int avd_cpop_should_kill_test_birth(int birth_method, int is_inject);
 int avd_analyze_relation_mask(const char* relation);
 int avd_analyze_is_html_extension(const char* extension);
 int avd_analyze_is_html_filename_token(const char* filename_token);
@@ -460,6 +475,8 @@ int avd_stats_is_den_habitat(int habitat);
 int avd_env_process_type(const char* type_str);
 int avd_env_phenplast_bonus_method(const char* method_str);
 int avd_env_reaction_entry_type(const char* entry_str);
+int avd_env_geometry_type(const char* geometry_str);
+int avd_env_parse_bool_string(const char* value_str);
 
 int avd_event_parse_trigger(const char* token);
 int avd_event_parse_timing(const char* timing, double* out_start, double* out_interval, double* out_stop);

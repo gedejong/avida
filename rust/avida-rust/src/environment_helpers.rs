@@ -67,6 +67,44 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Resource geometry string classifier ---
+// nGeometry: GLOBAL=0, GRID=1, TORUS=2, CLIQUE=3, HEX=4, PARTIAL=5
+
+const ENV_GEOMETRY_GLOBAL: c_int = 0;
+const ENV_GEOMETRY_GRID: c_int = 1;
+const ENV_GEOMETRY_TORUS: c_int = 2;
+const ENV_GEOMETRY_PARTIAL: c_int = 5;
+const ENV_GEOMETRY_UNKNOWN: c_int = -1;
+
+/// Classify a geometry string (case-insensitive via caller ToLower) to nGeometry enum.
+/// Returns -1 for unknown.
+#[no_mangle]
+pub extern "C" fn avd_env_geometry_type(geometry_str: *const c_char) -> c_int {
+    with_cstr(geometry_str, ENV_GEOMETRY_UNKNOWN, |s| match s.to_bytes() {
+        b"global" => ENV_GEOMETRY_GLOBAL,
+        b"grid" => ENV_GEOMETRY_GRID,
+        b"torus" => ENV_GEOMETRY_TORUS,
+        b"partial" => ENV_GEOMETRY_PARTIAL,
+        _ => ENV_GEOMETRY_UNKNOWN,
+    })
+}
+
+// --- Bool-string parser for resource config ---
+const ENV_BOOL_FALSE: c_int = 0;
+const ENV_BOOL_TRUE: c_int = 1;
+const ENV_BOOL_INVALID: c_int = -1;
+
+/// Parse a boolean string ("true"/"1"/"false"/"0") to 0/1/-1.
+/// Input should already be lowercased.
+#[no_mangle]
+pub extern "C" fn avd_env_parse_bool_string(value_str: *const c_char) -> c_int {
+    with_cstr(value_str, ENV_BOOL_INVALID, |s| match s.to_bytes() {
+        b"false" | b"0" => ENV_BOOL_FALSE,
+        b"true" | b"1" => ENV_BOOL_TRUE,
+        _ => ENV_BOOL_INVALID,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -199,6 +237,57 @@ mod tests {
             avd_env_reaction_entry_type(ptr::null()),
             ENV_ENTRY_TYPE_UNKNOWN
         );
+    }
+
+    // --- Geometry type tests ---
+
+    #[test]
+    fn geometry_known_values() {
+        let cases = [
+            ("global", ENV_GEOMETRY_GLOBAL),
+            ("grid", ENV_GEOMETRY_GRID),
+            ("torus", ENV_GEOMETRY_TORUS),
+            ("partial", ENV_GEOMETRY_PARTIAL),
+        ];
+        for (input, expected) in &cases {
+            let cs = cstr(input);
+            assert_eq!(
+                avd_env_geometry_type(cs.as_ptr()),
+                *expected,
+                "geometry mismatch for '{input}'"
+            );
+        }
+    }
+
+    #[test]
+    fn geometry_unknown_and_null() {
+        let unknown = cstr("clique");
+        assert_eq!(
+            avd_env_geometry_type(unknown.as_ptr()),
+            ENV_GEOMETRY_UNKNOWN
+        );
+        assert_eq!(avd_env_geometry_type(ptr::null()), ENV_GEOMETRY_UNKNOWN);
+    }
+
+    // --- Bool-string parser tests ---
+
+    #[test]
+    fn parse_bool_string_known_values() {
+        let t1 = cstr("true");
+        assert_eq!(avd_env_parse_bool_string(t1.as_ptr()), ENV_BOOL_TRUE);
+        let t2 = cstr("1");
+        assert_eq!(avd_env_parse_bool_string(t2.as_ptr()), ENV_BOOL_TRUE);
+        let f1 = cstr("false");
+        assert_eq!(avd_env_parse_bool_string(f1.as_ptr()), ENV_BOOL_FALSE);
+        let f2 = cstr("0");
+        assert_eq!(avd_env_parse_bool_string(f2.as_ptr()), ENV_BOOL_FALSE);
+    }
+
+    #[test]
+    fn parse_bool_string_invalid() {
+        let bad = cstr("yes");
+        assert_eq!(avd_env_parse_bool_string(bad.as_ptr()), ENV_BOOL_INVALID);
+        assert_eq!(avd_env_parse_bool_string(ptr::null()), ENV_BOOL_INVALID);
     }
 
     #[test]

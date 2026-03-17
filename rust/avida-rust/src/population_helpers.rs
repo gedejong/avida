@@ -153,6 +153,53 @@ pub extern "C" fn avd_cpop_is_merit_bonus_enabled(rewarded_instruction: c_int) -
     }
 }
 
+// --- Deme resource reset policy ---
+const CPOP_DEME_RESET_BOTH: c_int = 0;
+const CPOP_DEME_RESET_TARGET_ONLY: c_int = 1;
+const CPOP_DEME_RESET_NEITHER: c_int = 2;
+const CPOP_DEME_RESET_INVALID: c_int = -1;
+
+/// Classifies deme resource reset policy from config value.
+/// 0=reset both, 1=reset target only, 2=reset neither, other=-1 (invalid).
+#[no_mangle]
+pub extern "C" fn avd_cpop_deme_reset_resources_kind(config_value: c_int) -> c_int {
+    match config_value {
+        0 => CPOP_DEME_RESET_BOTH,
+        1 => CPOP_DEME_RESET_TARGET_ONLY,
+        2 => CPOP_DEME_RESET_NEITHER,
+        _ => CPOP_DEME_RESET_INVALID,
+    }
+}
+
+// --- Max prey kill gate ---
+
+/// Returns 1 if a random prey should be killed to enforce max_prey cap.
+/// Active when max_prey > 0 AND num_prey >= max_prey AND parent is prey.
+#[no_mangle]
+pub extern "C" fn avd_cpop_should_kill_rand_prey(
+    max_prey: c_int,
+    num_prey: c_int,
+    is_prey_ft: c_int,
+) -> c_int {
+    if max_prey > 0 && num_prey >= max_prey && is_prey_ft != 0 {
+        1
+    } else {
+        0
+    }
+}
+
+// --- Test-birth kill gate ---
+
+/// Returns 1 if offspring should be killed for test-birth methods (12 or 13) when not injecting.
+#[no_mangle]
+pub extern "C" fn avd_cpop_should_kill_test_birth(birth_method: c_int, is_inject: c_int) -> c_int {
+    if (birth_method == 12 || birth_method == 13) && is_inject == 0 {
+        1
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -316,6 +363,51 @@ mod tests {
         assert_eq!(avd_cpop_is_merit_bonus_enabled(0), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(5), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(-2), 1);
+    }
+
+    // --- Deme resource reset tests ---
+
+    #[test]
+    fn cpop_deme_reset_resources_policy() {
+        assert_eq!(avd_cpop_deme_reset_resources_kind(0), CPOP_DEME_RESET_BOTH);
+        assert_eq!(
+            avd_cpop_deme_reset_resources_kind(1),
+            CPOP_DEME_RESET_TARGET_ONLY
+        );
+        assert_eq!(
+            avd_cpop_deme_reset_resources_kind(2),
+            CPOP_DEME_RESET_NEITHER
+        );
+        assert_eq!(
+            avd_cpop_deme_reset_resources_kind(3),
+            CPOP_DEME_RESET_INVALID
+        );
+        assert_eq!(
+            avd_cpop_deme_reset_resources_kind(-1),
+            CPOP_DEME_RESET_INVALID
+        );
+    }
+
+    // --- Max prey kill gate tests ---
+
+    #[test]
+    fn cpop_should_kill_rand_prey_policy() {
+        assert_eq!(avd_cpop_should_kill_rand_prey(100, 100, 1), 1);
+        assert_eq!(avd_cpop_should_kill_rand_prey(100, 200, 1), 1);
+        assert_eq!(avd_cpop_should_kill_rand_prey(100, 99, 1), 0); // under cap
+        assert_eq!(avd_cpop_should_kill_rand_prey(0, 100, 1), 0); // disabled
+        assert_eq!(avd_cpop_should_kill_rand_prey(100, 100, 0), 0); // not prey
+    }
+
+    // --- Test-birth kill gate tests ---
+
+    #[test]
+    fn cpop_should_kill_test_birth_policy() {
+        assert_eq!(avd_cpop_should_kill_test_birth(12, 0), 1);
+        assert_eq!(avd_cpop_should_kill_test_birth(13, 0), 1);
+        assert_eq!(avd_cpop_should_kill_test_birth(12, 1), 0); // is_inject
+        assert_eq!(avd_cpop_should_kill_test_birth(0, 0), 0); // normal birth
+        assert_eq!(avd_cpop_should_kill_test_birth(5, 0), 0);
     }
 
     #[test]

@@ -1507,7 +1507,7 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
     org_survived = false;
   } 
   // don't kill our test org, just it's offspring
-  if ((m_world->GetConfig().BIRTH_METHOD.Get() == 12 || m_world->GetConfig().BIRTH_METHOD.Get() == 13) && !is_inject) {
+  if (avd_cpop_should_kill_test_birth(m_world->GetConfig().BIRTH_METHOD.Get(), is_inject ? 1 : 0)) {
       KillOrganism(target_cell, ctx); 
       org_survived = false; 
   }
@@ -3235,23 +3235,19 @@ void cPopulation::ReplaceDeme(cDeme& source_deme, cDeme& target_deme, cAvidaCont
   
   
   bool source_deme_resource_reset(true), target_deme_resource_reset(true);
-  switch(m_world->GetConfig().DEMES_RESET_RESOURCES.Get()) {
-    case 0:
-      // reset resource in both demes
+  {
+    const int reset_kind = avd_cpop_deme_reset_resources_kind(m_world->GetConfig().DEMES_RESET_RESOURCES.Get());
+    if (reset_kind == AVD_CPOP_DEME_RESET_BOTH) {
       source_deme_resource_reset = target_deme_resource_reset = true;
-      break;
-    case 1:
-      // reset resource only in target deme
+    } else if (reset_kind == AVD_CPOP_DEME_RESET_TARGET_ONLY) {
       source_deme_resource_reset = false;
       target_deme_resource_reset = true;
-      break;
-    case 2:
-      // do not reset either deme resource
+    } else if (reset_kind == AVD_CPOP_DEME_RESET_NEITHER) {
       source_deme_resource_reset = target_deme_resource_reset = false;
-      break;
-    default:
+    } else {
       cout << "Undefined value " << m_world->GetConfig().DEMES_RESET_RESOURCES.Get() << " for DEMES_RESET_RESOURCES\n";
       exit(1);
+    }
   }
   
   // Reset both demes, in case they have any cleanup work to do.
@@ -3472,23 +3468,19 @@ void cPopulation::ReplaceDemeFlaggedGermline(cDeme& source_deme, cDeme& target_d
   
   
   bool source_deme_resource_reset(true), target_deme_resource_reset(true);
-  switch(m_world->GetConfig().DEMES_RESET_RESOURCES.Get()) {
-    case 0:
-      // reset resource in both demes
+  {
+    const int reset_kind = avd_cpop_deme_reset_resources_kind(m_world->GetConfig().DEMES_RESET_RESOURCES.Get());
+    if (reset_kind == AVD_CPOP_DEME_RESET_BOTH) {
       source_deme_resource_reset = target_deme_resource_reset = true;
-      break;
-    case 1:
-      // reset resource only in target deme
+    } else if (reset_kind == AVD_CPOP_DEME_RESET_TARGET_ONLY) {
       source_deme_resource_reset = false;
       target_deme_resource_reset = true;
-      break;
-    case 2:
-      // do not reset either deme resource
+    } else if (reset_kind == AVD_CPOP_DEME_RESET_NEITHER) {
       source_deme_resource_reset = target_deme_resource_reset = false;
-      break;
-    default:
+    } else {
       cout << "Undefined value " << m_world->GetConfig().DEMES_RESET_RESOURCES.Get() << " for DEMES_RESET_RESOURCES\n";
       exit(1);
+    }
   }
   
   if (target_successfully_seeded) target_deme.DivideReset(ctx2, source_deme, target_deme_resource_reset);
@@ -5306,7 +5298,7 @@ cPopulationCell& cPopulation::PositionOffspring(cPopulationCell& parent_cell, cA
   }
   
   // for juvs with non-predatory parents...
-  if (m_world->GetConfig().MAX_PREY.Get() && m_world->GetStats().GetNumPreyCreatures() >= m_world->GetConfig().MAX_PREY.Get() && parent_cell.GetOrganism()->IsPreyFT()) {
+  if (avd_cpop_should_kill_rand_prey(m_world->GetConfig().MAX_PREY.Get(), m_world->GetStats().GetNumPreyCreatures(), parent_cell.GetOrganism()->IsPreyFT() ? 1 : 0)) {
     KillRandPrey(ctx, parent_cell.GetOrganism());
   }
   

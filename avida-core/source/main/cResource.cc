@@ -22,6 +22,8 @@
 
 #include "nGeometry.h"
 
+#include "rust/running_stats_ffi.h"
+
 using namespace std;
 
 cCellResource::cCellResource()
@@ -137,23 +139,12 @@ bool cResource::SetGeometry(cString _geometry)
 
 {
   _geometry.ToLower();
-  if (_geometry == "global") {
-    geometry = nGeometry::GLOBAL;
-    return true;
-  } else if (_geometry == "grid") {
-    geometry = nGeometry::GRID;
-    return true;
-  } else if (_geometry == "torus") {
-    geometry = nGeometry::TORUS;
+  int geo = avd_env_geometry_type((const char*)_geometry);
+  if (geo != AVD_ENV_GEOMETRY_UNKNOWN) {
+    geometry = geo;
     return true;
   }
-  else if (_geometry == "partial") {
-    geometry = nGeometry::PARTIAL;
-    return true;
-  }
-  else {
-    return false;
-  }
+  return false;
 }
 
 void cResource::SetCellIdList(Apto::Array<int>& id_list) {
@@ -163,12 +154,10 @@ void cResource::SetCellIdList(Apto::Array<int>& id_list) {
 
 /* Set if the resource is going to be accessable by demes */
 bool cResource::SetDemeResource(cString _deme_resource) {
-  _deme_resource.ToLower();\
-  if ((_deme_resource == "false") || (_deme_resource == "0")) {
-    deme_resource = false;
-    return true;
-  } else if ((_deme_resource == "true") || (_deme_resource == "1")) {
-    deme_resource = true;
+  _deme_resource.ToLower();
+  int val = avd_env_parse_bool_string((const char*)_deme_resource);
+  if (val != AVD_ENV_BOOL_INVALID) {
+    deme_resource = (val == AVD_ENV_BOOL_TRUE);
     return true;
   }
   return false;
@@ -177,11 +166,9 @@ bool cResource::SetDemeResource(cString _deme_resource) {
 /* Set if the resource is a energy resource */
 bool cResource::SetEnergyResource(cString _energy_resource) {
   _energy_resource.ToLower();
-  if ((_energy_resource == "false") || (_energy_resource == "0")) {
-    energy_resource = false;
-    return true;
-  } else if ((_energy_resource == "true") || (_energy_resource == "1")) {
-    energy_resource = true;
+  int val = avd_env_parse_bool_string((const char*)_energy_resource);
+  if (val != AVD_ENV_BOOL_INVALID) {
+    energy_resource = (val == AVD_ENV_BOOL_TRUE);
     return true;
   }
   return false;

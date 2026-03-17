@@ -34,6 +34,8 @@
 #include "cTestCPU.h"
 #include "cWorld.h"
 #include "tInstLibEntry.h"
+
+#include "rust/running_stats_ffi.h"
 #include "cParasite.h"
 
 #include "AvidaTools.h"
@@ -295,7 +297,7 @@ bool cHardwareTransSMT::SingleProcess(cAvidaContext& ctx, bool speculative)
   
   // Kill creatures who have reached their max num of instructions executed
   const int max_executed = m_organism->GetMaxExecuted();
-  if ((max_executed > 0 && phenotype.GetTimeUsed() >= max_executed) || phenotype.GetToDie()) {
+  if (avd_cpu_should_die_max_executed(max_executed, phenotype.GetTimeUsed(), phenotype.GetToDie() ? 1 : 0)) {
     m_organism->Die(ctx);
   }
   

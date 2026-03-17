@@ -2765,6 +2765,33 @@ protected:
       avd_cpop_is_merit_bonus_enabled(0) == 1 &&
       avd_cpop_is_merit_bonus_enabled(5) == 1
     );
+
+    // Deme resource reset policy
+    ReportTestResult(
+      "cPopulation deme reset resources policy",
+      avd_cpop_deme_reset_resources_kind(0) == AVD_CPOP_DEME_RESET_BOTH &&
+      avd_cpop_deme_reset_resources_kind(1) == AVD_CPOP_DEME_RESET_TARGET_ONLY &&
+      avd_cpop_deme_reset_resources_kind(2) == AVD_CPOP_DEME_RESET_NEITHER &&
+      avd_cpop_deme_reset_resources_kind(3) == AVD_CPOP_DEME_RESET_INVALID
+    );
+
+    // Max prey kill gate
+    ReportTestResult(
+      "cPopulation max prey kill gate",
+      avd_cpop_should_kill_rand_prey(100, 100, 1) == 1 &&
+      avd_cpop_should_kill_rand_prey(100, 99, 1) == 0 &&
+      avd_cpop_should_kill_rand_prey(0, 100, 1) == 0 &&
+      avd_cpop_should_kill_rand_prey(100, 100, 0) == 0
+    );
+
+    // Test-birth kill gate
+    ReportTestResult(
+      "cPopulation test-birth kill gate",
+      avd_cpop_should_kill_test_birth(12, 0) == 1 &&
+      avd_cpop_should_kill_test_birth(13, 0) == 1 &&
+      avd_cpop_should_kill_test_birth(12, 1) == 0 &&
+      avd_cpop_should_kill_test_birth(0, 0) == 0
+    );
   }
 };
 
@@ -3033,6 +3060,36 @@ protected:
       "Env reaction entry type case sensitivity",
       avd_env_reaction_entry_type("PROCESS") == AVD_ENV_ENTRY_TYPE_UNKNOWN &&
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
+    );
+
+    // Geometry type classification
+    ReportTestResult(
+      "Env geometry type known values",
+      avd_env_geometry_type("global") == AVD_ENV_GEOMETRY_GLOBAL &&
+      avd_env_geometry_type("grid") == AVD_ENV_GEOMETRY_GRID &&
+      avd_env_geometry_type("torus") == AVD_ENV_GEOMETRY_TORUS &&
+      avd_env_geometry_type("partial") == AVD_ENV_GEOMETRY_PARTIAL
+    );
+    ReportTestResult(
+      "Env geometry type unknown and null guard",
+      avd_env_geometry_type("clique") == AVD_ENV_GEOMETRY_UNKNOWN &&
+      avd_env_geometry_type("") == AVD_ENV_GEOMETRY_UNKNOWN &&
+      avd_env_geometry_type(NULL) == AVD_ENV_GEOMETRY_UNKNOWN
+    );
+
+    // Bool-string parser
+    ReportTestResult(
+      "Env bool string parser known values",
+      avd_env_parse_bool_string("true") == AVD_ENV_BOOL_TRUE &&
+      avd_env_parse_bool_string("1") == AVD_ENV_BOOL_TRUE &&
+      avd_env_parse_bool_string("false") == AVD_ENV_BOOL_FALSE &&
+      avd_env_parse_bool_string("0") == AVD_ENV_BOOL_FALSE
+    );
+    ReportTestResult(
+      "Env bool string parser invalid and null guard",
+      avd_env_parse_bool_string("yes") == AVD_ENV_BOOL_INVALID &&
+      avd_env_parse_bool_string("") == AVD_ENV_BOOL_INVALID &&
+      avd_env_parse_bool_string(NULL) == AVD_ENV_BOOL_INVALID
     );
   }
 };
