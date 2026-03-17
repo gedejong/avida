@@ -63,6 +63,7 @@
 #include "cTestCPU.h"
 #include "cTopology.h"
 #include "cWorld.h"
+#include "rust/running_stats_ffi.h"
 
 #include "cHardwareCPU.h"
 
@@ -1403,13 +1404,14 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
   
   // Keep track of statistics for organism counts...
   num_organisms++;
-  if (m_world->GetConfig().PRED_PREY_SWITCH.Get() == -2 || m_world->GetConfig().PRED_PREY_SWITCH.Get() > -1) {
+  if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
     // ft should be nearly always -1 so long as it is not being inherited
-    if (in_organism->IsPreyFT()) num_prey_organisms++;
-    else if (in_organism->IsTopPredFT()) num_top_pred_organisms++;
+    int ft_kind = avd_cpop_forager_type_kind(in_organism->IsPreyFT() ? 1 : 0, in_organism->IsTopPredFT() ? 1 : 0);
+    if (ft_kind == AVD_CPOP_FORAGER_TYPE_PREY) num_prey_organisms++;
+    else if (ft_kind == AVD_CPOP_FORAGER_TYPE_TOP_PRED) num_top_pred_organisms++;
     else num_pred_organisms++;
   }
-  if (deme_array.GetSize() > 0) {
+  if (avd_cpop_should_update_deme_counters(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_RUN) {
     deme_array[target_cell.GetDemeID()].IncOrgCount();
   }
   
@@ -1427,7 +1429,7 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
   seq.DynamicCastFrom(in_organism->GetGenome().Representation());
   int genome_length = seq->GetSize();
   
-  if (rewarded_instruction == -1){
+  if (!avd_cpop_is_merit_bonus_enabled(rewarded_instruction)){
     //no key instruction, so no bonus
     in_organism->GetPhenotype().SetCurBonusInstCount(0);
   }
@@ -1494,13 +1496,15 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
     org_survived = false;
   }
   // Kill org born on deadly world boundaries
-  if (m_world->GetConfig().DEADLY_BOUNDARIES.Get() == 1 && m_world->GetConfig().WORLD_GEOMETRY.Get() == 1 && target_cell.GetID() >= 0) {
-    int dest_x = target_cell.GetID() % m_world->GetConfig().WORLD_X.Get();  
-    int dest_y = target_cell.GetID() / m_world->GetConfig().WORLD_X.Get();
-    if (dest_x == 0 || dest_y == 0 || dest_x == m_world->GetConfig().WORLD_X.Get() - 1 || dest_y == m_world->GetConfig().WORLD_Y.Get() - 1) {
-      KillOrganism(target_cell, ctx);
-      org_survived = false;
-    }
+  if (target_cell.GetID() >= 0 && avd_cpop_is_deadly_boundary(
+      m_world->GetConfig().DEADLY_BOUNDARIES.Get(),
+      m_world->GetConfig().WORLD_GEOMETRY.Get(),
+      target_cell.GetID() % m_world->GetConfig().WORLD_X.Get(),
+      target_cell.GetID() / m_world->GetConfig().WORLD_X.Get(),
+      m_world->GetConfig().WORLD_X.Get(),
+      m_world->GetConfig().WORLD_Y.Get())) {
+    KillOrganism(target_cell, ctx);
+    org_survived = false;
   } 
   // don't kill our test org, just it's offspring
   if ((m_world->GetConfig().BIRTH_METHOD.Get() == 12 || m_world->GetConfig().BIRTH_METHOD.Get() == 13) && !is_inject) {
@@ -1761,7 +1765,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int sav
   Apto::Array<int, Apto::Smart> ft_check_counts;
   ft_check_counts.Resize(0);
   if (save_foragers) {
-    if (m_world->GetConfig().PRED_PREY_SWITCH.Get() == -2 || m_world->GetConfig().PRED_PREY_SWITCH.Get() > -1) {
+    if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
       fts_to_use.Push(-3);
       fts_to_use.Push(-2);
     }
@@ -1994,11 +1998,8 @@ bool cPopulation::MoveOrganisms(cAvidaContext& ctx, int src_cell_id, int dest_ce
   if (m_world->GetConfig().DEADLY_BOUNDARIES.Get() == 1 && m_world->GetConfig().WORLD_GEOMETRY.Get() == 1) {
     // Fail if we're running in the test CPU.
     if (src_cell_id < 0) return false;
-    bool faced_is_boundary = false;
-    if (dest_x == 0 || dest_y == 0 || 
-        dest_x == m_world->GetConfig().WORLD_X.Get() - 1 || 
-        dest_y == m_world->GetConfig().WORLD_Y.Get() - 1) faced_is_boundary = true;
-    if (faced_is_boundary) {
+    if (avd_cpop_is_deadly_boundary(1, 1, dest_x, dest_y,
+        m_world->GetConfig().WORLD_X.Get(), m_world->GetConfig().WORLD_Y.Get())) {
       if (true_cell != -1) KillOrganism(GetCell(true_cell), ctx);
       else if (true_cell == -1) KillOrganism(src_cell, ctx);
       return false;
@@ -2221,7 +2222,7 @@ void cPopulation::KillRandPrey(cAvidaContext& ctx, cOrganism* org)
   while (org_to_kill == org) {
     cOrganism* org_at = TriedIdx[idx];
     // exclude predators and juvenilles with predatory parents (include juvs with non-predatory parents)
-    if (org_at->GetForageTarget() > -1 || (org_at->GetForageTarget() == -1 && org_at->GetParentFT() > -2)) org_to_kill = org_at;
+    if (avd_cpop_is_valid_prey_target(org_at->GetForageTarget(), org_at->GetParentFT())) org_to_kill = org_at;
     else TriedIdx.Swap(idx, --list_size);
     if (list_size == 1) break;
     idx = ctx.GetRandom().GetUInt(list_size);
@@ -2241,7 +2242,7 @@ cOrganism* cPopulation::GetRandPrey(cAvidaContext& ctx, cOrganism* org)
   while (target_org == org) {
     cOrganism* org_at = TriedIdx[idx];
     // exclude predators and juvenilles with predatory parents (include juvs with non-predatory parents)
-    if (org_at->GetForageTarget() > -1 || (org_at->GetForageTarget() == -1 && org_at->GetParentFT() > -2)) target_org = org_at;
+    if (avd_cpop_is_valid_prey_target(org_at->GetForageTarget(), org_at->GetParentFT())) target_org = org_at;
     else TriedIdx.Swap(idx, --list_size);
     if (list_size == 1) break;
     idx = ctx.GetRandom().GetUInt(list_size);
@@ -2290,14 +2291,14 @@ void cPopulation::KillOrganism(cPopulationCell& in_cell, cAvidaContext& ctx)
   
   // Update count statistics...
   num_organisms--;
-  if (m_world->GetConfig().PRED_PREY_SWITCH.Get() == -2 || m_world->GetConfig().PRED_PREY_SWITCH.Get() > -1) {
+  if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
     if (ft > -2) num_prey_organisms--;
     else if (ft == -2) num_pred_organisms--;
     else num_top_pred_organisms--;
   }
   
   // Handle deme updates.
-  if (deme_array.GetSize() > 0) {
+  if (avd_cpop_should_update_deme_counters(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_RUN) {
     deme_array[in_cell.GetDemeID()].DecOrgCount();
     deme_array[in_cell.GetDemeID()].OrganismDeath(in_cell);
   }
@@ -4563,7 +4564,7 @@ void cPopulation::AddDemePred(cString type, int times) {
 
 void cPopulation::CheckImplicitDemeRepro(cDeme& deme, cAvidaContext& ctx) {
   
-  if (GetNumDemes() <= 1) return;
+  if (avd_cpop_should_run_multi_deme_block(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_SKIP) return;
   
   if (m_world->GetConfig().DEMES_REPLICATE_CPU_CYCLES.Get()
       && (deme.GetTimeUsed() >= m_world->GetConfig().DEMES_REPLICATE_CPU_CYCLES.Get())) ReplicateDeme(deme, ctx); 
@@ -5311,7 +5312,7 @@ cPopulationCell& cPopulation::PositionOffspring(cPopulationCell& parent_cell, cA
   
 	// increment the number of births in the **parent deme**.  in the case of a
 	// migration, only the origin has its birth count incremented.
-  if (deme_array.GetSize() > 0) {
+  if (avd_cpop_should_update_deme_counters(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_RUN) {
     const int deme_id = parent_cell.GetDemeID();
     deme_array[deme_id].IncBirthCount();
   }
@@ -5799,7 +5800,10 @@ void cPopulation::ProcessStep(cAvidaContext& ctx, double step_size, int cell_id)
   cDeme & deme = GetDeme(GetCell(cell_id).GetDemeID());
   deme.IncTimeUsed(merit);
   
-  if (GetNumDemes() >= 1) {
+  if (avd_cpop_deme_routing_short_circuit_kind(
+        AVD_CPOP_ROUTING_MODE_PROCESS_STEP,
+        GetNumDemes()
+      ) == AVD_CPOP_DEME_BLOCK_RUN) {
     CheckImplicitDemeRepro(deme, ctx); 
   }
 }
@@ -5837,7 +5841,7 @@ void cPopulation::ProcessStepSpeculative(cAvidaContext& ctx, double step_size, i
   }
   
   // Deme specific
-  if (GetNumDemes() > 1) {
+  if (avd_cpop_should_run_multi_deme_block(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_RUN) {
     for(int i = 0; i < GetNumDemes(); i++) GetDeme(i).Update(step_size);
     
     cDeme& deme = GetDeme(GetCell(cell_id).GetDemeID());
@@ -5864,8 +5868,8 @@ void cPopulation::UpdateDemeStats(cAvidaContext& ctx) {
     GetDeme(i).UpdateDemeRes(ctx); 
   }
   
-  // bail early to save time if there are no demes
-  if (GetNumDemes() == 1) return ;
+  // bail early to save time if there are no multi-deme aggregates to process
+  if (avd_cpop_should_run_multi_deme_block(GetNumDemes()) == AVD_CPOP_DEME_BLOCK_SKIP) return;
   
   cStats& stats = m_world->GetStats();
   
@@ -6311,7 +6315,7 @@ void cPopulation::ProcessPostUpdate(cAvidaContext& ctx)
   
   UpdateDemeStats(ctx); 
   UpdateOrganismStats(ctx);
-  if (m_world->GetConfig().PRED_PREY_SWITCH.Get() == -2 || m_world->GetConfig().PRED_PREY_SWITCH.Get() > -1) {
+  if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
     UpdateFTOrgStats(ctx);
   }
   if (m_world->GetConfig().MATING_TYPES.Get()) {

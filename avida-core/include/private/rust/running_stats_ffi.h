@@ -71,7 +71,121 @@ enum {
   AVD_RC_GRAD_SCALAR_SETTER_CONE_INFLOW = 2,
   AVD_RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW = 3,
   AVD_RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW = 4,
-  AVD_RC_GRAD_SCALAR_SETTER_INVALID = -1
+  AVD_RC_GRAD_SCALAR_SETTER_INVALID = -1,
+  AVD_RC_GRAD_VAR_INFLOW_SETTER_PLAT_VAR_INFLOW = 0,
+  AVD_RC_GRAD_VAR_INFLOW_SETTER_INVALID = -1,
+  AVD_RC_PREDATORY_SETTER_SET_PREDATORY_RESOURCE = 0,
+  AVD_RC_PREDATORY_SETTER_INVALID = -1,
+  AVD_RC_PROBABILISTIC_SETTER_SET_PROBABILISTIC_RESOURCE = 0,
+  AVD_RC_PROBABILISTIC_SETTER_INVALID = -1,
+  AVD_RC_PEAK_GETTER_CURR_X = 0,
+  AVD_RC_PEAK_GETTER_CURR_Y = 1,
+  AVD_RC_PEAK_GETTER_FROZEN_X = 2,
+  AVD_RC_PEAK_GETTER_FROZEN_Y = 3,
+  AVD_RC_PEAK_GETTER_INVALID = -1,
+  AVD_TASKLIB_UNARY_OP_LOG = 0,
+  AVD_TASKLIB_UNARY_OP_LOG2 = 1,
+  AVD_TASKLIB_UNARY_OP_LOG10 = 2,
+  AVD_TASKLIB_UNARY_OP_SQRT = 3,
+  AVD_TASKLIB_UNARY_OP_SINE = 4,
+  AVD_TASKLIB_UNARY_OP_COSINE = 5,
+  AVD_TASKLIB_UNARY_OP_INVALID = -1,
+  AVD_TASKLIB_BINARY_OP_MULT = 0,
+  AVD_TASKLIB_BINARY_OP_DIV = 1,
+  AVD_TASKLIB_BINARY_OP_INVALID = -1,
+  AVD_CPU_DISPATCH_FAMILY_INVALID = -1,
+  AVD_CPU_DISPATCH_FAMILY_NOP = 0,
+  AVD_CPU_DISPATCH_FAMILY_LABEL = 1,
+  AVD_CPU_DISPATCH_FAMILY_PROMOTER = 2,
+  AVD_CPU_DISPATCH_FAMILY_STALL = 3,
+  AVD_CPU_DISPATCH_FAMILY_DEFAULT = 4,
+  AVD_POPACTION_SEED_ACTION_PROCEED = 0,
+  AVD_POPACTION_SEED_ACTION_SKIP_AND_COUNT = 1,
+  AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE = 0,
+  AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_SEQUENCE = 1,
+  AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_PAIR = 2,
+  AVD_POPACTION_PARASITE_WARNING_ACTION_INVALID = -1,
+  AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE = 0,
+  AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR = 1,
+  AVD_POPACTION_PARASITE_WARNING_KIND_INVALID = -1,
+  AVD_POPACTION_PARASITE_MISSING_TOKEN_FILENAME = 0,
+  AVD_POPACTION_PARASITE_MISSING_TOKEN_LABEL = 1,
+  AVD_POPACTION_PARASITE_MISSING_TOKEN_SEQUENCE = 2,
+  AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID = -1,
+  AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE = 0,
+  AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_SEQUENCE = 1,
+  AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_PAIR = 2,
+  AVD_POPACTION_PARASITE_MISSING_ACTION_INVALID = -1,
+  AVD_POPACTION_PARASITE_ERROR_KIND_ORGANISM_FILE = 0,
+  AVD_POPACTION_PARASITE_ERROR_KIND_LABEL = 1,
+  AVD_POPACTION_PARASITE_ERROR_KIND_SEQUENCE = 2,
+  AVD_POPACTION_PARASITE_ERROR_KIND_INVALID = -1,
+  AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN = 0,
+  AVD_PRINTACTION_FILENAME_MODE_KEEP_PROVIDED = 1,
+  AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET = 2,
+  AVD_PRINTACTION_OUTPUT_SINK_STATS = 0,
+  AVD_PRINTACTION_OUTPUT_SINK_RECORDER = 1,
+  AVD_PRINTACTION_OUTPUT_SINK_INVALID = -1,
+  AVD_CPOP_DEME_BLOCK_SKIP = 0,
+  AVD_CPOP_DEME_BLOCK_RUN = 1,
+  AVD_CPOP_ROUTING_MODE_PROCESS_STEP = 0,
+  AVD_CPOP_ROUTING_MODE_SPECULATIVE_STEP = 1,
+  AVD_CPOP_ROUTING_MODE_INVALID = -1,
+  AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_KEEP_CURRENT = 0,
+  AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML = 1,
+  AVD_ANALYZE_OUTPUT_SINK_KIND_FILE = 0,
+  AVD_ANALYZE_OUTPUT_SINK_KIND_COUT = 1,
+  AVD_ANALYZE_OUTPUT_SINK_KIND_INVALID = -1,
+  AVD_ANALYZE_OUTPUT_HANDLE_MODE_CREATE = 0,
+  AVD_ANALYZE_OUTPUT_HANDLE_MODE_STATIC = 1,
+  AVD_ANALYZE_OUTPUT_HANDLE_MODE_INVALID = -1,
+  AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL = 0,
+  AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL_TIMELINE = 1,
+  AVD_ANALYZE_OUTPUT_HANDLE_ACTION_HISTOGRAM = 2,
+  AVD_ANALYZE_OUTPUT_HANDLE_ACTION_INVALID = -1,
+  AVD_ANALYZE_OUTPUT_TOKEN_ABSENT = 0,
+  AVD_ANALYZE_OUTPUT_TOKEN_PRESENT = 1,
+  AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_INVALID = -1,
+  AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_TEXT = 0,
+  AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML = 1,
+  AVD_ANALYZE_REL_MASK_LESS = 1,
+  AVD_ANALYZE_REL_MASK_EQUAL = 2,
+  AVD_ANALYZE_REL_MASK_GREATER = 4,
+  AVD_ENV_PROCTYPE_ADD = 0,
+  AVD_ENV_PROCTYPE_MULT = 1,
+  AVD_ENV_PROCTYPE_POW = 2,
+  AVD_ENV_PROCTYPE_LIN = 3,
+  AVD_ENV_PROCTYPE_ENERGY = 4,
+  AVD_ENV_PROCTYPE_ENZYME = 5,
+  AVD_ENV_PROCTYPE_EXP = 6,
+  AVD_ENV_PROCTYPE_UNKNOWN = -1,
+  AVD_ENV_PHENPLAST_DEFAULT = 0,
+  AVD_ENV_PHENPLAST_NO_BONUS = 1,
+  AVD_ENV_PHENPLAST_FRAC_BONUS = 2,
+  AVD_ENV_PHENPLAST_FULL_BONUS = 3,
+  AVD_ENV_PHENPLAST_UNKNOWN = -1,
+  AVD_ENV_ENTRY_TYPE_PROCESS = 0,
+  AVD_ENV_ENTRY_TYPE_REQUISITE = 1,
+  AVD_ENV_ENTRY_TYPE_CONTEXT_REQUISITE = 2,
+  AVD_ENV_ENTRY_TYPE_UNKNOWN = -1,
+  AVD_CPU_THREAD_CHANGE_NONE = 0,
+  AVD_CPU_THREAD_CHANGE_KILLED_ONE = 1,
+  AVD_CPU_THREAD_CHANGE_DIVIDE = 2,
+  AVD_CPU_THREAD_CHANGE_ERROR = 3,
+  AVD_CPOP_FORAGER_TYPE_PREY = 0,
+  AVD_CPOP_FORAGER_TYPE_TOP_PRED = 1,
+  AVD_CPOP_FORAGER_TYPE_PRED = 2,
+  AVD_CPU_ALLOC_OK = 0,
+  AVD_CPU_ALLOC_TOO_SMALL = 1,
+  AVD_CPU_ALLOC_OUT_OF_RANGE = 2,
+  AVD_CPU_ALLOC_TOO_LARGE = 3,
+  AVD_CPU_ALLOC_PARENT_TOO_LARGE = 4,
+  AVD_CPU_MATH_COMPUTE = 0,
+  AVD_CPU_MATH_NOOP = 1,
+  AVD_CPU_MATH_FAULT_NEGATIVE = 2,
+  AVD_CPU_DIV_OK = 0,
+  AVD_CPU_DIV_ZERO = 1,
+  AVD_CPU_DIV_OVERFLOW = 2
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -218,6 +332,69 @@ int avd_provider_is_argumented_id(const char* data_id);
 int avd_provider_split_argumented_id(const char* data_id, char** out_raw_id, char** out_argument);
 int avd_provider_classify_id(const char* data_id, char** out_raw_id, char** out_argument);
 void avd_provider_string_free(char* value);
+double avd_tasklib_fractional_reward_bits(unsigned int supplied, unsigned int correct);
+int avd_tasklib_is_logic3_or_math1_name(const char* task_name);
+int avd_tasklib_is_math2_or_math3_name(const char* task_name);
+int avd_tasklib_is_fibonacci_name(const char* task_name);
+int avd_tasklib_is_matching_sequence_name(const char* task_name);
+int avd_tasklib_is_load_based_name(const char* task_name);
+double avd_tasklib_threshold_halflife_quality(long long diff, int threshold, double halflife_arg);
+long long avd_tasklib_diff_scan_init(void);
+long long avd_tasklib_diff_scan_update(long long current_min, long long candidate);
+long long avd_tasklib_unary_math_input_diff(int input_value, long long test_output, int op_kind, double cast_precision);
+long long avd_tasklib_binary_pair_input_diff(int lhs_value, int rhs_value, long long test_output, int op_kind);
+int avd_cpu_dispatch_family(int is_nop, int is_label, int is_promoter, int should_stall);
+int avd_cpu_dispatch_counted_opcode(int opcode, int dispatch_family);
+int avd_cpu_thread_change_kind(int num_threads_before, int thread_size_after);
+int avd_cpu_should_die_max_executed(int max_executed, int time_used, int to_die);
+int avd_cpu_should_suppress_no_promoter(int promoters_enabled, int no_active_promoter_effect, int promoter_index);
+int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_executed);
+int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
+int avd_cpu_gradient_facing(int northerly, int easterly);
+int avd_cpu_alloc_validity(int allocated_size, int old_size, int min_genome, int max_genome, int max_alloc_size, int max_old_size);
+int avd_cpu_next_register(int default_register, int num_registers);
+int avd_cpu_prev_register(int default_register, int num_registers);
+int avd_cpu_unary_math_domain(int value, int threshold);
+int avd_cpu_div_guard(int op1, int op2, int int_min);
+int avd_popaction_deme_loop_start_index(int energy_enabled);
+int avd_popaction_seed_deme_action(int energy_enabled, int injected_count);
+int avd_popaction_normalize_cell_end(int cell_start, int cell_end);
+int avd_popaction_is_valid_cell_range(int cell_start, int cell_end, int population_size);
+int avd_popaction_is_valid_cell_range_with_stride(int cell_start, int cell_end, int population_size, int cell_stride);
+int avd_popaction_is_missing_filename_token(int filename_size);
+int avd_popaction_is_valid_well_mixed_cell_count(int cell_count, int population_size);
+int avd_popaction_is_valid_single_cell_id(int cell_id, int population_size);
+int avd_popaction_is_valid_group_cell_id(int cell_id, int population_size);
+int avd_popaction_should_skip_parasite_injection(int only_if_parasites_extinct, int num_parasites);
+int avd_popaction_is_missing_parasite_filename_token(int filename_size);
+int avd_popaction_has_missing_parasite_pair_filenames(int genome_filename_size, int parasite_filename_size);
+int avd_popaction_is_missing_parasite_label_token(int label_size);
+int avd_popaction_is_missing_parasite_sequence_token(int sequence_size);
+int avd_popaction_parasite_invalid_range_warning_kind(int action_kind);
+int avd_popaction_parasite_warning_short_circuit_kind(int action_kind, int is_invalid_range);
+int avd_popaction_parasite_missing_token_short_circuit_kind(int action_kind, int missing_filename, int missing_label, int missing_sequence);
+int avd_popaction_parasite_missing_token_error_kind(int missing_token_kind);
+int avd_printaction_instruction_filename_mode(int has_filename_token, int filename_empty);
+int avd_printaction_instruction_output_sink_kind(int action_kind);
+int avd_cpop_should_check_implicit_deme_repro(int num_demes);
+int avd_cpop_should_run_speculative_deme_block(int num_demes);
+int avd_cpop_should_update_deme_counters(int num_demes);
+int avd_cpop_should_run_multi_deme_block(int num_demes);
+int avd_cpop_deme_routing_short_circuit_kind(int routing_mode, int num_demes);
+int avd_cpop_is_pred_prey_tracking_active(int pred_prey_switch);
+int avd_cpop_forager_type_kind(int is_prey_ft, int is_top_pred_ft);
+int avd_cpop_is_deadly_boundary(int deadly_boundaries, int geometry, int dest_x, int dest_y, int world_x, int world_y);
+int avd_cpop_is_valid_prey_target(int forage_target, int parent_ft);
+int avd_cpop_is_merit_bonus_enabled(int rewarded_instruction);
+int avd_analyze_relation_mask(const char* relation);
+int avd_analyze_is_html_extension(const char* extension);
+int avd_analyze_is_html_filename_token(const char* filename_token);
+int avd_analyze_output_file_type_short_circuit_kind(int has_html_extension);
+int avd_analyze_output_sink_short_circuit_kind(int is_cout_filename);
+int avd_analyze_output_file_handle_mode_short_circuit_kind(int action_kind);
+int avd_analyze_output_token_presence_short_circuit_kind(int remaining_arg_size);
+int avd_analyze_file_type_token_short_circuit_kind(int has_text_token, int has_html_token);
+int avd_analyze_apply_file_type_token_policy(int has_text_token, int has_html_token, int current_file_type, int text_file_type, int html_file_type);
 int avd_rc_lookup_resource_index(const char* const* names, int count, const char* query);
 double avd_rc_step_inflow(double inflow, double update_step);
 double avd_rc_step_decay(double decay_rate, double update_step);
@@ -247,6 +424,15 @@ int avd_rc_gradient_setter_count(void);
 int avd_rc_gradient_setter_opcode(int index);
 int avd_rc_gradient_scalar_setter_count(void);
 int avd_rc_gradient_scalar_setter_opcode(int index);
+int avd_rc_gradient_var_inflow_setter_count(void);
+int avd_rc_gradient_var_inflow_setter_opcode(int index);
+int avd_rc_predatory_setter_count(void);
+int avd_rc_predatory_setter_opcode(int index);
+int avd_rc_probabilistic_setter_count(void);
+int avd_rc_probabilistic_setter_opcode(int index);
+int avd_rc_peak_getter_count(void);
+int avd_rc_peak_getter_opcode(int index);
+int avd_rc_peak_getter_requires_update(int opcode);
 int avd_src_normalize_span(int start, int end, int bound, int* out_start, int* out_end);
 double avd_src_compute_flow_scalar(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist);
 int avd_src_compute_flow_pair_deltas(double elem1_amount, double elem2_amount, double inxdiffuse, double inydiffuse, double inxgravity, double inygravity, int xdist, int ydist, double dist, double* out_elem1_delta, double* out_elem2_delta);
@@ -264,6 +450,17 @@ int avd_src_reset_amount(double res_initial, double cell_initial, double* out_am
 int avd_src_setcell_apply_initial(double amount, double delta, double cell_initial, double* out_amount, double* out_delta);
 int avd_rh_select_entry_index(const int* updates, int count, int update, int exact);
 double avd_rh_value_at_or_zero(const double* values, int count, int index);
+int avd_stats_is_dual_task_filename(const char* filename);
+int avd_stats_is_dual_internal_task_filename(const char* filename);
+int avd_stats_is_spatial_resource(int geometry);
+double avd_stats_task_quality_average(double quality, int count);
+int avd_stats_is_wall_gradient(int is_gradient, int habitat);
+int avd_stats_is_den_habitat(int habitat);
+
+int avd_env_process_type(const char* type_str);
+int avd_env_phenplast_bonus_method(const char* method_str);
+int avd_env_reaction_entry_type(const char* entry_str);
+
 int avd_event_parse_trigger(const char* token);
 int avd_event_parse_timing(const char* timing, double* out_start, double* out_interval, double* out_stop);
 

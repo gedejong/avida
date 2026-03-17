@@ -35,6 +35,7 @@
 #include "cOrgMovementPredicate.h"
 #include "cStateGrid.h"
 #include "cUserFeedback.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cstdlib>
 #include <cmath>
@@ -63,11 +64,7 @@ cTaskLib::~cTaskLib()
 
 inline double cTaskLib::FractionalReward(unsigned int supplied, unsigned int correct)
 {
-  const unsigned int variance = supplied ^ correct;
-  const unsigned int w = variance - ((variance >> 1) & 0x55555555);
-  const unsigned int x = (w & 0x33333333) + ((w >> 2) & 0x33333333);
-  const unsigned int bit_diff = ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
-  return static_cast<double>(32 - bit_diff) / 32.0; 
+  return avd_tasklib_fractional_reward_bits(supplied, correct);
 }
 
 cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs& envreqs, Feedback& feedback)
@@ -117,7 +114,9 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "nand-resourceDependent") NewTask(name, "Nand-resourceDependent", &cTaskLib::Task_Nand_ResourceDependent);
   else if (name == "nor-resourceDependent") NewTask(name, "Nor-resourceDependent", &cTaskLib::Task_Nor_ResourceDependent);
 	
-  // All 3-Input Logic Functions
+  // All 3-Input Logic Functions + Arbitrary 1-Input Math Tasks
+  // Registration-family gating keeps this large deterministic name chain isolated.
+  if (avd_tasklib_is_logic3_or_math1_name((const char*) name) != 0) {
   if (name == "logic_3AA")      NewTask(name, "Logic 3AA (A+B+C == 0)", &cTaskLib::Task_Logic3in_AA);
   else if (name == "logic_3AB") NewTask(name, "Logic 3AB (A+B+C == 1)", &cTaskLib::Task_Logic3in_AB);
   else if (name == "logic_3AC") NewTask(name, "Logic 3AC (A+B+C <= 1)", &cTaskLib::Task_Logic3in_AC);
@@ -205,8 +204,11 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "math_1AO") NewTask(name, "Math 1AO (X-6)", &cTaskLib::Task_Math1in_AO);  
   else if (name == "math_1AP") NewTask(name, "Math 1AP (X-7)", &cTaskLib::Task_Math1in_AP);
   else if (name == "math_1AS") NewTask(name, "Math 1AS (3Y)", &cTaskLib::Task_Math1in_AS);
+  }
   
-  // Arbitrary 2-Input Math Tasks
+  // Arbitrary 2-Input + 3-Input Math Tasks
+  // Registration-family gating keeps these large deterministic chains isolated.
+  if (avd_tasklib_is_math2_or_math3_name((const char*) name) != 0) {
   if (name == "math_2AA") NewTask(name, "Math 2AA (sqrt(X+Y))", &cTaskLib::Task_Math2in_AA);  
   else if (name == "math_2AB") NewTask(name, "Math 2AB ((X+Y)^2)", &cTaskLib::Task_Math2in_AB);  
   else if (name == "math_2AC") NewTask(name, "Math 2AC (X%Y)", &cTaskLib::Task_Math2in_AC);  
@@ -248,8 +250,10 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "math_3AK") NewTask(name, "Math 3AK ((X+Y)^2+(Y+Z)^2+(Z+X)^2)", &cTaskLib::Task_Math3in_AK);  
   else if (name == "math_3AL") NewTask(name, "Math 3AL ((X-Y)^2+(X-Z)^2)", &cTaskLib::Task_Math3in_AL);  
   else if (name == "math_3AM") NewTask(name, "Math 3AM ((X+Y)^2+(Y+Z)^2)", &cTaskLib::Task_Math3in_AM);  
+  }
 
-  //Fibonacci individual tasks
+  // Fibonacci individual tasks
+  if (avd_tasklib_is_fibonacci_name((const char*) name) != 0) {
   if (name == "fib_1") NewTask(name, "First Fib number (0)", &cTaskLib::Task_Fib1);
   else if (name == "fib_2") NewTask(name, "Second and Third Fib number (1)", &cTaskLib::Task_Fib2);
   else if (name == "fib_4") NewTask(name, "Fourth Fib number (2)", &cTaskLib::Task_Fib4);
@@ -259,17 +263,19 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "fib_8") NewTask(name, "Eighth Fib number (13)", &cTaskLib::Task_Fib8);
   else if (name == "fib_9") NewTask(name, "Ninth Fib number (21)", &cTaskLib::Task_Fib9);
   else if (name == "fib_10") NewTask(name, "Tenth Fib number (34)", &cTaskLib::Task_Fib10);
+  }
   
-  // Matching Tasks
+  // Matching + sequence tasks (load-based)
+  if (avd_tasklib_is_matching_sequence_name((const char*) name) != 0) {
   if (name == "matchstr") Load_MatchStr(name, info, envreqs, feedback);
   else if (name == "match_number") Load_MatchNumber(name, info, envreqs, feedback);
   else if (name == "matchprodstr") Load_MatchProdStr(name, info, envreqs, feedback);
-  
-  // Sequence Tasks
-  if (name == "sort_inputs") Load_SortInputs(name, info, envreqs, feedback);
+  else if (name == "sort_inputs") Load_SortInputs(name, info, envreqs, feedback);
   else if (name == "fibonacci_seq") Load_FibonacciSequence(name, info, envreqs, feedback);
+  }
   
-  // Math Tasks
+  // Load-based helper task families.
+  if (avd_tasklib_is_load_based_name((const char*) name) != 0) {
   if (name == "mult")       Load_Mult(name, info, envreqs, feedback);
   else if (name == "div")   Load_Div(name, info, envreqs, feedback);
   else if (name == "log")   Load_Log(name, info, envreqs, feedback);
@@ -278,11 +284,25 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "sqrt")  Load_Sqrt(name, info, envreqs, feedback);
   else if (name == "sine")  Load_Sine(name, info, envreqs, feedback);
   else if (name == "cosine") Load_Cosine(name, info, envreqs, feedback);
-  
-  
-  // Optimization Tasks
-  if (name == "optimize") Load_Optimize(name, info, envreqs, feedback);
-  
+  else if (name == "optimize") Load_Optimize(name, info, envreqs, feedback);
+  else if (name == "sg_path_traversal") Load_SGPathTraversal(name, info, envreqs, feedback);
+  else if (name == "form-group") Load_FormSpatialGroup(name, info, envreqs, feedback);
+  else if (name == "form-group-id") Load_FormSpatialGroupWithID(name, info, envreqs, feedback);
+  else if (name == "live-on-patch-id") Load_LiveOnPatchRes(name, info, envreqs, feedback);
+  else if (name == "collect-odd-cell") Load_CollectOddCell(name, info, envreqs, feedback);
+  else if (name == "eat-target") Load_ConsumeTarget(name, info, envreqs, feedback);
+  else if (name == "eat-target-echo") Load_ConsumeTargetEcho(name, info, envreqs, feedback);
+  else if (name == "eat-target-nand") Load_ConsumeTargetNand(name, info, envreqs, feedback);
+  else if (name == "eat-target-and") Load_ConsumeTargetAnd(name, info, envreqs, feedback);
+  else if (name == "eat-target-orn") Load_ConsumeTargetOrn(name, info, envreqs, feedback);
+  else if (name == "eat-target-or") Load_ConsumeTargetOr(name, info, envreqs, feedback);
+  else if (name == "eat-target-andn") Load_ConsumeTargetAndn(name, info, envreqs, feedback);
+  else if (name == "eat-target-nor") Load_ConsumeTargetNor(name, info, envreqs, feedback);
+  else if (name == "eat-target-xor") Load_ConsumeTargetXor(name, info, envreqs, feedback);
+  else if (name == "eat-target-equ") Load_ConsumeTargetEqu(name, info, envreqs, feedback);
+  else if (name == "move-ft") Load_MoveFT(name, info, envreqs, feedback);
+  }
+
   // Communication Tasks
   if (name == "comm_echo") {
     NewTask(name, "Echo of Neighbor's Input", &cTaskLib::Task_CommEcho, REQ_NEIGHBOR_INPUT);
@@ -309,26 +329,6 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   // event tasks
   if (name == "move_to_event") NewTask(name, "Moved into cell containing event", &cTaskLib::Task_MoveToEvent);
   else if (name == "event_killed") NewTask(name, "Killed event", &cTaskLib::Task_EventKilled);
-  
-  // Optimization Tasks
-  if (name == "sg_path_traversal") Load_SGPathTraversal(name, info, envreqs, feedback);  
-  if (name == "form-group") Load_FormSpatialGroup(name, info, envreqs, feedback);
-  if (name == "form-group-id") Load_FormSpatialGroupWithID(name, info, envreqs, feedback);
-  if (name == "live-on-patch-id") Load_LiveOnPatchRes(name, info, envreqs, feedback);
-  if (name == "collect-odd-cell") Load_CollectOddCell(name, info, envreqs, feedback);
-  
-  // Feed Specific Tasks
-  if (name == "eat-target") Load_ConsumeTarget(name, info, envreqs, feedback);
-  else if (name == "eat-target-echo") Load_ConsumeTargetEcho(name, info, envreqs, feedback);
-  else if (name == "eat-target-nand") Load_ConsumeTargetNand(name, info, envreqs, feedback);
-  else if (name == "eat-target-and") Load_ConsumeTargetAnd(name, info, envreqs, feedback);
-  else if (name == "eat-target-orn") Load_ConsumeTargetOrn(name, info, envreqs, feedback);
-  else if (name == "eat-target-or") Load_ConsumeTargetOr(name, info, envreqs, feedback);
-  else if (name == "eat-target-andn") Load_ConsumeTargetAndn(name, info, envreqs, feedback);
-  else if (name == "eat-target-nor") Load_ConsumeTargetNor(name, info, envreqs, feedback);
-  else if (name == "eat-target-xor") Load_ConsumeTargetXor(name, info, envreqs, feedback);
-  else if (name == "eat-target-equ") Load_ConsumeTargetEqu(name, info, envreqs, feedback);
-  else if (name == "move-ft") Load_MoveFT(name, info, envreqs, feedback);
   
   //Altruism
   if (name == "exploded") NewTask(name, "Organism exploded", &cTaskLib::Task_Exploded);
@@ -2342,19 +2342,10 @@ void cTaskLib::Load_MatchNumber(const cString& name, const cString& argstr, cEnv
 
 double cTaskLib::Task_MatchNumber(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   long long diff = ::llabs((long long)args.GetInt(0) - ctx.GetOutputBuffer()[0]);
-  int threshold = args.GetInt(1);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(1), args.GetDouble(0));
 }
 
 
@@ -2888,32 +2879,28 @@ void cTaskLib::Load_Mult(const cString& name, const cString& argstr, cEnvReqs&, 
 
 double cTaskLib::Task_Mult(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
     for (int j = 0; j < input_size; j ++) {
       if (i == j) continue;
-      long long cur_diff = ::llabs((long long)(input_buffer[i] * input_buffer[j]) - test_output);
-      if (cur_diff < diff) diff = cur_diff;
+      long long cur_diff = avd_tasklib_binary_pair_input_diff(
+        input_buffer[i],
+        input_buffer[j],
+        test_output,
+        AVD_TASKLIB_BINARY_OP_MULT
+      );
+      diff = avd_tasklib_diff_scan_update(diff, cur_diff);
     }
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -2933,32 +2920,28 @@ void cTaskLib::Load_Div(const cString& name, const cString& argstr, cEnvReqs&, F
 
 double cTaskLib::Task_Div(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
     for (int j = 0; j < input_size; j ++) {
       if (i == j || input_buffer[j] == 0) continue;
-      long long cur_diff = ::llabs((long long)(input_buffer[i] / input_buffer[j]) - test_output);
-      if (cur_diff < diff) diff = cur_diff;
+      long long cur_diff = avd_tasklib_binary_pair_input_diff(
+        input_buffer[i],
+        input_buffer[j],
+        test_output,
+        AVD_TASKLIB_BINARY_OP_DIV
+      );
+      diff = avd_tasklib_diff_scan_update(diff, cur_diff);
     }
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -2978,29 +2961,25 @@ void cTaskLib::Load_Log(const cString& name, const cString& argstr, cEnvReqs&, F
 
 double cTaskLib::Task_Log(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(log(fabs(double(input_buffer[i] ? input_buffer[i] : 1)))) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_LOG,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -3019,29 +2998,25 @@ void cTaskLib::Load_Log2(const cString& name, const cString& argstr, cEnvReqs&, 
 
 double cTaskLib::Task_Log2(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(log2(fabs(double(input_buffer[i] ? input_buffer[i] : 1)))) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_LOG2,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -3061,29 +3036,25 @@ void cTaskLib::Load_Log10(const cString& name, const cString& argstr, cEnvReqs&,
 
 double cTaskLib::Task_Log10(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(log10(fabs(double(input_buffer[i] ? input_buffer[i] : 1)))) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_LOG10,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -3103,29 +3074,25 @@ void cTaskLib::Load_Sqrt(const cString& name, const cString& argstr, cEnvReqs&, 
 
 double cTaskLib::Task_Sqrt(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(sqrt(fabs(double(input_buffer[i])))) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_SQRT,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -3145,29 +3112,25 @@ void cTaskLib::Load_Sine(const cString& name, const cString& argstr, cEnvReqs&, 
 
 double cTaskLib::Task_Sine(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(sin(double(input_buffer[i]) / dCastPrecision) * dCastPrecision) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_SINE,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -3187,29 +3150,25 @@ void cTaskLib::Load_Cosine(const cString& name, const cString& argstr, cEnvReqs&
 
 double cTaskLib::Task_Cosine(cTaskContext& ctx) const
 {
-  double quality = 0.0;
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
   
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
   const long long test_output = ctx.GetOutputBuffer()[0];
   const int input_size = input_buffer.GetNumStored();
   
-  long long diff = ((long long)INT_MAX + 1) * 2;
+  long long diff = avd_tasklib_diff_scan_init();
   
   for (int i = 0; i < input_size; i ++) {
-    long long cur_diff = ::llabs((long long)(cos(double(input_buffer[i]) / dCastPrecision) * dCastPrecision) - test_output);
-    if (cur_diff < diff) diff = cur_diff;
+    long long cur_diff = avd_tasklib_unary_math_input_diff(
+      input_buffer[i],
+      test_output,
+      AVD_TASKLIB_UNARY_OP_COSINE,
+      dCastPrecision
+    );
+    diff = avd_tasklib_diff_scan_update(diff, cur_diff);
   }
   
-  int threshold = args.GetInt(0);
-  
-  if (threshold < 0 || diff <= threshold) { // Negative threshold == infinite
-    // If within threshold range, quality decays based on absolute difference
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(diff) / halflife);
-  }
-  
-  return quality;
+  return avd_tasklib_threshold_halflife_quality(diff, args.GetInt(0), args.GetDouble(0));
 }
 
 

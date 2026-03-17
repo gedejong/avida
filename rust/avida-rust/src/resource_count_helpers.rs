@@ -60,6 +60,17 @@ const RC_GRAD_SCALAR_SETTER_CONE_INFLOW: c_int = 2;
 const RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW: c_int = 3;
 const RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW: c_int = 4;
 const RC_GRAD_SCALAR_SETTER_INVALID: c_int = -1;
+const RC_GRAD_VAR_INFLOW_SETTER_PLAT_VAR_INFLOW: c_int = 0;
+const RC_GRAD_VAR_INFLOW_SETTER_INVALID: c_int = -1;
+const RC_PREDATORY_SETTER_SET_PREDATORY_RESOURCE: c_int = 0;
+const RC_PREDATORY_SETTER_INVALID: c_int = -1;
+const RC_PROBABILISTIC_SETTER_SET_PROBABILISTIC_RESOURCE: c_int = 0;
+const RC_PROBABILISTIC_SETTER_INVALID: c_int = -1;
+const RC_PEAK_GETTER_CURR_X: c_int = 0;
+const RC_PEAK_GETTER_CURR_Y: c_int = 1;
+const RC_PEAK_GETTER_FROZEN_X: c_int = 2;
+const RC_PEAK_GETTER_FROZEN_Y: c_int = 3;
+const RC_PEAK_GETTER_INVALID: c_int = -1;
 const RC_GRADIENT_SETTER_SEQUENCE: [c_int; 37] = [
     RC_GRAD_SETTER_PEAK_X,
     RC_GRAD_SETTER_PEAK_Y,
@@ -105,6 +116,17 @@ const RC_GRADIENT_SCALAR_SETTER_SEQUENCE: [c_int; 5] = [
     RC_GRAD_SCALAR_SETTER_CONE_INFLOW,
     RC_GRAD_SCALAR_SETTER_CONE_OUTFLOW,
     RC_GRAD_SCALAR_SETTER_GRADIENT_INFLOW,
+];
+const RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE: [c_int; 1] =
+    [RC_GRAD_VAR_INFLOW_SETTER_PLAT_VAR_INFLOW];
+const RC_PREDATORY_SETTER_SEQUENCE: [c_int; 1] = [RC_PREDATORY_SETTER_SET_PREDATORY_RESOURCE];
+const RC_PROBABILISTIC_SETTER_SEQUENCE: [c_int; 1] =
+    [RC_PROBABILISTIC_SETTER_SET_PROBABILISTIC_RESOURCE];
+const RC_PEAK_GETTER_SEQUENCE: [c_int; 4] = [
+    RC_PEAK_GETTER_CURR_X,
+    RC_PEAK_GETTER_CURR_Y,
+    RC_PEAK_GETTER_FROZEN_X,
+    RC_PEAK_GETTER_FROZEN_Y,
 ];
 
 #[no_mangle]
@@ -303,6 +325,70 @@ fn gradient_scalar_setter_opcode(index: c_int) -> c_int {
         .unwrap_or(RC_GRAD_SCALAR_SETTER_INVALID)
 }
 
+fn gradient_var_inflow_setter_count() -> c_int {
+    RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE.len() as c_int
+}
+
+fn gradient_var_inflow_setter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_GRAD_VAR_INFLOW_SETTER_INVALID;
+    };
+    RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_GRAD_VAR_INFLOW_SETTER_INVALID)
+}
+
+fn predatory_setter_count() -> c_int {
+    RC_PREDATORY_SETTER_SEQUENCE.len() as c_int
+}
+
+fn predatory_setter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_PREDATORY_SETTER_INVALID;
+    };
+    RC_PREDATORY_SETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_PREDATORY_SETTER_INVALID)
+}
+
+fn probabilistic_setter_count() -> c_int {
+    RC_PROBABILISTIC_SETTER_SEQUENCE.len() as c_int
+}
+
+fn probabilistic_setter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_PROBABILISTIC_SETTER_INVALID;
+    };
+    RC_PROBABILISTIC_SETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_PROBABILISTIC_SETTER_INVALID)
+}
+
+fn peak_getter_count() -> c_int {
+    RC_PEAK_GETTER_SEQUENCE.len() as c_int
+}
+
+fn peak_getter_opcode(index: c_int) -> c_int {
+    let Ok(index) = usize::try_from(index) else {
+        return RC_PEAK_GETTER_INVALID;
+    };
+    RC_PEAK_GETTER_SEQUENCE
+        .get(index)
+        .copied()
+        .unwrap_or(RC_PEAK_GETTER_INVALID)
+}
+
+fn peak_getter_requires_update(opcode: c_int) -> c_int {
+    if opcode == RC_PEAK_GETTER_CURR_X || opcode == RC_PEAK_GETTER_CURR_Y {
+        1
+    } else {
+        0
+    }
+}
+
 fn apply_nonspatial_steps_internal(
     mut current: f64,
     decay_precalc: &[f64],
@@ -406,6 +492,51 @@ pub extern "C" fn avd_rc_gradient_scalar_setter_count() -> c_int {
 #[no_mangle]
 pub extern "C" fn avd_rc_gradient_scalar_setter_opcode(index: c_int) -> c_int {
     gradient_scalar_setter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_var_inflow_setter_count() -> c_int {
+    gradient_var_inflow_setter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_gradient_var_inflow_setter_opcode(index: c_int) -> c_int {
+    gradient_var_inflow_setter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_predatory_setter_count() -> c_int {
+    predatory_setter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_predatory_setter_opcode(index: c_int) -> c_int {
+    predatory_setter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_probabilistic_setter_count() -> c_int {
+    probabilistic_setter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_probabilistic_setter_opcode(index: c_int) -> c_int {
+    probabilistic_setter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_peak_getter_count() -> c_int {
+    peak_getter_count()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_peak_getter_opcode(index: c_int) -> c_int {
+    peak_getter_opcode(index)
+}
+
+#[no_mangle]
+pub extern "C" fn avd_rc_peak_getter_requires_update(opcode: c_int) -> c_int {
+    peak_getter_requires_update(opcode)
 }
 
 #[no_mangle]
@@ -773,6 +904,208 @@ mod tests {
         assert_eq!(
             avd_rc_gradient_scalar_setter_opcode(999),
             RC_GRAD_SCALAR_SETTER_INVALID
+        );
+    }
+
+    #[test]
+    fn rc_gradient_var_inflow_setter_sequence_policy() {
+        assert_eq!(
+            avd_rc_gradient_var_inflow_setter_count(),
+            RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(
+                avd_rc_gradient_var_inflow_setter_opcode(i as c_int),
+                *expected
+            );
+        }
+    }
+
+    #[test]
+    fn rc_gradient_var_inflow_setter_sequence_guards() {
+        assert_eq!(
+            avd_rc_gradient_var_inflow_setter_opcode(-1),
+            RC_GRAD_VAR_INFLOW_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_gradient_var_inflow_setter_opcode(avd_rc_gradient_var_inflow_setter_count()),
+            RC_GRAD_VAR_INFLOW_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_gradient_var_inflow_setter_opcode(999),
+            RC_GRAD_VAR_INFLOW_SETTER_INVALID
+        );
+    }
+
+    #[test]
+    fn rc_predatory_setter_sequence_policy() {
+        assert_eq!(
+            avd_rc_predatory_setter_count(),
+            RC_PREDATORY_SETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_PREDATORY_SETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(avd_rc_predatory_setter_opcode(i as c_int), *expected);
+        }
+    }
+
+    #[test]
+    fn rc_predatory_setter_sequence_guards() {
+        assert_eq!(
+            avd_rc_predatory_setter_opcode(-1),
+            RC_PREDATORY_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_predatory_setter_opcode(avd_rc_predatory_setter_count()),
+            RC_PREDATORY_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_predatory_setter_opcode(999),
+            RC_PREDATORY_SETTER_INVALID
+        );
+    }
+
+    #[test]
+    fn rc_probabilistic_setter_sequence_policy() {
+        assert_eq!(
+            avd_rc_probabilistic_setter_count(),
+            RC_PROBABILISTIC_SETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_PROBABILISTIC_SETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(avd_rc_probabilistic_setter_opcode(i as c_int), *expected);
+        }
+    }
+
+    #[test]
+    fn rc_probabilistic_setter_sequence_guards() {
+        assert_eq!(
+            avd_rc_probabilistic_setter_opcode(-1),
+            RC_PROBABILISTIC_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_probabilistic_setter_opcode(avd_rc_probabilistic_setter_count()),
+            RC_PROBABILISTIC_SETTER_INVALID
+        );
+        assert_eq!(
+            avd_rc_probabilistic_setter_opcode(999),
+            RC_PROBABILISTIC_SETTER_INVALID
+        );
+    }
+
+    #[test]
+    fn rc_peak_getter_sequence_policy() {
+        assert_eq!(
+            avd_rc_peak_getter_count(),
+            RC_PEAK_GETTER_SEQUENCE.len() as c_int
+        );
+        for (i, expected) in RC_PEAK_GETTER_SEQUENCE.iter().enumerate() {
+            assert_eq!(avd_rc_peak_getter_opcode(i as c_int), *expected);
+        }
+    }
+
+    #[test]
+    fn rc_peak_getter_sequence_guards_and_update_policy() {
+        assert_eq!(avd_rc_peak_getter_opcode(-1), RC_PEAK_GETTER_INVALID);
+        assert_eq!(
+            avd_rc_peak_getter_opcode(avd_rc_peak_getter_count()),
+            RC_PEAK_GETTER_INVALID
+        );
+        assert_eq!(avd_rc_peak_getter_opcode(999), RC_PEAK_GETTER_INVALID);
+
+        assert_eq!(avd_rc_peak_getter_requires_update(RC_PEAK_GETTER_CURR_X), 1);
+        assert_eq!(avd_rc_peak_getter_requires_update(RC_PEAK_GETTER_CURR_Y), 1);
+        assert_eq!(
+            avd_rc_peak_getter_requires_update(RC_PEAK_GETTER_FROZEN_X),
+            0
+        );
+        assert_eq!(
+            avd_rc_peak_getter_requires_update(RC_PEAK_GETTER_FROZEN_Y),
+            0
+        );
+        assert_eq!(
+            avd_rc_peak_getter_requires_update(RC_PEAK_GETTER_INVALID),
+            0
+        );
+        assert_eq!(avd_rc_peak_getter_requires_update(999), 0);
+    }
+
+    fn assert_opcode_family_matrix(
+        expected_sequence: &[c_int],
+        invalid_opcode: c_int,
+        count_fn: extern "C" fn() -> c_int,
+        opcode_fn: extern "C" fn(c_int) -> c_int,
+        payload: &[f64],
+        payload_expected_sum: f64,
+    ) {
+        assert_eq!(count_fn(), expected_sequence.len() as c_int);
+        for (i, expected) in expected_sequence.iter().enumerate() {
+            assert_eq!(opcode_fn(i as c_int), *expected);
+        }
+        assert_eq!(opcode_fn(-1), invalid_opcode);
+        assert_eq!(opcode_fn(count_fn()), invalid_opcode);
+
+        let mut payload_sum = 0.0;
+        for i in 0..count_fn() {
+            let opcode = opcode_fn(i);
+            if opcode >= 0 && opcode < count_fn() {
+                payload_sum += payload[opcode as usize];
+            }
+        }
+        assert!((payload_sum - payload_expected_sum).abs() < 1e-15);
+    }
+
+    #[test]
+    fn rc_unified_setter_getter_opcode_matrix_policy() {
+        assert_opcode_family_matrix(
+            &RC_GRADIENT_SETTER_SEQUENCE,
+            RC_GRAD_SETTER_INVALID,
+            avd_rc_gradient_setter_count,
+            avd_rc_gradient_setter_opcode,
+            &[
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6,
+                1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2,
+                3.3, 3.4, 3.5, 3.6, 3.7,
+            ],
+            70.3,
+        );
+        assert_opcode_family_matrix(
+            &RC_GRADIENT_SCALAR_SETTER_SEQUENCE,
+            RC_GRAD_SCALAR_SETTER_INVALID,
+            avd_rc_gradient_scalar_setter_count,
+            avd_rc_gradient_scalar_setter_opcode,
+            &[0.11, 0.22, 0.33, 0.44, 0.55],
+            1.65,
+        );
+        assert_opcode_family_matrix(
+            &RC_GRADIENT_VAR_INFLOW_SETTER_SEQUENCE,
+            RC_GRAD_VAR_INFLOW_SETTER_INVALID,
+            avd_rc_gradient_var_inflow_setter_count,
+            avd_rc_gradient_var_inflow_setter_opcode,
+            &[0.77],
+            0.77,
+        );
+        assert_opcode_family_matrix(
+            &RC_PREDATORY_SETTER_SEQUENCE,
+            RC_PREDATORY_SETTER_INVALID,
+            avd_rc_predatory_setter_count,
+            avd_rc_predatory_setter_opcode,
+            &[0.91],
+            0.91,
+        );
+        assert_opcode_family_matrix(
+            &RC_PROBABILISTIC_SETTER_SEQUENCE,
+            RC_PROBABILISTIC_SETTER_INVALID,
+            avd_rc_probabilistic_setter_count,
+            avd_rc_probabilistic_setter_opcode,
+            &[1.23],
+            1.23,
+        );
+        assert_opcode_family_matrix(
+            &RC_PEAK_GETTER_SEQUENCE,
+            RC_PEAK_GETTER_INVALID,
+            avd_rc_peak_getter_count,
+            avd_rc_peak_getter_opcode,
+            &[101.0, 202.0, 303.0, 404.0],
+            1010.0,
         );
     }
 

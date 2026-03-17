@@ -50,6 +50,7 @@
 #include "tInstLibEntry.h"
 
 #include "AvidaTools.h"
+#include "rust/running_stats_ffi.h"
 
 #include <climits>
 #include <fstream>
@@ -975,7 +976,7 @@ bool cHardwareCPU::SingleProcess(cAvidaContext& ctx, bool speculative)
     if (m_constitutive_regulation) Inst_SenseRegulate(ctx); 
     
     // If there are no active promoters and a certain mode is set, then don't execute any further instructions
-    if (m_promoters_enabled && m_world->GetConfig().NO_ACTIVE_PROMOTER_EFFECT.Get() == 2 && m_promoter_index == -1) exec = false;
+    if (avd_cpu_should_suppress_no_promoter(m_promoters_enabled ? 1 : 0, m_world->GetConfig().NO_ACTIVE_PROMOTER_EFFECT.Get(), m_promoter_index)) exec = false;
     
     // Now execute the instruction...
     if (exec == true) {
@@ -1019,23 +1020,25 @@ bool cHardwareCPU::SingleProcess(cAvidaContext& ctx, bool speculative)
       if (m_promoters_enabled) {
         const double processivity = m_world->GetConfig().PROMOTER_PROCESSIVITY.Get();
         if (ctx.GetRandom().P(1 - processivity)) Inst_Terminate(ctx);
-        if (m_world->GetConfig().PROMOTER_INST_MAX.Get() && (m_threads[m_cur_thread].GetPromoterInstExecuted() >= m_world->GetConfig().PROMOTER_INST_MAX.Get())) 
+        if (avd_cpu_should_terminate_promoter(m_world->GetConfig().PROMOTER_INST_MAX.Get(), m_threads[m_cur_thread].GetPromoterInstExecuted()))
           Inst_Terminate(ctx);
       }
       
       // check for difference in thread count caused by KillThread or ForkThread
-      if (num_threads == m_threads.GetSize()+1){
-        --num_threads;
-        --num_inst_exec;
-      } else if (num_threads > m_threads.GetSize() && m_threads.GetSize() == 1) {
-        // divide probably occured, I think divide insts. are the only ones that can reduce the thread count by more than one.
-        num_threads = 1;
-        num_inst_exec=0;
-      } else if (num_threads > m_threads.GetSize()) {
-        cerr<<cur_inst.GetOp()<<" "<<cur_inst.GetSymbol()<<" "<< num_threads << " " << m_threads.GetSize() <<endl;
-        m_organism->Fault(FAULT_LOC_DEFAULT, FAULT_TYPE_ERROR);
-        cerr<<"Error in thread handling\n";
-        exit(-1);
+      {
+        const int thread_change = avd_cpu_thread_change_kind(num_threads, m_threads.GetSize());
+        if (thread_change == AVD_CPU_THREAD_CHANGE_KILLED_ONE) {
+          --num_threads;
+          --num_inst_exec;
+        } else if (thread_change == AVD_CPU_THREAD_CHANGE_DIVIDE) {
+          num_threads = 1;
+          num_inst_exec=0;
+        } else if (thread_change == AVD_CPU_THREAD_CHANGE_ERROR) {
+          cerr<<cur_inst.GetOp()<<" "<<cur_inst.GetSymbol()<<" "<< num_threads << " " << m_threads.GetSize() <<endl;
+          m_organism->Fault(FAULT_LOC_DEFAULT, FAULT_TYPE_ERROR);
+          cerr<<"Error in thread handling\n";
+          exit(-1);
+        }
       }      
     } // if exec
     
@@ -1043,7 +1046,7 @@ bool cHardwareCPU::SingleProcess(cAvidaContext& ctx, bool speculative)
   
   // Kill creatures who have reached their max num of instructions executed
   const int max_executed = m_organism->GetMaxExecuted();
-  if ((max_executed > 0 && phenotype.GetTimeUsed() >= max_executed) || phenotype.GetToDie() == true) {
+  if (avd_cpu_should_die_max_executed(max_executed, phenotype.GetTimeUsed(), phenotype.GetToDie() ? 1 : 0)) {
     if (speculative) m_spec_die = true;
     else m_organism->Die(ctx);
   }
@@ -1063,12 +1066,19 @@ bool cHardwareCPU::SingleProcess_ExecuteInst(cAvidaContext& ctx, const Instructi
 {
   // Copy Instruction locally to handle stochastic effects
   Instruction actual_inst = cur_inst;
+  const int dispatch_family = avd_cpu_dispatch_family(
+    m_inst_set->IsNop(actual_inst) ? 1 : 0,
+    m_inst_set->IsLabel(actual_inst) ? 1 : 0,
+    m_inst_set->IsPromoter(actual_inst) ? 1 : 0,
+    m_inst_set->ShouldStall(actual_inst) ? 1 : 0
+  );
   
   // Get a pointer to the corresponding method...
   int inst_idx = m_inst_set->GetLibFunctionIndex(actual_inst);
+  const int counted_opcode = avd_cpu_dispatch_counted_opcode(actual_inst.GetOp(), dispatch_family);
   
   // instruction execution count incremented
-  m_organism->GetPhenotype().IncCurInstCount(actual_inst.GetOp());
+  m_organism->GetPhenotype().IncCurInstCount(counted_opcode);
 	
   // And execute it.
   const bool exec_success = (this->*(m_functions[inst_idx]))(ctx);
@@ -1076,18 +1086,21 @@ bool cHardwareCPU::SingleProcess_ExecuteInst(cAvidaContext& ctx, const Instructi
   // NOTE: Organism may be dead now if instruction executed killed it (such as some divides, "die", or "explode")
   
   // Add in a cycle cost for switching which task is performed
-  if (m_world->GetConfig().TASK_SWITCH_PENALTY_TYPE.Get()) {
-    if (m_organism->GetPhenotype().GetNumNewUniqueReactions()) {
-      int cost = m_organism->GetPhenotype().GetNumNewUniqueReactions() * m_world->GetConfig().TASK_SWITCH_PENALTY.Get();
+  {
+    int cost = avd_cpu_task_switch_penalty(
+      m_world->GetConfig().TASK_SWITCH_PENALTY_TYPE.Get(),
+      m_organism->GetPhenotype().GetNumNewUniqueReactions(),
+      m_world->GetConfig().TASK_SWITCH_PENALTY.Get()
+    );
+    if (cost > 0) {
       IncrementTaskSwitchingCost(cost);
-			
       m_organism->GetPhenotype().ResetNumNewUniqueReactions();
     }
   }
 	
   // Decrement if the instruction was not executed successfully.
   if (exec_success == false) {
-    m_organism->GetPhenotype().DecCurInstCount(actual_inst.GetOp());
+    m_organism->GetPhenotype().DecCurInstCount(counted_opcode);
   }
   
   return exec_success;
@@ -1640,7 +1653,7 @@ inline int cHardwareCPU::FindModifiedNextRegister(int default_register)
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + 1) % NUM_REGISTERS;
+    default_register = avd_cpu_next_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1648,13 +1661,13 @@ inline int cHardwareCPU::FindModifiedNextRegister(int default_register)
 inline int cHardwareCPU::FindModifiedPreviousRegister(int default_register)
 {
   assert(default_register < NUM_REGISTERS);  // Reg ID too high.
-  
+
   if (m_inst_set->IsNop(getIP().GetNextInst())) {
     getIP().Advance();
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + NUM_REGISTERS - 1) % NUM_REGISTERS;
+    default_register = avd_cpu_prev_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1711,39 +1724,34 @@ bool cHardwareCPU::Allocate_Main(cAvidaContext& ctx, const int allocated_size)
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR, "Allocate already active");
     return false;
   }
-  if (allocated_size < 1) {
+  const int old_size = m_memory.GetSize();
+  const int max_alloc_size = (int) (old_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
+  const int max_old_size = (int) (allocated_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
+  const int alloc_result = avd_cpu_alloc_validity(allocated_size, old_size, MIN_GENOME_LENGTH, MAX_GENOME_LENGTH, max_alloc_size, max_old_size);
+  if (alloc_result == AVD_CPU_ALLOC_TOO_SMALL) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate of %d too small", allocated_size));
     return false;
   }
-  
-  const int old_size = m_memory.GetSize();
-  const int new_size = old_size + allocated_size;
-  
-  // Make sure that the new size is in range.
-  if (new_size > MAX_GENOME_LENGTH  ||  new_size < MIN_GENOME_LENGTH) {
+  if (alloc_result == AVD_CPU_ALLOC_OUT_OF_RANGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Invalid post-allocate size (%d)",
-                                           new_size));
+                                           old_size + allocated_size));
     return false;
   }
-  
-  const int max_alloc_size = (int) (old_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
-  if (allocated_size > max_alloc_size) {
+  if (alloc_result == AVD_CPU_ALLOC_TOO_LARGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate too large (%d > %d)",
                                            allocated_size, max_alloc_size));
     return false;
   }
-  
-  const int max_old_size =
-  (int) (allocated_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
-  if (old_size > max_old_size) {
+  if (alloc_result == AVD_CPU_ALLOC_PARENT_TOO_LARGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate too small (%d > %d)",
                                            old_size, max_old_size));
     return false;
   }
+  const int new_size = old_size + allocated_size;
   
   switch (m_world->GetConfig().ALLOC_METHOD.Get()) {
     case ALLOC_METHOD_NECRO:
@@ -2922,10 +2930,13 @@ bool cHardwareCPU::Inst_Sqrt(cAvidaContext&)
   const int src = FindModifiedRegister(REG_BX);
   const int dst = src;
   const int value = GetRegister(src);
-  if (value > 1) GetRegister(dst) = static_cast<int>(sqrt(static_cast<double>(value)));
-  else if (value < 0) {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "sqrt: value is negative");
-    return false;
+  {
+    const int domain = avd_cpu_unary_math_domain(value, 2); // sqrt: value > 1
+    if (domain == AVD_CPU_MATH_COMPUTE) GetRegister(dst) = static_cast<int>(sqrt(static_cast<double>(value)));
+    else if (domain == AVD_CPU_MATH_FAULT_NEGATIVE) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "sqrt: value is negative");
+      return false;
+    }
   }
   return true;
 }
@@ -2935,10 +2946,13 @@ bool cHardwareCPU::Inst_Log(cAvidaContext&)
   const int src = FindModifiedRegister(REG_BX);
   const int dst = src;
   const int value = GetRegister(src);
-  if (value >= 1) GetRegister(dst) = static_cast<int>(log(static_cast<double>(value)));
-  else if (value < 0) {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "log: value is negative");
-    return false;
+  {
+    const int domain = avd_cpu_unary_math_domain(value, 1); // log: value >= 1
+    if (domain == AVD_CPU_MATH_COMPUTE) GetRegister(dst) = static_cast<int>(log(static_cast<double>(value)));
+    else if (domain == AVD_CPU_MATH_FAULT_NEGATIVE) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "log: value is negative");
+      return false;
+    }
   }
   return true;
 }
@@ -2948,10 +2962,13 @@ bool cHardwareCPU::Inst_Log10(cAvidaContext&)
   const int src = FindModifiedRegister(REG_BX);
   const int dst = src;
   const int value = GetRegister(src);
-  if (value >= 1) GetRegister(dst) = static_cast<int>(log10(static_cast<double>(value)));
-  else if (value < 0) {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "log10: value is negative");
-    return false;
+  {
+    const int domain = avd_cpu_unary_math_domain(value, 1); // log10: value >= 1
+    if (domain == AVD_CPU_MATH_COMPUTE) GetRegister(dst) = static_cast<int>(log10(static_cast<double>(value)));
+    else if (domain == AVD_CPU_MATH_FAULT_NEGATIVE) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "log10: value is negative");
+      return false;
+    }
   }
   return true;
 }
@@ -2988,14 +3005,16 @@ bool cHardwareCPU::Inst_Div(cAvidaContext&)
   const int dst = FindModifiedRegister(REG_BX);
   const int op1 = REG_BX;
   const int op2 = REG_CX;
-  if (GetRegister(op2) != 0) {
-    if (0-INT_MAX > GetRegister(op1) && GetRegister(op2) == -1)
-      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
-    else
+  {
+    const int dg = avd_cpu_div_guard(GetRegister(op1), GetRegister(op2), 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
       GetRegister(dst) = GetRegister(op1) / GetRegister(op2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
-    return false;
+    } else if (dg == AVD_CPU_DIV_OVERFLOW) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -3005,11 +3024,14 @@ bool cHardwareCPU::Inst_Mod(cAvidaContext&)
   const int dst = FindModifiedRegister(REG_BX);
   const int op1 = REG_BX;
   const int op2 = REG_CX;
-  if (GetRegister(op2) != 0) {
-    GetRegister(dst) = GetRegister(op1) % GetRegister(op2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
-    return false;
+  {
+    const int dg = avd_cpu_div_guard(GetRegister(op1), GetRegister(op2), 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
+      GetRegister(dst) = GetRegister(op1) % GetRegister(op2);
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -6524,15 +6546,8 @@ bool cHardwareCPU::Inst_RotateHome(cAvidaContext& ctx)
   // to face the 'marked' spot where those instructions were executed.
   int easterly = m_organism->GetEasterly();
   int northerly = m_organism->GetNortherly();
-  int correct_facing = 0;
-  if (northerly > 0 && easterly == 0) correct_facing = 0; // rotate N    
-  else if (northerly > 0 && easterly < 0) correct_facing = 1; // rotate NE
-  else if (northerly == 0 && easterly < 0) correct_facing = 2; // rotate E
-  else if (northerly < 0 && easterly < 0) correct_facing = 3; // rotate SE
-  else if (northerly < 0 && easterly == 0) correct_facing = 4; // rotate S
-  else if (northerly < 0 && easterly > 0) correct_facing = 5; // rotate SW
-  else if (northerly == 0 && easterly > 0) correct_facing = 6; // rotate W
-  else if (northerly > 0 && easterly > 0) correct_facing = 7; // rotate NW  
+  int correct_facing = avd_cpu_gradient_facing(northerly, easterly);
+  if (correct_facing < 0) correct_facing = 0; // zero vector defaults to N
   for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
     m_organism->Rotate(ctx, 1);
     if (m_organism->GetFacedDir() == correct_facing) break;

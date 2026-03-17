@@ -13,19 +13,27 @@
 )]
 #![cfg_attr(test, allow(clippy::expect_used, clippy::panic, clippy::unwrap_used))]
 
+pub mod analyze_helpers;
 pub mod bit_array;
 pub mod common;
+pub mod cpu_helpers;
 pub mod double_sum;
+pub mod environment_helpers;
 pub mod event_list_helpers;
 pub mod histogram;
 pub mod ordered_weighted_index;
 pub mod package;
+pub mod population_action_helpers;
+pub mod population_helpers;
+pub mod print_action_helpers;
 pub mod provider_helpers;
 pub mod resource_count_helpers;
 pub mod resource_history_helpers;
 pub mod running_average;
 pub mod running_stats;
 pub mod spatial_res_count_helpers;
+pub mod stats_helpers;
+pub mod task_lib_helpers;
 pub mod time_series_recorder;
 pub mod weighted_index;
 

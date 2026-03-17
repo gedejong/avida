@@ -2,8 +2,11 @@ use avida_rust::bit_array::{
     avd_rba_count_bits, avd_rba_free, avd_rba_increment, avd_rba_new, avd_rba_set_bit,
     avd_rba_shift,
 };
+use avida_rust::cpu_helpers::{avd_cpu_dispatch_counted_opcode, avd_cpu_dispatch_family};
 use avida_rust::resource_count_helpers::{
-    avd_rc_accumulate_update_time, avd_rc_num_steps, avd_rc_remainder_update_time,
+    avd_rc_accumulate_update_time, avd_rc_apply_nonspatial_steps, avd_rc_dispatch_action,
+    avd_rc_is_spatial_geometry, avd_rc_num_spatial_updates, avd_rc_num_steps,
+    avd_rc_remainder_update_time, avd_rc_spatial_step_iterations, avd_rc_use_cell_list_branch,
 };
 use avida_rust::{
     avd_pkg_double_to_string, avd_pkg_str_as_bool, avd_pkg_str_as_double, avd_pkg_str_as_int,
@@ -48,6 +51,64 @@ fn bench_resource_scheduling(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_resource_update_dispatch(c: &mut Criterion) {
+    let mut group = c.benchmark_group("resource_update_dispatch_helpers");
+    const RES_COUNT: usize = 128;
+    const PRECALC_DISTANCE: i32 = 100;
+    let geometries: [i32; RES_COUNT] = {
+        let mut values = [0_i32; RES_COUNT];
+        let mut i = 0;
+        while i < RES_COUNT {
+            values[i] = match i % 3 {
+                0 => 0, // global
+                1 => 5, // partial
+                _ => 1, // grid
+            };
+            i += 1;
+        }
+        values
+    };
+    let mut decay_table = [0.0_f64; PRECALC_DISTANCE as usize];
+    let mut inflow_table = [0.0_f64; PRECALC_DISTANCE as usize];
+    decay_table[0] = 1.0;
+    inflow_table[0] = 0.0;
+    for i in 1..PRECALC_DISTANCE as usize {
+        decay_table[i] = decay_table[i - 1] * 0.995;
+        inflow_table[i] = inflow_table[i - 1] * 0.995 + 0.0001;
+    }
+
+    group.bench_function("mixed_geometry_dispatch_pipeline", |b| {
+        b.iter(|| {
+            let mut checksum = black_box(0.0_f64);
+            let mut update_time = black_box(0.73_f64);
+            let num_steps = avd_rc_num_steps(update_time, 1.0 / 10000.0);
+            update_time = avd_rc_remainder_update_time(update_time, 1.0 / 10000.0, num_steps);
+            let num_spatial_updates = avd_rc_num_spatial_updates(black_box(3101), black_box(3092));
+            for geometry in geometries {
+                let is_spatial = avd_rc_is_spatial_geometry(black_box(geometry));
+                let action = avd_rc_dispatch_action(is_spatial, black_box(0));
+                if action == 1 {
+                    checksum += avd_rc_apply_nonspatial_steps(
+                        black_box(1.0),
+                        decay_table.as_ptr(),
+                        inflow_table.as_ptr(),
+                        PRECALC_DISTANCE,
+                        num_steps,
+                    );
+                } else if action == 2 {
+                    let iterations = avd_rc_spatial_step_iterations(num_spatial_updates);
+                    let use_cell_branch = avd_rc_use_cell_list_branch(black_box(12));
+                    checksum += f64::from(iterations + use_cell_branch);
+                }
+            }
+            checksum += update_time;
+            black_box(checksum)
+        })
+    });
+
+    group.finish();
+}
+
 fn bench_provider_classification(c: &mut Criterion) {
     let mut group = c.benchmark_group("provider_id_helpers");
     let standard = make_cstring("core.demo");
@@ -86,6 +147,32 @@ fn bench_provider_classification(c: &mut Criterion) {
             let mut arg: *mut c_char = std::ptr::null_mut();
             let kind = avd_provider_classify_id(black_box(malformed.as_ptr()), &mut raw, &mut arg);
             black_box(kind)
+        })
+    });
+
+    group.finish();
+}
+
+fn bench_cpu_dispatch_classification(c: &mut Criterion) {
+    let mut group = c.benchmark_group("cpu_dispatch_helpers");
+
+    group.bench_function("dispatch_family_and_counted_opcode", |b| {
+        b.iter(|| {
+            let mut checksum = 0_i32;
+            for i in 0..4096_i32 {
+                let is_nop = if i % 11 == 0 { 1 } else { 0 };
+                let is_label = if i % 13 == 0 { 1 } else { 0 };
+                let is_promoter = if i % 17 == 0 { 1 } else { 0 };
+                let should_stall = if i % 19 == 0 { 1 } else { 0 };
+                let family = avd_cpu_dispatch_family(
+                    black_box(is_nop),
+                    black_box(is_label),
+                    black_box(is_promoter),
+                    black_box(should_stall),
+                );
+                checksum += avd_cpu_dispatch_counted_opcode(black_box(i & 255), black_box(family));
+            }
+            black_box(checksum)
         })
     });
 
@@ -192,6 +279,8 @@ fn bench_bit_array_shift_increment_count(c: &mut Criterion) {
 criterion_group!(
     benches,
     bench_resource_scheduling,
+    bench_resource_update_dispatch,
+    bench_cpu_dispatch_classification,
     bench_provider_classification,
     bench_package_parsing_and_formatting,
     bench_bit_array_shift_increment_count

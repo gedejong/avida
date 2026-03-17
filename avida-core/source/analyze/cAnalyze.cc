@@ -66,6 +66,7 @@
 #include "cTestCPU.h"
 #include "cUserFeedback.h"
 #include "cWorld.h"
+#include "rust/running_stats_ffi.h"
 #include "tAnalyzeJob.h"
 #include "tAnalyzeJobBatch.h"
 #include "tDataCommandManager.h"
@@ -886,15 +887,9 @@ void cAnalyze::CommandFilter(cString cur_string)
     error_found = true;
   }
   
-  // Check relationship types.  rel_ok[0] = less_ok; rel_ok[1] = same_ok; rel_ok[2] = gtr_ok
-  Apto::Array<bool> rel_ok(3); rel_ok.SetAll(false);
-  if (relation == "==")      {                    rel_ok[1] = true;                    }
-  else if (relation == "!=") { rel_ok[0] = true;                     rel_ok[2] = true; }
-  else if (relation == "<")  { rel_ok[0] = true;                                       }
-  else if (relation == ">")  {                                       rel_ok[2] = true; }
-  else if (relation == "<=") { rel_ok[0] = true;  rel_ok[1] = true;                    }
-  else if (relation == ">=") {                    rel_ok[1] = true;  rel_ok[2] = true; }
-  else {
+  // Bits map compare index {less=0,equal=1,greater=2} to allow/deny policy.
+  const int rel_mask = avd_analyze_relation_mask((const char*) relation);
+  if (rel_mask < 0) {
     cerr << "Error: Unknown relation '" << relation << "'" << endl;
     error_found = true;
   }
@@ -924,7 +919,7 @@ void cAnalyze::CommandFilter(cString cur_string)
     int compare = 1 + CompareFlexStat(value, test_value);
     
     // Check if we should eliminate this genotype...
-    if (rel_ok[compare] == false) {
+    if ((rel_mask & (1 << compare)) == 0) {
       delete batch_it.Remove();
     }
   }
@@ -1819,7 +1814,8 @@ void cAnalyze::CommandPrintTasks(cString cur_string)
   
   // Load in the variables...
   cString filename("tasks.dat");
-  if (cur_string.GetSize() != 0) filename = cur_string.PopWord();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) filename = cur_string.PopWord();
   
   Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
   ofstream& fp = df->OFStream();
@@ -1841,7 +1837,8 @@ void cAnalyze::CommandPrintTasksQuality(cString cur_string)
   
   // Load in the variables...
   cString filename("tasksquality.dat");
-  if (cur_string.GetSize() != 0) filename = cur_string.PopWord();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) filename = cur_string.PopWord();
   
   Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
   ofstream& fp = df->OFStream();
@@ -1866,7 +1863,8 @@ void cAnalyze::CommandDetail(cString cur_string)
   
   // Load in the variables...
   cString filename("detail.dat");
-  if (cur_string.GetSize() != 0) filename = cur_string.PopWord();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) filename = cur_string.PopWord();
   
   // Construct a linked list of details needed...
   tList< tDataEntryCommand<cAnalyzeGenotype> > output_list;
@@ -1877,14 +1875,23 @@ void cAnalyze::CommandDetail(cString cur_string)
   int file_type = FILE_TYPE_TEXT;
   cString file_extension(filename);
   while (file_extension.Find('.') != -1) file_extension.Pop('.');
-  if (file_extension == "html") file_type = FILE_TYPE_HTML;
+  const int file_type_kind = avd_analyze_output_file_type_short_circuit_kind(
+    avd_analyze_is_html_extension((const char*) file_extension)
+  );
+  if (file_type_kind == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML) file_type = FILE_TYPE_HTML;
   
   // Setup the file...
-  if (filename == "cout") {
+  const int sink_kind = avd_analyze_output_sink_short_circuit_kind(filename == "cout");
+  if (sink_kind == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT) {
     CommandDetail_Header(cout, file_type, output_it);
     CommandDetail_Body(cout, file_type, output_it);
   } else {
-    Avida::Output::FilePtr df = Avida::Output::File::CreateWithPath(m_world->GetNewWorld(), (const char*)filename);
+    const int handle_mode = avd_analyze_output_file_handle_mode_short_circuit_kind(
+      AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL
+    );
+    Avida::Output::FilePtr df = (handle_mode == AVD_ANALYZE_OUTPUT_HANDLE_MODE_CREATE)
+      ? Avida::Output::File::CreateWithPath(m_world->GetNewWorld(), (const char*)filename)
+      : Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
     ofstream& fp = df->OFStream();
     CommandDetail_Header(fp, file_type, output_it);
     CommandDetail_Body(fp, file_type, output_it);
@@ -1905,9 +1912,12 @@ void cAnalyze::CommandDetailTimeline(cString cur_string)
   cString filename("detail_timeline.dat");
   int time_step = 100;
   int max_time = 100000;
-  if (cur_string.GetSize() != 0) filename = cur_string.PopWord();
-  if (cur_string.GetSize() != 0) time_step = cur_string.PopWord().AsInt();
-  if (cur_string.GetSize() != 0) max_time = cur_string.PopWord().AsInt();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) filename = cur_string.PopWord();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) time_step = cur_string.PopWord().AsInt();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) max_time = cur_string.PopWord().AsInt();
   
   if (m_world->GetVerbosity() >= VERBOSE_ON) {
     cout << "  Time step = " << time_step << endl
@@ -1923,14 +1933,23 @@ void cAnalyze::CommandDetailTimeline(cString cur_string)
   int file_type = FILE_TYPE_TEXT;
   cString file_extension(filename);
   while (file_extension.Find('.') != -1) file_extension.Pop('.');
-  if (file_extension == "html") file_type = FILE_TYPE_HTML;
+  const int file_type_kind = avd_analyze_output_file_type_short_circuit_kind(
+    avd_analyze_is_html_extension((const char*) file_extension)
+  );
+  if (file_type_kind == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML) file_type = FILE_TYPE_HTML;
   
   // Setup the file...
-  if (filename == "cout") {
+  const int sink_kind = avd_analyze_output_sink_short_circuit_kind(filename == "cout");
+  if (sink_kind == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT) {
     CommandDetail_Header(cout, file_type, output_it, time_step);
     CommandDetail_Body(cout, file_type, output_it, time_step, max_time);
   } else {
-    Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
+    const int handle_mode = avd_analyze_output_file_handle_mode_short_circuit_kind(
+      AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL_TIMELINE
+    );
+    Avida::Output::FilePtr df = (handle_mode == AVD_ANALYZE_OUTPUT_HANDLE_MODE_CREATE)
+      ? Avida::Output::File::CreateWithPath(m_world->GetNewWorld(), (const char*)filename)
+      : Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
     ofstream& fp = df->OFStream();
     CommandDetail_Header(fp, file_type, output_it, time_step);
     CommandDetail_Body(fp, file_type, output_it, time_step, max_time);
@@ -2150,7 +2169,10 @@ void cAnalyze::CommandDetailBatches(cString cur_string)
   int file_type = FILE_TYPE_TEXT;
   cString file_extension(filename);
   while (file_extension.Find('.') != -1) file_extension.Pop('.');
-  if (file_extension == "html") file_type = FILE_TYPE_HTML;
+  const int file_type_kind = avd_analyze_output_file_type_short_circuit_kind(
+    avd_analyze_is_html_extension((const char*) file_extension)
+  );
+  if (file_type_kind == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML) file_type = FILE_TYPE_HTML;
   
   Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
   ofstream& fp = df->OFStream();
@@ -2254,7 +2276,7 @@ void cAnalyze::CommandDetailIndex(cString cur_string)
   // Determine the file type...
   int file_type = FILE_TYPE_TEXT;
   while (filename.Find('.') != -1) filename.Pop('.'); // Grab only extension
-  if (filename == "html") file_type = FILE_TYPE_HTML;
+  if (avd_analyze_is_html_filename_token((const char*) filename) != 0) file_type = FILE_TYPE_HTML;
   
   // Write out the header on the file
   if (file_type == FILE_TYPE_TEXT) {
@@ -2338,7 +2360,8 @@ void cAnalyze::CommandHistogram(cString cur_string)
   
   // Load in the variables...
   cString filename("histogram.dat");
-  if (cur_string.GetSize() != 0) filename = cur_string.PopWord();
+  if (avd_analyze_output_token_presence_short_circuit_kind(cur_string.GetSize()) ==
+      AVD_ANALYZE_OUTPUT_TOKEN_PRESENT) filename = cur_string.PopWord();
   
   // Construct a linked list of details needed...
   tList< tDataEntryCommand<cAnalyzeGenotype> > output_list;
@@ -2349,14 +2372,23 @@ void cAnalyze::CommandHistogram(cString cur_string)
   int file_type = FILE_TYPE_TEXT;
   cString file_extension(filename);
   while (file_extension.Find('.') != -1) file_extension.Pop('.');
-  if (file_extension == "html") file_type = FILE_TYPE_HTML;
+  const int file_type_kind = avd_analyze_output_file_type_short_circuit_kind(
+    avd_analyze_is_html_extension((const char*) file_extension)
+  );
+  if (file_type_kind == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML) file_type = FILE_TYPE_HTML;
   
   // Setup the file...
-  if (filename == "cout") {
+  const int sink_kind = avd_analyze_output_sink_short_circuit_kind(filename == "cout");
+  if (sink_kind == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT) {
     CommandHistogram_Header(cout, file_type, output_it);
     CommandHistogram_Body(cout, file_type, output_it);
   } else {
-    Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
+    const int handle_mode = avd_analyze_output_file_handle_mode_short_circuit_kind(
+      AVD_ANALYZE_OUTPUT_HANDLE_ACTION_HISTOGRAM
+    );
+    Avida::Output::FilePtr df = (handle_mode == AVD_ANALYZE_OUTPUT_HANDLE_MODE_CREATE)
+      ? Avida::Output::File::CreateWithPath(m_world->GetNewWorld(), (const char*)filename)
+      : Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)filename);
     ofstream& fp = df->OFStream();
     CommandHistogram_Header(fp, file_type, output_it);
     CommandHistogram_Body(fp, file_type, output_it);
@@ -6071,8 +6103,15 @@ void cAnalyze::CommandMapTasks(cString cur_string)
   // Check for some command specific variables, removing them from the list if found.
   if (arg_list.PopString("0") != "")                 print_mode = 0;
   if (arg_list.PopString("1") != "")                 print_mode = 1;
-  if (arg_list.PopString("text") != "")              file_type = FILE_TYPE_TEXT;
-  if (arg_list.PopString("html") != "")              file_type = FILE_TYPE_HTML;
+  const int has_text_token = (arg_list.PopString("text") != "");
+  const int has_html_token = (arg_list.PopString("html") != "");
+  const int token_kind = avd_analyze_file_type_token_short_circuit_kind(
+    has_text_token,
+    has_html_token
+  );
+  file_type = (token_kind == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML)
+    ? FILE_TYPE_HTML
+    : ((token_kind == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_TEXT) ? FILE_TYPE_TEXT : file_type);
   if (arg_list.PopString("link_maps") != "")         link_maps = true;
   if (arg_list.PopString("link_insts") != "")        link_insts = true;
   if (arg_list.PopString("use_resources=2") != "")   use_resources = 2;
@@ -7008,8 +7047,15 @@ void cAnalyze::CommandMapMutations(cString cur_string)
   cStringList arg_list(cur_string);
   
   // Check for some command specific variables.
-  if (arg_list.PopString("text") != "") file_type = FILE_TYPE_TEXT;
-  if (arg_list.PopString("html") != "") file_type = FILE_TYPE_HTML;
+  const int has_text_token = (arg_list.PopString("text") != "");
+  const int has_html_token = (arg_list.PopString("html") != "");
+  const int token_kind = avd_analyze_file_type_token_short_circuit_kind(
+    has_text_token,
+    has_html_token
+  );
+  file_type = (token_kind == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML)
+    ? FILE_TYPE_HTML
+    : ((token_kind == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_TEXT) ? FILE_TYPE_TEXT : file_type);
   
   // Give some information in verbose mode.
   if (m_world->GetVerbosity() >= VERBOSE_ON) {
@@ -8470,7 +8516,7 @@ void cAnalyze::AnalyzeInstructions(cString cur_string)
   // Determine the file type...
   int file_type = FILE_TYPE_TEXT;
   while (filename.Find('.') != -1) filename.Pop('.');
-  if (filename == "html") file_type = FILE_TYPE_HTML;
+  if (avd_analyze_is_html_filename_token((const char*) filename) != 0) file_type = FILE_TYPE_HTML;
   
   // If we're in HTML mode, setup the header...
   if (file_type == FILE_TYPE_HTML) {

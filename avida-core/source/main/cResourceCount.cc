@@ -62,6 +62,81 @@ void ApplyGradientScalarSetter(cSpatialResCount* spatial_res, int opcode, double
       break;
   }
 }
+
+void ApplyGradientVarInflowSetter(
+  cSpatialResCount* spatial_res,
+  int opcode,
+  cAvidaContext& ctx,
+  double mean,
+  double variance,
+  int type
+)
+{
+  switch (opcode) {
+    case AVD_RC_GRAD_VAR_INFLOW_SETTER_PLAT_VAR_INFLOW:
+      spatial_res->SetGradPlatVarInflow(ctx, mean, variance, type);
+      break;
+    default:
+      assert(opcode == AVD_RC_GRAD_VAR_INFLOW_SETTER_INVALID && "Unexpected gradient var-inflow setter opcode");
+      break;
+  }
+}
+
+void ApplyPredatorySetter(
+  cSpatialResCount* spatial_res,
+  int opcode,
+  double odds,
+  int juvsper
+)
+{
+  switch (opcode) {
+    case AVD_RC_PREDATORY_SETTER_SET_PREDATORY_RESOURCE:
+      spatial_res->SetPredatoryResource(odds, juvsper);
+      break;
+    default:
+      assert(opcode == AVD_RC_PREDATORY_SETTER_INVALID && "Unexpected predatory setter opcode");
+      break;
+  }
+}
+
+void ApplyProbabilisticSetter(
+  cSpatialResCount* spatial_res,
+  int opcode,
+  cAvidaContext& ctx,
+  double initial,
+  double inflow,
+  double outflow,
+  double lambda,
+  double theta,
+  int x,
+  int y,
+  int count
+)
+{
+  switch (opcode) {
+    case AVD_RC_PROBABILISTIC_SETTER_SET_PROBABILISTIC_RESOURCE:
+      spatial_res->SetProbabilisticResource(ctx, initial, inflow, outflow, lambda, theta, x, y, count);
+      break;
+    default:
+      assert(opcode == AVD_RC_PROBABILISTIC_SETTER_INVALID && "Unexpected probabilistic setter opcode");
+      break;
+  }
+}
+
+int ApplyPeakGetter(cSpatialResCount* spatial_res, int opcode)
+{
+  switch (opcode) {
+    case AVD_RC_PEAK_GETTER_CURR_X:
+    case AVD_RC_PEAK_GETTER_FROZEN_X:
+      return spatial_res->GetCurrPeakX();
+    case AVD_RC_PEAK_GETTER_CURR_Y:
+    case AVD_RC_PEAK_GETTER_FROZEN_Y:
+      return spatial_res->GetCurrPeakY();
+    default:
+      assert(opcode == AVD_RC_PEAK_GETTER_INVALID && "Unexpected peak getter opcode");
+      return 0;
+  }
+}
 }
 
 const double cResourceCount::UPDATE_STEP(1.0 / 10000.0);
@@ -434,14 +509,16 @@ void cResourceCount::SetGradPlatVarInflow(cAvidaContext& ctx, const int& res_id,
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetGradPlatVarInflow(ctx, mean, variance, type);
+  const int opcode = avd_rc_gradient_var_inflow_setter_opcode(0);
+  ApplyGradientVarInflowSetter(spatial_resource_count[res_id], opcode, ctx, mean, variance, type);
 }
 
 void cResourceCount::SetPredatoryResource(const int& res_id, const double& odds, const int& juvsper) 
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetPredatoryResource(odds, juvsper);
+  const int opcode = avd_rc_predatory_setter_opcode(0);
+  ApplyPredatorySetter(spatial_resource_count[res_id], opcode, odds, juvsper);
 }
 
 void cResourceCount::SetProbabilisticResource(cAvidaContext& ctx, const int& res_id, const double& initial, const double& inflow,
@@ -449,7 +526,8 @@ void cResourceCount::SetProbabilisticResource(cAvidaContext& ctx, const int& res
 {
   assert(res_id >= 0 && res_id < resource_count.GetSize());
   assert(spatial_resource_count[res_id]->GetSize() > 0);
-  spatial_resource_count[res_id]->SetProbabilisticResource(ctx, initial, inflow, outflow, lambda, theta, x, y, count);
+  const int opcode = avd_rc_probabilistic_setter_opcode(0);
+  ApplyProbabilisticSetter(spatial_resource_count[res_id], opcode, ctx, initial, inflow, outflow, lambda, theta, x, y, count);
 }
 
 int cResourceCount::GetResourceCountID(const cString& res_name)
@@ -685,24 +763,28 @@ void cResourceCount::ResizeSpatialGrids(int in_x, int in_y)
 
 int cResourceCount::GetCurrPeakX(cAvidaContext& ctx, int res_id) const
 { 
-  DoUpdates(ctx);
-  return spatial_resource_count[res_id]->GetCurrPeakX();
+  const int opcode = avd_rc_peak_getter_opcode(0);
+  if (avd_rc_peak_getter_requires_update(opcode) != 0) DoUpdates(ctx);
+  return ApplyPeakGetter(spatial_resource_count[res_id], opcode);
 }
 
 int cResourceCount::GetCurrPeakY(cAvidaContext& ctx, int res_id) const
 { 
-  DoUpdates(ctx);
-  return spatial_resource_count[res_id]->GetCurrPeakY();
+  const int opcode = avd_rc_peak_getter_opcode(1);
+  if (avd_rc_peak_getter_requires_update(opcode) != 0) DoUpdates(ctx);
+  return ApplyPeakGetter(spatial_resource_count[res_id], opcode);
 }
 
 int cResourceCount::GetFrozenPeakX(cAvidaContext&, int res_id) const
 { 
-  return spatial_resource_count[res_id]->GetCurrPeakX();
+  const int opcode = avd_rc_peak_getter_opcode(2);
+  return ApplyPeakGetter(spatial_resource_count[res_id], opcode);
 }
 
 int cResourceCount::GetFrozenPeakY(cAvidaContext&, int res_id) const
 { 
-  return spatial_resource_count[res_id]->GetCurrPeakY();
+  const int opcode = avd_rc_peak_getter_opcode(3);
+  return ApplyPeakGetter(spatial_resource_count[res_id], opcode);
 }
 
 Apto::Array<int>* cResourceCount::GetWallCells(int res_id)

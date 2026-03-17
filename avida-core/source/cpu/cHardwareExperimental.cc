@@ -40,6 +40,8 @@
 #include "cStringUtil.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include "tInstLibEntry.h"
 
 #include <climits>
@@ -1407,13 +1409,13 @@ inline int cHardwareExperimental::FindModifiedRegister(int default_register)
 inline int cHardwareExperimental::FindModifiedNextRegister(int default_register)
 {
   assert(default_register < NUM_REGISTERS);  // Reg ID too high.
-  
+
   if (m_inst_set->IsNop(getIP().GetNextInst())) {
     getIP().Advance();
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + 1) % NUM_REGISTERS;
+    default_register = avd_cpu_next_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1421,13 +1423,13 @@ inline int cHardwareExperimental::FindModifiedNextRegister(int default_register)
 inline int cHardwareExperimental::FindModifiedPreviousRegister(int default_register)
 {
   assert(default_register < NUM_REGISTERS);  // Reg ID too high.
-  
+
   if (m_inst_set->IsNop(getIP().GetNextInst())) {
     getIP().Advance();
     default_register = m_inst_set->GetNopMod(getIP().GetInst());
     getIP().SetFlagExecuted();
   } else {
-    default_register = (default_register + NUM_REGISTERS - 1) % NUM_REGISTERS;
+    default_register = avd_cpu_prev_register(default_register, NUM_REGISTERS);
   }
   return default_register;
 }
@@ -1448,7 +1450,7 @@ inline int cHardwareExperimental::FindModifiedHead(int default_head)
 
 inline int cHardwareExperimental::FindNextRegister(int base_reg)
 {
-  return (base_reg + 1) % NUM_REGISTERS;
+  return avd_cpu_next_register(base_reg, NUM_REGISTERS);
 }
 
 
@@ -1484,40 +1486,35 @@ bool cHardwareExperimental::Allocate_Main(cAvidaContext& ctx, const int allocate
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR, "Allocate already active");
     return false;
   }
-  if (allocated_size < 1) {
+  const int old_size = m_memory.GetSize();
+  const int max_alloc_size = (int) (old_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
+  const int max_old_size = (int) (allocated_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
+  const int alloc_result = avd_cpu_alloc_validity(allocated_size, old_size, MIN_GENOME_LENGTH, MAX_GENOME_LENGTH, max_alloc_size, max_old_size);
+  if (alloc_result == AVD_CPU_ALLOC_TOO_SMALL) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate of %d too small", allocated_size));
     return false;
   }
-  
-  const int old_size = m_memory.GetSize();
-  const int new_size = old_size + allocated_size;
-  
-  // Make sure that the new size is in range.
-  if (new_size > MAX_GENOME_LENGTH  ||  new_size < MIN_GENOME_LENGTH) {
+  if (alloc_result == AVD_CPU_ALLOC_OUT_OF_RANGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Invalid post-allocate size (%d)",
-                                           new_size));
+                                           old_size + allocated_size));
     return false;
   }
-  
-  const int max_alloc_size = (int) (old_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
-  if (allocated_size > max_alloc_size) {
+  if (alloc_result == AVD_CPU_ALLOC_TOO_LARGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate too large (%d > %d)",
                                            allocated_size, max_alloc_size));
     return false;
   }
-  
-  const int max_old_size =
-  (int) (allocated_size * m_world->GetConfig().OFFSPRING_SIZE_RANGE.Get());
-  if (old_size > max_old_size) {
+  if (alloc_result == AVD_CPU_ALLOC_PARENT_TOO_LARGE) {
     m_organism->Fault(FAULT_LOC_ALLOC, FAULT_TYPE_ERROR,
                       cStringUtil::Stringf("Allocate too small (%d > %d)",
                                            old_size, max_old_size));
     return false;
   }
-  
+  const int new_size = old_size + allocated_size;
+
   switch (m_world->GetConfig().ALLOC_METHOD.Get()) {
     case ALLOC_METHOD_NECRO:
       // Only break if this succeeds -- otherwise just do random.
@@ -2023,14 +2020,16 @@ bool cHardwareExperimental::Inst_Div(cAvidaContext&)
   m_from_message = (FromMessage(op1) || FromMessage(op2));
   DataValue& r1 = m_threads[m_cur_thread].reg[op1];
   DataValue& r2 = m_threads[m_cur_thread].reg[op2];
-  if (r2.value != 0) {
-    if (0 - INT_MAX > r1.value && r2.value == -1)
-      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
-    else
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
       setInternalValue(dst, r1.value / r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
-    return false;
+    } else if (dg == AVD_CPU_DIV_OVERFLOW) {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: Float exception");
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "div: dividing by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -2044,11 +2043,14 @@ bool cHardwareExperimental::Inst_Mod(cAvidaContext&)
   m_from_message = (FromMessage(op1) || FromMessage(op2));
   DataValue& r1 = m_threads[m_cur_thread].reg[op1];
   DataValue& r2 = m_threads[m_cur_thread].reg[op2];
-  if (r2.value != 0) {
-    setInternalValue(dst, r1.value % r2.value, r1, r2);
-  } else {
-    m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
-    return false;
+  {
+    const int dg = avd_cpu_div_guard(r1.value, r2.value, 0-INT_MAX);
+    if (dg == AVD_CPU_DIV_OK) {
+      setInternalValue(dst, r1.value % r2.value, r1, r2);
+    } else {
+      m_organism->Fault(FAULT_LOC_MATH, FAULT_TYPE_ERROR, "mod: modding by 0");
+      return false;
+    }
   }
   return true;
 }
@@ -3400,15 +3402,8 @@ bool cHardwareExperimental::Inst_RotateHome(cAvidaContext& ctx)
   // to face the 'marked' spot where those instructions were executed.
   int easterly = m_organism->GetEasterly();
   int northerly = m_organism->GetNortherly();
-  int correct_facing = 0;
-  if (northerly > 0 && easterly == 0) correct_facing = 0; // rotate N    
-  else if (northerly > 0 && easterly < 0) correct_facing = 1; // rotate NE
-  else if (northerly == 0 && easterly < 0) correct_facing = 2; // rotate E
-  else if (northerly < 0 && easterly < 0) correct_facing = 3; // rotate SE
-  else if (northerly < 0 && easterly == 0) correct_facing = 4; // rotate S
-  else if (northerly < 0 && easterly > 0) correct_facing = 5; // rotate SW
-  else if (northerly == 0 && easterly > 0) correct_facing = 6; // rotate W
-  else if (northerly > 0 && easterly > 0) correct_facing = 7; // rotate NW  
+  int correct_facing = avd_cpu_gradient_facing(northerly, easterly);
+  if (correct_facing < 0) correct_facing = 0; // zero vector defaults to N
   
   int rotates = m_organism->GetNeighborhoodSize();
   if (m_use_avatar) rotates = m_organism->GetOrgInterface().GetAVNumNeighbors();

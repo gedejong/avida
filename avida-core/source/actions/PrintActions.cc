@@ -61,6 +61,7 @@
 #include "cParasite.h"
 #include "cBirthEntry.h"
 #include "nGeometry.h"
+#include "rust/running_stats_ffi.h"
 
 #include <cmath>
 #include <cerrno>
@@ -407,6 +408,18 @@ public:
   }
 };
 
+enum {
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_INSTRUCTION_DATA = 0,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_FROM_MESSAGE_INSTRUCTION_DATA = 1,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_PREY_INSTRUCTION_DATA = 2,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_PREDATOR_INSTRUCTION_DATA = 3,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_TOP_PREDATOR_INSTRUCTION_DATA = 4,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_PREY_FROM_SENSOR_INSTRUCTION_DATA = 5,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_PREDATOR_FROM_SENSOR_INSTRUCTION_DATA = 6,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_TOP_PREDATOR_FROM_SENSOR_INSTRUCTION_DATA = 7,
+  PRINTACTION_INSTRUCTION_ACTION_PRINT_GROUP_ATTACK_DATA = 8
+};
+
 class cActionPrintInstructionData : public cAction, public Data::Recorder
 {
 private:
@@ -421,13 +434,18 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "instruction.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = (const char*)largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("instruction-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "instruction.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("instruction-%s.dat", (const char*)m_inst_set);
+    }
     
     m_data_id = Apto::FormatStr("core.population.inst_exec_counts[%s]", (const char*)m_inst_set);
     
@@ -453,6 +471,11 @@ public:
   
   void Process(cAvidaContext&)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_RECORDER) return;
+
     const cInstSet& is = m_world->GetHardwareManager().GetInstSet(m_inst_set);
     Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)m_filename);
     
@@ -485,13 +508,18 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "from_msg_instruction.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = (const char*)largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("from_msg_instruction-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "from_msg_instruction.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("from_msg_instruction-%s.dat", (const char*)m_inst_set);
+    }
     
     m_data_id = Apto::FormatStr("core.population.from_message_inst_exec_counts[%s]", (const char*)m_inst_set);
     
@@ -517,6 +545,11 @@ public:
   
   void Process(cAvidaContext&)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_FROM_MESSAGE_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_RECORDER) return;
+
     const cInstSet& is = m_world->GetHardwareManager().GetInstSet(m_inst_set);
     Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), (const char*)m_filename);
     
@@ -548,19 +581,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "prey_instruction.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("prey_instruction-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "prey_instruction.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("prey_instruction-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"prey_instruction-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext&)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_PREY_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintPreyInstructionData(m_filename, m_inst_set);
   }
 };
@@ -577,19 +620,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "predator_instruction.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("predator_instruction-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "predator_instruction.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("predator_instruction-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"predator_instruction-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext&)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_PREDATOR_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintPredatorInstructionData(m_filename, m_inst_set);
   }
 };
@@ -606,19 +659,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "top_pred_instruction.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("top_pred_instruction-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "top_pred_instruction.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("top_pred_instruction-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"top_pred_instruction-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext& ctx)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_TOP_PREDATOR_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintTopPredatorInstructionData(m_filename, m_inst_set);
   }
 };
@@ -635,19 +698,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "prey_from_sensor_exec.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("prey_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "prey_from_sensor_exec.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("prey_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"prey_from_sensor_exec-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext& ctx)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_PREY_FROM_SENSOR_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintPreyFromSensorInstructionData(m_filename, m_inst_set);
   }
 };
@@ -664,19 +737,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "predator_from_sensor_exec.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("predator_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "predator_from_sensor_exec.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("predator_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"predator_from_sensor_exec-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext& ctx)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_PREDATOR_FROM_SENSOR_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintPredatorFromSensorInstructionData(m_filename, m_inst_set);
   }
 };
@@ -693,19 +776,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "top_pred_from_sensor_exec.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("top_pred_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "top_pred_from_sensor_exec.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("top_pred_from_sensor_exec-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"top_pred_from_sensor_exec-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext& ctx)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_TOP_PREDATOR_FROM_SENSOR_INSTRUCTION_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintTopPredatorFromSensorInstructionData(m_filename, m_inst_set);
   }
 };
@@ -722,19 +815,29 @@ public:
   {
     cString largs(args);
     largs.Trim();
-    if (largs.GetSize()) m_filename = largs.PopWord();
-    else {
-      if (m_filename == "") m_filename = "group_attacks.dat";
-    }
+    const int has_filename_token = largs.GetSize() ? 1 : 0;
+    if (has_filename_token != 0) m_filename = largs.PopWord();
     if (largs.GetSize()) m_inst_set = largs.PopWord();
-    
-    if (m_filename == "") m_filename.Set("group_attacks-%s.dat", (const char*)m_inst_set);
+    const int filename_mode = avd_printaction_instruction_filename_mode(
+      has_filename_token,
+      m_filename == "" ? 1 : 0
+    );
+    if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN) {
+      m_filename = "group_attacks.dat";
+    } else if (filename_mode == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET) {
+      m_filename.Set("group_attacks-%s.dat", (const char*)m_inst_set);
+    }
   }
   
   static const cString GetDescription() { return "Arguments: [string fname=\"group_attacks-${inst_set}.dat\"] [string inst_set]"; }
   
   void Process(cAvidaContext& ctx)
   {
+    const int sink_kind = avd_printaction_instruction_output_sink_kind(
+      PRINTACTION_INSTRUCTION_ACTION_PRINT_GROUP_ATTACK_DATA
+    );
+    if (sink_kind != AVD_PRINTACTION_OUTPUT_SINK_STATS) return;
+
     m_world->GetStats().PrintGroupAttackData(m_filename, m_inst_set);
   }
 };

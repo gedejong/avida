@@ -1351,6 +1351,292 @@ protected:
       "Gradient scalar setter payload selection parity",
       fabs(scalar_payload_sum - (0.11 + 0.22 + 0.33 + 0.44 + 0.55)) < 1e-15
     );
+    const int expected_gradient_var_inflow_sequence[] = {
+      AVD_RC_GRAD_VAR_INFLOW_SETTER_PLAT_VAR_INFLOW
+    };
+    const int expected_gradient_var_inflow_count =
+      sizeof(expected_gradient_var_inflow_sequence) / sizeof(expected_gradient_var_inflow_sequence[0]);
+    ReportTestResult(
+      "Gradient var-inflow setter sequence count policy",
+      avd_rc_gradient_var_inflow_setter_count() == expected_gradient_var_inflow_count
+    );
+    bool gradient_var_inflow_sequence_ok =
+      (avd_rc_gradient_var_inflow_setter_count() == expected_gradient_var_inflow_count);
+    for (int i = 0; i < expected_gradient_var_inflow_count; ++i) {
+      if (avd_rc_gradient_var_inflow_setter_opcode(i) != expected_gradient_var_inflow_sequence[i]) {
+        gradient_var_inflow_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult(
+      "Gradient var-inflow setter sequence order policy",
+      gradient_var_inflow_sequence_ok
+    );
+    ReportTestResult(
+      "Gradient var-inflow setter negative index guard",
+      avd_rc_gradient_var_inflow_setter_opcode(-1) == AVD_RC_GRAD_VAR_INFLOW_SETTER_INVALID
+    );
+    ReportTestResult(
+      "Gradient var-inflow setter out-of-range index guard",
+      avd_rc_gradient_var_inflow_setter_opcode(avd_rc_gradient_var_inflow_setter_count()) ==
+        AVD_RC_GRAD_VAR_INFLOW_SETTER_INVALID
+    );
+    const double var_inflow_payload[] = {0.77};
+    double var_inflow_payload_sum = 0.0;
+    for (int i = 0; i < avd_rc_gradient_var_inflow_setter_count(); ++i) {
+      const int opcode = avd_rc_gradient_var_inflow_setter_opcode(i);
+      if (opcode >= 0 && opcode < avd_rc_gradient_var_inflow_setter_count()) {
+        var_inflow_payload_sum += var_inflow_payload[opcode];
+      }
+    }
+    ReportTestResult(
+      "Gradient var-inflow setter payload selection parity",
+      fabs(var_inflow_payload_sum - 0.77) < 1e-15
+    );
+    const int expected_predatory_sequence[] = {
+      AVD_RC_PREDATORY_SETTER_SET_PREDATORY_RESOURCE
+    };
+    const int expected_predatory_count =
+      sizeof(expected_predatory_sequence) / sizeof(expected_predatory_sequence[0]);
+    ReportTestResult(
+      "Predatory setter sequence count policy",
+      avd_rc_predatory_setter_count() == expected_predatory_count
+    );
+    bool predatory_sequence_ok =
+      (avd_rc_predatory_setter_count() == expected_predatory_count);
+    for (int i = 0; i < expected_predatory_count; ++i) {
+      if (avd_rc_predatory_setter_opcode(i) != expected_predatory_sequence[i]) {
+        predatory_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult(
+      "Predatory setter sequence order policy",
+      predatory_sequence_ok
+    );
+    ReportTestResult(
+      "Predatory setter negative index guard",
+      avd_rc_predatory_setter_opcode(-1) == AVD_RC_PREDATORY_SETTER_INVALID
+    );
+    ReportTestResult(
+      "Predatory setter out-of-range index guard",
+      avd_rc_predatory_setter_opcode(avd_rc_predatory_setter_count()) ==
+        AVD_RC_PREDATORY_SETTER_INVALID
+    );
+    const double predatory_payload[] = {0.91};
+    double predatory_payload_sum = 0.0;
+    for (int i = 0; i < avd_rc_predatory_setter_count(); ++i) {
+      const int opcode = avd_rc_predatory_setter_opcode(i);
+      if (opcode >= 0 && opcode < avd_rc_predatory_setter_count()) {
+        predatory_payload_sum += predatory_payload[opcode];
+      }
+    }
+    ReportTestResult(
+      "Predatory setter payload selection parity",
+      fabs(predatory_payload_sum - 0.91) < 1e-15
+    );
+    const int expected_probabilistic_sequence[] = {
+      AVD_RC_PROBABILISTIC_SETTER_SET_PROBABILISTIC_RESOURCE
+    };
+    const int expected_probabilistic_count =
+      sizeof(expected_probabilistic_sequence) / sizeof(expected_probabilistic_sequence[0]);
+    ReportTestResult(
+      "Probabilistic setter sequence count policy",
+      avd_rc_probabilistic_setter_count() == expected_probabilistic_count
+    );
+    bool probabilistic_sequence_ok =
+      (avd_rc_probabilistic_setter_count() == expected_probabilistic_count);
+    for (int i = 0; i < expected_probabilistic_count; ++i) {
+      if (avd_rc_probabilistic_setter_opcode(i) != expected_probabilistic_sequence[i]) {
+        probabilistic_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult(
+      "Probabilistic setter sequence order policy",
+      probabilistic_sequence_ok
+    );
+    ReportTestResult(
+      "Probabilistic setter negative index guard",
+      avd_rc_probabilistic_setter_opcode(-1) == AVD_RC_PROBABILISTIC_SETTER_INVALID
+    );
+    ReportTestResult(
+      "Probabilistic setter out-of-range index guard",
+      avd_rc_probabilistic_setter_opcode(avd_rc_probabilistic_setter_count()) ==
+        AVD_RC_PROBABILISTIC_SETTER_INVALID
+    );
+    const double probabilistic_payload[] = {1.23};
+    double probabilistic_payload_sum = 0.0;
+    for (int i = 0; i < avd_rc_probabilistic_setter_count(); ++i) {
+      const int opcode = avd_rc_probabilistic_setter_opcode(i);
+      if (opcode >= 0 && opcode < avd_rc_probabilistic_setter_count()) {
+        probabilistic_payload_sum += probabilistic_payload[opcode];
+      }
+    }
+    ReportTestResult(
+      "Probabilistic setter payload selection parity",
+      fabs(probabilistic_payload_sum - 1.23) < 1e-15
+    );
+    const int expected_peak_getter_sequence[] = {
+      AVD_RC_PEAK_GETTER_CURR_X,
+      AVD_RC_PEAK_GETTER_CURR_Y,
+      AVD_RC_PEAK_GETTER_FROZEN_X,
+      AVD_RC_PEAK_GETTER_FROZEN_Y
+    };
+    const int expected_peak_getter_count =
+      sizeof(expected_peak_getter_sequence) / sizeof(expected_peak_getter_sequence[0]);
+    ReportTestResult(
+      "Peak getter sequence count policy",
+      avd_rc_peak_getter_count() == expected_peak_getter_count
+    );
+    bool peak_getter_sequence_ok =
+      (avd_rc_peak_getter_count() == expected_peak_getter_count);
+    for (int i = 0; i < expected_peak_getter_count; ++i) {
+      if (avd_rc_peak_getter_opcode(i) != expected_peak_getter_sequence[i]) {
+        peak_getter_sequence_ok = false;
+        break;
+      }
+    }
+    ReportTestResult(
+      "Peak getter sequence order policy",
+      peak_getter_sequence_ok
+    );
+    ReportTestResult(
+      "Peak getter negative index guard",
+      avd_rc_peak_getter_opcode(-1) == AVD_RC_PEAK_GETTER_INVALID
+    );
+    ReportTestResult(
+      "Peak getter out-of-range index guard",
+      avd_rc_peak_getter_opcode(avd_rc_peak_getter_count()) ==
+        AVD_RC_PEAK_GETTER_INVALID
+    );
+    ReportTestResult(
+      "Peak getter update policy current-x",
+      avd_rc_peak_getter_requires_update(AVD_RC_PEAK_GETTER_CURR_X) == 1
+    );
+    ReportTestResult(
+      "Peak getter update policy current-y",
+      avd_rc_peak_getter_requires_update(AVD_RC_PEAK_GETTER_CURR_Y) == 1
+    );
+    ReportTestResult(
+      "Peak getter update policy frozen-x",
+      avd_rc_peak_getter_requires_update(AVD_RC_PEAK_GETTER_FROZEN_X) == 0
+    );
+    ReportTestResult(
+      "Peak getter update policy frozen-y",
+      avd_rc_peak_getter_requires_update(AVD_RC_PEAK_GETTER_FROZEN_Y) == 0
+    );
+    ReportTestResult(
+      "Peak getter update policy invalid opcode",
+      avd_rc_peak_getter_requires_update(AVD_RC_PEAK_GETTER_INVALID) == 0
+    );
+    const int peak_payload[] = {101, 202, 303, 404};
+    int peak_payload_sum = 0;
+    for (int i = 0; i < avd_rc_peak_getter_count(); ++i) {
+      const int opcode = avd_rc_peak_getter_opcode(i);
+      if (opcode >= 0 && opcode < avd_rc_peak_getter_count()) {
+        peak_payload_sum += peak_payload[opcode];
+      }
+    }
+    ReportTestResult(
+      "Peak getter payload selection parity",
+      peak_payload_sum == (101 + 202 + 303 + 404)
+    );
+    int (*policy_count_fns[])() = {
+      avd_rc_gradient_setter_count,
+      avd_rc_gradient_scalar_setter_count,
+      avd_rc_gradient_var_inflow_setter_count,
+      avd_rc_predatory_setter_count,
+      avd_rc_probabilistic_setter_count,
+      avd_rc_peak_getter_count
+    };
+    int (*policy_opcode_fns[])(int) = {
+      avd_rc_gradient_setter_opcode,
+      avd_rc_gradient_scalar_setter_opcode,
+      avd_rc_gradient_var_inflow_setter_opcode,
+      avd_rc_predatory_setter_opcode,
+      avd_rc_probabilistic_setter_opcode,
+      avd_rc_peak_getter_opcode
+    };
+    const int* policy_expected_sequences[] = {
+      expected_gradient_sequence,
+      expected_gradient_scalar_sequence,
+      expected_gradient_var_inflow_sequence,
+      expected_predatory_sequence,
+      expected_probabilistic_sequence,
+      expected_peak_getter_sequence
+    };
+    const int policy_expected_counts[] = {
+      expected_gradient_count,
+      expected_gradient_scalar_count,
+      expected_gradient_var_inflow_count,
+      expected_predatory_count,
+      expected_probabilistic_count,
+      expected_peak_getter_count
+    };
+    const int policy_invalid_opcodes[] = {
+      AVD_RC_GRAD_SETTER_INVALID,
+      AVD_RC_GRAD_SCALAR_SETTER_INVALID,
+      AVD_RC_GRAD_VAR_INFLOW_SETTER_INVALID,
+      AVD_RC_PREDATORY_SETTER_INVALID,
+      AVD_RC_PROBABILISTIC_SETTER_INVALID,
+      AVD_RC_PEAK_GETTER_INVALID
+    };
+    const double gradient_payload_full[] = {
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
+      1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0,
+      2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0,
+      3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7
+    };
+    const double peak_payload_double[] = {101.0, 202.0, 303.0, 404.0};
+    const double* policy_payloads[] = {
+      gradient_payload_full,
+      scalar_payload,
+      var_inflow_payload,
+      predatory_payload,
+      probabilistic_payload,
+      peak_payload_double
+    };
+    const double policy_expected_payload_sums[] = {
+      70.3,
+      1.65,
+      0.77,
+      0.91,
+      1.23,
+      1010.0
+    };
+    bool unified_policy_matrix_ok = true;
+    const int policy_family_count = sizeof(policy_expected_counts) / sizeof(policy_expected_counts[0]);
+    for (int family = 0; family < policy_family_count; ++family) {
+      const int expected_count = policy_expected_counts[family];
+      const int reported_count = policy_count_fns[family]();
+      if (reported_count != expected_count) {
+        unified_policy_matrix_ok = false;
+      }
+      if (policy_opcode_fns[family](-1) != policy_invalid_opcodes[family]) {
+        unified_policy_matrix_ok = false;
+      }
+      if (policy_opcode_fns[family](reported_count) != policy_invalid_opcodes[family]) {
+        unified_policy_matrix_ok = false;
+      }
+      double payload_sum = 0.0;
+      for (int i = 0; i < expected_count; ++i) {
+        const int opcode = policy_opcode_fns[family](i);
+        if (opcode != policy_expected_sequences[family][i]) {
+          unified_policy_matrix_ok = false;
+        }
+        if (opcode >= 0 && opcode < expected_count) {
+          payload_sum += policy_payloads[family][opcode];
+        }
+      }
+      if (fabs(payload_sum - policy_expected_payload_sums[family]) > 1e-15) {
+        unified_policy_matrix_ok = false;
+      }
+    }
+    ReportTestResult(
+      "Unified setter/getter opcode matrix policy",
+      unified_policy_matrix_ok
+    );
     ReportTestResult(
       "Dispatch action non-spatial ignores global-only",
       avd_rc_dispatch_action(0, 1) == 1
@@ -1867,7 +2153,889 @@ protected:
   }
 };
 
+class cTaskLibRewardHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cTaskLib Reward Helpers"; }
+protected:
+  static double ReferenceFractionalReward(unsigned int supplied, unsigned int correct)
+  {
+    unsigned int diff = supplied ^ correct;
+    int bit_diff = 0;
+    for (int i = 0; i < 32; ++i) {
+      bit_diff += (diff & 1u) ? 1 : 0;
+      diff >>= 1;
+    }
+    return static_cast<double>(32 - bit_diff) / 32.0;
+  }
 
+  static double ReferenceThresholdHalflifeQuality(long long diff, int threshold, double halflife_arg)
+  {
+    if (threshold >= 0 && diff > threshold) return 0.0;
+    const double halflife = -1.0 * fabs(halflife_arg);
+    return pow(2.0, static_cast<double>(diff) / halflife);
+  }
+
+  void RunTests()
+  {
+    struct Case {
+      unsigned int supplied;
+      unsigned int correct;
+      const char* label;
+    };
+    const Case cases[] = {
+      {0u, 0u, "zero/zero"},
+      {0xFFFFFFFFu, 0xFFFFFFFFu, "all-ones identity"},
+      {0u, 0xFFFFFFFFu, "all bits differ"},
+      {0xAAAAAAAAu, 0x55555555u, "alternating complements"},
+      {0xDEADBEEFu, 0xDEADBEEFu, "identity value"},
+      {0xDEADBEEFu, 0xDEADBEFFu, "small diff"},
+      {0x12345678u, 0x87654321u, "mixed diff"}
+    };
+
+    bool matrix_ok = true;
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+      const double got = avd_tasklib_fractional_reward_bits(cases[i].supplied, cases[i].correct);
+      const double expected = ReferenceFractionalReward(cases[i].supplied, cases[i].correct);
+      if (fabs(got - expected) > 1e-15) {
+        matrix_ok = false;
+        break;
+      }
+    }
+    ReportTestResult("TaskLib fractional reward matrix parity", matrix_ok);
+    ReportTestResult(
+      "TaskLib fractional reward identity",
+      fabs(avd_tasklib_fractional_reward_bits(0u, 0u) - 1.0) < 1e-15
+    );
+    ReportTestResult(
+      "TaskLib fractional reward one-bit diff",
+      fabs(avd_tasklib_fractional_reward_bits(0u, 1u) - (31.0 / 32.0)) < 1e-15
+    );
+    ReportTestResult(
+      "TaskLib fractional reward full diff",
+      fabs(avd_tasklib_fractional_reward_bits(0u, 0xFFFFFFFFu) - 0.0) < 1e-15
+    );
+    const double ab = avd_tasklib_fractional_reward_bits(0x1234ABCDu, 0xABCD1234u);
+    const double ba = avd_tasklib_fractional_reward_bits(0xABCD1234u, 0x1234ABCDu);
+    ReportTestResult("TaskLib fractional reward symmetry", fabs(ab - ba) < 1e-15);
+    ReportTestResult(
+      "TaskLib registration-family classifier logic_3",
+      avd_tasklib_is_logic3_or_math1_name("logic_3AA") == 1
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier math_1",
+      avd_tasklib_is_logic3_or_math1_name("math_1AF") == 1
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier non-family",
+      avd_tasklib_is_logic3_or_math1_name("math_2AA") == 0 &&
+      avd_tasklib_is_logic3_or_math1_name("echo") == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier null guard",
+      avd_tasklib_is_logic3_or_math1_name(NULL) == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier math_2",
+      avd_tasklib_is_math2_or_math3_name("math_2AA") == 1
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier math_3",
+      avd_tasklib_is_math2_or_math3_name("math_3AF") == 1
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier non-math2math3",
+      avd_tasklib_is_math2_or_math3_name("math_1AF") == 0 &&
+      avd_tasklib_is_math2_or_math3_name("logic_3AA") == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier math2math3 null guard",
+      avd_tasklib_is_math2_or_math3_name(NULL) == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier fibonacci",
+      avd_tasklib_is_fibonacci_name("fib_7") == 1 &&
+      avd_tasklib_is_fibonacci_name("fibonacci_seq") == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier fibonacci null guard",
+      avd_tasklib_is_fibonacci_name(NULL) == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier matching-sequence",
+      avd_tasklib_is_matching_sequence_name("matchstr") == 1 &&
+      avd_tasklib_is_matching_sequence_name("sort_inputs") == 1 &&
+      avd_tasklib_is_matching_sequence_name("fibonacci_seq") == 1 &&
+      avd_tasklib_is_matching_sequence_name("fib_7") == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier matching-sequence null guard",
+      avd_tasklib_is_matching_sequence_name(NULL) == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier load-based",
+      avd_tasklib_is_load_based_name("mult") == 1 &&
+      avd_tasklib_is_load_based_name("optimize") == 1 &&
+      avd_tasklib_is_load_based_name("eat-target") == 1 &&
+      avd_tasklib_is_load_based_name("move-ft") == 1 &&
+      avd_tasklib_is_load_based_name("move_to_event") == 0
+    );
+    ReportTestResult(
+      "TaskLib registration-family classifier load-based null guard",
+      avd_tasklib_is_load_based_name(NULL) == 0
+    );
+    ReportTestResult(
+      "TaskLib threshold-halflife quality threshold policy",
+      fabs(
+        avd_tasklib_threshold_halflife_quality(5, 10, 4.0) -
+        ReferenceThresholdHalflifeQuality(5, 10, 4.0)
+      ) < 1e-15 &&
+      avd_tasklib_threshold_halflife_quality(11, 10, 4.0) == 0.0 &&
+      fabs(
+        avd_tasklib_threshold_halflife_quality(11, -1, 4.0) -
+        ReferenceThresholdHalflifeQuality(11, -1, 4.0)
+      ) < 1e-15
+    );
+    const double quality_pos_halflife = avd_tasklib_threshold_halflife_quality(7, -1, 3.0);
+    const double quality_neg_halflife = avd_tasklib_threshold_halflife_quality(7, -1, -3.0);
+    ReportTestResult(
+      "TaskLib threshold-halflife quality sign policy",
+      fabs(quality_pos_halflife - quality_neg_halflife) < 1e-15
+    );
+    ReportTestResult(
+      "TaskLib threshold-halflife quality zero-halflife edge policy",
+      std::isnan(avd_tasklib_threshold_halflife_quality(0, -1, 0.0)) &&
+      avd_tasklib_threshold_halflife_quality(2, -1, 0.0) == 0.0
+    );
+    ReportTestResult(
+      "TaskLib unary math input diff opcode policy",
+      avd_tasklib_unary_math_input_diff(0, 0, AVD_TASKLIB_UNARY_OP_LOG, 100000.0) == 0 &&
+      avd_tasklib_unary_math_input_diff(1, 0, AVD_TASKLIB_UNARY_OP_LOG2, 100000.0) == 0 &&
+      avd_tasklib_unary_math_input_diff(1, 0, AVD_TASKLIB_UNARY_OP_LOG10, 100000.0) == 0 &&
+      avd_tasklib_unary_math_input_diff(-9, 3, AVD_TASKLIB_UNARY_OP_SQRT, 100000.0) == 0 &&
+      avd_tasklib_unary_math_input_diff(0, 0, AVD_TASKLIB_UNARY_OP_COSINE, 100000.0) == 100000 &&
+      avd_tasklib_unary_math_input_diff(1, 0, AVD_TASKLIB_UNARY_OP_SINE, 100000.0) == 0
+    );
+    ReportTestResult(
+      "TaskLib unary math input diff invalid opcode guard",
+      avd_tasklib_unary_math_input_diff(1, 0, AVD_TASKLIB_UNARY_OP_INVALID, 100000.0) == LLONG_MAX
+    );
+    ReportTestResult(
+      "TaskLib binary pair input diff opcode policy",
+      avd_tasklib_binary_pair_input_diff(3, 4, 11, AVD_TASKLIB_BINARY_OP_MULT) == 1 &&
+      avd_tasklib_binary_pair_input_diff(8, 2, 3, AVD_TASKLIB_BINARY_OP_DIV) == 1
+    );
+    ReportTestResult(
+      "TaskLib binary pair input diff guard policy",
+      avd_tasklib_binary_pair_input_diff(8, 0, 3, AVD_TASKLIB_BINARY_OP_DIV) == LLONG_MAX &&
+      avd_tasklib_binary_pair_input_diff(8, 2, 3, AVD_TASKLIB_BINARY_OP_INVALID) == LLONG_MAX
+    );
+    const long long diff_seed = avd_tasklib_diff_scan_init();
+    ReportTestResult(
+      "TaskLib diff-scan reducer init policy",
+      diff_seed == 4294967296LL
+    );
+    ReportTestResult(
+      "TaskLib diff-scan reducer update policy",
+      avd_tasklib_diff_scan_update(10, 12) == 10 &&
+      avd_tasklib_diff_scan_update(10, 7) == 7 &&
+      avd_tasklib_diff_scan_update(diff_seed, LLONG_MAX) == diff_seed
+    );
+  }
+};
+
+class cHardwareCPUDispatchPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cHardwareCPU Dispatch Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "CPU dispatch family precedence policy",
+      avd_cpu_dispatch_family(1, 1, 1, 1) == AVD_CPU_DISPATCH_FAMILY_STALL &&
+      avd_cpu_dispatch_family(1, 1, 1, 0) == AVD_CPU_DISPATCH_FAMILY_PROMOTER &&
+      avd_cpu_dispatch_family(1, 1, 0, 0) == AVD_CPU_DISPATCH_FAMILY_LABEL &&
+      avd_cpu_dispatch_family(1, 0, 0, 0) == AVD_CPU_DISPATCH_FAMILY_NOP &&
+      avd_cpu_dispatch_family(0, 0, 0, 0) == AVD_CPU_DISPATCH_FAMILY_DEFAULT
+    );
+    ReportTestResult(
+      "CPU dispatch family invalid-bit guard",
+      avd_cpu_dispatch_family(2, 0, 0, 0) == AVD_CPU_DISPATCH_FAMILY_INVALID &&
+      avd_cpu_dispatch_family(0, -1, 0, 0) == AVD_CPU_DISPATCH_FAMILY_INVALID
+    );
+    ReportTestResult(
+      "CPU dispatch counted-opcode identity policy",
+      avd_cpu_dispatch_counted_opcode(77, AVD_CPU_DISPATCH_FAMILY_DEFAULT) == 77 &&
+      avd_cpu_dispatch_counted_opcode(11, AVD_CPU_DISPATCH_FAMILY_INVALID) == 11 &&
+      avd_cpu_dispatch_counted_opcode(3, AVD_CPU_DISPATCH_FAMILY_NOP) == 3
+    );
+
+    // Thread change classification
+    ReportTestResult(
+      "CPU thread change killed-one policy",
+      avd_cpu_thread_change_kind(5, 4) == AVD_CPU_THREAD_CHANGE_KILLED_ONE &&
+      avd_cpu_thread_change_kind(2, 1) == AVD_CPU_THREAD_CHANGE_KILLED_ONE
+    );
+    ReportTestResult(
+      "CPU thread change divide policy",
+      avd_cpu_thread_change_kind(3, 1) == AVD_CPU_THREAD_CHANGE_DIVIDE &&
+      avd_cpu_thread_change_kind(10, 1) == AVD_CPU_THREAD_CHANGE_DIVIDE
+    );
+    ReportTestResult(
+      "CPU thread change error policy",
+      avd_cpu_thread_change_kind(5, 2) == AVD_CPU_THREAD_CHANGE_ERROR &&
+      avd_cpu_thread_change_kind(5, 3) == AVD_CPU_THREAD_CHANGE_ERROR
+    );
+    ReportTestResult(
+      "CPU thread change none policy",
+      avd_cpu_thread_change_kind(3, 3) == AVD_CPU_THREAD_CHANGE_NONE &&
+      avd_cpu_thread_change_kind(3, 4) == AVD_CPU_THREAD_CHANGE_NONE
+    );
+
+    // Max-executed death policy
+    ReportTestResult(
+      "CPU max-executed death positive",
+      avd_cpu_should_die_max_executed(100, 100, 0) == 1 &&
+      avd_cpu_should_die_max_executed(100, 200, 0) == 1 &&
+      avd_cpu_should_die_max_executed(0, 0, 1) == 1
+    );
+    ReportTestResult(
+      "CPU max-executed death negative",
+      avd_cpu_should_die_max_executed(100, 50, 0) == 0 &&
+      avd_cpu_should_die_max_executed(0, 999, 0) == 0
+    );
+
+    // No-active-promoter exec suppression
+    ReportTestResult(
+      "CPU no-promoter suppression positive",
+      avd_cpu_should_suppress_no_promoter(1, 2, -1) == 1
+    );
+    ReportTestResult(
+      "CPU no-promoter suppression negative",
+      avd_cpu_should_suppress_no_promoter(0, 2, -1) == 0 &&
+      avd_cpu_should_suppress_no_promoter(1, 1, -1) == 0 &&
+      avd_cpu_should_suppress_no_promoter(1, 2, 0) == 0
+    );
+
+    // Promoter max-inst termination
+    ReportTestResult(
+      "CPU promoter termination positive",
+      avd_cpu_should_terminate_promoter(10, 10) == 1 &&
+      avd_cpu_should_terminate_promoter(10, 15) == 1
+    );
+    ReportTestResult(
+      "CPU promoter termination negative",
+      avd_cpu_should_terminate_promoter(0, 100) == 0 &&
+      avd_cpu_should_terminate_promoter(10, 5) == 0
+    );
+
+    // Task switch penalty
+    ReportTestResult(
+      "CPU task switch penalty computation",
+      avd_cpu_task_switch_penalty(1, 3, 10) == 30 &&
+      avd_cpu_task_switch_penalty(0, 3, 10) == 0 &&
+      avd_cpu_task_switch_penalty(1, 0, 10) == 0
+    );
+
+    // Cardinal direction from gradient
+    ReportTestResult(
+      "CPU gradient facing all directions",
+      avd_cpu_gradient_facing(1, 0) == 0 &&   // N
+      avd_cpu_gradient_facing(1, -1) == 1 &&  // NE
+      avd_cpu_gradient_facing(0, -1) == 2 &&  // E
+      avd_cpu_gradient_facing(-1, -1) == 3 && // SE
+      avd_cpu_gradient_facing(-1, 0) == 4 &&  // S
+      avd_cpu_gradient_facing(-1, 1) == 5 &&  // SW
+      avd_cpu_gradient_facing(0, 1) == 6 &&   // W
+      avd_cpu_gradient_facing(1, 1) == 7 &&   // NW
+      avd_cpu_gradient_facing(0, 0) == -1     // zero
+    );
+
+    // Allocation validity
+    ReportTestResult(
+      "CPU alloc validity OK and failures",
+      avd_cpu_alloc_validity(100, 100, 10, 500, 200, 200) == AVD_CPU_ALLOC_OK &&
+      avd_cpu_alloc_validity(0, 100, 10, 500, 200, 200) == AVD_CPU_ALLOC_TOO_SMALL &&
+      avd_cpu_alloc_validity(500, 100, 10, 500, 600, 600) == AVD_CPU_ALLOC_OUT_OF_RANGE &&
+      avd_cpu_alloc_validity(201, 100, 10, 500, 200, 200) == AVD_CPU_ALLOC_TOO_LARGE &&
+      avd_cpu_alloc_validity(50, 201, 10, 500, 300, 200) == AVD_CPU_ALLOC_PARENT_TOO_LARGE
+    );
+
+    // Register wrap
+    ReportTestResult(
+      "CPU next/prev register wrap",
+      avd_cpu_next_register(0, 3) == 1 &&
+      avd_cpu_next_register(2, 3) == 0 &&
+      avd_cpu_prev_register(0, 3) == 2 &&
+      avd_cpu_prev_register(2, 3) == 1
+    );
+
+    // Unary math domain guard
+    ReportTestResult(
+      "CPU unary math domain guard",
+      avd_cpu_unary_math_domain(5, 2) == AVD_CPU_MATH_COMPUTE &&
+      avd_cpu_unary_math_domain(1, 2) == AVD_CPU_MATH_NOOP &&
+      avd_cpu_unary_math_domain(-1, 2) == AVD_CPU_MATH_FAULT_NEGATIVE &&
+      avd_cpu_unary_math_domain(1, 1) == AVD_CPU_MATH_COMPUTE &&
+      avd_cpu_unary_math_domain(0, 1) == AVD_CPU_MATH_NOOP
+    );
+
+    // Div/mod guard
+    ReportTestResult(
+      "CPU div guard policy",
+      avd_cpu_div_guard(10, 3, -2147483647) == AVD_CPU_DIV_OK &&
+      avd_cpu_div_guard(10, 0, -2147483647) == AVD_CPU_DIV_ZERO &&
+      avd_cpu_div_guard(-2147483647, -1, -2147483647) == AVD_CPU_DIV_OVERFLOW
+    );
+  }
+};
+
+class cPopulationActionPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cPopulationAction Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "PopulationAction deme-loop start index policy",
+      avd_popaction_deme_loop_start_index(1) == 1 &&
+      avd_popaction_deme_loop_start_index(0) == 0 &&
+      avd_popaction_deme_loop_start_index(2) == 0
+    );
+    ReportTestResult(
+      "PopulationAction seed-deme action policy",
+      avd_popaction_seed_deme_action(1, 0) == AVD_POPACTION_SEED_ACTION_SKIP_AND_COUNT &&
+      avd_popaction_seed_deme_action(1, 1) == AVD_POPACTION_SEED_ACTION_PROCEED &&
+      avd_popaction_seed_deme_action(0, 0) == AVD_POPACTION_SEED_ACTION_PROCEED
+    );
+    ReportTestResult(
+      "PopulationAction cell-end normalization policy",
+      avd_popaction_normalize_cell_end(0, -1) == 1 &&
+      avd_popaction_normalize_cell_end(5, -1) == 6 &&
+      avd_popaction_normalize_cell_end(5, 9) == 9
+    );
+    ReportTestResult(
+      "PopulationAction cell-range validity policy",
+      avd_popaction_is_valid_cell_range(0, 1, 10) == 1 &&
+      avd_popaction_is_valid_cell_range(-1, 1, 10) == 0 &&
+      avd_popaction_is_valid_cell_range(2, 2, 10) == 0 &&
+      avd_popaction_is_valid_cell_range(0, 11, 10) == 0
+    );
+    ReportTestResult(
+      "PopulationAction cell-range-with-stride validity policy",
+      avd_popaction_is_valid_cell_range_with_stride(0, 5, 10, 1) == 1 &&
+      avd_popaction_is_valid_cell_range_with_stride(0, 5, 10, 0) == 0 &&
+      avd_popaction_is_valid_cell_range_with_stride(0, 5, 10, -1) == 0 &&
+      avd_popaction_is_valid_cell_range_with_stride(5, 5, 10, 1) == 0
+    );
+    ReportTestResult(
+      "PopulationAction filename-token requiredness policy",
+      avd_popaction_is_missing_filename_token(0) == 1 &&
+      avd_popaction_is_missing_filename_token(1) == 0 &&
+      avd_popaction_is_missing_filename_token(12) == 0 &&
+      avd_popaction_is_missing_filename_token(-1) == 0
+    );
+    ReportTestResult(
+      "PopulationAction well-mixed cell-count validity policy",
+      avd_popaction_is_valid_well_mixed_cell_count(0, 10) == 1 &&
+      avd_popaction_is_valid_well_mixed_cell_count(10, 10) == 1 &&
+      avd_popaction_is_valid_well_mixed_cell_count(-1, 10) == 0 &&
+      avd_popaction_is_valid_well_mixed_cell_count(11, 10) == 0
+    );
+    ReportTestResult(
+      "PopulationAction group cell-id validity policy",
+      avd_popaction_is_valid_group_cell_id(0, 10) == 1 &&
+      avd_popaction_is_valid_group_cell_id(9, 10) == 1 &&
+      avd_popaction_is_valid_group_cell_id(-1, 10) == 0 &&
+      avd_popaction_is_valid_group_cell_id(10, 10) == 0 &&
+      avd_popaction_is_valid_group_cell_id(0, 0) == 0 &&
+      avd_popaction_is_valid_group_cell_id(7, 10) == avd_popaction_is_valid_single_cell_id(7, 10) &&
+      avd_popaction_is_valid_group_cell_id(10, 10) == avd_popaction_is_valid_single_cell_id(10, 10)
+    );
+    ReportTestResult(
+      "PopulationAction single-cell id validity policy",
+      avd_popaction_is_valid_single_cell_id(0, 10) == 1 &&
+      avd_popaction_is_valid_single_cell_id(9, 10) == 1 &&
+      avd_popaction_is_valid_single_cell_id(-1, 10) == 0 &&
+      avd_popaction_is_valid_single_cell_id(10, 10) == 0 &&
+      avd_popaction_is_valid_single_cell_id(0, 0) == 0
+    );
+    ReportTestResult(
+      "PopulationAction parasite skip gating policy",
+      avd_popaction_should_skip_parasite_injection(1, 0) == 0 &&
+      avd_popaction_should_skip_parasite_injection(1, 1) == 1 &&
+      avd_popaction_should_skip_parasite_injection(0, 1) == 0 &&
+      avd_popaction_should_skip_parasite_injection(2, 3) == 1 &&
+      avd_popaction_should_skip_parasite_injection(1, -1) == 1
+    );
+    ReportTestResult(
+      "PopulationAction parasite filename requiredness policy",
+      avd_popaction_is_missing_parasite_filename_token(0) == 1 &&
+      avd_popaction_is_missing_parasite_filename_token(1) == 0 &&
+      avd_popaction_is_missing_parasite_filename_token(7) == 0 &&
+      avd_popaction_is_missing_parasite_filename_token(-1) == 0
+    );
+    ReportTestResult(
+      "PopulationAction parasite pair filename requiredness policy",
+      avd_popaction_has_missing_parasite_pair_filenames(0, 2) == 1 &&
+      avd_popaction_has_missing_parasite_pair_filenames(2, 0) == 1 &&
+      avd_popaction_has_missing_parasite_pair_filenames(0, 0) == 1 &&
+      avd_popaction_has_missing_parasite_pair_filenames(2, 3) == 0
+    );
+    ReportTestResult(
+      "PopulationAction parasite label requiredness policy",
+      avd_popaction_is_missing_parasite_label_token(0) == 1 &&
+      avd_popaction_is_missing_parasite_label_token(1) == 0 &&
+      avd_popaction_is_missing_parasite_label_token(5) == 0 &&
+      avd_popaction_is_missing_parasite_label_token(-1) == 0
+    );
+    ReportTestResult(
+      "PopulationAction parasite sequence requiredness policy",
+      avd_popaction_is_missing_parasite_sequence_token(0) == 1 &&
+      avd_popaction_is_missing_parasite_sequence_token(1) == 0 &&
+      avd_popaction_is_missing_parasite_sequence_token(8) == 0 &&
+      avd_popaction_is_missing_parasite_sequence_token(-1) == 0
+    );
+    ReportTestResult(
+      "PopulationAction parasite warning selector policy",
+      avd_popaction_parasite_invalid_range_warning_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE &&
+      avd_popaction_parasite_invalid_range_warning_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_SEQUENCE) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE &&
+      avd_popaction_parasite_invalid_range_warning_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_PAIR) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR &&
+      avd_popaction_parasite_invalid_range_warning_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INVALID) == AVD_POPACTION_PARASITE_WARNING_KIND_INVALID &&
+      avd_popaction_parasite_invalid_range_warning_kind(7) == AVD_POPACTION_PARASITE_WARNING_KIND_INVALID
+    );
+    ReportTestResult(
+      "PopulationAction parasite warning short-circuit combiner policy",
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE, 1) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE &&
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_SEQUENCE, 1) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE &&
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_PAIR, 1) == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR &&
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INVALID, 1) == AVD_POPACTION_PARASITE_WARNING_KIND_INVALID &&
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE, 0) == AVD_POPACTION_PARASITE_WARNING_KIND_INVALID &&
+      avd_popaction_parasite_warning_short_circuit_kind(AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_PAIR, 0) == AVD_POPACTION_PARASITE_WARNING_KIND_INVALID
+    );
+    ReportTestResult(
+      "PopulationAction parasite missing-token error selector policy",
+      avd_popaction_parasite_missing_token_error_kind(AVD_POPACTION_PARASITE_MISSING_TOKEN_FILENAME) == AVD_POPACTION_PARASITE_ERROR_KIND_ORGANISM_FILE &&
+      avd_popaction_parasite_missing_token_error_kind(AVD_POPACTION_PARASITE_MISSING_TOKEN_LABEL) == AVD_POPACTION_PARASITE_ERROR_KIND_LABEL &&
+      avd_popaction_parasite_missing_token_error_kind(AVD_POPACTION_PARASITE_MISSING_TOKEN_SEQUENCE) == AVD_POPACTION_PARASITE_ERROR_KIND_SEQUENCE &&
+      avd_popaction_parasite_missing_token_error_kind(AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID) == AVD_POPACTION_PARASITE_ERROR_KIND_INVALID &&
+      avd_popaction_parasite_missing_token_error_kind(9) == AVD_POPACTION_PARASITE_ERROR_KIND_INVALID
+    );
+    ReportTestResult(
+      "PopulationAction parasite missing-token short-circuit combiner policy",
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE, 1, 1, 1) == AVD_POPACTION_PARASITE_MISSING_TOKEN_FILENAME &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE, 0, 1, 0) == AVD_POPACTION_PARASITE_MISSING_TOKEN_LABEL &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_SEQUENCE, 0, 1, 1) == AVD_POPACTION_PARASITE_MISSING_TOKEN_SEQUENCE &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_SEQUENCE, 1, 1, 0) == AVD_POPACTION_PARASITE_MISSING_TOKEN_LABEL &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_PAIR, 1, 0, 0) == AVD_POPACTION_PARASITE_MISSING_TOKEN_FILENAME &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_PAIR, 0, 1, 1) == AVD_POPACTION_PARASITE_MISSING_TOKEN_LABEL &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE, 0, 0, 0) == AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID &&
+      avd_popaction_parasite_missing_token_short_circuit_kind(AVD_POPACTION_PARASITE_MISSING_ACTION_INVALID, 1, 1, 1) == AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID
+    );
+  }
+};
+
+class cPrintActionPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cPrintAction Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "PrintAction instruction filename mode policy",
+      avd_printaction_instruction_filename_mode(0, 0) == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN &&
+      avd_printaction_instruction_filename_mode(1, 0) == AVD_PRINTACTION_FILENAME_MODE_KEEP_PROVIDED &&
+      avd_printaction_instruction_filename_mode(1, 1) == AVD_PRINTACTION_FILENAME_MODE_FORMAT_WITH_INSTSET &&
+      avd_printaction_instruction_filename_mode(0, 1) == AVD_PRINTACTION_FILENAME_MODE_DEFAULT_PLAIN &&
+      avd_printaction_instruction_filename_mode(2, 0) == AVD_PRINTACTION_FILENAME_MODE_KEEP_PROVIDED
+    );
+    ReportTestResult(
+      "PrintAction instruction output sink-selection policy",
+      avd_printaction_instruction_output_sink_kind(0) == AVD_PRINTACTION_OUTPUT_SINK_RECORDER &&
+      avd_printaction_instruction_output_sink_kind(1) == AVD_PRINTACTION_OUTPUT_SINK_RECORDER &&
+      avd_printaction_instruction_output_sink_kind(2) == AVD_PRINTACTION_OUTPUT_SINK_STATS &&
+      avd_printaction_instruction_output_sink_kind(8) == AVD_PRINTACTION_OUTPUT_SINK_STATS &&
+      avd_printaction_instruction_output_sink_kind(-1) == AVD_PRINTACTION_OUTPUT_SINK_INVALID &&
+      avd_printaction_instruction_output_sink_kind(9) == AVD_PRINTACTION_OUTPUT_SINK_INVALID
+    );
+  }
+};
+
+class cPopulationPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cPopulation Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "cPopulation implicit-deme-repro policy",
+      avd_cpop_should_check_implicit_deme_repro(-1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_check_implicit_deme_repro(0) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_check_implicit_deme_repro(1) == AVD_CPOP_DEME_BLOCK_RUN &&
+      avd_cpop_should_check_implicit_deme_repro(2) == AVD_CPOP_DEME_BLOCK_RUN
+    );
+    ReportTestResult(
+      "cPopulation speculative-deme-block policy",
+      avd_cpop_should_run_speculative_deme_block(-1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_speculative_deme_block(0) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_speculative_deme_block(1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_speculative_deme_block(2) == AVD_CPOP_DEME_BLOCK_RUN
+    );
+    ReportTestResult(
+      "cPopulation deme counter-update policy",
+      avd_cpop_should_update_deme_counters(-1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_update_deme_counters(0) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_update_deme_counters(1) == AVD_CPOP_DEME_BLOCK_RUN &&
+      avd_cpop_should_update_deme_counters(2) == AVD_CPOP_DEME_BLOCK_RUN
+    );
+    ReportTestResult(
+      "cPopulation multi-deme block policy",
+      avd_cpop_should_run_multi_deme_block(-1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_multi_deme_block(0) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_multi_deme_block(1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_should_run_multi_deme_block(2) == AVD_CPOP_DEME_BLOCK_RUN
+    );
+    ReportTestResult(
+      "cPopulation speculative/multi-deme alignment policy",
+      avd_cpop_should_run_speculative_deme_block(-1) == avd_cpop_should_run_multi_deme_block(-1) &&
+      avd_cpop_should_run_speculative_deme_block(0) == avd_cpop_should_run_multi_deme_block(0) &&
+      avd_cpop_should_run_speculative_deme_block(1) == avd_cpop_should_run_multi_deme_block(1) &&
+      avd_cpop_should_run_speculative_deme_block(2) == avd_cpop_should_run_multi_deme_block(2)
+    );
+    ReportTestResult(
+      "cPopulation deme-routing short-circuit combiner policy",
+      avd_cpop_deme_routing_short_circuit_kind(AVD_CPOP_ROUTING_MODE_PROCESS_STEP, -1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_deme_routing_short_circuit_kind(AVD_CPOP_ROUTING_MODE_PROCESS_STEP, 1) == AVD_CPOP_DEME_BLOCK_RUN &&
+      avd_cpop_deme_routing_short_circuit_kind(AVD_CPOP_ROUTING_MODE_SPECULATIVE_STEP, 1) == AVD_CPOP_DEME_BLOCK_SKIP &&
+      avd_cpop_deme_routing_short_circuit_kind(AVD_CPOP_ROUTING_MODE_SPECULATIVE_STEP, 2) == AVD_CPOP_DEME_BLOCK_RUN &&
+      avd_cpop_deme_routing_short_circuit_kind(AVD_CPOP_ROUTING_MODE_INVALID, 2) == AVD_CPOP_DEME_BLOCK_SKIP
+    );
+
+    // Pred/prey tracking gate
+    ReportTestResult(
+      "cPopulation pred/prey tracking active policy",
+      avd_cpop_is_pred_prey_tracking_active(-2) == 1 &&
+      avd_cpop_is_pred_prey_tracking_active(0) == 1 &&
+      avd_cpop_is_pred_prey_tracking_active(5) == 1 &&
+      avd_cpop_is_pred_prey_tracking_active(-1) == 0 &&
+      avd_cpop_is_pred_prey_tracking_active(-3) == 0
+    );
+
+    // Forager type classification
+    ReportTestResult(
+      "cPopulation forager type classification policy",
+      avd_cpop_forager_type_kind(1, 0) == AVD_CPOP_FORAGER_TYPE_PREY &&
+      avd_cpop_forager_type_kind(1, 1) == AVD_CPOP_FORAGER_TYPE_PREY &&
+      avd_cpop_forager_type_kind(0, 1) == AVD_CPOP_FORAGER_TYPE_TOP_PRED &&
+      avd_cpop_forager_type_kind(0, 0) == AVD_CPOP_FORAGER_TYPE_PRED
+    );
+
+    // Deadly boundary detection
+    ReportTestResult(
+      "cPopulation deadly boundary edge detection",
+      avd_cpop_is_deadly_boundary(1, 1, 0, 5, 10, 10) == 1 &&
+      avd_cpop_is_deadly_boundary(1, 1, 5, 0, 10, 10) == 1 &&
+      avd_cpop_is_deadly_boundary(1, 1, 9, 5, 10, 10) == 1 &&
+      avd_cpop_is_deadly_boundary(1, 1, 5, 9, 10, 10) == 1 &&
+      avd_cpop_is_deadly_boundary(1, 1, 5, 5, 10, 10) == 0
+    );
+    ReportTestResult(
+      "cPopulation deadly boundary disabled guard",
+      avd_cpop_is_deadly_boundary(0, 1, 0, 0, 10, 10) == 0 &&
+      avd_cpop_is_deadly_boundary(1, 2, 0, 0, 10, 10) == 0
+    );
+
+    // Prey target exclusion
+    ReportTestResult(
+      "cPopulation valid prey target policy",
+      avd_cpop_is_valid_prey_target(0, -5) == 1 &&
+      avd_cpop_is_valid_prey_target(-1, -1) == 1 &&
+      avd_cpop_is_valid_prey_target(-1, -2) == 0 &&
+      avd_cpop_is_valid_prey_target(-2, 0) == 0
+    );
+
+    // Merit bonus gate
+    ReportTestResult(
+      "cPopulation merit bonus enabled policy",
+      avd_cpop_is_merit_bonus_enabled(-1) == 0 &&
+      avd_cpop_is_merit_bonus_enabled(0) == 1 &&
+      avd_cpop_is_merit_bonus_enabled(5) == 1
+    );
+  }
+};
+
+class cAnalyzePolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cAnalyze Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    ReportTestResult(
+      "Analyze relation mask equals policy",
+      avd_analyze_relation_mask("==") == AVD_ANALYZE_REL_MASK_EQUAL
+    );
+    ReportTestResult(
+      "Analyze relation mask not-equals policy",
+      avd_analyze_relation_mask("!=") == (AVD_ANALYZE_REL_MASK_LESS | AVD_ANALYZE_REL_MASK_GREATER)
+    );
+    ReportTestResult(
+      "Analyze relation mask boundary policies",
+      avd_analyze_relation_mask("<") == AVD_ANALYZE_REL_MASK_LESS &&
+      avd_analyze_relation_mask(">") == AVD_ANALYZE_REL_MASK_GREATER &&
+      avd_analyze_relation_mask("<=") == (AVD_ANALYZE_REL_MASK_LESS | AVD_ANALYZE_REL_MASK_EQUAL) &&
+      avd_analyze_relation_mask(">=") == (AVD_ANALYZE_REL_MASK_EQUAL | AVD_ANALYZE_REL_MASK_GREATER)
+    );
+    ReportTestResult(
+      "Analyze relation mask invalid/null guard",
+      avd_analyze_relation_mask("~=") == -1 &&
+      avd_analyze_relation_mask(NULL) == -1
+    );
+    ReportTestResult(
+      "Analyze html extension policy",
+      avd_analyze_is_html_extension("html") == 1 &&
+      avd_analyze_is_html_extension("txt") == 0 &&
+      avd_analyze_is_html_extension("HTML") == 0
+    );
+    ReportTestResult(
+      "Analyze html extension null guard",
+      avd_analyze_is_html_extension(NULL) == 0
+    );
+    ReportTestResult(
+      "Analyze html filename-token policy",
+      avd_analyze_is_html_filename_token("html") == 1 &&
+      avd_analyze_is_html_filename_token("txt") == 0 &&
+      avd_analyze_is_html_filename_token("HTML") == 0
+    );
+    ReportTestResult(
+      "Analyze html filename-token null guard",
+      avd_analyze_is_html_filename_token(NULL) == 0
+    );
+    ReportTestResult(
+      "Analyze output file-type resolution short-circuit kind policy",
+      avd_analyze_output_file_type_short_circuit_kind(0) == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_KEEP_CURRENT &&
+      avd_analyze_output_file_type_short_circuit_kind(1) == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML &&
+      avd_analyze_output_file_type_short_circuit_kind(2) == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML &&
+      avd_analyze_output_file_type_short_circuit_kind(-1) == AVD_ANALYZE_OUTPUT_FILE_TYPE_KIND_HTML
+    );
+    ReportTestResult(
+      "Analyze output sink-selection short-circuit kind policy",
+      avd_analyze_output_sink_short_circuit_kind(0) == AVD_ANALYZE_OUTPUT_SINK_KIND_FILE &&
+      avd_analyze_output_sink_short_circuit_kind(1) == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT &&
+      avd_analyze_output_sink_short_circuit_kind(2) == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT &&
+      avd_analyze_output_sink_short_circuit_kind(-1) == AVD_ANALYZE_OUTPUT_SINK_KIND_COUT
+    );
+    ReportTestResult(
+      "Analyze output file-handle mode short-circuit kind policy",
+      avd_analyze_output_file_handle_mode_short_circuit_kind(AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL) == AVD_ANALYZE_OUTPUT_HANDLE_MODE_CREATE &&
+      avd_analyze_output_file_handle_mode_short_circuit_kind(AVD_ANALYZE_OUTPUT_HANDLE_ACTION_DETAIL_TIMELINE) == AVD_ANALYZE_OUTPUT_HANDLE_MODE_STATIC &&
+      avd_analyze_output_file_handle_mode_short_circuit_kind(AVD_ANALYZE_OUTPUT_HANDLE_ACTION_HISTOGRAM) == AVD_ANALYZE_OUTPUT_HANDLE_MODE_STATIC &&
+      avd_analyze_output_file_handle_mode_short_circuit_kind(AVD_ANALYZE_OUTPUT_HANDLE_ACTION_INVALID) == AVD_ANALYZE_OUTPUT_HANDLE_MODE_INVALID &&
+      avd_analyze_output_file_handle_mode_short_circuit_kind(3) == AVD_ANALYZE_OUTPUT_HANDLE_MODE_INVALID
+    );
+    ReportTestResult(
+      "Analyze output token-presence short-circuit kind policy",
+      avd_analyze_output_token_presence_short_circuit_kind(0) == AVD_ANALYZE_OUTPUT_TOKEN_ABSENT &&
+      avd_analyze_output_token_presence_short_circuit_kind(1) == AVD_ANALYZE_OUTPUT_TOKEN_PRESENT &&
+      avd_analyze_output_token_presence_short_circuit_kind(2) == AVD_ANALYZE_OUTPUT_TOKEN_PRESENT &&
+      avd_analyze_output_token_presence_short_circuit_kind(-1) == AVD_ANALYZE_OUTPUT_TOKEN_PRESENT
+    );
+    ReportTestResult(
+      "Analyze file type token policy",
+      avd_analyze_apply_file_type_token_policy(0, 0, 30, 10, 20) == 30 &&
+      avd_analyze_apply_file_type_token_policy(1, 0, 30, 10, 20) == 10 &&
+      avd_analyze_apply_file_type_token_policy(0, 1, 30, 10, 20) == 20 &&
+      avd_analyze_apply_file_type_token_policy(1, 1, 30, 10, 20) == 20
+    );
+    ReportTestResult(
+      "Analyze file type token short-circuit kind policy",
+      avd_analyze_file_type_token_short_circuit_kind(0, 0) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_INVALID &&
+      avd_analyze_file_type_token_short_circuit_kind(1, 0) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_TEXT &&
+      avd_analyze_file_type_token_short_circuit_kind(0, 1) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML &&
+      avd_analyze_file_type_token_short_circuit_kind(1, 1) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML &&
+      avd_analyze_file_type_token_short_circuit_kind(2, 0) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_TEXT &&
+      avd_analyze_file_type_token_short_circuit_kind(0, -1) == AVD_ANALYZE_FILE_TYPE_TOKEN_KIND_HTML
+    );
+  }
+};
+class cStatsPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cStats Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    // Dual task filename classification
+    ReportTestResult(
+      "Stats dual task filename positive",
+      avd_stats_is_dual_task_filename("tasksq.dat") == 1
+    );
+    ReportTestResult(
+      "Stats dual task filename negative",
+      avd_stats_is_dual_task_filename("tasks.dat") == 0 &&
+      avd_stats_is_dual_task_filename("taskquality.dat") == 0 &&
+      avd_stats_is_dual_task_filename("") == 0 &&
+      avd_stats_is_dual_task_filename(NULL) == 0
+    );
+    ReportTestResult(
+      "Stats dual internal task filename positive",
+      avd_stats_is_dual_internal_task_filename("in_tasksq.dat") == 1
+    );
+    ReportTestResult(
+      "Stats dual internal task filename negative",
+      avd_stats_is_dual_internal_task_filename("in_tasks.dat") == 0 &&
+      avd_stats_is_dual_internal_task_filename("tasksq.dat") == 0 &&
+      avd_stats_is_dual_internal_task_filename(NULL) == 0
+    );
+
+    // Spatial resource geometry classification
+    ReportTestResult(
+      "Stats spatial resource excludes GLOBAL and PARTIAL",
+      avd_stats_is_spatial_resource(0) == 0 &&  // GLOBAL
+      avd_stats_is_spatial_resource(5) == 0      // PARTIAL
+    );
+    ReportTestResult(
+      "Stats spatial resource includes all spatial geometries",
+      avd_stats_is_spatial_resource(1) == 1 &&  // GRID
+      avd_stats_is_spatial_resource(2) == 1 &&  // TORUS
+      avd_stats_is_spatial_resource(3) == 1 &&  // CLIQUE
+      avd_stats_is_spatial_resource(4) == 1 &&  // HEX
+      avd_stats_is_spatial_resource(6) == 1 &&  // LATTICE
+      avd_stats_is_spatial_resource(7) == 1 &&  // RANDOM_CONNECTED
+      avd_stats_is_spatial_resource(8) == 1     // SCALE_FREE
+    );
+
+    // Task quality average
+    ReportTestResult(
+      "Stats task quality average normal",
+      avd_stats_task_quality_average(10.0, 5) == 2.0
+    );
+    ReportTestResult(
+      "Stats task quality average zero count",
+      avd_stats_task_quality_average(10.0, 0) == 0.0 &&
+      avd_stats_task_quality_average(0.0, 0) == 0.0
+    );
+    ReportTestResult(
+      "Stats task quality average negative count guard",
+      avd_stats_task_quality_average(10.0, -1) == 0.0
+    );
+
+    // Wall gradient resource classification
+    ReportTestResult(
+      "Stats wall gradient positive",
+      avd_stats_is_wall_gradient(1, 2) == 1
+    );
+    ReportTestResult(
+      "Stats wall gradient negative",
+      avd_stats_is_wall_gradient(0, 2) == 0 &&
+      avd_stats_is_wall_gradient(1, 0) == 0 &&
+      avd_stats_is_wall_gradient(1, 3) == 0 &&
+      avd_stats_is_wall_gradient(0, 0) == 0
+    );
+
+    // Den habitat classification
+    ReportTestResult(
+      "Stats den habitat positive",
+      avd_stats_is_den_habitat(3) == 1 &&
+      avd_stats_is_den_habitat(4) == 1
+    );
+    ReportTestResult(
+      "Stats den habitat negative",
+      avd_stats_is_den_habitat(0) == 0 &&
+      avd_stats_is_den_habitat(1) == 0 &&
+      avd_stats_is_den_habitat(2) == 0 &&
+      avd_stats_is_den_habitat(5) == 0 &&
+      avd_stats_is_den_habitat(-1) == 0
+    );
+  }
+};
+
+class cEnvironmentPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cEnvironment Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    // Process type classification parity
+    ReportTestResult(
+      "Env process type known values",
+      avd_env_process_type("add") == AVD_ENV_PROCTYPE_ADD &&
+      avd_env_process_type("mult") == AVD_ENV_PROCTYPE_MULT &&
+      avd_env_process_type("pow") == AVD_ENV_PROCTYPE_POW &&
+      avd_env_process_type("lin") == AVD_ENV_PROCTYPE_LIN &&
+      avd_env_process_type("energy") == AVD_ENV_PROCTYPE_ENERGY &&
+      avd_env_process_type("enzyme") == AVD_ENV_PROCTYPE_ENZYME &&
+      avd_env_process_type("exp") == AVD_ENV_PROCTYPE_EXP
+    );
+    ReportTestResult(
+      "Env process type nReaction enum parity",
+      AVD_ENV_PROCTYPE_ADD == 0 &&
+      AVD_ENV_PROCTYPE_MULT == 1 &&
+      AVD_ENV_PROCTYPE_POW == 2 &&
+      AVD_ENV_PROCTYPE_LIN == 3 &&
+      AVD_ENV_PROCTYPE_ENERGY == 4 &&
+      AVD_ENV_PROCTYPE_ENZYME == 5 &&
+      AVD_ENV_PROCTYPE_EXP == 6
+    );
+    ReportTestResult(
+      "Env process type unknown and null guard",
+      avd_env_process_type("subtract") == AVD_ENV_PROCTYPE_UNKNOWN &&
+      avd_env_process_type("") == AVD_ENV_PROCTYPE_UNKNOWN &&
+      avd_env_process_type(NULL) == AVD_ENV_PROCTYPE_UNKNOWN
+    );
+    ReportTestResult(
+      "Env process type case sensitivity",
+      avd_env_process_type("ADD") == AVD_ENV_PROCTYPE_UNKNOWN &&
+      avd_env_process_type("Mult") == AVD_ENV_PROCTYPE_UNKNOWN
+    );
+
+    // PhenPlast bonus method classification parity
+    ReportTestResult(
+      "Env phenplast bonus known values",
+      avd_env_phenplast_bonus_method("default") == AVD_ENV_PHENPLAST_DEFAULT &&
+      avd_env_phenplast_bonus_method("nobonus") == AVD_ENV_PHENPLAST_NO_BONUS &&
+      avd_env_phenplast_bonus_method("fracbonus") == AVD_ENV_PHENPLAST_FRAC_BONUS &&
+      avd_env_phenplast_bonus_method("fullbonus") == AVD_ENV_PHENPLAST_FULL_BONUS
+    );
+    ReportTestResult(
+      "Env phenplast bonus ePHENPLAST enum parity",
+      AVD_ENV_PHENPLAST_DEFAULT == 0 &&
+      AVD_ENV_PHENPLAST_NO_BONUS == 1 &&
+      AVD_ENV_PHENPLAST_FRAC_BONUS == 2 &&
+      AVD_ENV_PHENPLAST_FULL_BONUS == 3
+    );
+    ReportTestResult(
+      "Env phenplast bonus unknown and null guard",
+      avd_env_phenplast_bonus_method("halfbonus") == AVD_ENV_PHENPLAST_UNKNOWN &&
+      avd_env_phenplast_bonus_method("") == AVD_ENV_PHENPLAST_UNKNOWN &&
+      avd_env_phenplast_bonus_method(NULL) == AVD_ENV_PHENPLAST_UNKNOWN
+    );
+
+    // Reaction entry type classification parity
+    ReportTestResult(
+      "Env reaction entry type known values",
+      avd_env_reaction_entry_type("process") == AVD_ENV_ENTRY_TYPE_PROCESS &&
+      avd_env_reaction_entry_type("requisite") == AVD_ENV_ENTRY_TYPE_REQUISITE &&
+      avd_env_reaction_entry_type("context_requisite") == AVD_ENV_ENTRY_TYPE_CONTEXT_REQUISITE
+    );
+    ReportTestResult(
+      "Env reaction entry type unknown and null guard",
+      avd_env_reaction_entry_type("trigger") == AVD_ENV_ENTRY_TYPE_UNKNOWN &&
+      avd_env_reaction_entry_type("") == AVD_ENV_ENTRY_TYPE_UNKNOWN &&
+      avd_env_reaction_entry_type(NULL) == AVD_ENV_ENTRY_TYPE_UNKNOWN
+    );
+    ReportTestResult(
+      "Env reaction entry type case sensitivity",
+      avd_env_reaction_entry_type("PROCESS") == AVD_ENV_ENTRY_TYPE_UNKNOWN &&
+      avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
+    );
+  }
+};
 
 
 #define TEST(CLASS) \
@@ -1905,7 +3073,15 @@ int main(int argc, const char* argv[])
   TEST(cResourceHistoryHelper);
   TEST(cSpatialResCountHelper);
   TEST(cEventListParsingHelper);
-  
+  TEST(cTaskLibRewardHelper);
+  TEST(cHardwareCPUDispatchPolicyHelper);
+  TEST(cPopulationActionPolicyHelper);
+  TEST(cPrintActionPolicyHelper);
+  TEST(cPopulationPolicyHelper);
+  TEST(cAnalyzePolicyHelper);
+  TEST(cEnvironmentPolicyHelper);
+  TEST(cStatsPolicyHelper);
+
   if (failed == 0)
     cout << "All unit tests passed." << endl;
   else

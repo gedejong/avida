@@ -11,6 +11,8 @@ from typing import Dict, List, Tuple
 
 BASELINES_NS: Dict[str, float] = {
     "resource_scheduling_helpers/num_steps+remainder_pipeline": 53_402.540,
+    "resource_update_dispatch_helpers/mixed_geometry_dispatch_pipeline": 9_218.728,
+    "cpu_dispatch_helpers/dispatch_family_and_counted_opcode": 14_167.329,
     "provider_id_helpers/classify_standard": 22.438,
     "provider_id_helpers/classify_argumented_with_outputs": 205.364,
     "provider_id_helpers/classify_malformed": 26.152,

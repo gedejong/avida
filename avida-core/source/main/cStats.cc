@@ -46,6 +46,8 @@
 #include "cReaction.h"
 #include "cEventList.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
@@ -1203,9 +1205,9 @@ void cStats::PrintThreadsData(const cString& filename)
 void cStats::PrintTasksData(const cString& filename)
 {
 	cString file = filename;
-  
+
 	// flag to print both tasks.dat and taskquality.dat
-	if (filename == "tasksq.dat")
+	if (avd_stats_is_dual_task_filename((const char*)filename))
 	{
 		file = "tasks.dat";
 		PrintTasksQualData("taskquality.dat");
@@ -1304,9 +1306,9 @@ void cStats::PrintSoloTaskSnapshot(const cString& filename, cAvidaContext& ctx)
 void cStats::PrintHostTasksData(const cString& filename)
 {
 	cString file = filename;
-  
+
 	// flag to print both tasks.dat and taskquality.dat
-	if (filename == "tasksq.dat")
+	if (avd_stats_is_dual_task_filename((const char*)filename))
 	{
 		file = "host_tasks.dat";
 	}
@@ -1328,9 +1330,9 @@ void cStats::PrintHostTasksData(const cString& filename)
 void cStats::PrintParasiteTasksData(const cString& filename)
 {
 	cString file = filename;
-  
+
 	// flag to print both tasks.dat and taskquality.dat
-	if (filename == "tasksq.dat")
+	if (avd_stats_is_dual_task_filename((const char*)filename))
 	{
 		file = "parasite_tasks.dat";
 	}
@@ -1375,9 +1377,7 @@ void cStats::PrintTasksQualData(const cString& filename)
   df->WriteComment("First column gives the current update, rest give average and max task quality");
   df->Write(m_update, "Update");
   for(int i = 0; i < task_last_count.GetSize(); i++) {
-    double qual = 0.0;
-    if (task_last_count[i] > 0)
-      qual = task_last_quality[i] / static_cast<double>(task_last_count[i]);
+    double qual = avd_stats_task_quality_average(task_last_quality[i], task_last_count[i]);
     df->Write(qual, task_names[i] + " Average");
     df->Write(task_last_max_quality[i], task_names[i] + " Max");
   }
@@ -1565,7 +1565,7 @@ void cStats::PrintResourceData(const cString& filename, cString maps)
   // maps for each spatial resource
   
   for (int i = 0; i < resource_count.GetSize(); i++) {
-    if (resource_geometry[i] != nGeometry::GLOBAL && resource_geometry[i] != nGeometry::PARTIAL) {
+    if (avd_stats_is_spatial_resource(resource_geometry[i])) {
       double sum_spa_resource = 0;
       for (int j = 0; j < spatial_res_count[i].GetSize(); j++) {
         sum_spa_resource += spatial_res_count[i][j];
@@ -1615,7 +1615,7 @@ void cStats::PrintResWallLocData(const cString& filename, cAvidaContext& ctx)
   
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
   for (int i = 0; i < resLib.GetSize(); i++) {
-    if (resLib.GetResource(i)->GetGradient() && resLib.GetResource(i)->GetHabitat() == 2) {
+    if (avd_stats_is_wall_gradient(resLib.GetResource(i)->GetGradient() ? 1 : 0, resLib.GetResource(i)->GetHabitat())) {
       Apto::Array<int>& cells = *(m_world->GetPopulation().GetWallCells(i));
       for (int i = 0; i < cells.GetSize() - 1; i++) {
         fp << cells[i] << ",";
@@ -1782,7 +1782,7 @@ void cStats::PrintInternalTasksData(const cString& filename)
 	cString file = filename;
   
 	// flag to print both in_tasks.dat and in_taskquality.dat
-	if (filename == "in_tasksq.dat")
+	if (avd_stats_is_dual_internal_task_filename((const char*)filename))
 	{
 		file = "in_tasks.dat";
 		PrintInternalTasksQualData("in_taskquality.dat");
@@ -1813,9 +1813,7 @@ void cStats::PrintInternalTasksQualData(const cString& filename)
   df->WriteComment("for those tasks performed using internal resources");
   df->Write(m_update, "Update");
   for(int i = 0; i < task_internal_last_count.GetSize(); i++) {
-    double qual = 0.0;
-    if (task_internal_last_count[i] > 0)
-      qual = task_internal_last_quality[i] / static_cast<double>(task_internal_last_count[i]);
+    double qual = avd_stats_task_quality_average(task_internal_last_quality[i], task_internal_last_count[i]);
     df->Write(qual, task_names[i] + " Average");
     df->Write(task_internal_last_max_quality[i], task_names[i] + " Max");
   }
@@ -4549,7 +4547,7 @@ void cStats::PrintDenData(const cString& filename) {
     
     bool is_active = false;
     for (int j = 0; j < cell_res.GetSize(); j++) {
-      if ((resource_lib.GetResource(j)->GetHabitat() == 4 || resource_lib.GetResource(j)->GetHabitat() == 3) && cell_res[j] > 0) {
+      if (avd_stats_is_den_habitat(resource_lib.GetResource(j)->GetHabitat()) && cell_res[j] > 0) {
         Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
         for (int k = 0; k < cell_avs.GetSize(); k++) {
           if (cell_avs[k]->GetPhenotype().GetTimeUsed() < juv_age) {

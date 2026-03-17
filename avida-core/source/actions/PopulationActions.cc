@@ -50,6 +50,7 @@
 #include "cEnvironment.h"
 #include "cUserFeedback.h"
 #include "cArgSchema.h"
+#include "rust/running_stats_ffi.h"
 
 #include <algorithm>
 #include <iterator>
@@ -106,9 +107,13 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       m_world->GetDriver().Abort(AbortCondition::IO_ERROR);
+    }
+    if (avd_popaction_is_valid_single_cell_id(m_cell_id, m_world->GetPopulation().GetSize()) == 0) {
+      ctx.Driver().Feedback().Warning("Inject has invalid cell id!");
+      return;
     }
     GenomePtr genome;
     cUserFeedback feedback;
@@ -247,6 +252,10 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
+    if (avd_popaction_is_valid_single_cell_id(m_cell_id, m_world->GetPopulation().GetSize()) == 0) {
+      ctx.Driver().Feedback().Warning("InjectRandom has invalid cell id!");
+      return;
+    }
     const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
     HashPropertyMap props;
     cHardwareManager::SetupPropertyMap(props, (const char*)is.GetInstSetName());
@@ -375,7 +384,7 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       return;
     }
@@ -434,19 +443,19 @@ public:
     if (largs.GetSize()) m_lineage_label = largs.PopWord().AsInt();
     if (largs.GetSize()) m_neutral_metric = largs.PopWord().AsDouble();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string fname> [int cell_start=0] [int cell_end=-1] [double merit=-1] [int lineage_label=0] [double neutral_metric=0]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       return;
     }
     
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end) {
+    if (avd_popaction_is_valid_cell_range(m_cell_start, m_cell_end, m_world->GetPopulation().GetSize()) == 0) {
       ctx.Driver().Feedback().Warning("InjectRange has invalid range!");
     } else {
       GenomePtr genome;
@@ -508,14 +517,14 @@ public:
     if (largs.GetSize()) m_lineage_label = largs.PopWord().AsInt();
     if (largs.GetSize()) m_neutral_metric = largs.PopWord().AsDouble();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string sequence> [int cell_start=0] [int cell_end=-1] [double merit=-1] [int lineage_label=0] [double neutral_metric=0]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end) {
+    if (avd_popaction_is_valid_cell_range(m_cell_start, m_cell_end, m_world->GetPopulation().GetSize()) == 0) {
       ctx.Driver().Feedback().Warning("InjectSequence has invalid range!");
     } else {
       const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
@@ -570,12 +579,12 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       return;
     }
     
-    if (m_cell_num < 0 || m_cell_num > m_world->GetPopulation().GetSize()) {
+    if (avd_popaction_is_valid_well_mixed_cell_count(m_cell_num, m_world->GetPopulation().GetSize()) == 0) {
       ctx.Driver().Feedback().Warning("InjectWellMixed has invalid range!");
     } else {
       GenomePtr genome;
@@ -652,14 +661,14 @@ public:
     if (largs.GetSize()) m_lineage_label = largs.PopWord().AsInt();
     if (largs.GetSize()) m_neutral_metric = largs.PopWord().AsDouble();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string sequence> [int cell_start=0] [int cell_end=-1] [double div_mut_rate=0] [double merit=-1] [int lineage_label=0] [double neutral_metric=0]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end) {
+    if (avd_popaction_is_valid_cell_range(m_cell_start, m_cell_end, m_world->GetPopulation().GetSize()) == 0) {
       ctx.Driver().Feedback().Warning("InjectSequenceWithDivMutRate has invalid range!");
     } else {
       const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
@@ -708,8 +717,13 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
+      return;
+    }
+
+    if (avd_popaction_is_valid_single_cell_id(m_cell_id, m_world->GetPopulation().GetSize()) == 0) {
+      ctx.Driver().Feedback().Warning("InjectGroup has invalid cell id!");
       return;
     }
     
@@ -767,19 +781,52 @@ public:
     if (largs.GetSize()) m_cell_stride = largs.PopWord().AsInt();
     if (largs.GetSize()) m_only_if_parasites_extinct = largs.PopWord().AsInt();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string filename> <string label> [int cell_start=0] [int cell_end=-1] [int cell_stride=1] [int only_if_parasites_extinct=0]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_only_if_parasites_extinct && m_world->GetStats().GetNumParasites()) {
+    const int missing_token_kind = avd_popaction_parasite_missing_token_short_circuit_kind(
+      AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE,
+      avd_popaction_is_missing_parasite_filename_token(m_filename.GetSize()),
+      avd_popaction_is_missing_parasite_label_token(m_label.GetSize()),
+      0
+    );
+    if (missing_token_kind != AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID) {
+      const int error_kind = avd_popaction_parasite_missing_token_error_kind(missing_token_kind);
+      cerr << (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_ORGANISM_FILE
+        ? "error: no organism file specified"
+        : (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_SEQUENCE
+          ? "error: no parasite sequence specified"
+          : "error: no parasite label specified"))
+        << endl;
       return;
     }
 
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end || m_cell_stride <= 0) {
-      ctx.Driver().Feedback().Warning("InjectParasite has invalid range!");
+    if (avd_popaction_should_skip_parasite_injection(
+          m_only_if_parasites_extinct,
+          m_world->GetStats().GetNumParasites()
+        ) != 0) {
+      return;
+    }
+
+    const int warning_kind = avd_popaction_parasite_warning_short_circuit_kind(
+      AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE,
+      avd_popaction_is_valid_cell_range_with_stride(
+        m_cell_start,
+        m_cell_end,
+        m_world->GetPopulation().GetSize(),
+        m_cell_stride
+      ) == 0
+    );
+    if (warning_kind != AVD_POPACTION_PARASITE_WARNING_KIND_INVALID) {
+      ctx.Driver().Feedback().Warning(
+        warning_kind == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR
+          ? "InjectParasitePair has invalid range!"
+          : "InjectParasite has invalid range!"
+      );
     } else {
       GenomePtr genome;
       cUserFeedback feedback;
@@ -819,15 +866,44 @@ public:
     if (largs.GetSize()) m_cell_start = largs.PopWord().AsInt();
     if (largs.GetSize()) m_cell_end = largs.PopWord().AsInt();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string sequence> [int cell_start=0] [int cell_end=-1]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end) {
-      ctx.Driver().Feedback().Warning("InjectParasite has invalid range!");
+    const int missing_token_kind = avd_popaction_parasite_missing_token_short_circuit_kind(
+      AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_SEQUENCE,
+      0,
+      avd_popaction_is_missing_parasite_label_token(m_label.GetSize()),
+      avd_popaction_is_missing_parasite_sequence_token(m_sequence.GetSize())
+    );
+    if (missing_token_kind != AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID) {
+      const int error_kind = avd_popaction_parasite_missing_token_error_kind(missing_token_kind);
+      cerr << (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_ORGANISM_FILE
+        ? "error: no organism file specified"
+        : (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_SEQUENCE
+          ? "error: no parasite sequence specified"
+          : "error: no parasite label specified"))
+        << endl;
+      return;
+    }
+
+    const int warning_kind = avd_popaction_parasite_warning_short_circuit_kind(
+      AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_SEQUENCE,
+      avd_popaction_is_valid_cell_range(
+        m_cell_start,
+        m_cell_end,
+        m_world->GetPopulation().GetSize()
+      ) == 0
+    );
+    if (warning_kind != AVD_POPACTION_PARASITE_WARNING_KIND_INVALID) {
+      ctx.Driver().Feedback().Warning(
+        warning_kind == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR
+          ? "InjectParasitePair has invalid range!"
+          : "InjectParasite has invalid range!"
+      );
     } else {
       cUserFeedback feedback;
       const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
@@ -892,15 +968,47 @@ public:
     if (largs.GetSize()) m_lineage_label = largs.PopWord().AsInt();
     if (largs.GetSize()) m_neutral_metric = largs.PopWord().AsDouble();
     
-    if (m_cell_end == -1) m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
   
   static const cString GetDescription() { return "Arguments: <string filename_genome> <string filename_parasite> <string label> [int cell_start=0] [int cell_end=-1] [double merit=-1] [int lineage_label=0] [double neutral_metric=0]"; }
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end) {
-      ctx.Driver().Feedback().Warning("InjectParasitePair has invalid range!");
+    const int missing_token_kind = avd_popaction_parasite_missing_token_short_circuit_kind(
+      AVD_POPACTION_PARASITE_MISSING_ACTION_INJECT_PARASITE_PAIR,
+      avd_popaction_has_missing_parasite_pair_filenames(
+        m_filename_genome.GetSize(),
+        m_filename_parasite.GetSize()
+      ),
+      avd_popaction_is_missing_parasite_label_token(m_label.GetSize()),
+      0
+    );
+    if (missing_token_kind != AVD_POPACTION_PARASITE_MISSING_TOKEN_INVALID) {
+      const int error_kind = avd_popaction_parasite_missing_token_error_kind(missing_token_kind);
+      cerr << (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_ORGANISM_FILE
+        ? "error: no organism file specified"
+        : (error_kind == AVD_POPACTION_PARASITE_ERROR_KIND_SEQUENCE
+          ? "error: no parasite sequence specified"
+          : "error: no parasite label specified"))
+        << endl;
+      return;
+    }
+
+    const int warning_kind = avd_popaction_parasite_warning_short_circuit_kind(
+      AVD_POPACTION_PARASITE_WARNING_ACTION_INJECT_PARASITE_PAIR,
+      avd_popaction_is_valid_cell_range(
+        m_cell_start,
+        m_cell_end,
+        m_world->GetPopulation().GetSize()
+      ) == 0
+    );
+    if (warning_kind != AVD_POPACTION_PARASITE_WARNING_KIND_INVALID) {
+      ctx.Driver().Feedback().Warning(
+        warning_kind == AVD_POPACTION_PARASITE_WARNING_KIND_INJECT_PARASITE_PAIR
+          ? "InjectParasitePair has invalid range!"
+          : "InjectParasite has invalid range!"
+      );
     } else {
       GenomePtr genome, parasite;
       cUserFeedback feedback;
@@ -961,7 +1069,7 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       return;
     }
@@ -978,8 +1086,9 @@ public:
       cerr << feedback.GetMessage(i) << endl;
     }
     if (!genome) return;
-    if(m_world->GetConfig().ENERGY_ENABLED.Get() == 1) {
-      for(int i=1; i<m_world->GetPopulation().GetNumDemes(); ++i) {  // first org has already been injected
+    const int energy_enabled = m_world->GetConfig().ENERGY_ENABLED.Get();
+    if(energy_enabled == 1) {
+      for(int i=avd_popaction_deme_loop_start_index(energy_enabled); i<m_world->GetPopulation().GetNumDemes(); ++i) {  // first org has already been injected
         m_world->GetPopulation().Inject(*genome, Systematics::Source(Systematics::DIVISION, "", true), ctx,
                                         m_world->GetPopulation().GetDeme(i).GetCellID(0),
                                         m_merit, m_lineage_label, m_neutral_metric); 
@@ -1037,7 +1146,7 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    if (m_filename.GetSize() == 0) {
+    if (avd_popaction_is_missing_filename_token(m_filename.GetSize()) != 0) {
       cerr << "error: no organism file specified" << endl;
       return;
     }
@@ -1054,8 +1163,9 @@ public:
       cerr << feedback.GetMessage(i) << endl;
     }
     if (!genome) return;
-    if(m_world->GetConfig().ENERGY_ENABLED.Get() == 1) {
-      for(int i=1; i<m_world->GetPopulation().GetNumDemes(); ++i) {  // first org has already been injected
+    const int energy_enabled = m_world->GetConfig().ENERGY_ENABLED.Get();
+    if(energy_enabled == 1) {
+      for(int i=avd_popaction_deme_loop_start_index(energy_enabled); i<m_world->GetPopulation().GetNumDemes(); ++i) {  // first org has already been injected
         if (i % m_mod_num == 0) {
           m_world->GetPopulation().Inject(*genome, Systematics::Source(Systematics::DIVISION, "", true), ctx,
                                           m_world->GetPopulation().GetDeme(i).GetCellID(0),
@@ -1134,8 +1244,10 @@ public:
       // is the first injection and energy is used, increment the injected
       // count (the initial injection wasn't counted) and skip the first deme
       // so that the energies don't get messed up.
-      if( (m_world->GetConfig().ENERGY_ENABLED.Get() == 1) &&
-         (m_world->GetPopulation().GetDeme(i).GetInjectedCount() == 0) ) {
+      if (avd_popaction_seed_deme_action(
+            m_world->GetConfig().ENERGY_ENABLED.Get(),
+            m_world->GetPopulation().GetDeme(i).GetInjectedCount()
+          ) == AVD_POPACTION_SEED_ACTION_SKIP_AND_COUNT) {
         m_world->GetPopulation().GetDeme(i).IncInjectedCount();
         continue;
       }
@@ -1205,8 +1317,10 @@ public:
       // is the first injection and energy is used, increment the injected
       // count (the initial injection wasn't counted) and skip the first deme
       // so that the energies don't get messed up.
-      if( (m_world->GetConfig().ENERGY_ENABLED.Get() == 1) &&
-         (m_world->GetPopulation().GetDeme(i).GetInjectedCount() == 0) ) {
+      if (avd_popaction_seed_deme_action(
+            m_world->GetConfig().ENERGY_ENABLED.Get(),
+            m_world->GetPopulation().GetDeme(i).GetInjectedCount()
+          ) == AVD_POPACTION_SEED_ACTION_SKIP_AND_COUNT) {
         m_world->GetPopulation().GetDeme(i).IncInjectedCount();
         continue;
       }
@@ -1283,15 +1397,14 @@ public:
     if (largs.GetSize())
       m_cell_end = largs.PopWord().AsInt();
 
-    if (m_cell_end == -1)
-      m_cell_end = m_cell_start + 1;
+    m_cell_end = avd_popaction_normalize_cell_end(m_cell_start, m_cell_end);
   }
 
   static const cString GetDescription() { return "Arguments: [int cell_start=0] [int cell_end=-1]"; }
 
   void Process(cAvidaContext &ctx)
   {
-    if (m_cell_start < 0 || m_cell_end > m_world->GetPopulation().GetSize() || m_cell_start >= m_cell_end)
+    if (avd_popaction_is_valid_cell_range(m_cell_start, m_cell_end, m_world->GetPopulation().GetSize()) == 0)
     {
       ctx.Driver().Feedback().Warning("ClearParasites has invalid range!");
     }

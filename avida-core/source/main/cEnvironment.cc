@@ -48,6 +48,8 @@
 #include "cTaskEntry.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 using namespace Avida;
 
 
@@ -167,14 +169,10 @@ bool cEnvironment::LoadReactionProcess(cReaction* reaction, cString desc, Feedba
       new_process->SetValue(var_value.AsDouble());
     }
     else if (var_name == "type") {
-      if (var_value=="add") new_process->SetType(nReaction::PROCTYPE_ADD);
-      else if (var_value=="mult") new_process->SetType(nReaction::PROCTYPE_MULT);
-      else if (var_value=="pow") new_process->SetType(nReaction::PROCTYPE_POW);
-      else if (var_value=="lin") new_process->SetType(nReaction::PROCTYPE_LIN);
-      else if (var_value=="energy") new_process->SetType(nReaction::PROCTYPE_ENERGY);
-      else if (var_value=="enzyme") new_process->SetType(nReaction::PROCTYPE_ENZYME);
-      else if (var_value=="exp") new_process->SetType(nReaction::PROCTYPE_EXP);
-      else {
+      int proc_type = avd_env_process_type((const char*)var_value);
+      if (proc_type != AVD_ENV_PROCTYPE_UNKNOWN) {
+        new_process->SetType(proc_type);
+      } else {
         feedback.Error("unknown reaction process type '%s' found in '%s'",
                                       (const char*)var_value, (const char*)reaction->GetName());
         return false;
@@ -264,15 +262,10 @@ bool cEnvironment::LoadReactionProcess(cReaction* reaction, cString desc, Feedba
       new_process->SetDepletable(var_value.AsInt());
     }
     else if (var_name == "phenplastbonus") {
-      if (var_value == "nobonus")
-        new_process->SetPhenPlastBonusMethod(NO_BONUS);
-      else if (var_value == "fracbonus")
-        new_process->SetPhenPlastBonusMethod(FRAC_BONUS);
-      else if (var_value == "fullbonus")
-        new_process->SetPhenPlastBonusMethod(FULL_BONUS);
-      else if (var_value == "default")
-        new_process->SetPhenPlastBonusMethod(DEFAULT);
-      else {
+      int pp_method = avd_env_phenplast_bonus_method((const char*)var_value);
+      if (pp_method != AVD_ENV_PHENPLAST_UNKNOWN) {
+        new_process->SetPhenPlastBonusMethod(static_cast<ePHENPLAST_BONUS_METHOD>(pp_method));
+      } else {
         feedback.Error("invalid setting for phenplastbonus in reaction '%s'", (const char*)reaction->GetName());
         return false;
       }
@@ -796,19 +789,20 @@ bool cEnvironment::LoadReaction(cString desc, Feedback& feedback)
     entry_type.ToLower();                     // Make case insensitive.
 
     // Determine the type of each argument and process it.
-    if (entry_type == "process") {
+    int entry_kind = avd_env_reaction_entry_type((const char*)entry_type);
+    if (entry_kind == AVD_ENV_ENTRY_TYPE_PROCESS) {
       if (LoadReactionProcess(new_reaction, desc_entry, feedback) == false) {
         feedback.Error("failed in loading reaction-process...");
         return false;
       }
     }
-    else if (entry_type == "requisite") {
+    else if (entry_kind == AVD_ENV_ENTRY_TYPE_REQUISITE) {
       if (LoadReactionRequisite(new_reaction, desc_entry, feedback) == false) {
         feedback.Error("failed in loading reaction-requisite...");
         return false;
       }
     }
-    else if (entry_type == "context_requisite") {
+    else if (entry_kind == AVD_ENV_ENTRY_TYPE_CONTEXT_REQUISITE) {
       if (LoadContextReactionRequisite(new_reaction, desc_entry, feedback) == false) {
         feedback.Error("failed in loading reaction-requisite...");
         return false;
