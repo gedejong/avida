@@ -153,6 +153,49 @@ pub extern "C" fn avd_cpop_is_merit_bonus_enabled(rewarded_instruction: c_int) -
     }
 }
 
+// --- Forage target transition classification ---
+// Given (new_ft, old_ft), classify the population counter transition.
+const CPOP_FT_TRANSITION_NONE: c_int = 0;
+const CPOP_FT_TRANSITION_PREY_TO_PRED: c_int = 1;
+const CPOP_FT_TRANSITION_TOP_PRED_TO_PRED: c_int = 2;
+const CPOP_FT_TRANSITION_PREY_TO_TOP_PRED: c_int = 3;
+const CPOP_FT_TRANSITION_PRED_TO_TOP_PRED: c_int = 4;
+const CPOP_FT_TRANSITION_PRED_TO_PREY: c_int = 5;
+const CPOP_FT_TRANSITION_TOP_PRED_TO_PREY: c_int = 6;
+
+/// Classify forage-target transition for population counter updates.
+///
+/// - `new_ft`: new forage target
+/// - `old_ft`: current forage target
+///
+/// Returns transition kind (which counters to increment/decrement).
+/// prey: ft > -2, pred: ft == -2, top_pred: ft < -2
+#[no_mangle]
+pub extern "C" fn avd_cpop_forage_target_transition(new_ft: c_int, old_ft: c_int) -> c_int {
+    let new_is_prey = new_ft > -2;
+    let new_is_pred = new_ft == -2;
+    let new_is_top = new_ft < -2;
+    let old_is_prey = old_ft > -2;
+    let old_is_pred = old_ft == -2;
+    let old_is_top = old_ft < -2;
+
+    if new_is_pred && old_is_prey {
+        CPOP_FT_TRANSITION_PREY_TO_PRED
+    } else if new_is_pred && old_is_top {
+        CPOP_FT_TRANSITION_TOP_PRED_TO_PRED
+    } else if new_is_top && old_is_prey {
+        CPOP_FT_TRANSITION_PREY_TO_TOP_PRED
+    } else if new_is_top && old_is_pred {
+        CPOP_FT_TRANSITION_PRED_TO_TOP_PRED
+    } else if new_is_prey && old_is_pred {
+        CPOP_FT_TRANSITION_PRED_TO_PREY
+    } else if new_is_prey && old_is_top {
+        CPOP_FT_TRANSITION_TOP_PRED_TO_PREY
+    } else {
+        CPOP_FT_TRANSITION_NONE
+    }
+}
+
 // --- Deme resource reset policy ---
 const CPOP_DEME_RESET_BOTH: c_int = 0;
 const CPOP_DEME_RESET_TARGET_ONLY: c_int = 1;
@@ -363,6 +406,55 @@ mod tests {
         assert_eq!(avd_cpop_is_merit_bonus_enabled(0), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(5), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(-2), 1);
+    }
+
+    // --- Forage target transition tests ---
+
+    #[test]
+    fn forage_target_transition_policy() {
+        // prey(>-2) to pred(==-2)
+        assert_eq!(
+            avd_cpop_forage_target_transition(-2, 0),
+            CPOP_FT_TRANSITION_PREY_TO_PRED
+        );
+        // top_pred(<-2) to pred(==-2)
+        assert_eq!(
+            avd_cpop_forage_target_transition(-2, -3),
+            CPOP_FT_TRANSITION_TOP_PRED_TO_PRED
+        );
+        // prey to top_pred
+        assert_eq!(
+            avd_cpop_forage_target_transition(-3, 0),
+            CPOP_FT_TRANSITION_PREY_TO_TOP_PRED
+        );
+        // pred to top_pred
+        assert_eq!(
+            avd_cpop_forage_target_transition(-3, -2),
+            CPOP_FT_TRANSITION_PRED_TO_TOP_PRED
+        );
+        // pred to prey
+        assert_eq!(
+            avd_cpop_forage_target_transition(0, -2),
+            CPOP_FT_TRANSITION_PRED_TO_PREY
+        );
+        // top_pred to prey
+        assert_eq!(
+            avd_cpop_forage_target_transition(0, -3),
+            CPOP_FT_TRANSITION_TOP_PRED_TO_PREY
+        );
+        // same type => NONE
+        assert_eq!(
+            avd_cpop_forage_target_transition(0, 1),
+            CPOP_FT_TRANSITION_NONE
+        );
+        assert_eq!(
+            avd_cpop_forage_target_transition(-2, -2),
+            CPOP_FT_TRANSITION_NONE
+        );
+        assert_eq!(
+            avd_cpop_forage_target_transition(-3, -4),
+            CPOP_FT_TRANSITION_NONE
+        );
     }
 
     // --- Deme resource reset tests ---

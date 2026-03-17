@@ -41,6 +41,8 @@
 #include "cStats.h"
 #include "nHardware.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include <algorithm>
 #include <iomanip>
 #include <iterator>
@@ -1233,33 +1235,35 @@ void cOrganism::SetForageTarget(cAvidaContext& ctx, int forage_target, bool inje
   else if (forage_target > -2 && m_world->GetConfig().MAX_PREY.Get() && m_world->GetStats().GetNumPreyCreatures() >= m_world->GetConfig().MAX_PREY.Get()) m_interface->KillRandPrey(ctx, this);
 
   // if using avatars, make sure you swap avatar lists if the org type changes!
-  if (m_world->GetConfig().PRED_PREY_SWITCH.Get() == -2 || m_world->GetConfig().PRED_PREY_SWITCH.Get() > -1) {
-    // change to pred
-    if (forage_target == -2 && m_forage_target > -2) {
-      if (!inject) m_interface->DecNumPreyOrganisms();
-      m_interface->IncNumPredOrganisms();
-    }
-    else if (forage_target == -2 && m_forage_target < -2) {
-      if (!inject) m_interface->DecNumTopPredOrganisms();
-      m_interface->IncNumPredOrganisms();
-    }
-    // change to top pred
-    else if (forage_target < -2 && m_forage_target > -2) {
-      if (!inject) m_interface->DecNumPreyOrganisms();
-      m_interface->IncNumTopPredOrganisms();
-    }
-    else if (forage_target < -2 && m_forage_target == -2) {
-      if (!inject) m_interface->DecNumPredOrganisms();
-      m_interface->IncNumTopPredOrganisms();
-    }
-    // change to prey
-    else if (forage_target > -2 && m_forage_target == -2) {
-      m_interface->IncNumPreyOrganisms();
-      if (!inject) m_interface->DecNumPredOrganisms();
-    }
-    else if (forage_target > -2 && m_forage_target < -2) {
-      m_interface->IncNumPreyOrganisms();
-      if (!inject) m_interface->DecNumTopPredOrganisms();
+  if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
+    const int transition = avd_cpop_forage_target_transition(forage_target, m_forage_target);
+    switch (transition) {
+      case AVD_CPOP_FT_TRANSITION_PREY_TO_PRED:
+        if (!inject) m_interface->DecNumPreyOrganisms();
+        m_interface->IncNumPredOrganisms();
+        break;
+      case AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED:
+        if (!inject) m_interface->DecNumTopPredOrganisms();
+        m_interface->IncNumPredOrganisms();
+        break;
+      case AVD_CPOP_FT_TRANSITION_PREY_TO_TOP_PRED:
+        if (!inject) m_interface->DecNumPreyOrganisms();
+        m_interface->IncNumTopPredOrganisms();
+        break;
+      case AVD_CPOP_FT_TRANSITION_PRED_TO_TOP_PRED:
+        if (!inject) m_interface->DecNumPredOrganisms();
+        m_interface->IncNumTopPredOrganisms();
+        break;
+      case AVD_CPOP_FT_TRANSITION_PRED_TO_PREY:
+        m_interface->IncNumPreyOrganisms();
+        if (!inject) m_interface->DecNumPredOrganisms();
+        break;
+      case AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PREY:
+        m_interface->IncNumPreyOrganisms();
+        if (!inject) m_interface->DecNumTopPredOrganisms();
+        break;
+      default:
+        break;
     }
   }
   m_forage_target = forage_target;

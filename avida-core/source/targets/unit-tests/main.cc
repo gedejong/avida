@@ -2766,6 +2766,19 @@ protected:
       avd_cpop_is_merit_bonus_enabled(5) == 1
     );
 
+    // Forage target transition
+    ReportTestResult(
+      "cPopulation forage target transition classification",
+      avd_cpop_forage_target_transition(-2, 0) == AVD_CPOP_FT_TRANSITION_PREY_TO_PRED &&
+      avd_cpop_forage_target_transition(-2, -3) == AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED &&
+      avd_cpop_forage_target_transition(-3, 0) == AVD_CPOP_FT_TRANSITION_PREY_TO_TOP_PRED &&
+      avd_cpop_forage_target_transition(-3, -2) == AVD_CPOP_FT_TRANSITION_PRED_TO_TOP_PRED &&
+      avd_cpop_forage_target_transition(0, -2) == AVD_CPOP_FT_TRANSITION_PRED_TO_PREY &&
+      avd_cpop_forage_target_transition(0, -3) == AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PREY &&
+      avd_cpop_forage_target_transition(0, 1) == AVD_CPOP_FT_TRANSITION_NONE &&
+      avd_cpop_forage_target_transition(-2, -2) == AVD_CPOP_FT_TRANSITION_NONE
+    );
+
     // Deme resource reset policy
     ReportTestResult(
       "cPopulation deme reset resources policy",

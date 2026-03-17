@@ -201,7 +201,14 @@ enum {
   AVD_ENV_GRADIENT_ACTION_BARRIER = 0,
   AVD_ENV_GRADIENT_ACTION_HILLS = 1,
   AVD_ENV_GRADIENT_ACTION_PROBABILISTIC = 2,
-  AVD_ENV_GRADIENT_ACTION_PEAK = 3
+  AVD_ENV_GRADIENT_ACTION_PEAK = 3,
+  AVD_CPOP_FT_TRANSITION_NONE = 0,
+  AVD_CPOP_FT_TRANSITION_PREY_TO_PRED = 1,
+  AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED = 2,
+  AVD_CPOP_FT_TRANSITION_PREY_TO_TOP_PRED = 3,
+  AVD_CPOP_FT_TRANSITION_PRED_TO_TOP_PRED = 4,
+  AVD_CPOP_FT_TRANSITION_PRED_TO_PREY = 5,
+  AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PREY = 6
 };
 
 AvidaRunningStatsHandle* avd_rs_new(void);
@@ -405,6 +412,7 @@ int avd_cpop_is_merit_bonus_enabled(int rewarded_instruction);
 int avd_cpop_deme_reset_resources_kind(int config_value);
 int avd_cpop_should_kill_rand_prey(int max_prey, int num_prey, int is_prey_ft);
 int avd_cpop_should_kill_test_birth(int birth_method, int is_inject);
+int avd_cpop_forage_target_transition(int new_ft, int old_ft);
 int avd_analyze_relation_mask(const char* relation);
 int avd_analyze_is_html_extension(const char* extension);
 int avd_analyze_is_html_filename_token(const char* filename_token);
