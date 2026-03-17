@@ -105,15 +105,15 @@ Additionally, prior-wave FFI integration continues in:
 - `source/data/{Provider,Manager,Package,TimeSeriesRecorder}.cc`
 - selected `source/tools` modules and unit-test parity harnesses
 
-**Untouched high-value targets** (0 `avd_*` calls):
+**Remaining untouched files** (0 `avd_*` calls, >500 LOC):
 
-| File | LOC | Branch tokens | Seam readiness |
-|---|---:|---:|---|
-| `source/main/cStats.cc` | 5,272 | 482 | High — pure aggregation/filtering patterns |
-| `source/main/cEnvironment.cc` | 2,095 | — | High — classic enum dispatch (process type, entry type, bonus type) |
-| `source/cpu/cHardwareExperimental.cc` | 6,270 | 1,442 | Medium — similar to cHardwareCPU patterns |
-| `source/cpu/cHardwareBCR.cc` | 3,309 | 694 | Medium |
-| `source/cpu/cHardwareGP8.cc` | 2,691 | 566 | Medium |
+| File | LOC | Seam readiness |
+|---|---:|---|
+| `source/main/cPopulationInterface.cc` | 2,424 | Medium — organism interface dispatch |
+| `source/main/cOrganism.cc` | 1,710 | Medium — lifecycle policy |
+| `source/main/cDeme.cc` | 1,707 | Low — heavy state management |
+| `source/main/cLandscape.cc` | 1,003 | Low — fitness landscape math |
+| `source/main/cBirthChamber.cc` | 602 | Low — birth selection |
 
 ## How to Use This Baseline
 
@@ -136,4 +136,5 @@ Additionally, prior-wave FFI integration continues in:
 - **2026-03-16 population addendum**: `cPopulation` deme-routing pilot seam completed (`avd_cpop_should_check_implicit_deme_repro`, `avd_cpop_should_run_speculative_deme_block`) with full gate validation, centralizing deterministic deme-block gating policy in `ProcessStep` and `ProcessStepSpeculative` while preserving C++ update/repro sequencing and ownership.
 - **2026-03-16 print-action follow-on addendum**: `PrintActions` instruction filename-mode selection expansion completed by routing remaining instruction-data action constructors through `avd_printaction_instruction_filename_mode`, with full gate validation and preserved C++ output ordering/ownership semantics.
 - **2026-03-16 population-action follow-on addendum**: `PopulationActions` cell-range normalization expansion completed (`avd_popaction_normalize_cell_end`) by routing repeated constructor range normalization policy across injection/parasite actions, with full gate validation and preserved C++ ownership/flow semantics.
+- **2026-03-17 debt-tranche refresh**: ABI symbol baseline refreshed to 268 symbols (was 159). FFI coverage now spans 18 actively-routed C++ implementation files with ~260 call-sites. All prior "untouched" targets (`cStats`, `cEnvironment`, `cHardwareExperimental`, `cHardwareBCR`, `cHardwareGP8`) now have Rust seams. Newly touched files: `cResource.cc`, `cGradientCount.cc`, `cOrgSensor.cc`, `cHardwareTransSMT.cc`. Remaining untouched high-LOC files updated.
 - **2026-03-17 comprehensive refresh**: FFI footprint recharacterized — 71 unique `avd_*` exports, 179 C++ call-sites across 7 actively-routed files. `PopulationActions` (45 calls), `cResourceCount` (42), and `cTaskLib` (39) approaching policy-extraction saturation. Identified `cStats.cc` and `cEnvironment.cc` as fresh high-value untouched targets (0 `avd_*` calls each). Reprioritization triggered: pivot from near-saturated action/analyze follow-ons to untouched `cEnvironment`/`cStats` targets and deeper `cHardwareCPU`/`cPopulation` extraction.

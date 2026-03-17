@@ -88,15 +88,32 @@ When working at program scale, always read and maintain these documents:
 
 ---
 
-## Current Migration State (as of 2026-03-17)
+## Current Migration State (as of 2026-03-17, post debt-tranche)
 
-**71 unique `avd_*` FFI exports, 179 C++ call-sites across 7 actively-routed files.**
+**268 unique `avd_*` FFI exports, ~260 C++ call-sites across 18 actively-routed files. 193 Rust tests.**
 
-- **Waves 1–4**: Completed (archived in `documentation/archive/rust-migration-waves-completed.md`).
-- **Wave 5**: COMPLETE — `cResourceCount`/`cSpatialResCount` fully extracted (42 call-sites, 35+ FFI exports). Resource runtime is orchestration-only.
-- **Wave 6**: CPU pilot done (`cHardwareCPU` dispatch family/opcode — 2 calls). Massive remaining surface (11K LOC).
-- **Wave 7**: Active — `cTaskLib` scoring/registration near-complete (39 calls). `cPopulation` deme routing done (7 calls). **`cEnvironment.cc` and `cStats.cc` are untouched fresh targets (0 calls each).**
-- **Wave 8**: Near saturation — `PopulationActions` (45 calls), `cAnalyze` (26 calls), `PrintActions` (18 calls).
-- **Waves 6–8 execute in parallel** by seam-readiness, not sequentially.
+| File | avd_ calls | Status |
+|---|---:|---|
+| `PopulationActions.cc` | 45 | Near saturation |
+| `cResourceCount.cc` | 41 | Complete |
+| `cTaskLib.cc` | 39 | Near saturation |
+| `cAnalyze.cc` | 26 | Near saturation |
+| `cPopulation.cc` | 21 | Active — depth extraction ongoing |
+| `PrintActions.cc` | 18 | Near saturation |
+| `cHardwareCPU.cc` | 16 | Active — depth extraction ongoing |
+| `cStats.cc` | 9 | Covered |
+| `cHardwareExperimental.cc` | 9 | Covered |
+| `cHardwareBCR.cc` | 7 | Covered |
+| `cHardwareGP8.cc` | 7 | Covered |
+| `cGradientCount.cc` | 7 | Covered |
+| `cEnvironment.cc` | 6 | Covered |
+| `cOrgSensor.cc` | 4 | Covered |
+| `cResource.cc` | 3 | Covered |
+| `cHardwareTransSMT.cc` | 1 | Pilot |
 
-**Next candidate**: `cEnvironment.cc` reaction-process-type dispatch classifiers (string→enum patterns, 0 avd_ calls, very seam-ready, lowest risk).
+- **Waves 1–5**: Complete.
+- **Waves 6–8**: Executing in parallel by seam-readiness.
+- **ABI baseline**: Refreshed to 268 symbols (2026-03-17).
+- **Remaining untouched files**: `cPopulationInterface.cc` (2.4K), `cOrganism.cc` (1.7K), `cDeme.cc` (1.7K), `cLandscape.cc` (1K).
+
+**Next candidates**: Deeper `cHardwareCPU.cc` / `cPopulation.cc` extraction, or `cPopulationInterface.cc` as a fresh target.
