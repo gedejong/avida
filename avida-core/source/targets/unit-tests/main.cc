@@ -3094,6 +3094,65 @@ protected:
   }
 };
 
+class cOrgSensorPolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cOrgSensor Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    // Search type normalization
+    ReportTestResult(
+      "Sensor search type env resource default",
+      avd_sensor_normalize_search_type(0, -1, 0, 0) == 0 &&
+      avd_sensor_normalize_search_type(0, 2, 0, 0) == 0 &&
+      avd_sensor_normalize_search_type(0, 0, 0, 0) == 0 &&
+      avd_sensor_normalize_search_type(0, 1, 0, 0) == 1
+    );
+    ReportTestResult(
+      "Sensor search type prey in pred experiment",
+      avd_sensor_normalize_search_type(-2, -3, 1, 0) == 1 &&
+      avd_sensor_normalize_search_type(-2, 3, 1, 0) == 1 &&
+      avd_sensor_normalize_search_type(-2, 2, 1, 0) == 2
+    );
+    ReportTestResult(
+      "Sensor search type predator in pred experiment",
+      avd_sensor_normalize_search_type(-2, -3, 1, 1) == -1 &&
+      avd_sensor_normalize_search_type(-2, 3, 1, 1) == -1 &&
+      avd_sensor_normalize_search_type(-2, 0, 1, 1) == 0
+    );
+    ReportTestResult(
+      "Sensor search type non-pred experiment",
+      avd_sensor_normalize_search_type(-2, 1, 0, 0) == 0 &&
+      avd_sensor_normalize_search_type(-2, -1, 0, 0) == -1
+    );
+
+    // Distance clamping
+    ReportTestResult(
+      "Sensor distance clamping",
+      avd_sensor_clamp_distance(-1, 10) == 1 &&
+      avd_sensor_clamp_distance(15, 10) == 10 &&
+      avd_sensor_clamp_distance(5, 10) == 5
+    );
+
+    // Max distance
+    ReportTestResult(
+      "Sensor max distance computation",
+      avd_sensor_max_distance(-1, 60, 40) == 30 &&
+      avd_sensor_max_distance(20, 60, 40) == 20 &&
+      avd_sensor_max_distance(100, 60, 40) == 60
+    );
+
+    // ID sought clamp
+    ReportTestResult(
+      "Sensor id sought clamping",
+      avd_sensor_clamp_id_sought(-2) == -1 &&
+      avd_sensor_clamp_id_sought(-1) == -1 &&
+      avd_sensor_clamp_id_sought(0) == 0 &&
+      avd_sensor_clamp_id_sought(5) == 5
+    );
+  }
+};
 
 #define TEST(CLASS) \
 tester = new CLASS ## Tests(); \
@@ -3138,6 +3197,7 @@ int main(int argc, const char* argv[])
   TEST(cAnalyzePolicyHelper);
   TEST(cEnvironmentPolicyHelper);
   TEST(cStatsPolicyHelper);
+  TEST(cOrgSensorPolicyHelper);
 
   if (failed == 0)
     cout << "All unit tests passed." << endl;

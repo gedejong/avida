@@ -28,6 +28,8 @@
 #include "cResource.h"
 #include "cResourceCount.h"
 
+#include "rust/running_stats_ffi.h"
+
 cOrgSensor::cOrgSensor(cWorld* world, cOrganism* in_organism)
 : m_world(world), m_organism(in_organism), m_res_lib(world->GetEnvironment().GetResourceLib())
 {
@@ -88,30 +90,20 @@ const cOrgSensor::sLookOut cOrgSensor::SetLooking(cAvidaContext& ctx, sLookInit&
   else if (!m_world->GetEnvironment().IsHabitat(habitat_used) && habitat_used != -2) habitat_used = 0;
   
   // second reg gives distance sought--arbitrarily capped at half long axis of world--default to 1 if low invalid number, half-world if high
-  int max_dist = 0;
-  const int long_axis = (int) (max(worldx, worldy) * 0.5 + 0.5);
-  m_world->GetConfig().LOOK_DIST.Get() != -1 ? max_dist = m_world->GetConfig().LOOK_DIST.Get() : max_dist = long_axis;
-  if (max_dist > max(worldx,worldy)) max_dist = max(worldx,worldy); // this still wont wrapping errors catch if x > 2y
-  if (distance_sought < 0) distance_sought = 1;
-  else if (distance_sought > max_dist) distance_sought = max_dist;
+  int max_dist = avd_sensor_max_distance(m_world->GetConfig().LOOK_DIST.Get(), worldx, worldy);
+  distance_sought = avd_sensor_clamp_distance(distance_sought, max_dist);
   
   // third register gives type of search used for food resources (habitat 0) and org hunting (habitat -2)
   // env res search_types (habitat 0): 0 or 1
   // 0 = look for closest edible res (>=1), closest hill/wall, closest simulated predator, or closest den, 1 = count # edible cells/walls/hills & total food res in cells
   // org hunting search types (habitat -2): -2 -1 0 1 2
   // 0 = closest any org, 1 = closest predator, 2 = count predators, -1 = closest prey, -2 = count prey
-  // if looking for env res, default to closest edible
-  if (habitat_used != -2 && (search_type < 0 || search_type > 1)) search_type = 0;
-  // if looking for orgs in predator environment and is prey, default to closest predator
-  else if (pred_experiment && habitat_used == -2 && forage > -2 && (search_type < -2 || search_type > 2)) search_type = 1;
-  // if looking for orgs in predator environment and is predator, default to look for prey
-  else if (pred_experiment && habitat_used == -2 && forage <= -2 && (search_type < -2 || search_type > 2)) search_type = -1;
-  // if looking for orgs in non-predator environment, default to closest org of any type
-  else if (!pred_experiment && habitat_used == -2 && (search_type < -2 || search_type > 0)) search_type = 0;
+  // normalize search_type based on habitat and organism context
+  search_type = avd_sensor_normalize_search_type(habitat_used, search_type, pred_experiment ? 1 : 0, (forage <= -2) ? 1 : 0);
   
   // fourth register gives specific instance of resources sought or specific organisms to look for
   // negative numbers == any of current habitat type
-  if (id_sought < -1) id_sought = -1;
+  id_sought = avd_sensor_clamp_id_sought(id_sought);
   // override if using lookFT
   if ( (id_sought < -1 || id_sought >= lib_size) && use_ft && habitat_used != -2) id_sought = forage;
   // if resource search...

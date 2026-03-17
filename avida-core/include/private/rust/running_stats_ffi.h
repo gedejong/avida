@@ -476,6 +476,10 @@ int avd_env_process_type(const char* type_str);
 int avd_env_phenplast_bonus_method(const char* method_str);
 int avd_env_reaction_entry_type(const char* entry_str);
 int avd_env_geometry_type(const char* geometry_str);
+int avd_sensor_normalize_search_type(int habitat_used, int search_type, int pred_experiment, int is_predator);
+int avd_sensor_clamp_distance(int distance_sought, int max_dist);
+int avd_sensor_max_distance(int look_dist_config, int world_x, int world_y);
+int avd_sensor_clamp_id_sought(int id_sought);
 int avd_env_parse_bool_string(const char* value_str);
 
 int avd_event_parse_trigger(const char* token);

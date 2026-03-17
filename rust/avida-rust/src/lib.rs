@@ -31,6 +31,7 @@ pub mod resource_count_helpers;
 pub mod resource_history_helpers;
 pub mod running_average;
 pub mod running_stats;
+pub mod sensor_helpers;
 pub mod spatial_res_count_helpers;
 pub mod stats_helpers;
 pub mod task_lib_helpers;
