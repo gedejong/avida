@@ -23,19 +23,18 @@
 #ifndef tBuffer_h
 #define tBuffer_h
 
-#include "cString.h"
-
 #include <cassert>
 #include <iostream>
+#include <vector>
 
 
 template <class T> class tBuffer
 {
 private:
-  Apto::Array<T> data;      // Contents of buffer...
-  int offset;          // Position in buffer to next write.
-  int total;           // Total inputs ever...
-  int last_total;      // Total inputs at time of last ZeroNumAdds.
+  std::vector<T> data;  // Contents of buffer (replaces Apto::Array<T>)
+  int offset;           // Position in buffer to next write.
+  int total;            // Total inputs ever...
+  int last_total;       // Total inputs at time of last ZeroNumAdds.
 public:
   explicit tBuffer(const int size) : data(size), offset(0), total(0), last_total(0) { ; }
   tBuffer(const tBuffer<T> & in) : data(in.data), offset(in.offset), total(in.total), last_total(in.last_total) { ; }
@@ -58,28 +57,27 @@ public:
     data[offset] = in_value;
     total++;
     offset++;
-    offset %= data.GetSize();
+    offset %= static_cast<int>(data.size());
   }
 
   void Pop()
   {
 	  total--;
 	  offset--;
-	  if (offset < 0) offset += data.GetSize();
+	  if (offset < 0) offset += static_cast<int>(data.size());
   }
 
   T operator[](int i) const
   {
-//    assert(i < total);
     int index = offset - i - 1;
-    if (index < 0)  index += data.GetSize();
-    assert(index >= 0 && index < data.GetSize());
+    if (index < 0)  index += static_cast<int>(data.size());
+    assert(index >= 0 && index < static_cast<int>(data.size()));
     return data[index];
   }
 
-  int GetCapacity() const { return data.GetSize(); }
+  int GetCapacity() const { return static_cast<int>(data.size()); }
   int GetTotal() const { return total; }
-  int GetNumStored() const { return (total <= data.GetSize()) ? total : data.GetSize(); }
+  int GetNumStored() const { return (total <= static_cast<int>(data.size())) ? total : static_cast<int>(data.size()); }
   int GetNum() const { return total - last_total; }
 };
 
