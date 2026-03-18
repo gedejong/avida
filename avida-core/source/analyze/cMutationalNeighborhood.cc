@@ -36,6 +36,8 @@
 #include "cWorld.h"
 #include "tAnalyzeJob.h"
 
+#include "rust/running_stats_ffi.h"
+
 using namespace std;
 
 
@@ -303,19 +305,22 @@ double cMutationalNeighborhood::ProcessOneStepGenome(cAvidaContext& ctx, cTestCP
   odata.total_fitness += test_fitness;
   odata.total_sqr_fitness += test_fitness * test_fitness;
   odata.total++;
-  if (test_fitness == 0.0) {
-    odata.dead++;
-  } else if (test_fitness < m_neut_min) {
-    odata.neg++;
-    odata.size_neg += test_fitness;
-  } else if (test_fitness <= m_neut_max) {
-    odata.neut++;
-  } else {
-    odata.pos++;
-    odata.size_pos += test_fitness;
-    if (test_fitness > odata.peak_fitness) {
-      odata.peak_fitness = test_fitness;
-      odata.peak_genome = mod_genome;
+  {
+    const int cat = avd_landscape_fitness_category(test_fitness, m_neut_min, m_neut_max);
+    if (cat == AVD_LANDSCAPE_DEAD) {
+      odata.dead++;
+    } else if (cat == AVD_LANDSCAPE_NEGATIVE) {
+      odata.neg++;
+      odata.size_neg += test_fitness;
+    } else if (cat == AVD_LANDSCAPE_NEUTRAL) {
+      odata.neut++;
+    } else {
+      odata.pos++;
+      odata.size_pos += test_fitness;
+      if (test_fitness > odata.peak_fitness) {
+        odata.peak_fitness = test_fitness;
+        odata.peak_genome = mod_genome;
+      }
     }
   }
   
@@ -512,19 +517,22 @@ double cMutationalNeighborhood::ProcessTwoStepGenome(cAvidaContext& ctx, cTestCP
   tdata.total_fitness += test_fitness;
   tdata.total_sqr_fitness += test_fitness * test_fitness;
   tdata.total++;
-  if (test_fitness == 0.0) {
-    tdata.dead++;
-  } else if (test_fitness < m_neut_min) {
-    tdata.neg++;
-    tdata.size_neg += test_fitness;
-  } else if (test_fitness <= m_neut_max) {
-    tdata.neut++;
-  } else {
-    tdata.pos++;
-    tdata.size_pos += test_fitness;
-    if (test_fitness > tdata.peak_fitness) {
-      tdata.peak_fitness = test_fitness;
-      tdata.peak_genome = mod_genome;
+  {
+    const int cat = avd_landscape_fitness_category(test_fitness, m_neut_min, m_neut_max);
+    if (cat == AVD_LANDSCAPE_DEAD) {
+      tdata.dead++;
+    } else if (cat == AVD_LANDSCAPE_NEGATIVE) {
+      tdata.neg++;
+      tdata.size_neg += test_fitness;
+    } else if (cat == AVD_LANDSCAPE_NEUTRAL) {
+      tdata.neut++;
+    } else {
+      tdata.pos++;
+      tdata.size_pos += test_fitness;
+      if (test_fitness > tdata.peak_fitness) {
+        tdata.peak_fitness = test_fitness;
+        tdata.peak_genome = mod_genome;
+      }
     }
   }
   
@@ -811,16 +819,19 @@ void cMutationalNeighborhood::AggregateTwoStep(Apto::Array<sTwoStep>& steps, sTw
     while ((pend = tdata.pending.Pop())) {
       double fitness = pend->GetFitness();
       
-      if (fitness == 0.0) {
-        tsa.task_target_dead++;
-      } else if (fitness < m_neut_min) {
-        tsa.task_target_neg++;
-        tsa.task_size_target_neg += fitness;
-      } else if (fitness <= m_neut_max) {
-        tsa.task_target_neut++;
-      } else {
-        tsa.task_target_pos++;
-        tsa.task_size_target_pos += fitness;
+      {
+        const int cat = avd_landscape_fitness_category(fitness, m_neut_min, m_neut_max);
+        if (cat == AVD_LANDSCAPE_DEAD) {
+          tsa.task_target_dead++;
+        } else if (cat == AVD_LANDSCAPE_NEGATIVE) {
+          tsa.task_target_neg++;
+          tsa.task_size_target_neg += fitness;
+        } else if (cat == AVD_LANDSCAPE_NEUTRAL) {
+          tsa.task_target_neut++;
+        } else {
+          tsa.task_target_pos++;
+          tsa.task_size_target_pos += fitness;
+        }
       }
       
       delete pend;
