@@ -3126,6 +3126,30 @@ protected:
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
     );
 
+    // Cellbox validation
+    ReportTestResult(
+      "Env cellbox validation OK and failures",
+      avd_env_cellbox_validate(5, 5, 3, 3, 20, 20) == AVD_ENV_CELLBOX_OK &&
+      avd_env_cellbox_validate(-1, 5, 3, 3, 20, 20) == AVD_ENV_CELLBOX_BAD_X &&
+      avd_env_cellbox_validate(5, -1, 3, 3, 20, 20) == AVD_ENV_CELLBOX_BAD_Y &&
+      avd_env_cellbox_validate(5, 5, 0, 3, 20, 20) == AVD_ENV_CELLBOX_BAD_WIDTH &&
+      avd_env_cellbox_validate(5, 5, 3, 0, 20, 20) == AVD_ENV_CELLBOX_BAD_HEIGHT
+    );
+
+    // Requisite var_name classification
+    ReportTestResult(
+      "Env requisite var kind known values",
+      avd_env_requisite_var_kind("reaction") == AVD_ENV_REQUISITE_REACTION &&
+      avd_env_requisite_var_kind("noreaction") == AVD_ENV_REQUISITE_NOREACTION &&
+      avd_env_requisite_var_kind("min_count") == AVD_ENV_REQUISITE_MIN_COUNT &&
+      avd_env_requisite_var_kind("cellbox") == AVD_ENV_REQUISITE_CELLBOX
+    );
+    ReportTestResult(
+      "Env requisite var kind unknown and null guard",
+      avd_env_requisite_var_kind("bogus") == AVD_ENV_REQUISITE_UNKNOWN &&
+      avd_env_requisite_var_kind(NULL) == AVD_ENV_REQUISITE_UNKNOWN
+    );
+
     // Gradient temp height
     ReportTestResult(
       "Env gradient temp height policy",

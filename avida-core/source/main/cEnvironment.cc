@@ -300,80 +300,75 @@ bool cEnvironment::LoadReactionRequisite(cReaction* reaction, cString desc, Feed
     // Parse this entry.
     if (!ParseSetting(var_entry, var_name, var_value, var_type, feedback)) return false;
 
-    // Now that we know we have a variable name and its value, set it!
-    if (var_name == "reaction") {
+    // Classify the variable name via Rust helper
+    const int req_kind = avd_env_requisite_var_kind((const char*)var_name);
+
+    if (req_kind == AVD_ENV_REQUISITE_REACTION) {
       cReaction* test_reaction = reaction_lib.GetReaction(var_value);
       if (!AssertInputValid(test_reaction, "reaction", var_type, var_value, feedback)) {
         return false;
       }
       new_requisite->AddReaction(test_reaction);
     }
-    else if (var_name == "noreaction") {
+    else if (req_kind == AVD_ENV_REQUISITE_NOREACTION) {
       cReaction* test_reaction = reaction_lib.GetReaction(var_value);
       if (!AssertInputValid(test_reaction,"noreaction",var_type, var_value, feedback)) {
         return false;
       }
       new_requisite->AddNoReaction(test_reaction);
     }
-    else if (var_name == "min_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MIN_COUNT) {
       if (!AssertInputInt(var_value, "min_count", var_type, feedback)) return false;
       new_requisite->SetMinTaskCount(var_value.AsInt());
     }
-    else if (var_name == "max_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MAX_COUNT) {
       if (!AssertInputInt(var_value, "max_count", var_type, feedback)) return false;
       new_requisite->SetMaxTaskCount(var_value.AsInt());
     }
-    else if (var_name == "reaction_min_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_REACTION_MIN_COUNT) {
       if (!AssertInputInt(var_value, "reaction_min_count", var_type, feedback)) return false;
       new_requisite->SetMinReactionCount(var_value.AsInt());
     }
-    else if (var_name == "reaction_max_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_REACTION_MAX_COUNT) {
       if (!AssertInputInt(var_value, "reaction_max_count", var_type, feedback)) return false;
       new_requisite->SetMaxReactionCount(var_value.AsInt());
     }
-    else if (var_name == "divide_only") {
+    else if (req_kind == AVD_ENV_REQUISITE_DIVIDE_ONLY) {
       if (!AssertInputInt(var_value, "divide_only", var_type, feedback)) return false;
       new_requisite->SetDivideOnly(var_value.AsInt());
     }
-    else if (var_name == "min_tot_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MIN_TOT_COUNT) {
       if (!AssertInputInt(var_value, "min_tot_count", var_type, feedback)) return false;
       new_requisite->SetMinTotReactionCount(var_value.AsInt());
     }
-    else if (var_name == "max_tot_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MAX_TOT_COUNT) {
       if (!AssertInputInt(var_value, "max_tot_count", var_type, feedback)) return false;
       new_requisite->SetMaxTotReactionCount(var_value.AsInt());
     }
-    else if (var_name == "parasite_only") {
+    else if (req_kind == AVD_ENV_REQUISITE_PARASITE_ONLY) {
       if (!AssertInputInt(var_value, "parasite_only", var_type, feedback)) return false;
       new_requisite->SetParasiteOnly(var_value.AsInt());
     }
-    else if (var_name == "cellbox") {   //<-- Added
-      //var_name is what came before the =
-      //var_value is what came after the =
-      // e.g. cell_box=[xx, yy, width, height]
-      //      var_name    var_value
-      //We need to parse the var_name into the xx, yy, width and height variables
-      //and eat the angle brackets and commas
-      //If the coordinates or the width or height are out of bounds use feedback to throw
-      //an error message to the user. This will abort the program.
+    else if (req_kind == AVD_ENV_REQUISITE_CELLBOX) {
       int xx = (var_value.GetSize() > 0) ? var_value.Pop(',').AsInt() : -1;
       int yy = (var_value.GetSize() > 0) ? var_value.Pop(',').AsInt() : -1;
       int width = (var_value.GetSize() > 0) ? var_value.Pop(',').AsInt() : 1;
       int height = (var_value.GetSize() > 0) ? var_value.AsInt() : 1;
 
-      if (0 > xx || xx >= m_world->GetConfig().WORLD_X.Get() ) {
+      const int cb_result = avd_env_cellbox_validate(xx, yy, width, height, m_world->GetConfig().WORLD_X.Get(), m_world->GetConfig().WORLD_Y.Get());
+      if (cb_result == AVD_ENV_CELLBOX_BAD_X) {
         feedback.Error("cellbox requisite requires 0 >= < xx < WORLD_X for first argument");
         return false;
       }
-      if (0 > yy || yy >= m_world->GetConfig().WORLD_Y.Get() ) {
+      if (cb_result == AVD_ENV_CELLBOX_BAD_Y) {
         feedback.Error("cellbox requisite requires 0 >= < yy < WORLD_Y for 2nd argument");
         return false;
       }
-      if (0>= width || width+xx >= m_world->GetConfig().WORLD_X.Get() ) {
+      if (cb_result == AVD_ENV_CELLBOX_BAD_WIDTH) {
         feedback.Error("cellbox requisite requires 0 < width+xx < WORLD_X for 3rd argument");
         return false;
       }
-      if (0 >= height || height+yy  >= m_world->GetConfig().WORLD_Y.Get() ) {
+      if (cb_result == AVD_ENV_CELLBOX_BAD_HEIGHT) {
         feedback.Error("cellbox requisite requires 0 < height+yy < WORLD_Y for 4th argument");
         return false;
       }
@@ -405,50 +400,52 @@ bool cEnvironment::LoadContextReactionRequisite(cReaction* reaction, cString des
     // Parse this entry.
     if (!ParseSetting(var_entry, var_name, var_value, var_type, feedback)) return false;
 
-    // Now that we know we have a variable name and its value, set it!
-    if (var_name == "reaction") {
+    // Classify the variable name via Rust helper (context requisites support same fields as requisites minus cellbox)
+    const int req_kind = avd_env_requisite_var_kind((const char*)var_name);
+
+    if (req_kind == AVD_ENV_REQUISITE_REACTION) {
       cReaction* test_reaction = reaction_lib.GetReaction(var_value);
       if (!AssertInputValid(test_reaction, "reaction", var_type, var_value, feedback)) {
         return false;
       }
       new_requisite->AddReaction(test_reaction);
     }
-    else if (var_name == "noreaction") {
+    else if (req_kind == AVD_ENV_REQUISITE_NOREACTION) {
       cReaction* test_reaction = reaction_lib.GetReaction(var_value);
       if (!AssertInputValid(test_reaction,"noreaction",var_type, var_value, feedback)) {
         return false;
       }
       new_requisite->AddNoReaction(test_reaction);
     }
-    else if (var_name == "min_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MIN_COUNT) {
       if (!AssertInputInt(var_value, "min_count", var_type, feedback)) return false;
       new_requisite->SetMinTaskCount(var_value.AsInt());
     }
-    else if (var_name == "max_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MAX_COUNT) {
       if (!AssertInputInt(var_value, "max_count", var_type, feedback)) return false;
       new_requisite->SetMaxTaskCount(var_value.AsInt());
     }
-    else if (var_name == "reaction_min_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_REACTION_MIN_COUNT) {
       if (!AssertInputInt(var_value, "reaction_min_count", var_type, feedback)) return false;
       new_requisite->SetMinReactionCount(var_value.AsInt());
     }
-    else if (var_name == "reaction_max_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_REACTION_MAX_COUNT) {
       if (!AssertInputInt(var_value, "reaction_max_count", var_type, feedback)) return false;
       new_requisite->SetMaxReactionCount(var_value.AsInt());
     }
-    else if (var_name == "divide_only") {
+    else if (req_kind == AVD_ENV_REQUISITE_DIVIDE_ONLY) {
       if (!AssertInputInt(var_value, "divide_only", var_type, feedback)) return false;
       new_requisite->SetDivideOnly(var_value.AsInt());
     }
-    else if (var_name == "min_tot_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MIN_TOT_COUNT) {
       if (!AssertInputInt(var_value, "min_tot_count", var_type, feedback)) return false;
       new_requisite->SetMinTotReactionCount(var_value.AsInt());
     }
-    else if (var_name == "max_tot_count") {
+    else if (req_kind == AVD_ENV_REQUISITE_MAX_TOT_COUNT) {
       if (!AssertInputInt(var_value, "max_tot_count", var_type, feedback)) return false;
       new_requisite->SetMaxTotReactionCount(var_value.AsInt());
     }
-    else if (var_name == "parasite_only") {
+    else if (req_kind == AVD_ENV_REQUISITE_PARASITE_ONLY) {
       if (!AssertInputInt(var_value, "parasite_only", var_type, feedback)) return false;
       new_requisite->SetParasiteOnly(var_value.AsInt());
     }

@@ -202,6 +202,23 @@ enum {
   AVD_ENV_GRADIENT_ACTION_HILLS = 1,
   AVD_ENV_GRADIENT_ACTION_PROBABILISTIC = 2,
   AVD_ENV_GRADIENT_ACTION_PEAK = 3,
+  AVD_ENV_CELLBOX_OK = 0,
+  AVD_ENV_CELLBOX_BAD_X = 1,
+  AVD_ENV_CELLBOX_BAD_Y = 2,
+  AVD_ENV_CELLBOX_BAD_WIDTH = 3,
+  AVD_ENV_CELLBOX_BAD_HEIGHT = 4,
+  AVD_ENV_REQUISITE_REACTION = 0,
+  AVD_ENV_REQUISITE_NOREACTION = 1,
+  AVD_ENV_REQUISITE_MIN_COUNT = 2,
+  AVD_ENV_REQUISITE_MAX_COUNT = 3,
+  AVD_ENV_REQUISITE_REACTION_MIN_COUNT = 4,
+  AVD_ENV_REQUISITE_REACTION_MAX_COUNT = 5,
+  AVD_ENV_REQUISITE_DIVIDE_ONLY = 6,
+  AVD_ENV_REQUISITE_MIN_TOT_COUNT = 7,
+  AVD_ENV_REQUISITE_MAX_TOT_COUNT = 8,
+  AVD_ENV_REQUISITE_PARASITE_ONLY = 9,
+  AVD_ENV_REQUISITE_CELLBOX = 10,
+  AVD_ENV_REQUISITE_UNKNOWN = -1,
   AVD_CPOP_FT_TRANSITION_NONE = 0,
   AVD_CPOP_FT_TRANSITION_PREY_TO_PRED = 1,
   AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED = 2,
@@ -501,6 +518,9 @@ int avd_env_reaction_entry_type(const char* entry_str);
 double avd_deme_base_merit(int method, double const_merit);
 int avd_deme_should_join_germline_first(int selection_method);
 double avd_deme_reaction_weight(double slope, int index);
+
+int avd_env_cellbox_validate(int xx, int yy, int width, int height, int world_x, int world_y);
+int avd_env_requisite_var_kind(const char* var_name);
 
 int avd_env_gradient_update_action(int habitat, int is_probabilistic);
 int avd_env_gradient_temp_height(double plateau, int height);

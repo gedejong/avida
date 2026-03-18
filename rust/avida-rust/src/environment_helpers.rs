@@ -67,6 +67,70 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Cellbox bounds validation ---
+const ENV_CELLBOX_OK: c_int = 0;
+const ENV_CELLBOX_BAD_X: c_int = 1;
+const ENV_CELLBOX_BAD_Y: c_int = 2;
+const ENV_CELLBOX_BAD_WIDTH: c_int = 3;
+const ENV_CELLBOX_BAD_HEIGHT: c_int = 4;
+
+/// Validate cellbox requisite bounds against world dimensions.
+/// Returns 0 if OK, or 1-4 for the specific invalid parameter.
+#[no_mangle]
+pub extern "C" fn avd_env_cellbox_validate(
+    xx: c_int,
+    yy: c_int,
+    width: c_int,
+    height: c_int,
+    world_x: c_int,
+    world_y: c_int,
+) -> c_int {
+    if xx < 0 || xx >= world_x {
+        ENV_CELLBOX_BAD_X
+    } else if yy < 0 || yy >= world_y {
+        ENV_CELLBOX_BAD_Y
+    } else if width <= 0 || width + xx >= world_x {
+        ENV_CELLBOX_BAD_WIDTH
+    } else if height <= 0 || height + yy >= world_y {
+        ENV_CELLBOX_BAD_HEIGHT
+    } else {
+        ENV_CELLBOX_OK
+    }
+}
+
+// --- Requisite var_name classification ---
+const ENV_REQUISITE_REACTION: c_int = 0;
+const ENV_REQUISITE_NOREACTION: c_int = 1;
+const ENV_REQUISITE_MIN_COUNT: c_int = 2;
+const ENV_REQUISITE_MAX_COUNT: c_int = 3;
+const ENV_REQUISITE_REACTION_MIN_COUNT: c_int = 4;
+const ENV_REQUISITE_REACTION_MAX_COUNT: c_int = 5;
+const ENV_REQUISITE_DIVIDE_ONLY: c_int = 6;
+const ENV_REQUISITE_MIN_TOT_COUNT: c_int = 7;
+const ENV_REQUISITE_MAX_TOT_COUNT: c_int = 8;
+const ENV_REQUISITE_PARASITE_ONLY: c_int = 9;
+const ENV_REQUISITE_CELLBOX: c_int = 10;
+const ENV_REQUISITE_UNKNOWN: c_int = -1;
+
+/// Classify a requisite variable name to an opcode.
+#[no_mangle]
+pub extern "C" fn avd_env_requisite_var_kind(var_name: *const c_char) -> c_int {
+    with_cstr(var_name, ENV_REQUISITE_UNKNOWN, |s| match s.to_bytes() {
+        b"reaction" => ENV_REQUISITE_REACTION,
+        b"noreaction" => ENV_REQUISITE_NOREACTION,
+        b"min_count" => ENV_REQUISITE_MIN_COUNT,
+        b"max_count" => ENV_REQUISITE_MAX_COUNT,
+        b"reaction_min_count" => ENV_REQUISITE_REACTION_MIN_COUNT,
+        b"reaction_max_count" => ENV_REQUISITE_REACTION_MAX_COUNT,
+        b"divide_only" => ENV_REQUISITE_DIVIDE_ONLY,
+        b"min_tot_count" => ENV_REQUISITE_MIN_TOT_COUNT,
+        b"max_tot_count" => ENV_REQUISITE_MAX_TOT_COUNT,
+        b"parasite_only" => ENV_REQUISITE_PARASITE_ONLY,
+        b"cellbox" => ENV_REQUISITE_CELLBOX,
+        _ => ENV_REQUISITE_UNKNOWN,
+    })
+}
+
 // --- Gradient resource update-action classifier ---
 const ENV_GRADIENT_ACTION_BARRIER: c_int = 0;
 const ENV_GRADIENT_ACTION_HILLS: c_int = 1;
@@ -176,6 +240,85 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Cellbox validation tests ---
+
+    #[test]
+    fn cellbox_validate_ok() {
+        assert_eq!(avd_env_cellbox_validate(5, 5, 3, 3, 20, 20), ENV_CELLBOX_OK);
+    }
+
+    #[test]
+    fn cellbox_validate_failures() {
+        assert_eq!(
+            avd_env_cellbox_validate(-1, 5, 3, 3, 20, 20),
+            ENV_CELLBOX_BAD_X
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(20, 5, 3, 3, 20, 20),
+            ENV_CELLBOX_BAD_X
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(5, -1, 3, 3, 20, 20),
+            ENV_CELLBOX_BAD_Y
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(5, 5, 0, 3, 20, 20),
+            ENV_CELLBOX_BAD_WIDTH
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(5, 5, 15, 3, 20, 20),
+            ENV_CELLBOX_BAD_WIDTH
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(5, 5, 3, 0, 20, 20),
+            ENV_CELLBOX_BAD_HEIGHT
+        );
+        assert_eq!(
+            avd_env_cellbox_validate(5, 5, 3, 15, 20, 20),
+            ENV_CELLBOX_BAD_HEIGHT
+        );
+    }
+
+    // --- Requisite var_name classification tests ---
+
+    #[test]
+    fn requisite_var_kind_known_values() {
+        let cases = [
+            ("reaction", ENV_REQUISITE_REACTION),
+            ("noreaction", ENV_REQUISITE_NOREACTION),
+            ("min_count", ENV_REQUISITE_MIN_COUNT),
+            ("max_count", ENV_REQUISITE_MAX_COUNT),
+            ("reaction_min_count", ENV_REQUISITE_REACTION_MIN_COUNT),
+            ("reaction_max_count", ENV_REQUISITE_REACTION_MAX_COUNT),
+            ("divide_only", ENV_REQUISITE_DIVIDE_ONLY),
+            ("min_tot_count", ENV_REQUISITE_MIN_TOT_COUNT),
+            ("max_tot_count", ENV_REQUISITE_MAX_TOT_COUNT),
+            ("parasite_only", ENV_REQUISITE_PARASITE_ONLY),
+            ("cellbox", ENV_REQUISITE_CELLBOX),
+        ];
+        for (input, expected) in &cases {
+            let cs = cstr(input);
+            assert_eq!(
+                avd_env_requisite_var_kind(cs.as_ptr()),
+                *expected,
+                "requisite var_kind mismatch for '{input}'"
+            );
+        }
+    }
+
+    #[test]
+    fn requisite_var_kind_unknown() {
+        let bad = cstr("unknown_field");
+        assert_eq!(
+            avd_env_requisite_var_kind(bad.as_ptr()),
+            ENV_REQUISITE_UNKNOWN
+        );
+        assert_eq!(
+            avd_env_requisite_var_kind(ptr::null()),
+            ENV_REQUISITE_UNKNOWN
+        );
     }
 
     // --- Gradient temp height tests ---
