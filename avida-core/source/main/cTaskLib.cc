@@ -81,6 +81,7 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   // The following if blocks are grouped based on class of task.  Chaining too
   // many if block causes problems block nesting depth in Visual Studio.net 2003.
   
+  if (avd_tasklib_is_basic_name((const char*) name) != 0) {
   if (name == "echo")      NewTask(name, "Echo", &cTaskLib::Task_Echo);
   else if (name == "echo_dup")  NewTask(name, "Echo_dup",  &cTaskLib::Task_Echo);
   else if (name == "add")  NewTask(name, "Add",  &cTaskLib::Task_Add);
@@ -113,7 +114,8 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
 	// resoruce dependent version
   else if (name == "nand-resourceDependent") NewTask(name, "Nand-resourceDependent", &cTaskLib::Task_Nand_ResourceDependent);
   else if (name == "nor-resourceDependent") NewTask(name, "Nor-resourceDependent", &cTaskLib::Task_Nor_ResourceDependent);
-	
+  } // end basic name gate
+
   // All 3-Input Logic Functions + Arbitrary 1-Input Math Tasks
   // Registration-family gating keeps this large deterministic name chain isolated.
   if (avd_tasklib_is_logic3_or_math1_name((const char*) name) != 0) {
@@ -304,13 +306,16 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   }
 
   // Communication Tasks
+  if (avd_tasklib_is_comm_name((const char*) name) != 0) {
   if (name == "comm_echo") {
     NewTask(name, "Echo of Neighbor's Input", &cTaskLib::Task_CommEcho, REQ_NEIGHBOR_INPUT);
   } else if (name == "comm_not") {
     NewTask(name, "Not of Neighbor's Input", &cTaskLib::Task_CommNot, REQ_NEIGHBOR_INPUT);
   }
+  } // end comm name gate
   
   // Movement Tasks
+  if (avd_tasklib_is_movement_name((const char*) name) != 0) {
   if (name == "move_up_gradient") NewTask(name, "Move up gradient", &cTaskLib::Task_MoveUpGradient);
   else if (name == "move_neutral_gradient") NewTask(name, "Move neutral gradient", &cTaskLib::Task_MoveNeutralGradient);
   else if (name == "move_down_gradient") NewTask(name, "Move down gradient", &cTaskLib::Task_MoveDownGradient);
@@ -321,21 +326,26 @@ cTaskEntry* cTaskLib::AddTask(const cString& name, const cString& info, cEnvReqs
   else if (name == "move") NewTask(name, "Successfully Moved", &cTaskLib::Task_Move);
   else if (name == "movetotarget") NewTask(name, "Move to a target area", &cTaskLib::Task_MoveToTarget);
   else if (name == "movetoevent") NewTask(name, "Move to a target area", &cTaskLib::Task_MoveToMovementEvent);
-  else if (name == "movebetweenevent") NewTask(name, "Move to a target area", &cTaskLib::Task_MoveBetweenMovementEvent); 
-	
+  else if (name == "movebetweenevent") NewTask(name, "Move to a target area", &cTaskLib::Task_MoveBetweenMovementEvent);
+
   // reputation based tasks
-  else if (name == "perfect_strings") NewTask(name, "Produce and store perfect strings", &cTaskLib::Task_CreatePerfectStrings);		
+  else if (name == "perfect_strings") NewTask(name, "Produce and store perfect strings", &cTaskLib::Task_CreatePerfectStrings);
+  } // end movement name gate
 
   // event tasks
+  if (avd_tasklib_is_event_name((const char*) name) != 0) {
   if (name == "move_to_event") NewTask(name, "Moved into cell containing event", &cTaskLib::Task_MoveToEvent);
   else if (name == "event_killed") NewTask(name, "Killed event", &cTaskLib::Task_EventKilled);
+  } // end event name gate
   
   //Altruism
+  if (avd_tasklib_is_altruism_name((const char*) name) != 0) {
   if (name == "exploded") NewTask(name, "Organism exploded", &cTaskLib::Task_Exploded);
-  if (name == "exploded2") NewTask(name, "Organism exploded", &cTaskLib::Task_Exploded2);
-  if (name == "consume-public-good") NewTask(name, "Public good consumed", &cTaskLib::Task_ConsumePublicGood);
-  if (name == "ai-display-cost") NewTask(name, "Autoinducer cost paid", &cTaskLib::Task_AIDisplayCost);
-  if (name == "produce-public-good") NewTask(name, "Public good produced", &cTaskLib::Task_ProducePublicGood);
+  else if (name == "exploded2") NewTask(name, "Organism exploded", &cTaskLib::Task_Exploded2);
+  else if (name == "consume-public-good") NewTask(name, "Public good consumed", &cTaskLib::Task_ConsumePublicGood);
+  else if (name == "ai-display-cost") NewTask(name, "Autoinducer cost paid", &cTaskLib::Task_AIDisplayCost);
+  else if (name == "produce-public-good") NewTask(name, "Public good produced", &cTaskLib::Task_ProducePublicGood);
+  } // end altruism name gate
 
   // String matching
   if (name == "all-ones") Load_AllOnes(name, info, envreqs, feedback);

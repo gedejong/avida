@@ -142,18 +142,96 @@ pub extern "C" fn avd_tasklib_binary_pair_input_diff(
     (transformed - test_output).abs()
 }
 
+// --- Task name family classifiers for ungated blocks ---
+
+/// Returns 1 if the task name is a basic logic/math name.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_is_basic_name(task_name: *const c_char) -> c_int {
+    crate::common::with_cstr(task_name, 0, |s| match s.to_bytes() {
+        b"echo"
+        | b"echo_dup"
+        | b"add"
+        | b"add3"
+        | b"sub"
+        | b"dontcare"
+        | b"not"
+        | b"not_dup"
+        | b"nand"
+        | b"nand_dup"
+        | b"and"
+        | b"and_dup"
+        | b"orn"
+        | b"orn_dup"
+        | b"or"
+        | b"or_dup"
+        | b"andn"
+        | b"andn_dup"
+        | b"nor"
+        | b"nor_dup"
+        | b"xor"
+        | b"xor_dup"
+        | b"equ"
+        | b"equ_dup"
+        | b"xor-max"
+        | b"nand-resourceDependent"
+        | b"nor-resourceDependent" => 1,
+        _ => 0,
+    })
+}
+
+/// Returns 1 if the task name is a communication task name.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_is_comm_name(task_name: *const c_char) -> c_int {
+    crate::common::with_cstr(task_name, 0, |s| match s.to_bytes() {
+        b"comm_echo" | b"comm_not" => 1,
+        _ => 0,
+    })
+}
+
+/// Returns 1 if the task name is a movement task name.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_is_movement_name(task_name: *const c_char) -> c_int {
+    crate::common::with_cstr(task_name, 0, |s| match s.to_bytes() {
+        b"move_up_gradient"
+        | b"move_neutral_gradient"
+        | b"move_down_gradient"
+        | b"move_not_up_gradient"
+        | b"move_to_right_side"
+        | b"move_to_left_side"
+        | b"move"
+        | b"movetotarget"
+        | b"movetoevent"
+        | b"movebetweenevent"
+        | b"perfect_strings" => 1,
+        _ => 0,
+    })
+}
+
+/// Returns 1 if the task name is an event task name.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_is_event_name(task_name: *const c_char) -> c_int {
+    crate::common::with_cstr(task_name, 0, |s| match s.to_bytes() {
+        b"move_to_event" | b"event_killed" => 1,
+        _ => 0,
+    })
+}
+
+/// Returns 1 if the task name is an altruism task name.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_is_altruism_name(task_name: *const c_char) -> c_int {
+    crate::common::with_cstr(task_name, 0, |s| match s.to_bytes() {
+        b"exploded"
+        | b"exploded2"
+        | b"consume-public-good"
+        | b"ai-display-cost"
+        | b"produce-public-good" => 1,
+        _ => 0,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{
-        avd_tasklib_binary_pair_input_diff, avd_tasklib_diff_scan_init,
-        avd_tasklib_diff_scan_update, avd_tasklib_fractional_reward_bits,
-        avd_tasklib_is_fibonacci_name, avd_tasklib_is_load_based_name,
-        avd_tasklib_is_logic3_or_math1_name, avd_tasklib_is_matching_sequence_name,
-        avd_tasklib_is_math2_or_math3_name, avd_tasklib_threshold_halflife_quality,
-        avd_tasklib_unary_math_input_diff, TASKLIB_BINARY_OP_DIV, TASKLIB_BINARY_OP_MULT,
-        TASKLIB_UNARY_OP_COSINE, TASKLIB_UNARY_OP_LOG, TASKLIB_UNARY_OP_LOG10,
-        TASKLIB_UNARY_OP_LOG2, TASKLIB_UNARY_OP_SINE, TASKLIB_UNARY_OP_SQRT,
-    };
+    use super::*;
     use std::ffi::CString;
     use std::os::raw::c_uint;
     use std::ptr;
@@ -341,6 +419,58 @@ mod tests {
             i64::MAX
         );
         assert_eq!(avd_tasklib_binary_pair_input_diff(8, 2, 3, -1), i64::MAX);
+    }
+
+    // --- Task name family classifier tests ---
+
+    #[test]
+    fn tasklib_basic_name_policy() {
+        let yes_cases = ["echo", "not", "nand", "xor", "equ", "add", "sub", "xor-max"];
+        for name in &yes_cases {
+            let cs = CString::new(*name).unwrap();
+            assert_eq!(
+                avd_tasklib_is_basic_name(cs.as_ptr()),
+                1,
+                "expected basic for '{name}'"
+            );
+        }
+        let no = CString::new("logic_3AA").unwrap();
+        assert_eq!(avd_tasklib_is_basic_name(no.as_ptr()), 0);
+        assert_eq!(avd_tasklib_is_basic_name(std::ptr::null()), 0);
+    }
+
+    #[test]
+    fn tasklib_comm_name_policy() {
+        let yes = CString::new("comm_echo").unwrap();
+        assert_eq!(avd_tasklib_is_comm_name(yes.as_ptr()), 1);
+        let no = CString::new("echo").unwrap();
+        assert_eq!(avd_tasklib_is_comm_name(no.as_ptr()), 0);
+    }
+
+    #[test]
+    fn tasklib_movement_name_policy() {
+        let yes = CString::new("move_up_gradient").unwrap();
+        assert_eq!(avd_tasklib_is_movement_name(yes.as_ptr()), 1);
+        let yes2 = CString::new("movetotarget").unwrap();
+        assert_eq!(avd_tasklib_is_movement_name(yes2.as_ptr()), 1);
+        let no = CString::new("echo").unwrap();
+        assert_eq!(avd_tasklib_is_movement_name(no.as_ptr()), 0);
+    }
+
+    #[test]
+    fn tasklib_event_name_policy() {
+        let yes = CString::new("move_to_event").unwrap();
+        assert_eq!(avd_tasklib_is_event_name(yes.as_ptr()), 1);
+        let no = CString::new("move").unwrap();
+        assert_eq!(avd_tasklib_is_event_name(no.as_ptr()), 0);
+    }
+
+    #[test]
+    fn tasklib_altruism_name_policy() {
+        let yes = CString::new("exploded").unwrap();
+        assert_eq!(avd_tasklib_is_altruism_name(yes.as_ptr()), 1);
+        let no = CString::new("echo").unwrap();
+        assert_eq!(avd_tasklib_is_altruism_name(no.as_ptr()), 0);
     }
 
     #[test]
