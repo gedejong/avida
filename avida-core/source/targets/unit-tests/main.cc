@@ -2766,6 +2766,25 @@ protected:
       avd_cpop_is_merit_bonus_enabled(5) == 1
     );
 
+    // Phenotype config gates
+    ReportTestResult(
+      "cPopulation divide method split gate",
+      avd_cpop_is_divide_method_split(1) == 1 &&
+      avd_cpop_is_divide_method_split(0) == 0 &&
+      avd_cpop_is_divide_method_split(2) == 0
+    );
+    ReportTestResult(
+      "cPopulation generation inc both gate",
+      avd_cpop_is_generation_inc_both(1) == 1 &&
+      avd_cpop_is_generation_inc_both(0) == 0
+    );
+    ReportTestResult(
+      "cPopulation divide method split-or-birth gate",
+      avd_cpop_is_divide_method_split_or_birth(1) == 1 &&
+      avd_cpop_is_divide_method_split_or_birth(2) == 1 &&
+      avd_cpop_is_divide_method_split_or_birth(0) == 0
+    );
+
     // CopyParentFT loophole guard
     ReportTestResult(
       "cPopulation CopyParentFT loophole guard",

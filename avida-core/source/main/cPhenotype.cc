@@ -29,6 +29,8 @@
 #include "cReactionResult.h"
 #include "cTaskState.h"
 #include "cWorld.h"
+
+#include "rust/running_stats_ffi.h"
 #include "tList.h"
 
 #include <fstream>
@@ -901,7 +903,7 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {     
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {     
     last_para_tasks = cur_para_tasks;
     cur_para_tasks.SetAll(0);
   }
@@ -1034,22 +1036,21 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   
   // A few final changes if the parent was supposed to be be considered
   // a second child on the divide.
-  if ((m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) ||
-      (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_BIRTH)) {
+  if (avd_cpop_is_divide_method_split_or_birth(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     gestation_start = 0;
     cpu_cycles_used = 0;
     time_used = 0;
     neutral_metric += m_world->GetRandom().GetRandNormal();
   }
   
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_tolerance_immigrants.Clear();        
     m_tolerance_offspring_own.Clear();     
     m_tolerance_offspring_others.Clear();  
     m_intolerances.SetAll(make_pair(-1, -1));  
   }
 
-  if (m_world->GetConfig().GENERATION_INC_METHOD.Get() == GENERATION_INC_BOTH) generation++;
+  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
   
   // Reset Task States
   for (Apto::Map<void*, cTaskState*>::ValueIterator it = m_task_states.Values(); it.Next();) delete *it.Get();
@@ -1126,7 +1127,7 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   cur_host_tasks.SetAll(0);
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     last_para_tasks = cur_para_tasks;
     cur_para_tasks.SetAll(0);
   }
@@ -2327,7 +2328,7 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
   
   // A few final changes if the parent was supposed to be be considered
   // a second child on the divide.
-  if ((m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) || (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_BIRTH)) {    
+  if (avd_cpop_is_divide_method_split_or_birth(m_world->GetConfig().DIVIDE_METHOD.Get())) {    
     gestation_start = 0;
     cpu_cycles_used = 0;
     time_used = 0;
@@ -2335,14 +2336,14 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
     neutral_metric += m_world->GetRandom().GetRandNormal();
   }
   
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_tolerance_immigrants.Clear();        
     m_tolerance_offspring_own.Clear();     
     m_tolerance_offspring_others.Clear();  
     m_intolerances.SetAll(make_pair(-1,-1));  
   }
 
-  if (m_world->GetConfig().GENERATION_INC_METHOD.Get() == GENERATION_INC_BOTH) generation++;
+  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
 }
 
 // Arbitrary (but consistant) ordering.

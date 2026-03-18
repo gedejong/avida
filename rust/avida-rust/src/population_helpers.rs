@@ -153,6 +153,41 @@ pub extern "C" fn avd_cpop_is_merit_bonus_enabled(rewarded_instruction: c_int) -
     }
 }
 
+// --- Phenotype config gates ---
+
+// DIVIDE_METHOD_OFFSPRING=0, DIVIDE_METHOD_SPLIT=1, DIVIDE_METHOD_BIRTH=2
+// GENERATION_INC_OFFSPRING=0, GENERATION_INC_BOTH=1
+
+/// Returns 1 if divide method is SPLIT (1).
+#[no_mangle]
+pub extern "C" fn avd_cpop_is_divide_method_split(divide_method: c_int) -> c_int {
+    if divide_method == 1 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Returns 1 if generation increment method is BOTH (1).
+#[no_mangle]
+pub extern "C" fn avd_cpop_is_generation_inc_both(gen_inc_method: c_int) -> c_int {
+    if gen_inc_method == 1 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Returns 1 if divide method is SPLIT (1) or BIRTH (2).
+#[no_mangle]
+pub extern "C" fn avd_cpop_is_divide_method_split_or_birth(divide_method: c_int) -> c_int {
+    if divide_method == 1 || divide_method == 2 {
+        1
+    } else {
+        0
+    }
+}
+
 // --- CopyParentFT loophole guard ---
 
 /// Returns 1 if the parent forage target should be copied to the offspring.
@@ -470,6 +505,28 @@ mod tests {
         assert_eq!(avd_cpop_is_merit_bonus_enabled(0), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(5), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(-2), 1);
+    }
+
+    // --- Phenotype config gate tests ---
+
+    #[test]
+    fn divide_method_split_policy() {
+        assert_eq!(avd_cpop_is_divide_method_split(1), 1); // SPLIT
+        assert_eq!(avd_cpop_is_divide_method_split(0), 0); // OFFSPRING
+        assert_eq!(avd_cpop_is_divide_method_split(2), 0); // BIRTH
+    }
+
+    #[test]
+    fn generation_inc_both_policy() {
+        assert_eq!(avd_cpop_is_generation_inc_both(1), 1); // BOTH
+        assert_eq!(avd_cpop_is_generation_inc_both(0), 0); // OFFSPRING
+    }
+
+    #[test]
+    fn divide_method_split_or_birth_policy() {
+        assert_eq!(avd_cpop_is_divide_method_split_or_birth(1), 1); // SPLIT
+        assert_eq!(avd_cpop_is_divide_method_split_or_birth(2), 1); // BIRTH
+        assert_eq!(avd_cpop_is_divide_method_split_or_birth(0), 0); // OFFSPRING
     }
 
     // --- CopyParentFT loophole guard tests ---
