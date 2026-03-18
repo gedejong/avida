@@ -492,6 +492,33 @@ int avd_cpu_should_die_max_executed(int max_executed, int time_used, int to_die)
 int avd_cpu_should_suppress_no_promoter(int promoters_enabled, int no_active_promoter_effect, int promoter_index);
 int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_executed);
 int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
+typedef struct {
+  int bits;
+  unsigned int base;
+  int offset;
+  double value;
+} AvidaMerit;
+
+AvidaMerit avd_merit_new(double value);
+AvidaMerit avd_merit_new_int(int value);
+AvidaMerit avd_merit_default(void);
+double avd_merit_get_double(const AvidaMerit* m);
+unsigned int avd_merit_get_uint(const AvidaMerit* m);
+int avd_merit_get_bit(const AvidaMerit* m, int bit_num);
+int avd_merit_get_num_bits(const AvidaMerit* m);
+double avd_merit_calc_fitness(const AvidaMerit* m, int gestation_time);
+void avd_merit_set(AvidaMerit* m, double value);
+void avd_merit_add_assign(AvidaMerit* m, const AvidaMerit* other);
+void avd_merit_add_assign_double(AvidaMerit* m, double value);
+AvidaMerit avd_merit_mul(const AvidaMerit* a, const AvidaMerit* b);
+void avd_merit_mul_assign(AvidaMerit* m, const AvidaMerit* other);
+void avd_merit_clear(AvidaMerit* m);
+int avd_merit_gt(const AvidaMerit* a, const AvidaMerit* b);
+int avd_merit_lt(const AvidaMerit* a, const AvidaMerit* b);
+int avd_merit_eq(const AvidaMerit* a, const AvidaMerit* b);
+int avd_merit_eq_double(const AvidaMerit* m, double val);
+int avd_merit_ne_double(const AvidaMerit* m, double val);
+
 int avd_script_get_runtime_type(int ltype, int rtype, int allow_str);
 int avd_script_valid_arithmetic_type(int type_val, int allow_matrix);
 int avd_script_valid_bitwise_type(int type_val);

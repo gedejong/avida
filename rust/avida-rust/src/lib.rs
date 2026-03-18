@@ -23,6 +23,7 @@ pub mod environment_helpers;
 pub mod event_list_helpers;
 pub mod histogram;
 pub mod landscape_helpers;
+pub mod merit;
 pub mod ordered_weighted_index;
 pub mod package;
 pub mod population_action_helpers;
