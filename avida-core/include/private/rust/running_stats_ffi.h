@@ -494,6 +494,10 @@ int avd_stats_is_den_habitat(int habitat);
 int avd_env_process_type(const char* type_str);
 int avd_env_phenplast_bonus_method(const char* method_str);
 int avd_env_reaction_entry_type(const char* entry_str);
+double avd_deme_base_merit(int method, double const_merit);
+int avd_deme_should_join_germline_first(int selection_method);
+double avd_deme_reaction_weight(double slope, int index);
+
 int avd_env_gradient_update_action(int habitat, int is_probabilistic);
 int avd_env_gradient_temp_height(double plateau, int height);
 int avd_env_gradient_should_fillin(double move_a_scaler, double plateau_inflow, double plateau_outflow, double cone_inflow, double cone_outflow, double gradient_inflow, int just_reset);

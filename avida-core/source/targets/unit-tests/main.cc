@@ -3166,6 +3166,50 @@ protected:
   }
 };
 
+class cDemePolicyHelperTests : public cUnitTest
+{
+public:
+  const char* GetUnitName() { return "cDeme Policy Helpers"; }
+protected:
+  void RunTests()
+  {
+    // Base merit computation
+    ReportTestResult(
+      "Deme base merit const method",
+      avd_deme_base_merit(0, 100.0) == 100.0 &&
+      avd_deme_base_merit(0, 0.5) == 0.5
+    );
+    ReportTestResult(
+      "Deme base merit other methods",
+      avd_deme_base_merit(1, 100.0) == 1.0 &&
+      avd_deme_base_merit(2, 100.0) == 1.0
+    );
+
+    // Germline join gate
+    ReportTestResult(
+      "Deme germline join gate",
+      avd_deme_should_join_germline_first(0) == 1 &&
+      avd_deme_should_join_germline_first(6) == 1 &&
+      avd_deme_should_join_germline_first(7) == 0 &&
+      avd_deme_should_join_germline_first(8) == 0 &&
+      avd_deme_should_join_germline_first(9) == 1
+    );
+
+    // Reaction weight
+    ReportTestResult(
+      "Deme reaction weight with slope",
+      avd_deme_reaction_weight(2.0, 3) == 6.0 &&
+      avd_deme_reaction_weight(0.5, 4) == 2.0 &&
+      avd_deme_reaction_weight(2.0, 0) == 0.0
+    );
+    ReportTestResult(
+      "Deme reaction weight without slope",
+      avd_deme_reaction_weight(0.0, 3) == 1.0 &&
+      avd_deme_reaction_weight(-1.0, 3) == 1.0
+    );
+  }
+};
+
 class cOrgSensorPolicyHelperTests : public cUnitTest
 {
 public:
@@ -3269,6 +3313,7 @@ int main(int argc, const char* argv[])
   TEST(cAnalyzePolicyHelper);
   TEST(cEnvironmentPolicyHelper);
   TEST(cStatsPolicyHelper);
+  TEST(cDemePolicyHelper);
   TEST(cOrgSensorPolicyHelper);
 
   if (failed == 0)

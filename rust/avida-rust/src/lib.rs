@@ -17,6 +17,7 @@ pub mod analyze_helpers;
 pub mod bit_array;
 pub mod common;
 pub mod cpu_helpers;
+pub mod deme_helpers;
 pub mod double_sum;
 pub mod environment_helpers;
 pub mod event_list_helpers;

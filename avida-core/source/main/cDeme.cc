@@ -35,6 +35,8 @@
 #include "cOrgMovementPredicate.h"
 #include "cDemePredicate.h"
 #include "cReactionResult.h" //@JJB**
+
+#include "rust/running_stats_ffi.h"
 #include "cTaskState.h" //@JJB**
 
 #include <cassert>
@@ -251,11 +253,7 @@ void cDeme::Setup(int id, const Apto::Array<int> & in_cells, int in_width, cWorl
   m_cur_reaction_add_reward.ResizeClear(m_world->GetEnvironment().GetReactionLib().GetSize()); //@JJB**
   m_cur_reaction_add_reward.SetAll(0.0);
   m_cur_bonus = m_world->GetConfig().DEFAULT_BONUS.Get(); //@JJB**
-  if (m_world->GetConfig().BASE_MERIT_METHOD.Get() == BASE_MERIT_CONST) {
-    m_cur_merit = m_world->GetConfig().BASE_CONST_MERIT.Get();
-  } else {
-    m_cur_merit = 1.0;
-  }
+  m_cur_merit = avd_deme_base_merit(m_world->GetConfig().BASE_MERIT_METHOD.Get(), m_world->GetConfig().BASE_CONST_MERIT.Get());
   
   total_energy_donated = 0.0;
   total_energy_received = 0.0;
@@ -542,11 +540,7 @@ void cDeme::Reset(cAvidaContext& ctx, bool resetResources, double deme_energy)
   m_reaction_count.SetAll(0); //@JJB**
   m_cur_reaction_add_reward.SetAll(0.0); //@JJB**
   m_cur_bonus = m_world->GetConfig().DEFAULT_BONUS.Get(); //@JJB**
-  if (m_world->GetConfig().BASE_MERIT_METHOD.Get() == BASE_MERIT_CONST) {
-    m_cur_merit = m_world->GetConfig().BASE_CONST_MERIT.Get();
-  } else {
-    m_cur_merit = 1.0;
-  }
+  m_cur_merit = avd_deme_base_merit(m_world->GetConfig().BASE_MERIT_METHOD.Get(), m_world->GetConfig().BASE_CONST_MERIT.Get());
 
   // Reset Task States
   for (Apto::Map<void*, cTaskState*>::ValueIterator it = m_task_states.Values(); it.Next();) delete *it.Get();
@@ -1380,12 +1374,7 @@ void cDeme::DoDemeOutput(cAvidaContext& ctx, int value)
 //@JJB**
 void cDeme::UpdateCurMerit()
 {
-  double merit_base;
-  if (m_world->GetConfig().BASE_MERIT_METHOD.Get() == BASE_MERIT_CONST) {
-    merit_base = m_world->GetConfig().BASE_CONST_MERIT.Get();
-  } else {
-    merit_base = 1.0;
-  }
+  double merit_base = avd_deme_base_merit(m_world->GetConfig().BASE_MERIT_METHOD.Get(), m_world->GetConfig().BASE_CONST_MERIT.Get());
   m_cur_merit = merit_base * m_cur_bonus;
 }
 
@@ -1393,12 +1382,7 @@ void cDeme::UpdateCurMerit()
 cMerit cDeme::CalcCurMerit()
 {
   cMerit cur_merit;
-  double merit_base;
-  if (m_world->GetConfig().BASE_MERIT_METHOD.Get() == BASE_MERIT_CONST) {
-    merit_base = m_world->GetConfig().BASE_CONST_MERIT.Get();
-  } else {
-    merit_base = 1.0;
-  }
+  double merit_base = avd_deme_base_merit(m_world->GetConfig().BASE_MERIT_METHOD.Get(), m_world->GetConfig().BASE_CONST_MERIT.Get());
   cur_merit = merit_base * m_cur_bonus;
   return cur_merit;
 }
@@ -1547,8 +1531,7 @@ void cDeme::ClearShannonInformationStats()
 std::pair<double, double> cDeme::GetAveVarGermMut() 
 {
 
-  if ((m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get() != 7) && 
-      (m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get() != 8)) {
+  if (avd_deme_should_join_germline_first(m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get())) {
     cPopulationCell& c = GetCell(0);
     if (c.IsOccupied()) { c.GetOrganism()->JoinGermline(); }
   }
@@ -1570,8 +1553,7 @@ std::pair<double, double> cDeme::GetAveVarGermMut()
 std::pair<double, double> cDeme::GetAveVarSomaMut() 
 {
   
-  if ((m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get() != 7) && 
-      (m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get() != 8)) {
+  if (avd_deme_should_join_germline_first(m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get())) {
     cPopulationCell& c = GetCell(0);
     if (c.IsOccupied()) { c.GetOrganism()->JoinGermline(); }
   }
@@ -1623,11 +1605,7 @@ std::pair<double, double> cDeme::GetAveVarGermWorkLoad() {
         // Compute workload...
         const Apto::Array<int> curr_react =  o->GetPhenotype().GetCumulativeReactionCount();
         for (int j=0; j<curr_react.GetSize(); j++) {
-          double weight = 1.0;
-          // weight each reaction according to.
-          if (m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() > 0.0) { 
-            weight = m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() * j; 
-          }
+          double weight = avd_deme_reaction_weight(m_world->GetConfig().INST_POINT_MUT_SLOPE.Get(), j);
           // The first task never has any work associated with it.
           if (j > 0) {
             cur_org_w += weight * curr_react[j];
@@ -1655,11 +1633,7 @@ std::pair<double, double> cDeme::GetAveVarSomaWorkLoad() {
         // Compute workload...
         const Apto::Array<int> curr_react =  o->GetPhenotype().GetCumulativeReactionCount();
         for (int j=0; j<curr_react.GetSize(); j++) {
-          double weight = 1.0;
-          // weight each reaction according to.
-          if (m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() > 0.0) { 
-            weight = m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() * j; 
-          }
+          double weight = avd_deme_reaction_weight(m_world->GetConfig().INST_POINT_MUT_SLOPE.Get(), j);
           // The first task never has any work associated with it.
           if (j > 0) {
             cur_org_w += weight * curr_react[j];
@@ -1687,11 +1661,7 @@ std::pair<double, double> cDeme::GetAveVarWorkLoad() {
         // Compute workload...
         const Apto::Array<int> curr_react =  o->GetPhenotype().GetCumulativeReactionCount();
         for (int j=0; j<curr_react.GetSize(); j++) {
-          double weight = 1.0;
-          // weight each reaction according to.
-          if (m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() > 0.0) { 
-            weight = m_world->GetConfig().INST_POINT_MUT_SLOPE.Get() * j; 
-          }
+          double weight = avd_deme_reaction_weight(m_world->GetConfig().INST_POINT_MUT_SLOPE.Get(), j);
           // The first task never has any work associated with it.
           if (j > 0) {
             cur_org_w += weight * curr_react[j];
