@@ -229,6 +229,9 @@ avd_rs_skewness
 avd_rs_std_deviation
 avd_rs_std_error
 avd_rs_variance
+avd_script_get_runtime_type
+avd_script_valid_arithmetic_type
+avd_script_valid_bitwise_type
 avd_sensor_clamp_distance
 avd_sensor_clamp_id_sought
 avd_sensor_max_distance
