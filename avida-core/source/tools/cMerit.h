@@ -28,17 +28,30 @@
 #include <climits>
 #include <cassert>
 
+#include "rust/running_stats_ffi.h"
+
 class cWorld;
+
+// cMerit now delegates its core logic (UpdateValue / binary decomposition) to the
+// Rust Merit type via the AvidaMerit FFI. The memory layout is identical, so the
+// class remains ABI-compatible with all existing C++ consumers.
 
 class cMerit
 {
 protected:
+  // Memory layout matches AvidaMerit exactly: { int bits, unsigned int base, int offset, double value }
   int bits;
   unsigned int base;
   int offset;
   double value;
 
-  void UpdateValue(double in_value);
+  void UpdateValue(double in_value) {
+    AvidaMerit m = avd_merit_new(in_value);
+    bits   = m.bits;
+    base   = m.base;
+    offset = m.offset;
+    value  = m.value;
+  }
 
 public:
   cMerit() : bits(0), base(0), offset(0), value(0) { ; }
@@ -59,10 +72,10 @@ public:
   }
 
   void operator=(double _merit) { UpdateValue(_merit); }
-  
+
   void operator+=(const cMerit & _m) { UpdateValue(value + _m.GetDouble()); }
   void operator+=(double _merit) { UpdateValue(value + _merit); }
-  
+
   cMerit operator*(const cMerit& _m) const { return cMerit(value * _m.GetDouble()); }
   void operator*=(const cMerit& _m) { UpdateValue(value * _m.GetDouble()); }
 
