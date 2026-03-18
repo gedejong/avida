@@ -3126,6 +3126,22 @@ protected:
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
     );
 
+    // Resource var_name classification
+    ReportTestResult(
+      "Env resource var kind known values and aliases",
+      avd_env_resource_var_kind("inflow") == AVD_ENV_RES_INFLOW &&
+      avd_env_resource_var_kind("geometry") == AVD_ENV_RES_GEOMETRY &&
+      avd_env_resource_var_kind("inflowx1") == AVD_ENV_RES_INFLOWX1 &&
+      avd_env_resource_var_kind("inflowx") == AVD_ENV_RES_INFLOWX1 &&
+      avd_env_resource_var_kind("outflowy") == AVD_ENV_RES_OUTFLOWY1 &&
+      avd_env_resource_var_kind("hgt") == AVD_ENV_RES_HGT
+    );
+    ReportTestResult(
+      "Env resource var kind unknown",
+      avd_env_resource_var_kind("bogus") == AVD_ENV_RES_UNKNOWN &&
+      avd_env_resource_var_kind(NULL) == AVD_ENV_RES_UNKNOWN
+    );
+
     // Process var_name classification
     ReportTestResult(
       "Env process var kind known values",

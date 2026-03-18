@@ -67,6 +67,59 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Resource var_name classification ---
+const ENV_RES_INFLOW: c_int = 0;
+const ENV_RES_OUTFLOW: c_int = 1;
+const ENV_RES_INITIAL: c_int = 2;
+const ENV_RES_GEOMETRY: c_int = 3;
+const ENV_RES_CELLS: c_int = 4;
+const ENV_RES_INFLOWX1: c_int = 5;
+const ENV_RES_INFLOWX2: c_int = 6;
+const ENV_RES_INFLOWY1: c_int = 7;
+const ENV_RES_INFLOWY2: c_int = 8;
+const ENV_RES_OUTFLOWX1: c_int = 9;
+const ENV_RES_OUTFLOWX2: c_int = 10;
+const ENV_RES_OUTFLOWY1: c_int = 11;
+const ENV_RES_OUTFLOWY2: c_int = 12;
+const ENV_RES_XDIFFUSE: c_int = 13;
+const ENV_RES_XGRAVITY: c_int = 14;
+const ENV_RES_YDIFFUSE: c_int = 15;
+const ENV_RES_YGRAVITY: c_int = 16;
+const ENV_RES_DEME: c_int = 17;
+const ENV_RES_COLLECTABLE: c_int = 18;
+const ENV_RES_ENERGY: c_int = 19;
+const ENV_RES_HGT: c_int = 20;
+const ENV_RES_UNKNOWN: c_int = -1;
+
+/// Classify a resource variable name to an opcode. Handles aliases (inflowx→inflowx1, etc).
+#[no_mangle]
+pub extern "C" fn avd_env_resource_var_kind(var_name: *const c_char) -> c_int {
+    with_cstr(var_name, ENV_RES_UNKNOWN, |s| match s.to_bytes() {
+        b"inflow" => ENV_RES_INFLOW,
+        b"outflow" => ENV_RES_OUTFLOW,
+        b"initial" => ENV_RES_INITIAL,
+        b"geometry" => ENV_RES_GEOMETRY,
+        b"cells" => ENV_RES_CELLS,
+        b"inflowx1" | b"inflowx" => ENV_RES_INFLOWX1,
+        b"inflowx2" => ENV_RES_INFLOWX2,
+        b"inflowy1" | b"inflowy" => ENV_RES_INFLOWY1,
+        b"inflowy2" => ENV_RES_INFLOWY2,
+        b"outflowx1" | b"outflowx" => ENV_RES_OUTFLOWX1,
+        b"outflowx2" => ENV_RES_OUTFLOWX2,
+        b"outflowy1" | b"outflowy" => ENV_RES_OUTFLOWY1,
+        b"outflowy2" => ENV_RES_OUTFLOWY2,
+        b"xdiffuse" => ENV_RES_XDIFFUSE,
+        b"xgravity" => ENV_RES_XGRAVITY,
+        b"ydiffuse" => ENV_RES_YDIFFUSE,
+        b"ygravity" => ENV_RES_YGRAVITY,
+        b"deme" => ENV_RES_DEME,
+        b"collectable" => ENV_RES_COLLECTABLE,
+        b"energy" => ENV_RES_ENERGY,
+        b"hgt" => ENV_RES_HGT,
+        _ => ENV_RES_UNKNOWN,
+    })
+}
+
 // --- Process var_name classification ---
 const ENV_PROCESS_RESOURCE: c_int = 0;
 const ENV_PROCESS_VALUE: c_int = 1;
@@ -295,6 +348,45 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Resource var_name classification tests ---
+
+    #[test]
+    fn resource_var_kind_known_values() {
+        let cases = [
+            ("inflow", ENV_RES_INFLOW),
+            ("outflow", ENV_RES_OUTFLOW),
+            ("initial", ENV_RES_INITIAL),
+            ("geometry", ENV_RES_GEOMETRY),
+            ("cells", ENV_RES_CELLS),
+            ("inflowx1", ENV_RES_INFLOWX1),
+            ("inflowx", ENV_RES_INFLOWX1), // alias
+            ("inflowy1", ENV_RES_INFLOWY1),
+            ("inflowy", ENV_RES_INFLOWY1), // alias
+            ("outflowx1", ENV_RES_OUTFLOWX1),
+            ("outflowx", ENV_RES_OUTFLOWX1), // alias
+            ("outflowy1", ENV_RES_OUTFLOWY1),
+            ("outflowy", ENV_RES_OUTFLOWY1), // alias
+            ("deme", ENV_RES_DEME),
+            ("energy", ENV_RES_ENERGY),
+            ("hgt", ENV_RES_HGT),
+        ];
+        for (input, expected) in &cases {
+            let cs = cstr(input);
+            assert_eq!(
+                avd_env_resource_var_kind(cs.as_ptr()),
+                *expected,
+                "resource var_kind mismatch for '{input}'"
+            );
+        }
+    }
+
+    #[test]
+    fn resource_var_kind_unknown() {
+        let bad = cstr("bogus");
+        assert_eq!(avd_env_resource_var_kind(bad.as_ptr()), ENV_RES_UNKNOWN);
+        assert_eq!(avd_env_resource_var_kind(ptr::null()), ENV_RES_UNKNOWN);
     }
 
     // --- Process var_name classification tests ---

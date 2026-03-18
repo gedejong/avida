@@ -496,88 +496,89 @@ bool cEnvironment::LoadResource(cString desc, Feedback& feedback)
         return false;
       }
 
-      if (var_name == "inflow") {
+      const int res_var = avd_env_resource_var_kind((const char*)var_name);
+
+      if (res_var == AVD_ENV_RES_INFLOW) {
         if (!AssertInputDouble(var_value, "inflow", var_type, feedback)) return false;
         new_resource->SetInflow( var_value.AsDouble() );
       }
-      else if (var_name == "outflow") {
+      else if (res_var == AVD_ENV_RES_OUTFLOW) {
         if (!AssertInputDouble(var_value, "outflow", var_type, feedback)) return false;
         new_resource->SetOutflow( var_value.AsDouble() );
       }
-      else if (var_name == "initial") {
+      else if (res_var == AVD_ENV_RES_INITIAL) {
         if (!AssertInputDouble(var_value, "initial", var_type, feedback)) return false;
         new_resource->SetInitial( var_value.AsDouble() );
       }
-      else if (var_name == "geometry") {
+      else if (res_var == AVD_ENV_RES_GEOMETRY) {
         if (!new_resource->SetGeometry( var_value )) {
           feedback.Error("in %s, %s unknown geometry", (const char*)var_type, (const char*)var_value);
           return false;
         }
       }
-      else if (var_name == "cells")
-      {
+      else if (res_var == AVD_ENV_RES_CELLS) {
         Apto::Array<int> cell_list = cStringUtil::ReturnArray(var_value);
         new_resource->SetCellIdList(cell_list);
       }
-      else if (var_name == "inflowx1" || var_name == "inflowx") {
+      else if (res_var == AVD_ENV_RES_INFLOWX1) {
         if (!AssertInputInt(var_value, "inflowX1", var_type, feedback)) return false;
         new_resource->SetInflowX1( var_value.AsInt() );
       }
-      else if (var_name == "inflowx2") {
+      else if (res_var == AVD_ENV_RES_INFLOWX2) {
         if (!AssertInputInt(var_value, "inflowX2", var_type, feedback)) return false;
         new_resource->SetInflowX2( var_value.AsInt() );
       }
-      else if (var_name == "inflowy1" || var_name == "inflowy") {
+      else if (res_var == AVD_ENV_RES_INFLOWY1) {
         if (!AssertInputInt(var_value, "inflowY1", var_type, feedback)) return false;
         new_resource->SetInflowY1( var_value.AsInt() );
       }
-      else if (var_name == "inflowy2") {
+      else if (res_var == AVD_ENV_RES_INFLOWY2) {
         if (!AssertInputInt(var_value, "inflowY2", var_type, feedback)) return false;
         new_resource->SetInflowY2( var_value.AsInt() );
       }
-      else if (var_name == "outflowx1" || var_name == "outflowx") {
+      else if (res_var == AVD_ENV_RES_OUTFLOWX1) {
         if (!AssertInputInt(var_value, "outflowX1", var_type, feedback)) return false;
         new_resource->SetOutflowX1( var_value.AsInt() );
       }
-      else if (var_name == "outflowx2") {
+      else if (res_var == AVD_ENV_RES_OUTFLOWX2) {
         if (!AssertInputInt(var_value, "outflowX2", var_type, feedback)) return false;
         new_resource->SetOutflowX2( var_value.AsInt() );
       }
-      else if (var_name == "outflowy1" || var_name == "outflowy") {
+      else if (res_var == AVD_ENV_RES_OUTFLOWY1) {
         if (!AssertInputInt(var_value, "outflowY1", var_type, feedback)) return false;
         new_resource->SetOutflowY1( var_value.AsInt() );
       }
-      else if (var_name == "outflowy2") {
+      else if (res_var == AVD_ENV_RES_OUTFLOWY2) {
         if (!AssertInputInt(var_value, "outflowY2", var_type, feedback)) return false;
         new_resource->SetOutflowY2( var_value.AsInt() );
       }
-      else if (var_name == "xdiffuse") {
+      else if (res_var == AVD_ENV_RES_XDIFFUSE) {
         if (!AssertInputDouble(var_value, "xdiffuse", var_type, feedback)) return false;
         new_resource->SetXDiffuse( var_value.AsDouble() );
       }
-      else if (var_name == "xgravity") {
+      else if (res_var == AVD_ENV_RES_XGRAVITY) {
         if (!AssertInputDouble(var_value, "xgravity", var_type, feedback)) return false;
         new_resource->SetXGravity( var_value.AsDouble() );
       }
-      else if (var_name == "ydiffuse") {
+      else if (res_var == AVD_ENV_RES_YDIFFUSE) {
         if (!AssertInputDouble(var_value, "ydiffuse", var_type, feedback)) return false;
         new_resource->SetYDiffuse( var_value.AsDouble() );
       }
-      else if (var_name == "ygravity") {
+      else if (res_var == AVD_ENV_RES_YGRAVITY) {
         if (!AssertInputDouble(var_value, "ygravity", var_type, feedback)) return false;
         new_resource->SetYGravity( var_value.AsDouble() );
       }
-      else if (var_name == "deme") {
+      else if (res_var == AVD_ENV_RES_DEME) {
         if (!new_resource->SetDemeResource( var_value )) {
           feedback.Error("in %s, %s must be true or false", (const char*)var_type, (const char*)var_value);
           return false;
         }
       }
-      else if (var_name == "collectable") {
+      else if (res_var == AVD_ENV_RES_COLLECTABLE) {
         if (!AssertInputBool(var_value, "collectable", var_type, feedback)) return false;
           new_resource->SetCollectable(var_value.AsInt());
       }
-      else if (var_name == "energy") {
+      else if (res_var == AVD_ENV_RES_ENERGY) {
         if (!new_resource->SetEnergyResource( var_value )) {
           feedback.Error("in %s, %s must be true or false", (const char*)var_type, (const char*)var_value);
           return false;
@@ -586,7 +587,7 @@ bool cEnvironment::LoadResource(cString desc, Feedback& feedback)
           return false;
         }
       }
-      else if (var_name == "hgt") {
+      else if (res_var == AVD_ENV_RES_HGT) {
 	// this resource is for HGT -- corresponds to genome fragments present in cells.
 	if (!AssertInputBool(var_value, "hgt", var_type, feedback)) return false;
 	new_resource->SetHGTMetabolize(var_value.AsInt());
