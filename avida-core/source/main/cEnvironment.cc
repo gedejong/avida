@@ -862,162 +862,164 @@ bool cEnvironment::LoadGradientResource(cString desc, Feedback& feedback)
         return false;
       }
       
-      if (var_name == "peakx") {
+      const int grad_var = avd_env_gradient_var_kind((const char*)var_name);
+
+      if (grad_var == AVD_ENV_GRAD_PEAKX) {
         if (!AssertInputInt(var_value, "peakx", var_type, feedback)) return false;
         new_resource->SetPeakX( var_value.AsInt() );
       }
-      else if (var_name == "peaky") {
+      else if (grad_var == AVD_ENV_GRAD_PEAKY) {
         if (!AssertInputInt(var_value, "peaky", var_type, feedback)) return false;
         new_resource->SetPeakY( var_value.AsInt() );
       }
-      else if (var_name == "height") {
+      else if (grad_var == AVD_ENV_GRAD_HEIGHT) {
         if (!AssertInputInt(var_value, "height", var_type, feedback)) return false;
         new_resource->SetHeight( var_value.AsInt() );
       }
-      else if (var_name == "spread") {
+      else if (grad_var == AVD_ENV_GRAD_SPREAD) {
         if (!AssertInputInt(var_value, "spread", var_type, feedback)) return false;
         new_resource->SetSpread( var_value.AsInt() );
       }
-      else if (var_name == "plateau") {
+      else if (grad_var == AVD_ENV_GRAD_PLATEAU) {
         if (!AssertInputDouble(var_value, "plateau", var_type, feedback)) return false;
         new_resource->SetPlateau( var_value.AsDouble() );
       }
-      else if (var_name == "decay") {
+      else if (grad_var == AVD_ENV_GRAD_DECAY) {
         if (!AssertInputInt(var_value, "decay", var_type, feedback)) return false;
         new_resource->SetDecay( var_value.AsInt() );
       }
-      else if (var_name == "max_x") {
+      else if (grad_var == AVD_ENV_GRAD_MAX_X) {
         if (!AssertInputInt(var_value, "max_x", var_type, feedback)) return false;
         new_resource->SetMaxX( var_value.AsInt() );
       }
-      else if (var_name == "max_y") {
+      else if (grad_var == AVD_ENV_GRAD_MAX_Y) {
         if (!AssertInputInt(var_value, "max_y", var_type, feedback)) return false;
         new_resource->SetMaxY( var_value.AsInt() );
       }
-      else if (var_name == "min_x") {
+      else if (grad_var == AVD_ENV_GRAD_MIN_X) {
         if (!AssertInputInt(var_value, "min_x", var_type, feedback)) return false;
         new_resource->SetMinX( var_value.AsInt() );
       }
-      else if (var_name == "min_y") {
+      else if (grad_var == AVD_ENV_GRAD_MIN_Y) {
         if (!AssertInputInt(var_value, "min_y", var_type, feedback)) return false;
         new_resource->SetMinY( var_value.AsInt() );
       }
-      else if (var_name == "move_a_scaler") {
+      else if (grad_var == AVD_ENV_GRAD_MOVE_A_SCALER) {
         if (!AssertInputDouble(var_value, "move_a_scaler", var_type, feedback)) return false;
         new_resource->SetAscaler( var_value.AsDouble() );
       }
-      else if (var_name == "updatestep") {
+      else if (grad_var == AVD_ENV_GRAD_UPDATESTEP) {
         if (!AssertInputInt(var_value, "updatestep", var_type, feedback)) return false;
         new_resource->SetUpdateStep( var_value.AsInt() );
       }
-      else if (var_name == "halo") {
+      else if (grad_var == AVD_ENV_GRAD_HALO) {
         if (!AssertInputInt(var_value, "halo", var_type, feedback)) return false;
         new_resource->SetHalo( var_value.AsInt() );
       }
-      else if (var_name == "halo_inner_radius") {
+      else if (grad_var == AVD_ENV_GRAD_HALO_INNER_RADIUS) {
         if (!AssertInputInt(var_value, "halo_inner_radius", var_type, feedback)) return false;
         new_resource->SetHaloInnerRadius( var_value.AsInt() );
       }
-      else if (var_name == "halo_anchor_x") {
+      else if (grad_var == AVD_ENV_GRAD_HALO_ANCHOR_X) {
         if (!AssertInputInt(var_value, "halo_halo_anchor_x", var_type, feedback)) return false;
         new_resource->SetHaloAnchorX( var_value.AsInt() );
       }
-      else if (var_name == "halo_anchor_y") {
+      else if (grad_var == AVD_ENV_GRAD_HALO_ANCHOR_Y) {
         if (!AssertInputInt(var_value, "halo_halo_anchor_y", var_type, feedback)) return false;
         new_resource->SetHaloAnchorY( var_value.AsInt() );
       }
-      else if (var_name == "move_speed") {
+      else if (grad_var == AVD_ENV_GRAD_MOVE_SPEED) {
         if (!AssertInputInt(var_value, "move_speed", var_type, feedback)) return false;
         new_resource->SetMoveSpeed( var_value.AsInt() );
       }
-      else if (var_name == "move_resistance") {
+      else if (grad_var == AVD_ENV_GRAD_MOVE_RESISTANCE) {
         if (!AssertInputInt(var_value, "move_resistance", var_type, feedback)) return false;
         new_resource->SetMoveResistance( var_value.AsInt() );
       }
-      else if (var_name == "halo_width") {
+      else if (grad_var == AVD_ENV_GRAD_HALO_WIDTH) {
         if (!AssertInputInt(var_value, "halo_width", var_type, feedback)) return false;
         new_resource->SetHaloWidth( var_value.AsInt() );
       }
-      else if (var_name == "plateau_inflow") {
+      else if (grad_var == AVD_ENV_GRAD_PLATEAU_INFLOW) {
         if (!AssertInputDouble(var_value, "plateau_inflow", var_type, feedback)) return false;
         new_resource->SetPlateauInflow( var_value.AsDouble() );
       }      
-      else if (var_name == "plateau_outflow") {
+      else if (grad_var == AVD_ENV_GRAD_PLATEAU_OUTFLOW) {
         if (!AssertInputDouble(var_value, "plateau_outflow", var_type, feedback)) return false;
         new_resource->SetPlateauOutflow( var_value.AsDouble() );
       } 
-      else if (var_name == "cone_inflow") {
+      else if (grad_var == AVD_ENV_GRAD_CONE_INFLOW) {
         if (!AssertInputDouble(var_value, "cone_inflow", var_type, feedback)) return false;
         new_resource->SetConeInflow( var_value.AsDouble() );
       }      
-      else if (var_name == "cone_outflow") {
+      else if (grad_var == AVD_ENV_GRAD_CONE_OUTFLOW) {
         if (!AssertInputDouble(var_value, "cone_outflow", var_type, feedback)) return false;
         new_resource->SetConeOutflow( var_value.AsDouble() );
       } 
-      else if (var_name == "gradient_inflow") {
+      else if (grad_var == AVD_ENV_GRAD_GRADIENT_INFLOW) {
         if (!AssertInputDouble(var_value, "gradient_inflow", var_type, feedback)) return false;
         new_resource->SetGradientInflow( var_value.AsDouble() );
       } 
-      else if (var_name == "initial") {
+      else if (grad_var == AVD_ENV_GRAD_INITIAL) {
         if (!AssertInputDouble(var_value, "initial", var_type, feedback)) return false;
         new_resource->SetPlatInitial( var_value.AsDouble() );
       } 
-      else if (var_name == "common") {
+      else if (grad_var == AVD_ENV_GRAD_COMMON) {
         if (!AssertInputInt(var_value, "common", var_type, feedback)) return false;
         new_resource->SetIsPlateauCommon( var_value.AsInt() );
       } 
-      else if (var_name == "floor") {
+      else if (grad_var == AVD_ENV_GRAD_FLOOR) {
         if (!AssertInputDouble(var_value, "floor", var_type, feedback)) return false;
         new_resource->SetFloor( var_value.AsDouble() );
       } 
-      else if (var_name == "habitat") {
+      else if (grad_var == AVD_ENV_GRAD_HABITAT) {
         if (!AssertInputInt(var_value, "habitat", var_type, feedback)) return false;
         new_resource->SetHabitat( var_value.AsInt() );
         AddHabitat(var_value.AsInt());
       } 
-      else if (var_name == "min_size") {
+      else if (grad_var == AVD_ENV_GRAD_MIN_SIZE) {
         if (!AssertInputInt(var_value, "min_size", var_type, feedback)) return false;
         new_resource->SetMinSize( var_value.AsInt() );
       } 
-      else if (var_name == "max_size") {
+      else if (grad_var == AVD_ENV_GRAD_MAX_SIZE) {
         if (!AssertInputInt(var_value, "max_size", var_type, feedback)) return false;
         new_resource->SetMaxSize( var_value.AsInt() );
       } 
-      else if (var_name == "config") {
+      else if (grad_var == AVD_ENV_GRAD_CONFIG) {
         if (!AssertInputInt(var_value, "config", var_type, feedback)) return false;
         new_resource->SetConfig( var_value.AsInt() );
       } 
-      else if (var_name == "count") {
+      else if (grad_var == AVD_ENV_GRAD_COUNT) {
         if (!AssertInputInt(var_value, "count", var_type, feedback)) return false;
         new_resource->SetCount( var_value.AsInt() );
       } 
-      else if (var_name == "resistance") {
+      else if (grad_var == AVD_ENV_GRAD_RESISTANCE) {
         if (!AssertInputDouble(var_value, "resistance", var_type, feedback)) return false;
         new_resource->SetResistance( var_value.AsDouble() );
       } 
-      else if (var_name == "damage") {
+      else if (grad_var == AVD_ENV_GRAD_DAMAGE) {
         if (!AssertInputDouble(var_value, "damage", var_type, feedback)) return false;
         new_resource->SetDamage( var_value.AsDouble() );
       } 
-      else if (var_name == "deadly") {
+      else if (grad_var == AVD_ENV_GRAD_DEADLY) {
         if (!AssertInputDouble(var_value, "deadly", var_type, feedback)) return false;
         new_resource->SetDeadly( var_value.AsDouble() );
       }
-      else if (var_name == "path") {
+      else if (grad_var == AVD_ENV_GRAD_PATH) {
         if (!AssertInputInt(var_value, "path", var_type, feedback)) return false;
         new_resource->SetPath( var_value.AsInt() );
         m_paths = true;
       }
-      else if (var_name == "hammer") {
+      else if (grad_var == AVD_ENV_GRAD_HAMMER) {
         if (!AssertInputInt(var_value, "hammer", var_type, feedback)) return false;
         new_resource->SetHammer( var_value.AsInt() );
         m_hammers = true;
       }
-      else if (var_name == "threshold") {
+      else if (grad_var == AVD_ENV_GRAD_THRESHOLD) {
         if (!AssertInputDouble(var_value, "threshold", var_type, feedback)) return false;
         new_resource->SetThreshold( var_value.AsDouble() );
       } 
-      else if (var_name == "refuge") {
+      else if (grad_var == AVD_ENV_GRAD_REFUGE) {
         if (!AssertInputInt(var_value, "refuge", var_type, feedback)) return false;
         new_resource->SetRefuge( var_value.AsInt() );
       } 

@@ -67,6 +67,55 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Gradient resource var_name classification ---
+
+/// Classify a gradient resource variable name to an opcode (0-34, -1=unknown).
+#[no_mangle]
+pub extern "C" fn avd_env_gradient_var_kind(var_name: *const c_char) -> c_int {
+    with_cstr(var_name, -1, |s| match s.to_bytes() {
+        b"peakx" => 0,
+        b"peaky" => 1,
+        b"height" => 2,
+        b"spread" => 3,
+        b"plateau" => 4,
+        b"decay" => 5,
+        b"max_x" => 6,
+        b"max_y" => 7,
+        b"min_x" => 8,
+        b"min_y" => 9,
+        b"move_a_scaler" => 10,
+        b"updatestep" => 11,
+        b"halo" => 12,
+        b"halo_inner_radius" => 13,
+        b"halo_anchor_x" => 14,
+        b"halo_anchor_y" => 15,
+        b"move_speed" => 16,
+        b"move_resistance" => 17,
+        b"halo_width" => 18,
+        b"plateau_inflow" => 19,
+        b"plateau_outflow" => 20,
+        b"cone_inflow" => 21,
+        b"cone_outflow" => 22,
+        b"gradient_inflow" => 23,
+        b"initial" => 24,
+        b"common" => 25,
+        b"floor" => 26,
+        b"habitat" => 27,
+        b"min_size" => 28,
+        b"max_size" => 29,
+        b"config" => 30,
+        b"count" => 31,
+        b"resistance" => 32,
+        b"damage" => 33,
+        b"deadly" => 34,
+        b"path" => 35,
+        b"hammer" => 36,
+        b"threshold" => 37,
+        b"refuge" => 38,
+        _ => -1,
+    })
+}
+
 // --- Resource var_name classification ---
 const ENV_RES_INFLOW: c_int = 0;
 const ENV_RES_OUTFLOW: c_int = 1;
@@ -348,6 +397,35 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Gradient var_name classification tests ---
+
+    #[test]
+    fn gradient_var_kind_known_values() {
+        let cases = [
+            ("peakx", 0),
+            ("peaky", 1),
+            ("plateau", 4),
+            ("halo", 12),
+            ("habitat", 27),
+            ("refuge", 38),
+        ];
+        for (input, expected) in &cases {
+            let cs = cstr(input);
+            assert_eq!(
+                avd_env_gradient_var_kind(cs.as_ptr()),
+                *expected,
+                "gradient var_kind mismatch for '{input}'"
+            );
+        }
+    }
+
+    #[test]
+    fn gradient_var_kind_unknown() {
+        let bad = cstr("bogus");
+        assert_eq!(avd_env_gradient_var_kind(bad.as_ptr()), -1);
+        assert_eq!(avd_env_gradient_var_kind(ptr::null()), -1);
     }
 
     // --- Resource var_name classification tests ---
