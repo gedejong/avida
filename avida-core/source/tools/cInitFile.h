@@ -21,6 +21,8 @@
  */
 
 #ifndef cInitFile_h
+
+#include "AvidaArray.h"
 #define cInitFile_h
 
 #include "apto/core.h"
@@ -51,7 +53,7 @@ private:
       : line(in_line), file(in_file), line_num(in_line_num), used(false) { ; }
   };
 
-  Apto::Array<sLine*> m_lines;
+  AvidaArray<sLine*> m_lines;
   cString m_ftype;
   cStringList m_format;
   cStringList m_imported_files;
@@ -124,7 +126,7 @@ public:
    * one to set standard values that are used if the user does not override
    * them.
    **/
-  cString ReadString(const Apto::Array<cString>& names, cString def = "", bool warn_default = true) const;
+  cString ReadString(const AvidaArray<cString>& names, cString def = "", bool warn_default = true) const;
   
   /**
    * Looks over all lines loaded into the file, and warns if any of them
@@ -144,11 +146,11 @@ public:
 
 private:
   void initMappings(const Apto::Map<Apto::String, Apto::String>& mappings);
-  bool loadFile(const cString& filename, Apto::Array<sLine*, Apto::Smart>& lines, const cString& working_dir,
+  bool loadFile(const cString& filename, AvidaArray<sLine*>& lines, const cString& working_dir,
                 const Apto::Set<Apto::String>* custom_directives, Feedback& feedback);
-  bool processCommand(cString cmdstr, Apto::Array<sLine*, Apto::Smart>& lines, const cString& filename, int linenum,
+  bool processCommand(cString cmdstr, AvidaArray<sLine*>& lines, const cString& filename, int linenum,
                       const cString& working_dir, const Apto::Set<Apto::String>* custom_directives, Feedback& feedback);
-  void postProcess(Apto::Array<sLine*, Apto::Smart>& lines);
+  void postProcess(AvidaArray<sLine*>& lines);
 };
 
 #endif

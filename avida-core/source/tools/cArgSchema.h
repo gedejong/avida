@@ -21,6 +21,8 @@
  */
 
 #ifndef cArgSchema_h
+
+#include "AvidaArray.h"
 #define cArgSchema_h
 
 #include "apto/core.h"
@@ -67,9 +69,9 @@ private:
   
   
   Apto::Map<Apto::String, sArgSchemaEntry*> m_entries;
-  Apto::Array<sArgSchemaEntry*> m_ints;
-  Apto::Array<sArgSchemaEntry*> m_doubles;
-  Apto::Array<sArgSchemaEntry*> m_strings;
+  AvidaArray<sArgSchemaEntry*> m_ints;
+  AvidaArray<sArgSchemaEntry*> m_doubles;
+  AvidaArray<sArgSchemaEntry*> m_strings;
   
   char m_sep_entry;
   char m_sep_value;

@@ -20,6 +20,8 @@
  */
 
 #ifndef tObjectFactory_h
+
+#include "AvidaArray.h"
 #define tObjectFactory_h
 
 #include "apto/core/Mutex.h"
@@ -97,7 +99,7 @@ public:
     return NULL;
   }
   
-  void CreateAll(Apto::Array<BaseType>& objects)
+  void CreateAll(AvidaArray<BaseType>& objects)
   {
     tList<Apto::String> names;
     tList<CreateObjectFunction> funcs;

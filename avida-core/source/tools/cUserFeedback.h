@@ -20,6 +20,8 @@
  */
 
 #ifndef cUserFeedback_h
+
+#include "AvidaArray.h"
 #define cUserFeedback_h
 
 #include "avida/core/Feedback.h"
@@ -52,7 +54,7 @@ private:
   };
   
   
-  Apto::Array<sEntry, Apto::Smart> m_entries;
+  AvidaArray<sEntry> m_entries;
   int m_errors;
   int m_warnings;
   

@@ -21,6 +21,8 @@
  */
 
 #ifndef cDemeProbSchedule_h
+
+#include "AvidaArray.h"
 #define cDemeProbSchedule_h
 
 #include "avida/core/Types.h"
@@ -49,7 +51,7 @@ private:
   Apto::Random* m_rng;
 
   // Array of WeightedIndex tree's to farm out the scheduling.
-  Apto::Array<cWeightedIndex*> chart;
+  AvidaArray<cWeightedIndex*> chart;
 
   // how many demes are there?
   int num_demes;

@@ -21,6 +21,8 @@
  */
 
 #ifndef cStringUtil_h
+
+#include "AvidaArray.h"
 #define cStringUtil_h
 
 #include "cString.h"
@@ -73,7 +75,7 @@ public:
 
   /* Return an array of integers from a string with format x,y..z,a */
 
-  static Apto::Array<int> ReturnArray(cString& in_string);
+  static AvidaArray<int> ReturnArray(cString& in_string);
 };
 
 

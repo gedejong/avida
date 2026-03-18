@@ -20,6 +20,8 @@
  */
 
 #ifndef tDataCommandManager_h
+
+#include "AvidaArray.h"
 #define tDataCommandManager_h
 
 #include "cStringUtil.h"
@@ -33,7 +35,7 @@ template <class TargetType> class tDataCommandManager
 {
 private:
   Apto::Map<Apto::String, tDataEntry<TargetType>*> m_entry_dict;
-  Apto::Array<cString> m_entry_names;
+  AvidaArray<cString> m_entry_names;
   
 public:
   tDataCommandManager() { ; }
@@ -48,7 +50,7 @@ public:
     m_entry_names.Push(name);
   }
   
-  const Apto::Array<cString>& GetEntryNames() const { return m_entry_names; }
+  const AvidaArray<cString>& GetEntryNames() const { return m_entry_names; }
 
   tDataEntryCommand<TargetType>* GetDataCommand(const cString& cmd, cString* error_str = NULL) const
   {

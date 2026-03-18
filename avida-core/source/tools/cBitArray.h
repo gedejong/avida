@@ -1,4 +1,6 @@
 #ifndef BIT_ARRAY_H
+
+#include "AvidaArray.h"
 #define BIT_ARRAY_H
 
 #include "avida/core/Types.h"
@@ -158,7 +160,7 @@ public:
 
   // Other bit-play
   int FindBit1(const int num_bits, const int start_pos) const;
-  Apto::Array<int> GetOnes(const int num_bits) const;
+  AvidaArray<int> GetOnes(const int num_bits) const;
   void ShiftLeft(const int num_bits, const int shift_size); // Helper: call SHIFT with positive number instead
   void ShiftRight(const int num_bits, const int shift_size); // Helper: call SHIFT with negative number instead
 
@@ -288,7 +290,7 @@ public:
 
   int FindBit1(int start_bit=0) const
     { return bit_array.FindBit1(array_size, start_bit); }
-  Apto::Array<int> GetOnes() const { return bit_array.GetOnes(array_size); }
+  AvidaArray<int> GetOnes() const { return bit_array.GetOnes(array_size); }
 
   // Boolean math functions...
   cBitArray NOT() const {

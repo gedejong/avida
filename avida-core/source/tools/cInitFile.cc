@@ -37,7 +37,7 @@ cInitFile::cInitFile(const cString& filename, const cString& working_dir, Feedba
 : m_filename(filename), m_found(false), m_opened(false), m_ftype("unknown")
 {
   if (mappings) initMappings(*mappings);
-  Apto::Array<sLine*, Apto::Smart> lines;
+  AvidaArray<sLine*> lines;
   m_opened = loadFile(filename, lines, working_dir, custom_directives, feedback);
   postProcess(lines);
 }
@@ -46,7 +46,7 @@ cInitFile::cInitFile(const cString& filename, const cString& working_dir, const 
   : m_filename(filename), m_found(false), m_opened(false), m_ftype("unknown")
 {
   if (mappings) initMappings(*mappings);
-  Apto::Array<sLine*, Apto::Smart> lines;
+  AvidaArray<sLine*> lines;
   m_opened = loadFile(filename, lines, working_dir, custom_directives, m_feedback);
   postProcess(lines);
 }
@@ -55,7 +55,7 @@ cInitFile::cInitFile(const cString& filename, const Apto::Map<Apto::String, Apto
   : m_filename(filename), m_found(false), m_opened(false), m_ftype("unknown")
 {
   initMappings(mappings);
-  Apto::Array<sLine*, Apto::Smart> lines;
+  AvidaArray<sLine*> lines;
   m_opened = loadFile(filename, lines, working_dir, NULL, m_feedback);
   postProcess(lines);
 }
@@ -70,7 +70,7 @@ cInitFile::cInitFile(istream& in_stream, const cString& working_dir)
     return;
   }
   
-  Apto::Array<sLine*, Apto::Smart> lines;
+  AvidaArray<sLine*> lines;
   
   int linenum = 1;
   std::string linebuf;
@@ -99,7 +99,7 @@ void cInitFile::initMappings(const Apto::Map<Apto::String, Apto::String>& mappin
 }
 
 
-bool cInitFile::loadFile(const cString& filename, Apto::Array<sLine*, Apto::Smart>& lines, const cString& working_dir,
+bool cInitFile::loadFile(const cString& filename, AvidaArray<sLine*>& lines, const cString& working_dir,
                          const Apto::Set<Apto::String>* custom_directives, Feedback& feedback)
 {
   cString path = cString(Apto::FileSystem::GetAbsolutePath(Apto::String(filename), Apto::String(working_dir))); 
@@ -137,7 +137,7 @@ bool cInitFile::loadFile(const cString& filename, Apto::Array<sLine*, Apto::Smar
 }
 
 
-bool cInitFile::processCommand(cString cmdstr, Apto::Array<sLine*, Apto::Smart>& lines, const cString& filename, int linenum,
+bool cInitFile::processCommand(cString cmdstr, AvidaArray<sLine*>& lines, const cString& filename, int linenum,
                                const cString& working_dir, const Apto::Set<Apto::String>* custom_directives, Feedback& feedback)
 {
   cString cmd = cmdstr.PopWord();
@@ -214,7 +214,7 @@ bool cInitFile::processCommand(cString cmdstr, Apto::Array<sLine*, Apto::Smart>&
 }
 
 
-void cInitFile::postProcess(Apto::Array<sLine*, Apto::Smart>& lines)
+void cInitFile::postProcess(AvidaArray<sLine*>& lines)
 {
   m_mappings.Clear();
   m_imported_files.Clear();
@@ -357,7 +357,7 @@ cString cInitFile::ReadString(const cString& name, cString def, bool warn_defaul
 }
 
 
-cString cInitFile::ReadString(const Apto::Array<cString>& names, cString def, bool warn_default) const
+cString cInitFile::ReadString(const AvidaArray<cString>& names, cString def, bool warn_default) const
 {
   const int num_names = names.GetSize();
   if (num_names == 0) return def;

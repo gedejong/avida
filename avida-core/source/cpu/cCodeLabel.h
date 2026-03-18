@@ -25,6 +25,7 @@
 
 #include "avida/Avida.h"
 
+#include "AvidaArray.h"
 #include "cString.h"
 #include "nHardware.h"
 
@@ -39,7 +40,7 @@ public:
   static const int MAX_LENGTH;
   
 private:
-  Apto::Array<char, Apto::Smart> m_nops;
+  AvidaArray<char> m_nops;
 
 public:
   inline cCodeLabel() { m_nops.SetReserve(MAX_LENGTH); }

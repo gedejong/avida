@@ -322,9 +322,9 @@ cString cStringUtil::Convert(double in_double)
 
 /* Return an array of integers from a string with format x,y..z,a */
 
-Apto::Array<int> cStringUtil::ReturnArray(cString& in_string)
+AvidaArray<int> cStringUtil::ReturnArray(cString& in_string)
 {
-  Apto::Array<int> out_list;
+  AvidaArray<int> out_list;
   while (in_string.GetSize() != 0) {
     cString chunk = in_string.Pop(',');
 

@@ -20,6 +20,8 @@
  */
 
 #ifndef cArgContainer_h
+
+#include "AvidaArray.h"
 #define cArgContainer_h
 
 #include "cString.h"
@@ -39,9 +41,9 @@ using namespace Avida;
 class cArgContainer
 {
 private:
-  Apto::Array<int> m_ints;
-  Apto::Array<double> m_doubles;
-  Apto::Array<cString> m_strings;
+  AvidaArray<int> m_ints;
+  AvidaArray<double> m_doubles;
+  AvidaArray<cString> m_strings;
 
   
   cArgContainer() { ; }
