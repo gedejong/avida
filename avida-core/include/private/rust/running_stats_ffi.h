@@ -492,6 +492,7 @@ int avd_cpu_should_die_max_executed(int max_executed, int time_used, int to_die)
 int avd_cpu_should_suppress_no_promoter(int promoters_enabled, int no_active_promoter_effect, int promoter_index);
 int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_executed);
 int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
+int avd_script_get_runtime_type(int ltype, int rtype, int allow_str);
 int avd_landscape_fitness_category(double fitness, double neut_min, double neut_max);
 int avd_landscape_epistasis_category(double mut1_fitness, double mut2_fitness, double combo_fitness);
 int avd_cpu_should_update_test_resources(int res_method, int cpu_cycles_used, int ave_time_slice);

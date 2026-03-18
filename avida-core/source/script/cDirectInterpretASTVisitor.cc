@@ -33,6 +33,8 @@
 
 #include "tMatrix.h"
 
+#include "rust/running_stats_ffi.h"
+
 using namespace AvidaScript;
 
 
@@ -1906,71 +1908,7 @@ cString* cDirectInterpretASTVisitor::asString(const sASTypeInfo& type, uAnyType 
 
 ASType_t cDirectInterpretASTVisitor::getRuntimeType(ASType_t ltype, ASType_t rtype, bool allow_str)
 {
-  switch (ltype) {
-    case TYPE(ARRAY):
-      return TYPE(ARRAY);
-    case TYPE(BOOL):
-      switch (rtype) {
-        case TYPE(ARRAY):
-        case TYPE(BOOL):
-        case TYPE(CHAR):
-        case TYPE(FLOAT):
-        case TYPE(INT):
-        case TYPE(MATRIX):
-        case TYPE(OBJECT_REF):
-        case TYPE(STRING):
-          return TYPE(BOOL);
-          
-        default: break;
-      }
-      break;
-    case TYPE(CHAR):
-      switch (rtype) {
-        case TYPE(ARRAY):     return TYPE(ARRAY);
-        case TYPE(BOOL):      return TYPE(CHAR);
-        case TYPE(CHAR):      return TYPE(CHAR);
-        case TYPE(FLOAT):     return TYPE(FLOAT);
-        case TYPE(INT):       return TYPE(INT);
-        case TYPE(MATRIX):    return TYPE(MATRIX);
-        case TYPE(STRING):    if (allow_str) return TYPE(STRING); break;
-        default: break;
-      }
-      break;
-    case TYPE(DICT):
-      return TYPE(DICT);
-    case TYPE(FLOAT):
-      switch (rtype) {
-        case TYPE(ARRAY):     return TYPE(ARRAY);
-        case TYPE(BOOL):      return TYPE(FLOAT);
-        case TYPE(CHAR):      return TYPE(FLOAT);
-        case TYPE(FLOAT):     return TYPE(FLOAT);
-        case TYPE(INT):       return TYPE(FLOAT);
-        case TYPE(MATRIX):    return TYPE(MATRIX);
-        case TYPE(STRING):    if (allow_str) return TYPE(FLOAT); break;
-        default: break;
-      }
-      break;
-    case TYPE(INT):
-      switch (rtype) {
-        case TYPE(ARRAY):     return TYPE(ARRAY);
-        case TYPE(BOOL):      return TYPE(INT);
-        case TYPE(CHAR):      return TYPE(INT);
-        case TYPE(FLOAT):     return TYPE(FLOAT);
-        case TYPE(INT):       return TYPE(INT);
-        case TYPE(MATRIX):    return TYPE(MATRIX);
-        case TYPE(STRING):    if (allow_str) return TYPE(INT); break;
-        default: break;
-      }
-      break;
-    case TYPE(MATRIX):
-      return TYPE(MATRIX);
-    case TYPE(STRING):
-      if (allow_str) return TYPE(STRING); break;
-      
-    default: break;
-  }
-  
-  return TYPE(INVALID);
+  return static_cast<ASType_t>(avd_script_get_runtime_type(ltype, rtype, allow_str ? 1 : 0));
 }
 
 
