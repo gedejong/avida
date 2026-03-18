@@ -494,6 +494,7 @@ int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_e
 int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
 int avd_landscape_fitness_category(double fitness, double neut_min, double neut_max);
 int avd_landscape_epistasis_category(double mut1_fitness, double mut2_fitness, double combo_fitness);
+int avd_cpu_should_update_test_resources(int res_method, int cpu_cycles_used, int ave_time_slice);
 int avd_cpu_clamp_max_genome_size(int config_value, int absolute_max);
 int avd_cpu_clamp_min_genome_size(int config_value, int absolute_min);
 int avd_cpu_gradient_facing(int northerly, int easterly);

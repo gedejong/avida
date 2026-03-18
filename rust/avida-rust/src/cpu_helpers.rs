@@ -167,6 +167,23 @@ pub extern "C" fn avd_cpu_task_switch_penalty(
     }
 }
 
+// --- TestCPU resource update gate ---
+
+/// Returns 1 if the TestCPU should update resources this cycle.
+/// Active when res_method >= RES_UPDATED_DEPLETABLE (2) AND cpu_cycles_used is on a time-slice boundary.
+#[no_mangle]
+pub extern "C" fn avd_cpu_should_update_test_resources(
+    res_method: c_int,
+    cpu_cycles_used: c_int,
+    ave_time_slice: c_int,
+) -> c_int {
+    if ave_time_slice > 0 && res_method >= 2 && (cpu_cycles_used % ave_time_slice == 0) {
+        1
+    } else {
+        0
+    }
+}
+
 // --- Genome size clamping ---
 
 /// Clamp a configured max genome size. If config is 0 or exceeds absolute max, use absolute max.
@@ -449,6 +466,22 @@ mod tests {
         assert_eq!(avd_cpu_gradient_facing(0, 1), 6); // W
         assert_eq!(avd_cpu_gradient_facing(1, 1), 7); // NW
         assert_eq!(avd_cpu_gradient_facing(0, 0), -1); // zero vector
+    }
+
+    // --- TestCPU resource update gate tests ---
+
+    #[test]
+    fn should_update_test_resources_policy() {
+        // method >= 2 and on boundary
+        assert_eq!(avd_cpu_should_update_test_resources(2, 100, 10), 1);
+        assert_eq!(avd_cpu_should_update_test_resources(3, 50, 10), 1);
+        // not on boundary
+        assert_eq!(avd_cpu_should_update_test_resources(2, 101, 10), 0);
+        // method too low
+        assert_eq!(avd_cpu_should_update_test_resources(1, 100, 10), 0);
+        assert_eq!(avd_cpu_should_update_test_resources(0, 100, 10), 0);
+        // zero time slice guard
+        assert_eq!(avd_cpu_should_update_test_resources(2, 100, 0), 0);
     }
 
     // --- Genome size clamping tests ---

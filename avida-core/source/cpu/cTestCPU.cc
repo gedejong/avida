@@ -42,6 +42,8 @@
 #include "cWorld.h"
 #include "tMatrix.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include <iomanip>
 
 using namespace std;
@@ -111,15 +113,13 @@ void cTestCPU::InitResources(cAvidaContext& ctx, int res_method, cResourceHistor
 
 void cTestCPU::UpdateResources(cAvidaContext& ctx, int cpu_cycles_used)
 {
-  int ave_time_slice = m_world->GetConfig().AVE_TIME_SLICE.Get();
-  if ((m_res_method >= RES_UPDATED_DEPLETABLE) && (cpu_cycles_used % ave_time_slice == 0))
+  if (avd_cpu_should_update_test_resources(m_res_method, cpu_cycles_used, m_world->GetConfig().AVE_TIME_SLICE.Get()))
     SetResourceUpdate(ctx, m_res_update + 1, true);
 }
 
 void cTestCPU::UpdateRandomResources(cAvidaContext& ctx, int cpu_cycles_used)
 {
-  int ave_time_slice = m_world->GetConfig().AVE_TIME_SLICE.Get();
-  if ((m_res_method >= RES_UPDATED_DEPLETABLE) && (cpu_cycles_used % ave_time_slice == 0))
+  if (avd_cpu_should_update_test_resources(m_res_method, cpu_cycles_used, m_world->GetConfig().AVE_TIME_SLICE.Get()))
     SetResourceUpdate(ctx, m_res_update + 1, true);
 }
 
