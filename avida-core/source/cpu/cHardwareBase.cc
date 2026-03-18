@@ -42,6 +42,8 @@
 #include "cWorld.h"
 #include "nHardware.h"
 
+#include "rust/running_stats_ffi.h"
+
 using namespace Avida;
 using namespace AvidaTools;
 
@@ -297,8 +299,8 @@ int cHardwareBase::Divide_DoMutations(cAvidaContext& ctx, double mut_multiplier,
 {
   int max_genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
   int min_genome_size = m_world->GetConfig().MIN_GENOME_SIZE.Get();
-  if (!max_genome_size || max_genome_size > MAX_GENOME_LENGTH) max_genome_size = MAX_GENOME_LENGTH;
-  if (!min_genome_size || min_genome_size < MIN_GENOME_LENGTH) min_genome_size = MIN_GENOME_LENGTH;
+  max_genome_size = avd_cpu_clamp_max_genome_size(max_genome_size, MAX_GENOME_LENGTH);
+  min_genome_size = avd_cpu_clamp_min_genome_size(min_genome_size, MIN_GENOME_LENGTH);
   
   int totalMutations = 0;
   Genome& offspring_gen = m_organism->OffspringGenome();
@@ -579,13 +581,13 @@ bool cHardwareBase::doUniformMutation(cAvidaContext& ctx, InstructionSequence& g
     genome[site] = Instruction(mut);
   } else if (mut == m_inst_set->GetSize()) { // delete
     int min_genome_size = m_world->GetConfig().MIN_GENOME_SIZE.Get();
-    if (!min_genome_size || min_genome_size < MIN_GENOME_LENGTH) min_genome_size = MIN_GENOME_LENGTH;
+    min_genome_size = avd_cpu_clamp_min_genome_size(min_genome_size, MIN_GENOME_LENGTH);
     if (genome.GetSize() == min_genome_size) return false;
     int site = ctx.GetRandom().GetUInt(genome.GetSize());
     genome.Remove(site);
   } else { // insert
     int max_genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    if (!max_genome_size || max_genome_size > MAX_GENOME_LENGTH) max_genome_size = MAX_GENOME_LENGTH;
+    max_genome_size = avd_cpu_clamp_max_genome_size(max_genome_size, MAX_GENOME_LENGTH);
     if (genome.GetSize() == max_genome_size) return false;
     int site = ctx.GetRandom().GetUInt(genome.GetSize() + 1);
     genome.Insert(site, Instruction(mut - m_inst_set->GetSize() - 1));

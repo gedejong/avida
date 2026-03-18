@@ -167,6 +167,28 @@ pub extern "C" fn avd_cpu_task_switch_penalty(
     }
 }
 
+// --- Genome size clamping ---
+
+/// Clamp a configured max genome size. If config is 0 or exceeds absolute max, use absolute max.
+#[no_mangle]
+pub extern "C" fn avd_cpu_clamp_max_genome_size(config_value: c_int, absolute_max: c_int) -> c_int {
+    if config_value == 0 || config_value > absolute_max {
+        absolute_max
+    } else {
+        config_value
+    }
+}
+
+/// Clamp a configured min genome size. If config is 0 or below absolute min, use absolute min.
+#[no_mangle]
+pub extern "C" fn avd_cpu_clamp_min_genome_size(config_value: c_int, absolute_min: c_int) -> c_int {
+    if config_value == 0 || config_value < absolute_min {
+        absolute_min
+    } else {
+        config_value
+    }
+}
+
 // --- Cardinal direction from gradient vectors ---
 
 /// Classify gradient vectors (northerly, easterly) into 8 facing directions.
@@ -427,6 +449,22 @@ mod tests {
         assert_eq!(avd_cpu_gradient_facing(0, 1), 6); // W
         assert_eq!(avd_cpu_gradient_facing(1, 1), 7); // NW
         assert_eq!(avd_cpu_gradient_facing(0, 0), -1); // zero vector
+    }
+
+    // --- Genome size clamping tests ---
+
+    #[test]
+    fn clamp_max_genome_size_policy() {
+        assert_eq!(avd_cpu_clamp_max_genome_size(0, 1000), 1000); // 0 → absolute max
+        assert_eq!(avd_cpu_clamp_max_genome_size(2000, 1000), 1000); // exceeds → absolute max
+        assert_eq!(avd_cpu_clamp_max_genome_size(500, 1000), 500); // within range
+    }
+
+    #[test]
+    fn clamp_min_genome_size_policy() {
+        assert_eq!(avd_cpu_clamp_min_genome_size(0, 10), 10); // 0 → absolute min
+        assert_eq!(avd_cpu_clamp_min_genome_size(5, 10), 10); // below → absolute min
+        assert_eq!(avd_cpu_clamp_min_genome_size(50, 10), 50); // within range
     }
 
     #[test]

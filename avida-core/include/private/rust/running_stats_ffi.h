@@ -484,6 +484,8 @@ int avd_cpu_should_die_max_executed(int max_executed, int time_used, int to_die)
 int avd_cpu_should_suppress_no_promoter(int promoters_enabled, int no_active_promoter_effect, int promoter_index);
 int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_executed);
 int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
+int avd_cpu_clamp_max_genome_size(int config_value, int absolute_max);
+int avd_cpu_clamp_min_genome_size(int config_value, int absolute_min);
 int avd_cpu_gradient_facing(int northerly, int easterly);
 int avd_cpu_alloc_validity(int allocated_size, int old_size, int min_genome, int max_genome, int max_alloc_size, int max_old_size);
 int avd_cpu_next_register(int default_register, int num_registers);
