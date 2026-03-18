@@ -1826,7 +1826,7 @@ bool cHardwareCPU::Divide_Main(cAvidaContext& ctx, const int div_point,
   }
   
   m_mal_active = false;
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_advance_ip = false;
   }
   
@@ -1841,7 +1841,7 @@ bool cHardwareCPU::Divide_Main(cAvidaContext& ctx, const int div_point,
       InheritState(*this);  
     }
     
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
     
     // Clear instruction flags on successful divide
     m_memory.ClearFlags();
@@ -1931,7 +1931,7 @@ bool cHardwareCPU::Divide_MainRS(cAvidaContext& ctx, const int div_point,
   }
   
   m_mal_active = false;
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_advance_ip = false;
   }
   
@@ -1939,7 +1939,7 @@ bool cHardwareCPU::Divide_MainRS(cAvidaContext& ctx, const int div_point,
   // birth.
   bool parent_alive = m_organism->ActivateDivide(ctx);
   if (parent_alive) {
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
 
     // Clear instruction flags on successful divide
     m_memory.ClearFlags();
@@ -2025,7 +2025,7 @@ bool cHardwareCPU::Divide_Main1RS(cAvidaContext& ctx, const int div_point,
   }
   
   m_mal_active = false;
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_advance_ip = false;
   }
   
@@ -2033,7 +2033,7 @@ bool cHardwareCPU::Divide_Main1RS(cAvidaContext& ctx, const int div_point,
   // birth.
   bool parent_alive = m_organism->ActivateDivide(ctx);
   if (parent_alive) {
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
   
     // Clear instruction flags on successful divide
     m_memory.ClearFlags();
@@ -2121,7 +2121,7 @@ bool cHardwareCPU::Divide_Main2RS(cAvidaContext& ctx, const int div_point,
   }
   
   m_mal_active = false;
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_advance_ip = false;
   }
   
@@ -2129,7 +2129,7 @@ bool cHardwareCPU::Divide_Main2RS(cAvidaContext& ctx, const int div_point,
   // birth.
   bool parent_alive = m_organism->ActivateDivide(ctx);
   if (parent_alive) {
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
 
     // Clear instruction flags on successful divide
     m_memory.ClearFlags();
@@ -3439,13 +3439,13 @@ bool cHardwareCPU::Inst_Repro(cAvidaContext& ctx)
     }
   }
   
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) m_advance_ip = false;
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) m_advance_ip = false;
   
   const bool parent_alive = m_organism->ActivateDivide(ctx);
   
   //Reset the parent
   if (parent_alive) {
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
 
     // Clear instruction flags on successful divide
     m_memory.ClearFlags();

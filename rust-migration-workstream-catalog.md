@@ -53,13 +53,23 @@ Slice queue:
 5. `cEnvironment` deeper reaction/requisite configuration parsing
 6. `cStats` spatial resource data formatting and germline classification
 
+Pending cross-file reuse:
+
+- **`avd_cpop_is_divide_method_split`** and **`avd_cpop_is_generation_inc_both`**: wire into `cHardwareCPU.cc` (~8 sites) and `cPopulation.cc` where `DIVIDE_METHOD_SPLIT` checks appear.
+- **`avd_deme_base_merit`**: may apply in `cPhenotype.cc` `CalcSizeMerit` BASE_MERIT_CONST case.
+
 Primary files:
 
-- `source/main/cEnvironment.cc` (2,095 LOC, **0 avd_ calls** — fresh)
-- `source/main/cStats.cc` (5,272 LOC, **0 avd_ calls** — fresh)
-- `source/main/cPopulation.cc` (9,475 LOC, 7 avd_ calls)
+- `source/main/cEnvironment.cc` (2,095 LOC, 6 avd_ calls)
+- `source/main/cStats.cc` (5,272 LOC, 9 avd_ calls)
+- `source/main/cPopulation.cc` (9,475 LOC, 21 avd_ calls)
 - `source/main/cTaskLib.cc` (4,255 LOC, 39 avd_ calls)
-- `source/main/cPhenotype.cc`
+- `source/main/cPhenotype.cc` (2,447 LOC, 8 avd_ calls)
+- `source/main/cDeme.cc` (1,707 LOC, 9 avd_ calls)
+- `source/main/cOrganism.cc` (1,710 LOC, 7 avd_ calls)
+- `source/main/cGradientCount.cc` (1,140 LOC, 7 avd_ calls)
+- `source/main/cOrgSensor.cc` (1,443 LOC, 4 avd_ calls)
+- `source/main/cResource.cc` (3 avd_ calls)
 
 ## Workstream D: Analyze and Action Pipeline (`source/analyze`, `source/actions`) — NEAR SATURATION
 
@@ -112,10 +122,10 @@ Ongoing tasks:
 - **M4**: Analyze/action stabilization (Workstream D slices 1-2)
 - **M5**: Remaining tails + retirement cleanup
 
-## Updated Priority Order (Top 5 executable candidates, 2026-03-17)
+## Updated Priority Order (Top 5 executable candidates, 2026-03-18)
 
-1. **Workstream C.1: `cEnvironment.cc` reaction-process-type dispatch classifiers** — fresh target, 0 avd_ calls, highest seam-readiness score, lowest risk
-2. **Workstream C.2: `cStats.cc` task-count filtering and resource-gradient classification** — fresh target, 0 avd_ calls, pure aggregation patterns
-3. **Workstream B.1: `cHardwareCPU.cc` instruction precondition and thread-evolution helpers** — 2 avd_ calls in 11K LOC, massive value surface
-4. **Workstream C.3: `cPopulation.cc` opinion/group assignment and forager classification** — 7 avd_ calls, large remaining decision surface
-5. **Workstream C.4: `cTaskLib.cc` remaining name-dispatch chain and scoring patterns** — diminishing returns but clear patterns remain
+1. **Cross-file reuse pass**: Wire `avd_cpop_is_divide_method_split` / `avd_cpop_is_generation_inc_both` into `cHardwareCPU.cc` and `cPopulation.cc` (~8 call-sites, zero new Rust code)
+2. **Workstream B: deeper `cHardwareCPU.cc`/`cHardwareExperimental.cc`** — 16/9 avd_ calls in 11K/6K LOC, still significant remaining decision surface
+3. **Workstream C: deeper `cPopulation.cc`** — 21 avd_ calls in 9.5K LOC, deme replication/migration dispatch patterns remain
+4. **Workstream C: `cPopulationInterface.cc`** — 0 avd_ calls, 2.4K LOC, last large untouched main file
+5. **Workstream C: `cLandscape.cc`** — 0 avd_ calls, 1K LOC, fitness landscape math

@@ -632,7 +632,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
   
   // If divide method is split, parent will be reset to completely tolerant
   // must remove their intolerance from the group's cached total.
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     if (m_world->GetConfig().TOLERANCE_WINDOW.Get() > 0) {
       int tol_max = m_world->GetConfig().MAX_TOLERANCE.Get();
       int group_id = parent_organism->GetOpinion().first;
@@ -986,14 +986,14 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
       delete offspring_array[i];
     }
   }
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT && parent_alive && m_world->GetConfig().RESET_INPUTS_ON_DIVIDE.Get()) TestForMiniTrace(parent_organism);
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get()) && parent_alive && m_world->GetConfig().RESET_INPUTS_ON_DIVIDE.Get()) TestForMiniTrace(parent_organism);
   return parent_alive;
 }
 
 void cPopulation::UpdateQs(cOrganism* org, bool reproduced)
 {
   // yank the org out of any current trace queues, as appropriate (i.e. if dead (==!reproduced) or if reproduced and splitting on divide)
-  bool split = (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT && m_world->GetConfig().RESET_INPUTS_ON_DIVIDE.Get());
+  bool split = (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get()) && m_world->GetConfig().RESET_INPUTS_ON_DIVIDE.Get());
   
   if (!reproduced || (reproduced && split)) {
     org->GetHardware().PrintMicroTrace(org->SystematicsGroup("genotype")->ID());
