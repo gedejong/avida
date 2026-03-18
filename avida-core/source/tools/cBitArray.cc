@@ -1,4 +1,5 @@
 #include "cBitArray.h"
+#include "AvidaArray.h"
 
 void cRawBitArray::Copy(const cRawBitArray & in_array, const int num_bits)
 {

@@ -18,6 +18,7 @@
 
 #include "apto/core/Array.h"
 
+
 template <class T>
 class AvidaArray
 {
@@ -25,6 +26,7 @@ private:
   std::vector<T> m_data;
 
 public:
+  typedef T ValueType;
   AvidaArray() {}
   explicit AvidaArray(int size) : m_data(size) {}
   AvidaArray(int size, const T& value) : m_data(size, value) {}
@@ -64,6 +66,13 @@ public:
   T Pop() { T val = m_data.back(); m_data.pop_back(); return val; }
 
   void Swap(int i, int j) { std::swap(m_data[i], m_data[j]); }
+
+  // Apto::Array compatibility aliases
+  T Get(int index) const { return m_data[index]; }
+  void Set(int index, const T& value) { m_data[index] = value; }
+
+  bool operator==(const AvidaArray& rhs) const { return m_data == rhs.m_data; }
+  bool operator!=(const AvidaArray& rhs) const { return m_data != rhs.m_data; }
 
   typename std::vector<T>::reference operator[](int index) { return m_data[index]; }
   typename std::vector<T>::const_reference operator[](int index) const { return m_data[index]; }

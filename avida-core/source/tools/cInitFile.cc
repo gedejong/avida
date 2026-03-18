@@ -186,6 +186,8 @@ bool cInitFile::processCommand(cString cmdstr, AvidaArray<sLine*>& lines, const 
     }
     m_format.Load(cmdstr);
   } else if (cmd == "#define") {
+
+#include "AvidaArray.h"
     cString mapping = cmdstr.PopWord();
     if (mapping.GetSize()) {
       cString value = cmdstr.PopWord();
