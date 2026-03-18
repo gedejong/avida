@@ -1996,128 +1996,47 @@ double cTaskLib::Task_Math3in_AM(cTaskContext& ctx) const //((X+Y)^2+(Y+Z)^2)
 
 double cTaskLib::Task_Fib1(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 0)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 1);
 }
 
 double cTaskLib::Task_Fib2(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 1)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 2);
 }
 
 double cTaskLib::Task_Fib4(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 2)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 4);
 }
 
 double cTaskLib::Task_Fib5(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 3)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 5);
 }
 
 double cTaskLib::Task_Fib6(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 5)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 6);
 }
 
 double cTaskLib::Task_Fib7(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 8)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 7);
 }
 
 double cTaskLib::Task_Fib8(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 13)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 8);
 }
 
 double cTaskLib::Task_Fib9(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 21)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 9);
 }
 
 double cTaskLib::Task_Fib10(cTaskContext& ctx) const
 {
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = ctx.GetInputBuffer().GetNumStored();
-  for (int i = 0; i < input_size ; i++)
-    {
-      if ( test_output == 34)
-	{
-	  return 1.0;
-	}
-    }
-  return 0.0;
+  return avd_tasklib_fib_check(ctx.GetOutputBuffer()[0], 10);
 }
 
 

@@ -142,6 +142,35 @@ pub extern "C" fn avd_tasklib_binary_pair_input_diff(
     (transformed - test_output).abs()
 }
 
+// --- Fibonacci scoring helper ---
+
+const FIBONACCI_VALUES: [c_int; 9] = [0, 1, 2, 3, 5, 8, 13, 21, 34];
+
+/// Check if test_output matches the expected Fibonacci value for the given index (1-based).
+/// fib_index: 1=Fib1(0), 2=Fib2(1), 4=Fib4(2), 5=Fib5(3), 6=Fib6(5), 7=Fib7(8),
+///            8=Fib8(13), 9=Fib9(21), 10=Fib10(34)
+/// Returns 1.0 if match, 0.0 otherwise. Returns 0.0 for invalid index.
+#[no_mangle]
+pub extern "C" fn avd_tasklib_fib_check(test_output: c_int, fib_index: c_int) -> f64 {
+    let idx = match fib_index {
+        1 => 0,
+        2 => 1,
+        4 => 2,
+        5 => 3,
+        6 => 4,
+        7 => 5,
+        8 => 6,
+        9 => 7,
+        10 => 8,
+        _ => return 0.0,
+    };
+    if test_output == FIBONACCI_VALUES[idx] {
+        1.0
+    } else {
+        0.0
+    }
+}
+
 // --- Task name family classifiers for ungated blocks ---
 
 /// Returns 1 if the task name is a basic logic/math name.
@@ -419,6 +448,35 @@ mod tests {
             i64::MAX
         );
         assert_eq!(avd_tasklib_binary_pair_input_diff(8, 2, 3, -1), i64::MAX);
+    }
+
+    // --- Fibonacci scoring tests ---
+
+    #[test]
+    fn tasklib_fib_check_matches() {
+        assert_eq!(avd_tasklib_fib_check(0, 1), 1.0); // Fib1 = 0
+        assert_eq!(avd_tasklib_fib_check(1, 2), 1.0); // Fib2 = 1
+        assert_eq!(avd_tasklib_fib_check(2, 4), 1.0); // Fib4 = 2
+        assert_eq!(avd_tasklib_fib_check(3, 5), 1.0); // Fib5 = 3
+        assert_eq!(avd_tasklib_fib_check(5, 6), 1.0); // Fib6 = 5
+        assert_eq!(avd_tasklib_fib_check(8, 7), 1.0); // Fib7 = 8
+        assert_eq!(avd_tasklib_fib_check(13, 8), 1.0); // Fib8 = 13
+        assert_eq!(avd_tasklib_fib_check(21, 9), 1.0); // Fib9 = 21
+        assert_eq!(avd_tasklib_fib_check(34, 10), 1.0); // Fib10 = 34
+    }
+
+    #[test]
+    fn tasklib_fib_check_mismatches() {
+        assert_eq!(avd_tasklib_fib_check(1, 1), 0.0); // Fib1 expects 0
+        assert_eq!(avd_tasklib_fib_check(0, 2), 0.0); // Fib2 expects 1
+        assert_eq!(avd_tasklib_fib_check(99, 10), 0.0);
+    }
+
+    #[test]
+    fn tasklib_fib_check_invalid_index() {
+        assert_eq!(avd_tasklib_fib_check(0, 0), 0.0);
+        assert_eq!(avd_tasklib_fib_check(0, 3), 0.0); // no Fib3
+        assert_eq!(avd_tasklib_fib_check(0, 11), 0.0);
     }
 
     // --- Task name family classifier tests ---

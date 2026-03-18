@@ -471,6 +471,7 @@ long long avd_tasklib_diff_scan_init(void);
 long long avd_tasklib_diff_scan_update(long long current_min, long long candidate);
 long long avd_tasklib_unary_math_input_diff(int input_value, long long test_output, int op_kind, double cast_precision);
 long long avd_tasklib_binary_pair_input_diff(int lhs_value, int rhs_value, long long test_output, int op_kind);
+double avd_tasklib_fib_check(int test_output, int fib_index);
 int avd_tasklib_is_basic_name(const char* task_name);
 int avd_tasklib_is_comm_name(const char* task_name);
 int avd_tasklib_is_movement_name(const char* task_name);
