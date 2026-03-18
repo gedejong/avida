@@ -304,6 +304,14 @@ enum {
   AVD_ENV_GRAD_THRESHOLD = 37,
   AVD_ENV_GRAD_REFUGE = 38,
   AVD_ENV_GRAD_UNKNOWN = -1,
+  AVD_LANDSCAPE_DEAD = 0,
+  AVD_LANDSCAPE_NEGATIVE = 1,
+  AVD_LANDSCAPE_NEUTRAL = 2,
+  AVD_LANDSCAPE_POSITIVE = 3,
+  AVD_LANDSCAPE_EPI_DEAD = 0,
+  AVD_LANDSCAPE_EPI_NEGATIVE = 1,
+  AVD_LANDSCAPE_EPI_POSITIVE = 2,
+  AVD_LANDSCAPE_EPI_NONE = 3,
   AVD_CPOP_FT_TRANSITION_NONE = 0,
   AVD_CPOP_FT_TRANSITION_PREY_TO_PRED = 1,
   AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED = 2,
@@ -484,6 +492,8 @@ int avd_cpu_should_die_max_executed(int max_executed, int time_used, int to_die)
 int avd_cpu_should_suppress_no_promoter(int promoters_enabled, int no_active_promoter_effect, int promoter_index);
 int avd_cpu_should_terminate_promoter(int promoter_inst_max, int promoter_inst_executed);
 int avd_cpu_task_switch_penalty(int penalty_type, int num_new_unique_reactions, int penalty_per_switch);
+int avd_landscape_fitness_category(double fitness, double neut_min, double neut_max);
+int avd_landscape_epistasis_category(double mut1_fitness, double mut2_fitness, double combo_fitness);
 int avd_cpu_clamp_max_genome_size(int config_value, int absolute_max);
 int avd_cpu_clamp_min_genome_size(int config_value, int absolute_min);
 int avd_cpu_gradient_facing(int northerly, int easterly);

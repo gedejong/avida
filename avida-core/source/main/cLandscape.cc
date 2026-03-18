@@ -34,6 +34,8 @@
 #include "cTestCPU.h"
 #include "cWorld.h"
 
+#include "rust/running_stats_ffi.h"
+
 
 cLandscape::cLandscape(cWorld* world, const Genome& in_genome)
 : m_world(world), trials(1), m_min_found(0), m_max_trials(0), site_count(NULL)
@@ -103,19 +105,22 @@ double cLandscape::ProcessGenome(cAvidaContext& ctx, cTestCPU* testcpu, Genome& 
   total_fitness += test_fitness;
   total_sqr_fitness += test_fitness * test_fitness;
   total_count++;
-  if (test_fitness == 0) {
-    dead_count++;
-  } else if (test_fitness < neut_min) {
-    neg_count++;
-    neg_size = neg_size + test_fitness  ;
-  } else if (test_fitness <= neut_max) {
-    neut_count++;
-  } else {
-    pos_count++;
-    pos_size = pos_size + test_fitness  ;
-    if (test_fitness > peak_fitness) {
-      peak_fitness = test_fitness;
-      peak_genome = in_genome;
+  {
+    const int cat = avd_landscape_fitness_category(test_fitness, neut_min, neut_max);
+    if (cat == AVD_LANDSCAPE_DEAD) {
+      dead_count++;
+    } else if (cat == AVD_LANDSCAPE_NEGATIVE) {
+      neg_count++;
+      neg_size = neg_size + test_fitness;
+    } else if (cat == AVD_LANDSCAPE_NEUTRAL) {
+      neut_count++;
+    } else {
+      pos_count++;
+      pos_size = pos_size + test_fitness;
+      if (test_fitness > peak_fitness) {
+        peak_fitness = test_fitness;
+        peak_genome = in_genome;
+      }
     }
   }
   
@@ -932,17 +937,20 @@ double cLandscape::TestMutPair(cAvidaContext& ctx, cTestCPU* testcpu, Genome& mo
   double mult_combo = mut1_fitness * mut2_fitness;
     
   total_epi_count++;
-  if ((mut1_fitness == 0 || mut2_fitness == 0) && (combo_fitness == 0)) {
-    dead_epi_count++;
-  } else if (combo_fitness < mult_combo) {
-    neg_epi_count++;
-    neg_epi_size = neg_epi_size + combo_fitness;
-  } else if (combo_fitness > mult_combo) {
-    pos_epi_count++;
-    pos_epi_size = pos_epi_size + combo_fitness;
-  } else {
-    no_epi_count++;
-    no_epi_size = no_epi_size + combo_fitness;
+  {
+    const int epi_cat = avd_landscape_epistasis_category(mut1_fitness, mut2_fitness, combo_fitness);
+    if (epi_cat == AVD_LANDSCAPE_EPI_DEAD) {
+      dead_epi_count++;
+    } else if (epi_cat == AVD_LANDSCAPE_EPI_NEGATIVE) {
+      neg_epi_count++;
+      neg_epi_size = neg_epi_size + combo_fitness;
+    } else if (epi_cat == AVD_LANDSCAPE_EPI_POSITIVE) {
+      pos_epi_count++;
+      pos_epi_size = pos_epi_size + combo_fitness;
+    } else {
+      no_epi_count++;
+      no_epi_size = no_epi_size + combo_fitness;
+    }
   }
   
   return combo_fitness;
