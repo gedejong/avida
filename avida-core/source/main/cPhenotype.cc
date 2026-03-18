@@ -98,7 +98,7 @@ cPhenotype::cPhenotype(cWorld* world, int parent_generation, int num_nops)
 { 
   if (parent_generation >= 0) {
     generation = parent_generation;
-    if (m_world->GetConfig().GENERATION_INC_METHOD.Get() != GENERATION_INC_BOTH) generation++;
+    if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
   }
   
   double num_resources = m_world->GetEnvironment().GetResourceLib().GetSize();
@@ -475,7 +475,7 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   num_divides     = 0;
   num_divides_failed = 0;
   generation      = parent_phenotype.generation;
-  if (m_world->GetConfig().GENERATION_INC_METHOD.Get() != GENERATION_INC_BOTH) generation++;
+  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
   cpu_cycles_used = 0;
   time_used       = 0;
   num_execs       = 0;
@@ -1378,7 +1378,7 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   num_divides     = 0;
   num_divides_failed = 0;
   generation      = clone_phenotype.generation;
-  if (m_world->GetConfig().GENERATION_INC_METHOD.Get() != GENERATION_INC_BOTH) generation++;
+  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
   cpu_cycles_used = 0;
   time_used       = 0;
   num_execs       = 0;

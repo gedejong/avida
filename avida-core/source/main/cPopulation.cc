@@ -5370,7 +5370,7 @@ cPopulationCell& cPopulation::PositionOffspring(cPopulationCell& parent_cell, cA
     return GetCell(out_pos);
   }
   
-  if (birth_method == POSITION_OFFSPRING_FULL_SOUP_ELDEST) {
+  if (avd_cpop_is_birth_method_eldest(birth_method)) {
     cPopulationCell * out_cell = reaper_queue.PopRear();
     if (parent_ok == false && out_cell->GetID() == parent_cell.GetID()) {
       out_cell = reaper_queue.PopRear();

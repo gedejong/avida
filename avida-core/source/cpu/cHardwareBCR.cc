@@ -2441,7 +2441,7 @@ bool cHardwareBCR::Inst_Repro(cAvidaContext& ctx)
     m_inst_ft_cost[i] = m_inst_set->GetFTCost(Instruction(i));
   }
   
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) {
+  if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_advance_ip = false;
   }
   
@@ -2450,7 +2450,7 @@ bool cHardwareBCR::Inst_Repro(cAvidaContext& ctx)
   
   // Do more work if the parent lives through the birth of the offspring
   if (parent_alive) {
-    if (m_world->GetConfig().DIVIDE_METHOD.Get() == DIVIDE_METHOD_SPLIT) Reset(ctx);
+    if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) Reset(ctx);
   }
   
   return true;
