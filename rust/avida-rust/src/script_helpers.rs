@@ -58,6 +58,29 @@ pub extern "C" fn avd_script_get_runtime_type(
     }
 }
 
+// AS_TYPE_RUNTIME = 10, AS_TYPE_VAR = 9
+
+/// Returns 1 if the type is valid for arithmetic operations.
+/// Valid: RUNTIME(10), INT(5), CHAR(2), FLOAT(4), and MATRIX(7) if allow_matrix.
+#[no_mangle]
+pub extern "C" fn avd_script_valid_arithmetic_type(type_val: c_int, allow_matrix: c_int) -> c_int {
+    match type_val {
+        AS_TYPE_MATRIX if allow_matrix != 0 => 1,
+        10 | AS_TYPE_INT | AS_TYPE_CHAR | AS_TYPE_FLOAT => 1, // 10 = AS_TYPE_RUNTIME
+        _ => 0,
+    }
+}
+
+/// Returns 1 if the type is valid for bitwise operations.
+/// Valid: RUNTIME(10), INT(5), CHAR(2).
+#[no_mangle]
+pub extern "C" fn avd_script_valid_bitwise_type(type_val: c_int) -> c_int {
+    match type_val {
+        10 | AS_TYPE_INT | AS_TYPE_CHAR => 1, // 10 = AS_TYPE_RUNTIME
+        _ => 0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,6 +170,27 @@ mod tests {
             avd_script_get_runtime_type(AS_TYPE_INT, AS_TYPE_MATRIX, 0),
             AS_TYPE_MATRIX
         );
+    }
+
+    #[test]
+    fn valid_arithmetic_type_policy() {
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_INT, 0), 1);
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_CHAR, 0), 1);
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_FLOAT, 0), 1);
+        assert_eq!(avd_script_valid_arithmetic_type(10, 0), 1); // RUNTIME
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_MATRIX, 1), 1);
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_MATRIX, 0), 0);
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_STRING, 0), 0);
+        assert_eq!(avd_script_valid_arithmetic_type(AS_TYPE_BOOL, 0), 0);
+    }
+
+    #[test]
+    fn valid_bitwise_type_policy() {
+        assert_eq!(avd_script_valid_bitwise_type(AS_TYPE_INT), 1);
+        assert_eq!(avd_script_valid_bitwise_type(AS_TYPE_CHAR), 1);
+        assert_eq!(avd_script_valid_bitwise_type(10), 1); // RUNTIME
+        assert_eq!(avd_script_valid_bitwise_type(AS_TYPE_FLOAT), 0);
+        assert_eq!(avd_script_valid_bitwise_type(AS_TYPE_STRING), 0);
     }
 
     #[test]

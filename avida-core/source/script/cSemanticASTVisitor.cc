@@ -40,6 +40,8 @@ using namespace AvidaScript;
 #define TYPE(x) AS_TYPE_ ## x
 #define TYPEINFO(x) sASTypeInfo(AS_TYPE_ ## x)
 
+#include "rust/running_stats_ffi.h"
+
 namespace AvidaScript {
   static const bool valid_cast[13][13] = {
   // ARRAY, BOOL , CHAR , DICT , FLOAT, INT  , @OBJ , MATRX, STRNG, VAR  , RUNTM, VOID , INVLD
@@ -963,33 +965,12 @@ ASType_t cSemanticASTVisitor::getConsensusType(const sASTypeInfo& left, const sA
 }
 
 inline bool cSemanticASTVisitor::validArithmeticType(const sASTypeInfo& type, bool allow_matrix) const {
-  switch (type.type) {
-    case TYPE(MATRIX):
-      return allow_matrix;
-      
-    case TYPE(RUNTIME):
-    case TYPE(INT):
-    case TYPE(CHAR):
-    case TYPE(FLOAT):
-      return true;
-      
-    default:
-      return false;
-  }
+  return avd_script_valid_arithmetic_type(type.type, allow_matrix ? 1 : 0) != 0;
 }
 
 
 inline bool cSemanticASTVisitor::validBitwiseType(const sASTypeInfo& type) const {
-  switch (type.type) {
-    case TYPE(RUNTIME):
-    case TYPE(INT):
-    case TYPE(CHAR):
-      // Char and Int Okay
-      return true;
-      
-    default:
-      return false;
-  }
+  return avd_script_valid_bitwise_type(type.type) != 0;
 }
 
 inline bool cSemanticASTVisitor::lookupVariable(const cString& name, int& var_id, bool& global) const
