@@ -156,19 +156,21 @@ bool cEnvironment::LoadReactionProcess(cReaction* reaction, cString desc, Feedba
     // Parse this entry.
     if (!ParseSetting(var_entry, var_name, var_value, var_type, feedback)) return false;
 
-    // Now that we know we have a variable name and its value, set it!
-    if (var_name == "resource") {
+    // Classify the variable name via Rust helper
+    const int proc_var = avd_env_process_var_kind((const char*)var_name);
+
+    if (proc_var == AVD_ENV_PROCESS_RESOURCE) {
       cResource* test_resource = resource_lib.GetResource(var_value);
       if (!AssertInputValid(test_resource, "resource", var_type, var_value, feedback)) {
         return false;
       }
       new_process->SetResource(test_resource);
     }
-    else if (var_name == "value") {
+    else if (proc_var == AVD_ENV_PROCESS_VALUE) {
       if (!AssertInputDouble(var_value, "value", var_type, feedback)) return false;
       new_process->SetValue(var_value.AsDouble());
     }
-    else if (var_name == "type") {
+    else if (proc_var == AVD_ENV_PROCESS_TYPE) {
       int proc_type = avd_env_process_type((const char*)var_value);
       if (proc_type != AVD_ENV_PROCTYPE_UNKNOWN) {
         new_process->SetType(proc_type);
@@ -178,90 +180,90 @@ bool cEnvironment::LoadReactionProcess(cReaction* reaction, cString desc, Feedba
         return false;
       }
     }
-    else if (var_name == "max") {
+    else if (proc_var == AVD_ENV_PROCESS_MAX) {
       if (!AssertInputDouble(var_value, "max", var_type, feedback)) return false;
       new_process->SetMaxNumber(var_value.AsDouble());
     }
-    else if (var_name == "min") {
+    else if (proc_var == AVD_ENV_PROCESS_MIN) {
       if (!AssertInputDouble(var_value, "min", var_type, feedback)) return false;
       new_process->SetMinNumber(var_value.AsDouble());
     }
-    else if (var_name == "frac") {
+    else if (proc_var == AVD_ENV_PROCESS_FRAC) {
       if (!AssertInputDouble(var_value, "frac", var_type, feedback)) return false;
       double in_frac = var_value.AsDouble();
       if (in_frac > 1.0) in_frac = 1.0;
       new_process->SetMaxFraction(in_frac);
     }
-    else if (var_name == "ksubm") {
+    else if (proc_var == AVD_ENV_PROCESS_KSUBM) {
       if (!AssertInputDouble(var_value, "ksubm", var_type, feedback)) return false;
       double in_k_sub_m = var_value.AsDouble();
       new_process->SetKsubM(in_k_sub_m);
     }
-    else if (var_name == "product") {
+    else if (proc_var == AVD_ENV_PROCESS_PRODUCT) {
       cResource* test_resource = resource_lib.GetResource(var_value);
       if (!AssertInputValid(test_resource, "product", var_type, var_value, feedback)) {
         return false;
       }
       new_process->SetProduct(test_resource);
     }
-    else if (var_name == "conversion") {
+    else if (proc_var == AVD_ENV_PROCESS_CONVERSION) {
       if (!AssertInputDouble(var_value, "conversion", var_type, feedback)) return false;
       new_process->SetConversion(var_value.AsDouble());
     }
-    else if (var_name == "inst") {
+    else if (proc_var == AVD_ENV_PROCESS_INST) {
       new_process->SetInst(var_value);
     }
-    else if (var_name =="random") {
+    else if (proc_var == AVD_ENV_PROCESS_RANDOM) {
       if (!AssertInputBool(var_value, "random", var_type, feedback))
         return false;
       new_process->SetRandomResource(var_value.AsInt());
     }
-    else if (var_name == "lethal") {
+    else if (proc_var == AVD_ENV_PROCESS_LETHAL) {
       if (!AssertInputDouble(var_value, "lethal", var_type, feedback))
         return false;
       new_process->SetLethal(var_value.AsDouble());
     }
-    else if (var_name == "sterilize") {
+    else if (proc_var == AVD_ENV_PROCESS_STERILIZE) {
       if (!AssertInputBool(var_value, "sterilize", var_type, feedback))
         return false;
       new_process->SetSterile(var_value.AsInt());
     }
-    else if (var_name == "deme") {
+    else if (proc_var == AVD_ENV_PROCESS_DEME) {
       if (!AssertInputDouble(var_value, "demefrac", var_type, feedback))
         return false;
       new_process->SetDemeFraction(var_value.AsDouble());
     }
-    else if (var_name == "germline") {
+    else if (proc_var == AVD_ENV_PROCESS_GERMLINE) {
       if (!AssertInputBool(var_value, "germline", var_type, feedback))
         return false;
       new_process->SetIsGermline(var_value.AsInt());
     }
-    else if (var_name == "detect") {
+    else if (proc_var == AVD_ENV_PROCESS_DETECT) {
       cResource* test_resource = resource_lib.GetResource(var_value);
       if (!AssertInputValid(test_resource, "product", var_type, var_value, feedback)) {
         return false;
       }
       new_process->SetDetect(test_resource);
     }
-    else if (var_name == "threshold") {
+    else if (proc_var == AVD_ENV_PROCESS_THRESHOLD) {
       if (!AssertInputDouble(var_value, "threshold", var_type, feedback))
         return false;
       new_process->SetDetectionThreshold(var_value.AsDouble());
     }
-    else if (var_name == "detectionerror") {
+    else if (proc_var == AVD_ENV_PROCESS_DETECTIONERROR) {
       if (!AssertInputDouble(var_value, "detectionerror", var_type, feedback))
         return false;
       new_process->SetDetectionError(var_value.AsDouble());
     }
-    else if (var_name == "string") {
+    else if (proc_var == AVD_ENV_PROCESS_STRING) {
       new_process->SetMatchString(var_value);
     }
-    else if (var_name == "depletable") {
+    else if (proc_var == AVD_ENV_PROCESS_DEPLETABLE) {
       if (!AssertInputBool(var_value, "depletable", var_type, feedback))
         return false;
       new_process->SetDepletable(var_value.AsInt());
     }
-    else if (var_name == "phenplastbonus") {
+    else if (proc_var == AVD_ENV_PROCESS_PHENPLASTBONUS) {
       int pp_method = avd_env_phenplast_bonus_method((const char*)var_value);
       if (pp_method != AVD_ENV_PHENPLAST_UNKNOWN) {
         new_process->SetPhenPlastBonusMethod(static_cast<ePHENPLAST_BONUS_METHOD>(pp_method));
@@ -270,7 +272,7 @@ bool cEnvironment::LoadReactionProcess(cReaction* reaction, cString desc, Feedba
         return false;
       }
     }
-    else if ( var_name == "internal") {
+    else if (proc_var == AVD_ENV_PROCESS_INTERNAL) {
       if (!AssertInputBool(var_value, "internal", var_type, feedback))
         return false;
       new_process->SetInternal(var_value.AsInt());

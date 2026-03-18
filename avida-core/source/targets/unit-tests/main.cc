@@ -3126,6 +3126,21 @@ protected:
       avd_env_reaction_entry_type("Requisite") == AVD_ENV_ENTRY_TYPE_UNKNOWN
     );
 
+    // Process var_name classification
+    ReportTestResult(
+      "Env process var kind known values",
+      avd_env_process_var_kind("resource") == AVD_ENV_PROCESS_RESOURCE &&
+      avd_env_process_var_kind("value") == AVD_ENV_PROCESS_VALUE &&
+      avd_env_process_var_kind("type") == AVD_ENV_PROCESS_TYPE &&
+      avd_env_process_var_kind("phenplastbonus") == AVD_ENV_PROCESS_PHENPLASTBONUS &&
+      avd_env_process_var_kind("internal") == AVD_ENV_PROCESS_INTERNAL
+    );
+    ReportTestResult(
+      "Env process var kind unknown and null guard",
+      avd_env_process_var_kind("bogus") == AVD_ENV_PROCESS_UNKNOWN &&
+      avd_env_process_var_kind(NULL) == AVD_ENV_PROCESS_UNKNOWN
+    );
+
     // Cellbox validation
     ReportTestResult(
       "Env cellbox validation OK and failures",

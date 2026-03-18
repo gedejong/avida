@@ -67,6 +67,61 @@ pub extern "C" fn avd_env_reaction_entry_type(entry_str: *const c_char) -> c_int
     })
 }
 
+// --- Process var_name classification ---
+const ENV_PROCESS_RESOURCE: c_int = 0;
+const ENV_PROCESS_VALUE: c_int = 1;
+const ENV_PROCESS_TYPE: c_int = 2;
+const ENV_PROCESS_MAX: c_int = 3;
+const ENV_PROCESS_MIN: c_int = 4;
+const ENV_PROCESS_FRAC: c_int = 5;
+const ENV_PROCESS_KSUBM: c_int = 6;
+const ENV_PROCESS_PRODUCT: c_int = 7;
+const ENV_PROCESS_CONVERSION: c_int = 8;
+const ENV_PROCESS_INST: c_int = 9;
+const ENV_PROCESS_RANDOM: c_int = 10;
+const ENV_PROCESS_LETHAL: c_int = 11;
+const ENV_PROCESS_STERILIZE: c_int = 12;
+const ENV_PROCESS_DEME: c_int = 13;
+const ENV_PROCESS_GERMLINE: c_int = 14;
+const ENV_PROCESS_DETECT: c_int = 15;
+const ENV_PROCESS_THRESHOLD: c_int = 16;
+const ENV_PROCESS_DETECTIONERROR: c_int = 17;
+const ENV_PROCESS_STRING: c_int = 18;
+const ENV_PROCESS_DEPLETABLE: c_int = 19;
+const ENV_PROCESS_PHENPLASTBONUS: c_int = 20;
+const ENV_PROCESS_INTERNAL: c_int = 21;
+const ENV_PROCESS_UNKNOWN: c_int = -1;
+
+/// Classify a reaction process variable name to an opcode.
+#[no_mangle]
+pub extern "C" fn avd_env_process_var_kind(var_name: *const c_char) -> c_int {
+    with_cstr(var_name, ENV_PROCESS_UNKNOWN, |s| match s.to_bytes() {
+        b"resource" => ENV_PROCESS_RESOURCE,
+        b"value" => ENV_PROCESS_VALUE,
+        b"type" => ENV_PROCESS_TYPE,
+        b"max" => ENV_PROCESS_MAX,
+        b"min" => ENV_PROCESS_MIN,
+        b"frac" => ENV_PROCESS_FRAC,
+        b"ksubm" => ENV_PROCESS_KSUBM,
+        b"product" => ENV_PROCESS_PRODUCT,
+        b"conversion" => ENV_PROCESS_CONVERSION,
+        b"inst" => ENV_PROCESS_INST,
+        b"random" => ENV_PROCESS_RANDOM,
+        b"lethal" => ENV_PROCESS_LETHAL,
+        b"sterilize" => ENV_PROCESS_STERILIZE,
+        b"deme" => ENV_PROCESS_DEME,
+        b"germline" => ENV_PROCESS_GERMLINE,
+        b"detect" => ENV_PROCESS_DETECT,
+        b"threshold" => ENV_PROCESS_THRESHOLD,
+        b"detectionerror" => ENV_PROCESS_DETECTIONERROR,
+        b"string" => ENV_PROCESS_STRING,
+        b"depletable" => ENV_PROCESS_DEPLETABLE,
+        b"phenplastbonus" => ENV_PROCESS_PHENPLASTBONUS,
+        b"internal" => ENV_PROCESS_INTERNAL,
+        _ => ENV_PROCESS_UNKNOWN,
+    })
+}
+
 // --- Cellbox bounds validation ---
 const ENV_CELLBOX_OK: c_int = 0;
 const ENV_CELLBOX_BAD_X: c_int = 1;
@@ -240,6 +295,51 @@ mod tests {
 
     fn cstr(s: &str) -> CString {
         CString::new(s).unwrap()
+    }
+
+    // --- Process var_name classification tests ---
+
+    #[test]
+    fn process_var_kind_known_values() {
+        let cases = [
+            ("resource", ENV_PROCESS_RESOURCE),
+            ("value", ENV_PROCESS_VALUE),
+            ("type", ENV_PROCESS_TYPE),
+            ("max", ENV_PROCESS_MAX),
+            ("min", ENV_PROCESS_MIN),
+            ("frac", ENV_PROCESS_FRAC),
+            ("ksubm", ENV_PROCESS_KSUBM),
+            ("product", ENV_PROCESS_PRODUCT),
+            ("conversion", ENV_PROCESS_CONVERSION),
+            ("inst", ENV_PROCESS_INST),
+            ("random", ENV_PROCESS_RANDOM),
+            ("lethal", ENV_PROCESS_LETHAL),
+            ("sterilize", ENV_PROCESS_STERILIZE),
+            ("deme", ENV_PROCESS_DEME),
+            ("germline", ENV_PROCESS_GERMLINE),
+            ("detect", ENV_PROCESS_DETECT),
+            ("threshold", ENV_PROCESS_THRESHOLD),
+            ("detectionerror", ENV_PROCESS_DETECTIONERROR),
+            ("string", ENV_PROCESS_STRING),
+            ("depletable", ENV_PROCESS_DEPLETABLE),
+            ("phenplastbonus", ENV_PROCESS_PHENPLASTBONUS),
+            ("internal", ENV_PROCESS_INTERNAL),
+        ];
+        for (input, expected) in &cases {
+            let cs = cstr(input);
+            assert_eq!(
+                avd_env_process_var_kind(cs.as_ptr()),
+                *expected,
+                "process var_kind mismatch for '{input}'"
+            );
+        }
+    }
+
+    #[test]
+    fn process_var_kind_unknown() {
+        let bad = cstr("bogus");
+        assert_eq!(avd_env_process_var_kind(bad.as_ptr()), ENV_PROCESS_UNKNOWN);
+        assert_eq!(avd_env_process_var_kind(ptr::null()), ENV_PROCESS_UNKNOWN);
     }
 
     // --- Cellbox validation tests ---

@@ -219,6 +219,29 @@ enum {
   AVD_ENV_REQUISITE_PARASITE_ONLY = 9,
   AVD_ENV_REQUISITE_CELLBOX = 10,
   AVD_ENV_REQUISITE_UNKNOWN = -1,
+  AVD_ENV_PROCESS_RESOURCE = 0,
+  AVD_ENV_PROCESS_VALUE = 1,
+  AVD_ENV_PROCESS_TYPE = 2,
+  AVD_ENV_PROCESS_MAX = 3,
+  AVD_ENV_PROCESS_MIN = 4,
+  AVD_ENV_PROCESS_FRAC = 5,
+  AVD_ENV_PROCESS_KSUBM = 6,
+  AVD_ENV_PROCESS_PRODUCT = 7,
+  AVD_ENV_PROCESS_CONVERSION = 8,
+  AVD_ENV_PROCESS_INST = 9,
+  AVD_ENV_PROCESS_RANDOM = 10,
+  AVD_ENV_PROCESS_LETHAL = 11,
+  AVD_ENV_PROCESS_STERILIZE = 12,
+  AVD_ENV_PROCESS_DEME = 13,
+  AVD_ENV_PROCESS_GERMLINE = 14,
+  AVD_ENV_PROCESS_DETECT = 15,
+  AVD_ENV_PROCESS_THRESHOLD = 16,
+  AVD_ENV_PROCESS_DETECTIONERROR = 17,
+  AVD_ENV_PROCESS_STRING = 18,
+  AVD_ENV_PROCESS_DEPLETABLE = 19,
+  AVD_ENV_PROCESS_PHENPLASTBONUS = 20,
+  AVD_ENV_PROCESS_INTERNAL = 21,
+  AVD_ENV_PROCESS_UNKNOWN = -1,
   AVD_CPOP_FT_TRANSITION_NONE = 0,
   AVD_CPOP_FT_TRANSITION_PREY_TO_PRED = 1,
   AVD_CPOP_FT_TRANSITION_TOP_PRED_TO_PRED = 2,
@@ -519,6 +542,7 @@ double avd_deme_base_merit(int method, double const_merit);
 int avd_deme_should_join_germline_first(int selection_method);
 double avd_deme_reaction_weight(double slope, int index);
 
+int avd_env_process_var_kind(const char* var_name);
 int avd_env_cellbox_validate(int xx, int yy, int width, int height, int world_x, int world_y);
 int avd_env_requisite_var_kind(const char* var_name);
 
