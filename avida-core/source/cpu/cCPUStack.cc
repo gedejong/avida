@@ -44,13 +44,8 @@ void cCPUStack::operator=(const cCPUStack & in_stack)
   stack_pointer = in_stack.stack_pointer;
 }
 
-void cCPUStack::Flip()
-{
-  int new_stack[nHardware::STACK_SIZE];
-  int i;
-  for (i = 0; i < nHardware::STACK_SIZE; i++) new_stack[i] = Pop();
-  for (i = 0; i < nHardware::STACK_SIZE; i++) Push(new_stack[i]);
-}
+// Flip, Push, Pop, Get, Clear, Top are now inline in the header,
+// delegating to Rust via AvidaCpuStack FFI.
 
 void cCPUStack::SaveState(ostream& fp)
 {

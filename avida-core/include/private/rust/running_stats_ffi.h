@@ -499,6 +499,20 @@ typedef struct {
   double value;
 } AvidaMerit;
 
+typedef struct {
+  int stack[10];
+  unsigned char stack_pointer;
+} AvidaCpuStack;
+
+AvidaCpuStack avd_cpu_stack_default(void);
+void avd_cpu_stack_push(AvidaCpuStack* s, int value);
+int avd_cpu_stack_pop(AvidaCpuStack* s);
+int avd_cpu_stack_peek(const AvidaCpuStack* s);
+int avd_cpu_stack_get(const AvidaCpuStack* s, int depth);
+int avd_cpu_stack_top(const AvidaCpuStack* s);
+void avd_cpu_stack_clear(AvidaCpuStack* s);
+void avd_cpu_stack_flip(AvidaCpuStack* s);
+
 AvidaMerit avd_merit_new(double value);
 AvidaMerit avd_merit_new_int(int value);
 AvidaMerit avd_merit_default(void);

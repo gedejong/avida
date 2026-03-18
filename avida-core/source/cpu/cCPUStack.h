@@ -29,11 +29,20 @@
 #include "nHardware.h"
 #endif
 
+#include "rust/running_stats_ffi.h"
+
+// cCPUStack now delegates to AvidaCpuStack (Rust-native CpuStack type).
+// Memory layout is identical: { int stack[10], unsigned char stack_pointer }.
+
 class cCPUStack
 {
 private:
+  // Layout matches AvidaCpuStack exactly
   int stack[nHardware::STACK_SIZE];
   unsigned char stack_pointer;
+
+  AvidaCpuStack* as_rust() { return reinterpret_cast<AvidaCpuStack*>(this); }
+  const AvidaCpuStack* as_rust() const { return reinterpret_cast<const AvidaCpuStack*>(this); }
 
 public:
   cCPUStack() { Clear(); }
@@ -42,52 +51,17 @@ public:
 
   void operator=(const cCPUStack& in_stack);
 
-  inline void Push(int value);
-  inline int Pop();
+  inline void Push(int value) { avd_cpu_stack_push(as_rust(), value); }
+  inline int Pop() { return avd_cpu_stack_pop(as_rust()); }
   inline int& Peek() { return stack[stack_pointer]; }
-  inline int Peek() const { return stack[stack_pointer]; }
-  inline int Get(int depth=0) const;
-  inline void Clear();
-  inline int Top();
-  void Flip();
+  inline int Peek() const { return avd_cpu_stack_peek(as_rust()); }
+  inline int Get(int depth=0) const { return avd_cpu_stack_get(as_rust(), depth); }
+  inline void Clear() { avd_cpu_stack_clear(as_rust()); }
+  inline int Top() { return avd_cpu_stack_top(as_rust()); }
+  void Flip() { avd_cpu_stack_flip(as_rust()); }
 
   void SaveState(std::ostream& fp);
   void LoadState(std::istream & fp);
 };
-
-
-inline void cCPUStack::Push(int value)
-{
-  if (stack_pointer == 0) stack_pointer = nHardware::STACK_SIZE - 1;
-  else stack_pointer--;
-  stack[stack_pointer] = value;
-}
-
-inline int cCPUStack::Pop()
-{
-  int value = stack[stack_pointer];
-  stack[stack_pointer] = 0;
-  stack_pointer++;
-  if (stack_pointer == nHardware::STACK_SIZE) stack_pointer = 0;
-  return value;
-}
-
-inline int cCPUStack::Get(int depth) const
-{
-  int array_pos = depth + stack_pointer;
-  if (array_pos >= nHardware::STACK_SIZE) array_pos -= nHardware::STACK_SIZE;
-  return stack[array_pos];
-}
-
-inline void cCPUStack::Clear()
-{
-  for (int i = 0; i < nHardware::STACK_SIZE; i++) stack[i] = 0;
-  stack_pointer = 0;
-}
-
-inline int cCPUStack::Top()
-{
-  return stack[stack_pointer];
-}
 
 #endif
