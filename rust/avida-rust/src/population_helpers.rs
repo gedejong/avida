@@ -155,6 +155,18 @@ pub extern "C" fn avd_cpop_is_merit_bonus_enabled(rewarded_instruction: c_int) -
 
 // --- Phenotype config gates ---
 
+// --- Birth method gate ---
+
+/// Returns 1 if birth method is FULL_SOUP_ELDEST (5).
+#[no_mangle]
+pub extern "C" fn avd_cpop_is_birth_method_eldest(birth_method: c_int) -> c_int {
+    if birth_method == 5 {
+        1
+    } else {
+        0
+    }
+}
+
 // DIVIDE_METHOD_OFFSPRING=0, DIVIDE_METHOD_SPLIT=1, DIVIDE_METHOD_BIRTH=2
 // GENERATION_INC_OFFSPRING=0, GENERATION_INC_BOTH=1
 
@@ -505,6 +517,15 @@ mod tests {
         assert_eq!(avd_cpop_is_merit_bonus_enabled(0), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(5), 1);
         assert_eq!(avd_cpop_is_merit_bonus_enabled(-2), 1);
+    }
+
+    // --- Birth method gate tests ---
+
+    #[test]
+    fn birth_method_eldest_policy() {
+        assert_eq!(avd_cpop_is_birth_method_eldest(5), 1);
+        assert_eq!(avd_cpop_is_birth_method_eldest(0), 0);
+        assert_eq!(avd_cpop_is_birth_method_eldest(4), 0);
     }
 
     // --- Phenotype config gate tests ---

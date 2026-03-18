@@ -416,6 +416,7 @@ int avd_cpop_deme_reset_resources_kind(int config_value);
 int avd_cpop_should_kill_rand_prey(int max_prey, int num_prey, int is_prey_ft);
 int avd_cpop_should_kill_test_birth(int birth_method, int is_inject);
 int avd_cpop_forage_target_transition(int new_ft, int old_ft);
+int avd_cpop_is_birth_method_eldest(int birth_method);
 int avd_cpop_is_divide_method_split(int divide_method);
 int avd_cpop_is_generation_inc_both(int gen_inc_method);
 int avd_cpop_is_divide_method_split_or_birth(int divide_method);

@@ -344,7 +344,7 @@ void cPopulation::SetupCellGrid()
   }
   
   // Setup the cells.  Do things that are not dependent upon topology here.
-  bool fill_reaper_queue = (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST);
+  bool fill_reaper_queue = (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get()));
   for (int i = 0; i < num_cells; i++) {
     cell_array[i].Setup(m_world, i, environment.GetMutRates(), i % world_x, i / world_x);    
     if (fill_reaper_queue) reaper_queue.Push(&(cell_array[i]));
@@ -1390,7 +1390,7 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
   AdjustSchedule(target_cell, in_organism->GetPhenotype().GetMerit());
   
   // Special handling for certain birth methods.
-  if (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST) {
+  if (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get())) {
     reaper_queue.Push(&target_cell);
   }
   
@@ -7062,7 +7062,7 @@ bool cPopulation::LoadPopulation(const cString& filename, cAvidaContext& ctx, in
       new_organism->SetLineageLabel(lineage_label);
       
       // Prep the cell..
-      if (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST &&
+      if (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get()) &&
           cell_array[cell_id].IsOccupied() == true) {
         // Have to manually take this cell out of the reaper Queue.
         reaper_queue.Remove( &(cell_array[cell_id]) );
@@ -7511,7 +7511,7 @@ void cPopulation::InjectClone(int cell_id, cOrganism& orig_org, Systematics::Sou
   new_organism->GetPhenotype().SetupClone(orig_org.GetPhenotype());
   
   // Prep the cell..
-  if (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST &&
+  if (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get()) &&
       cell_array[cell_id].IsOccupied() == true) {
     // Have to manually take this cell out of the reaper Queue.
     reaper_queue.Remove( &(cell_array[cell_id]) );
@@ -7577,7 +7577,7 @@ void cPopulation::CompeteOrganisms_ConstructOffspring(int cell_id, cOrganism& pa
   new_organism->GetPhenotype().SetupOffspring(parent.GetPhenotype(),*seq);
   
   // Prep the cell..
-  if (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST &&
+  if (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get()) &&
       cell_array[cell_id].IsOccupied() == true) {
     // Have to manually take this cell out of the reaper Queue.
     reaper_queue.Remove( &(cell_array[cell_id]) );
@@ -7638,7 +7638,7 @@ void cPopulation::InjectGenome(int cell_id, Systematics::Source src, const Genom
   
   
   // Prep the cell..
-  if (m_world->GetConfig().BIRTH_METHOD.Get() == POSITION_OFFSPRING_FULL_SOUP_ELDEST &&
+  if (avd_cpop_is_birth_method_eldest(m_world->GetConfig().BIRTH_METHOD.Get()) &&
       cell_array[cell_id].IsOccupied() == true) {
     // Have to manually take this cell out of the reaper Queue.
     reaper_queue.Remove( &(cell_array[cell_id]) );
