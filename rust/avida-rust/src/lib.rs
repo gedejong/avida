@@ -15,6 +15,7 @@
 
 pub mod analyze_helpers;
 pub mod bit_array;
+pub mod code_label;
 pub mod common;
 pub mod cpu_helpers;
 pub mod cpu_stack;
