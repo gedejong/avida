@@ -513,6 +513,19 @@ int avd_cpu_stack_top(const AvidaCpuStack* s);
 void avd_cpu_stack_clear(AvidaCpuStack* s);
 void avd_cpu_stack_flip(AvidaCpuStack* s);
 
+typedef struct CodeLabel CodeLabel;
+CodeLabel* avd_code_label_new(void);
+void avd_code_label_free(CodeLabel* label);
+CodeLabel* avd_code_label_clone(const CodeLabel* label);
+void avd_code_label_add_nop(CodeLabel* label, int nop_num);
+int avd_code_label_get_size(const CodeLabel* label);
+int avd_code_label_get(const CodeLabel* label, int index);
+void avd_code_label_clear(CodeLabel* label);
+void avd_code_label_rotate(CodeLabel* label, int rot, int base);
+int avd_code_label_eq(const CodeLabel* a, const CodeLabel* b);
+int avd_code_label_find_sublabel(const CodeLabel* label, const CodeLabel* sub);
+int avd_code_label_as_int(const CodeLabel* label, int base);
+
 AvidaMerit avd_merit_new(double value);
 AvidaMerit avd_merit_new_int(int value);
 AvidaMerit avd_merit_default(void);
