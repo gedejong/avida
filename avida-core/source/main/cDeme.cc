@@ -556,7 +556,15 @@ void cDeme::Reset(cAvidaContext& ctx, bool resetResources, double deme_energy)
 	
   cur_task_exe_count.SetAll(0);
   cur_reaction_count.SetAll(0);
-  
+  last_task_exe_count.SetAll(0);
+  last_reaction_count.SetAll(0);
+  cur_org_task_count.SetAll(0);
+  cur_org_task_exe_count.SetAll(0);
+  cur_org_reaction_count.SetAll(0);
+  last_org_task_count.SetAll(0);
+  last_org_task_exe_count.SetAll(0);
+  last_org_reaction_count.SetAll(0);
+
   //reset remaining deme predicates
   for (int i = 0; i < deme_pred_list.GetSize(); i++) {
     deme_pred_list[i]->Reset();
