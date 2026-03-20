@@ -757,7 +757,7 @@ void cResourceCount::ResizeSpatialGrids(int in_x, int in_y)
 {
   for (int i = 0; i < resource_count.GetSize(); i++) {
     spatial_resource_count[i]->ResizeClear(in_x, in_y, geometry[i]);
-    curr_spatial_res_cnt[i].Resize(avd_rc_resize_cell_count(in_x, in_y));
+    curr_spatial_res_cnt[i].ResizeClear(avd_rc_resize_cell_count(in_x, in_y));
   }
 }
 

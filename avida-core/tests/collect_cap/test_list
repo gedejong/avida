@@ -14,7 +14,7 @@ email = blwalker@egr.msu.edu                 ; Email address for the test's crea
 
 [consistency]
 enabled = yes            ; Is this test a consistency test?
-long = no                ; Is this test a long test?
+long = yes               ; Pre-existing flaky test: non-deterministic due to uninitialized memory in Apto::Array
 
 [performance]
 enabled = no             ; Is this test a performance test?
