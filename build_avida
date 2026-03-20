@@ -25,7 +25,7 @@ do_build() {
     mkdir -p cbuild
     cd cbuild
     cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.20 ${RUST_CMAKE_ARGS} "$@" ../
-    make -j 10 install
+    make -j 6 install
   )
 }
 
