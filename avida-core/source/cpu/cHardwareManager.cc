@@ -152,7 +152,7 @@ bool cHardwareManager::loadInstSet(int hw_type, const Apto::String& name, int st
   m_inst_sets.Push(inst_set);
   m_is_name_map.Set(name, inst_set_id);
   
-  Apto::Array<cString> names(inst_set->GetSize());
+  AvidaArray<cString> names(inst_set->GetSize());
   for (int i = 0; i < inst_set->GetSize(); i++) names[i] = inst_set->GetName(i);
   m_world->GetStats().SetInstNames(inst_set->GetInstSetName(), names);
   Apto::String is((const char*)inst_set->GetInstSetName());
@@ -167,7 +167,7 @@ bool cHardwareManager::loadInstSet(int hw_type, const Apto::String& name, int st
   m_world->GetStats().InstFromMessageExeCountsForInstSet(inst_set->GetInstSetName()).Resize(inst_set->GetSize());
 
   m_world->GetStats().ExecCountsForGroupAttackInstSet(inst_set->GetInstSetName()).Clear();
-  Apto::Array<cString> att_inst = m_world->GetStats().GetGroupAttackInsts(inst_set->GetInstSetName());
+  AvidaArray<cString> att_inst = m_world->GetStats().GetGroupAttackInsts(inst_set->GetInstSetName());
   for (int i = 0; i < att_inst.GetSize(); i++) {
     m_world->GetStats().ExecCountsForGroupAttackInst(inst_set->GetInstSetName(), att_inst[i]).Resize(20);
     for (int j = 0; j < 20; j++) {

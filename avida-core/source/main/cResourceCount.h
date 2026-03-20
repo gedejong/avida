@@ -187,7 +187,7 @@ public:
   int GetCurrPeakY(cAvidaContext& ctx, int res_id) const;
   int GetFrozenPeakX(cAvidaContext& ctx, int res_id) const;
   int GetFrozenPeakY(cAvidaContext& ctx, int res_id) const;
-  Apto::Array<int>* GetWallCells(int res_id);
+  AvidaArray<int>* GetWallCells(int res_id);
   int GetMinUsedX(int res_id);
   int GetMinUsedY(int res_id);
   int GetMaxUsedX(int res_id);

@@ -22,6 +22,7 @@
 #ifndef cAnalyzeJobQueue_h
 #define cAnalyzeJobQueue_h
 
+#include "AvidaArray.h"
 #include "apto/core.h"
 #include "apto/platform.h"
 
@@ -55,7 +56,7 @@ private:
   volatile int m_jobs;      // count of waiting jobs, used in condition variable constructs
   volatile int m_pending;   // count of currently executing jobs
   
-  Apto::Array<cAnalyzeJobWorker*> m_workers;
+  AvidaArray<cAnalyzeJobWorker*> m_workers;
 
 
   void singleThreadedJobExecution(cAnalyzeJob* job);

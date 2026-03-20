@@ -36,7 +36,7 @@ class cBirthMatingTypeGlobalHandler : public cBirthSelectionHandler
 private:
   cWorld* m_world;
   cBirthChamber* m_bc;
-  Apto::Array<cBirthEntry> m_entries;
+  AvidaArray<cBirthEntry> m_entries;
 
   int getTaskID(cString task_name, cWorld* world);
   void storeOffspring(cAvidaContext& ctx, const Genome& offspring, cOrganism* parent);

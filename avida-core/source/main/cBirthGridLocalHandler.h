@@ -22,7 +22,7 @@
 #ifndef cBirthGridLocalHandler_h
 #define cBirthGridLocalHandler_h
 
-#include "avida/core/Types.h"
+#include "AvidaArray.h"
 
 #include "cBirthSelectionHandler.h"
 #include "cBitArray.h"
@@ -38,7 +38,7 @@ private:
   cBirthChamber* m_bc;
   int m_world_x;
   int m_world_y;
-  Apto::Array<cBirthEntry> m_entries;
+  AvidaArray<cBirthEntry> m_entries;
   cBitArray m_occupied;
   
   

@@ -25,26 +25,28 @@
 
 #include "cString.h"
 
+#include "AvidaArray.h"
+
 
 class cReactionResult {
 private:
-  Apto::Array<double> resources_consumed;
-  Apto::Array<double> resources_produced;
-  Apto::Array<double> resources_detected;  //Initialize to -1.0
-  Apto::Array<double> internal_resources_consumed;
-  Apto::Array<double> internal_resources_produced;
-  Apto::Array<bool> tasks_done;
-  Apto::Array<double> tasks_quality;
-  Apto::Array<double> tasks_value;
-  Apto::Array<bool> reactions_triggered;
-  Apto::Array<double> reaction_add_bonus;
-  Apto::Array<double> task_plasticity;
+  AvidaArray<double> resources_consumed;
+  AvidaArray<double> resources_produced;
+  AvidaArray<double> resources_detected;  //Initialize to -1.0
+  AvidaArray<double> internal_resources_consumed;
+  AvidaArray<double> internal_resources_produced;
+  AvidaArray<bool> tasks_done;
+  AvidaArray<double> tasks_quality;
+  AvidaArray<double> tasks_value;
+  AvidaArray<bool> reactions_triggered;
+  AvidaArray<double> reaction_add_bonus;
+  AvidaArray<double> task_plasticity;
   double energy_add;
   double bonus_add;
   double bonus_mult;
   double germline_add;
   double germline_mult;
-  Apto::Array<cString> insts_triggered;
+  AvidaArray<cString> insts_triggered;
   bool is_random_resource;
   bool lethal;
   bool sterilize;
@@ -105,7 +107,7 @@ public:
   double GetAddBonus() { return bonus_add; }
   double GetReactionAddBonus(const int i) { return reaction_add_bonus[i]; }
   double GetMultBonus() { return bonus_mult; }
-  Apto::Array<cString>& GetInstArray() { return insts_triggered; }
+  AvidaArray<cString>& GetInstArray() { return insts_triggered; }
   bool UsedEnvResource() { return used_env_resource; }
   bool IsEnvResource() { return used_env_resource; }
   double GetAddDemeBonus() { return deme_add_bonus; }

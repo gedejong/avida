@@ -43,7 +43,7 @@ public:
     double  m_min_fit_frequency;
     double  m_max_fit_frequency;
     double m_viable_probability;
-    Apto::Array<double> m_task_probabilities;
+    AvidaArray<double> m_task_probabilities;
   
   cPhenPlastSummary(const cPhenPlastGenotype& pp) 
   {

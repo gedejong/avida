@@ -32,7 +32,7 @@ class cBirthGenomeSizeHandler : public cBirthSelectionHandler
 {
 private:
   cBirthChamber* m_bc;
-  Apto::Array<cBirthEntry> m_entries;
+  AvidaArray<cBirthEntry> m_entries;
   
   
 public:

@@ -1513,8 +1513,11 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   cReactionResult& result = *m_reaction_result;
   
   // Run everything through the environment.
-  bool found = env.TestOutput(ctx, result, taskctx, eff_task_count, cur_reaction_count, res_in, rbins_in, 
+  // Adapter: env.TestOutput takes Apto::Array<int>& for reaction_count (non-const output param)
+  Apto::Array<int> reaction_count_adapter(cur_reaction_count);
+  bool found = env.TestOutput(ctx, result, taskctx, Apto::Array<int>(eff_task_count), reaction_count_adapter, res_in, rbins_in,
                               is_parasite, context_phenotype); //NEED different eff_task_count and cur_reaction_count for deme resource
+  cur_reaction_count = reaction_count_adapter;
   
   // If nothing was found, stop here.
   if (found == false) {
@@ -1953,7 +1956,7 @@ int cPhenotype::CalcToleranceOffspringOthers()
 }
 
 void cPhenotype::IncAttackedPreyFTData(int target_ft) {
-  Apto::Array<int> target_list = m_world->GetEnvironment().GetAttackPreyFTList();
+  AvidaArray<int> target_list = m_world->GetEnvironment().GetAttackPreyFTList();
   if (!cur_killed_targets.GetSize()) {
     cur_killed_targets.Resize(target_list.GetSize());
     cur_killed_targets.SetAll(0);
@@ -2358,8 +2361,8 @@ int cPhenotype::Compare(const cPhenotype* lhs, const cPhenotype* rhs) {
   else if ( lhs->GetGestationTime() > rhs->GetGestationTime() ) return 1;
   
   // If gestation times are also equal, compare each task
-  Apto::Array<int> lhsTasks = lhs->GetLastTaskCount();
-  Apto::Array<int> rhsTasks = rhs->GetLastTaskCount();
+  AvidaArray<int> lhsTasks = lhs->GetLastTaskCount();
+  AvidaArray<int> rhsTasks = rhs->GetLastTaskCount();
   for (int k = 0; k < lhsTasks.GetSize(); k++) {
     if (lhsTasks[k] < rhsTasks[k]) return -1;
     else if (lhsTasks[k] > rhsTasks[k]) return 1;
@@ -2421,7 +2424,7 @@ double cPhenotype::GetResourcesConsumed()
 }
 
 //Deep copy parasite task count
-void cPhenotype::SetLastParasiteTaskCount(Apto::Array<int> oldParaPhenotype)
+void cPhenotype::SetLastParasiteTaskCount(AvidaArray<int> oldParaPhenotype)
 {
   assert(initialized == true);
   
@@ -2432,10 +2435,10 @@ void cPhenotype::SetLastParasiteTaskCount(Apto::Array<int> oldParaPhenotype)
 }
 
 /* Return the cumulative reaction count if we aren't resetting on divide. */
-Apto::Array<int> cPhenotype::GetCumulativeReactionCount()
-{ 
-  if (m_world->GetConfig().DIVIDE_METHOD.Get() == 0) { 
-    Apto::Array<int> cum_react;
+AvidaArray<int> cPhenotype::GetCumulativeReactionCount()
+{
+  if (m_world->GetConfig().DIVIDE_METHOD.Get() == 0) {
+    AvidaArray<int> cum_react;
     for (int i=0; i<cur_reaction_count.GetSize(); ++i) 
     {
       cum_react.Push(cur_reaction_count[i] + last_reaction_count[i]);

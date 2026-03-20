@@ -27,6 +27,7 @@
 #include "avida/environment/Manager.h"
 #include "avida/environment/Product.h"
 
+#include "AvidaArray.h"
 #include "cArgSchema.h"
 #include "cAvidaContext.h"
 #include "cContextPhenotype.h"
@@ -1075,8 +1076,8 @@ bool cEnvironment::LoadStateGrid(cString desc, Feedback& feedback)
   cString statename;
   cString statesensestr;
 
-  Apto::Array<cString> states;
-  Apto::Array<int> state_sense;
+  AvidaArray<cString> states;
+  AvidaArray<int> state_sense;
   cString statestr = args->GetString(0);
   statestr.Trim();
   while (statestr.GetSize()) {
@@ -1106,7 +1107,7 @@ bool cEnvironment::LoadStateGrid(cString desc, Feedback& feedback)
   }
 
   // Load the state grid itself
-  Apto::Array<int> lgrid(width * height);
+  AvidaArray<int> lgrid(width * height);
   cString gridstr = args->GetString(1);
   int cell = 0;
   while (gridstr.GetSize() && cell < lgrid.GetSize()) {
@@ -1135,7 +1136,7 @@ bool cEnvironment::LoadStateGrid(cString desc, Feedback& feedback)
   // | a a |
   // | b a |
   // would be a,a,b,a
-  Apto::Array<int> grid(lgrid.GetSize());
+  AvidaArray<int> grid(lgrid.GetSize());
   for (int y = 0; y < height; y++) {
     int off = y * width;
     int loff = (height - y - 1) * width;

@@ -25,6 +25,7 @@
 #ifndef cCPUTestInfo_h
 #define cCPUTestInfo_h
 
+#include "AvidaArray.h"
 #include "nHardware.h"
 #include "cHardwareTracer.h"
 #include "cMutationRates.h"
@@ -52,7 +53,7 @@ private:
   bool trace_task_order;      // Should we keep track of ordering of tasks?
   bool use_random_inputs;     // Should we give the organism random inputs?
 	bool use_manual_inputs;     // Do we have inputs that we must use?
-  Apto::Array<int> manual_inputs;  //   if so, use these.
+  AvidaArray<int> manual_inputs;  //   if so, use these.
   HardwareTracerPtr m_tracer;
   cMutationRates m_mut_rates;
   
@@ -64,9 +65,9 @@ private:
   int depth_found;        // Depth actually found (often same as max_depth)
   int max_cycle;          // Longest cycle found.
   int cycle_to;           // Cycle path of the last genotype.
-	Apto::Array<int> used_inputs; //Depth 0 inputs
+	AvidaArray<int> used_inputs; //Depth 0 inputs
 
-  Apto::Array<cOrganism*> org_array;
+  AvidaArray<cOrganism*> org_array;
   
   // Information about how to handle resources
   eTestCPUResourceMethod m_res_method;
@@ -86,7 +87,7 @@ public:
   // Input Setup
   void TraceTaskOrder(bool _trace=true) { trace_task_order = _trace; }
   void UseRandomInputs(bool _rand=true) { use_random_inputs = _rand; use_manual_inputs = false; }
-  void UseManualInputs(Apto::Array<int> inputs) {use_manual_inputs = true; use_random_inputs = false; manual_inputs = inputs;}
+  void UseManualInputs(AvidaArray<int> inputs) {use_manual_inputs = true; use_random_inputs = false; manual_inputs = inputs;}
   void ResetInputMode() {use_manual_inputs = false; use_random_inputs = false;}
   void SetTraceExecution(HardwareTracerPtr tracer) { m_tracer = tracer; }
   void SetResourceOptions(int res_method = RES_INITIAL, cResourceHistory* res = NULL, int update = 0, int cpu_cycle_offset = 0)
@@ -100,7 +101,7 @@ public:
   bool GetTraceTaskOrder() const { return trace_task_order; }
   bool GetUseRandomInputs() const { return use_random_inputs; }
 	bool GetUseManualInputs() const { return use_manual_inputs; }
-	const Apto::Array<int>& GetTestCPUInputs() const { return used_inputs; }
+	const AvidaArray<int>& GetTestCPUInputs() const { return used_inputs; }
   HardwareTracerPtr GetTracer() { return m_tracer; }
 
 

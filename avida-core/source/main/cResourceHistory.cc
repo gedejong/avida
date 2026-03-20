@@ -29,7 +29,7 @@
 
 int cResourceHistory::getEntryForUpdate(int update, bool exact) const
 {
-  Apto::Array<int> updates;
+  AvidaArray<int> updates;
   updates.Resize(m_entries.GetSize());
   for (int i = 0; i < m_entries.GetSize(); ++i) updates[i] = m_entries[i].update;
   const int* updates_ptr = (updates.GetSize() > 0) ? &updates[0] : NULL;
@@ -50,7 +50,7 @@ bool cResourceHistory::GetResourceCountForUpdate(cAvidaContext& ctx, int update,
   return true;
 }
 
-bool cResourceHistory::GetResourceLevelsForUpdate(int update, Apto::Array<double>& levels, bool exact) const
+bool cResourceHistory::GetResourceLevelsForUpdate(int update, AvidaArray<double>& levels, bool exact) const
 {
   int entry = getEntryForUpdate(update, exact);
   if (entry < 0 || entry >= m_entries.GetSize()) return false;
@@ -65,7 +65,7 @@ bool cResourceHistory::GetResourceLevelsForUpdate(int update, Apto::Array<double
   return true;
 }
 
-void cResourceHistory::AddEntry(int update, const Apto::Array<double>& values)
+void cResourceHistory::AddEntry(int update, const AvidaArray<double>& values)
 {
   // Note that this method does not currently validate that 'update' does not already exist as an entry
   // If this happens, incorrect resource levels may be returned upon retreival

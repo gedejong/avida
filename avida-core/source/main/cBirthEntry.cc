@@ -38,6 +38,26 @@ cBirthEntry::cBirthEntry()
 //This instructor is intended to be use to create a temporary birth entry from a parent that is
 // about to divide sexually, just for record-keeping purposes; the birth entry should then be
 // immediately destroyed
+cBirthEntry::cBirthEntry(const cBirthEntry& _birth_entry)
+: m_mating_type(_birth_entry.m_mating_type)
+, m_mating_display_a(_birth_entry.m_mating_display_a)
+, m_mating_display_b(_birth_entry.m_mating_display_b)
+, m_mate_preference(_birth_entry.m_mate_preference)
+, m_group_id(_birth_entry.m_group_id)
+, m_parent_task_count(_birth_entry.m_parent_task_count)
+, genome(_birth_entry.genome)
+, energy4Offspring(_birth_entry.energy4Offspring)
+, merit(_birth_entry.merit)
+, timestamp(_birth_entry.timestamp)
+, groups(_birth_entry.groups)
+{
+  if (groups) {
+    for (int i = 0; i < groups->GetSize(); i++) {
+      (*groups)[i]->AddActiveReference();
+    }
+  }
+}
+
 cBirthEntry::cBirthEntry(const Genome& _offspring, cOrganism* _parent, int _timestamp)
 : m_mating_type(_parent->GetPhenotype().GetMatingType())
 , m_mating_display_a(_parent->GetPhenotype().GetLastMatingDisplayA())

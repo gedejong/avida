@@ -23,6 +23,7 @@
 #ifndef cTaskLib_h
 #define cTaskLib_h
 
+#include "AvidaArray.h"
 #include "cTaskContext.h"
 #include "cTaskEntry.h"
 #include "cWorld.h"
@@ -37,7 +38,7 @@ class cTaskLib
 {
 private:
   cWorld* m_world;
-  Apto::Array<cTaskEntry*> task_array;
+  AvidaArray<cTaskEntry*> task_array;
 
   // What extra information should be sent along when we are evaluating
   // which tasks have been performed?

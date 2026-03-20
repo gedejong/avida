@@ -23,7 +23,7 @@
 #ifndef cReactionLib_h
 #define cReactionLib_h
 
-#include "avida/core/Types.h"
+#include "AvidaArray.h"
 
 class cReaction;
 class cString;
@@ -32,7 +32,7 @@ class cString;
 class cReactionLib
 {
 private:
-  Apto::Array<cReaction*> reaction_array;
+  AvidaArray<cReaction*> reaction_array;
 
   cReactionLib(const cReactionLib&); // @not_implemented
   cReactionLib& operator=(const cReactionLib&); // @not_implemented

@@ -34,6 +34,7 @@
 #include "apto/rng.h"
 #include "apto/scheduler.h"
 
+#include "AvidaArray.h"
 #include "cActionLibrary.h"
 #include "cAnalyzeCommand.h"
 #include "cAnalyzeCommandAction.h"
@@ -3853,7 +3854,7 @@ void cAnalyze::CommandPrintResourceFitnessMap(cString cur_string)
 	  fitnesses[i].Resize(fsize[1]+1,1);
   
   // Get the resources for the specified update
-  Apto::Array<double> resources;
+  AvidaArray<double> resources;
   if (!m_resources || !m_resources->GetResourceLevelsForUpdate(update, resources, true)) {
     cout << "error: did not find the desired update in resource history" << endl;
     return;

@@ -237,7 +237,7 @@ private:
   const tMethod* m_functions;
 
   // Genes
-  Apto::Array<Gene> m_genes;
+  AvidaArray<Gene> m_genes;
 
   // Memory
   Apto::Array<cCPUMemory, Apto::ManagedPointer> m_mem_array;
@@ -252,7 +252,7 @@ private:
   
 
   cOrgSensor m_sensor;
-  Apto::Array<cOrgSensor::sLookInit> m_sensor_sessions;
+  AvidaArray<cOrgSensor::sLookInit> m_sensor_sessions;
   
   // Flags
   struct {

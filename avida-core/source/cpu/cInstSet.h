@@ -25,6 +25,7 @@
 
 #include <iostream>
 
+#include "AvidaArray.h"
 #include "avida/core/InstructionSequence.h"
 
 #include "cString.h"
@@ -75,7 +76,7 @@ public:
   };
   Apto::Array<sInstEntry, Apto::Smart> m_lib_name_map;
   
-  Apto::Array<int> m_lib_nopmod_map;
+  AvidaArray<int> m_lib_nopmod_map;
   
   cOrderedWeightedIndex* m_mutation_index;     // Weighted index for instructions 
   

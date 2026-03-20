@@ -1415,12 +1415,8 @@ void cStats::PrintNewTasksDataPlus(const cString& filename)
   df->Write(m_update,   "Update");
   for (int i = 0; i < new_task_count.GetSize(); i++) {
     df->Write(new_task_count[i], task_names[i] + " - num times newly evolved");
-    double prev_ave = -1;
-    double cur_ave = -1;
-    if (new_task_count[i]>0) {
-      prev_ave = prev_task_count[i]/double(new_task_count[i]);
-      cur_ave = cur_task_count[i]/double(new_task_count[i]);
-    }
+    double prev_ave = avd_stats_safe_divide_or_default(prev_task_count[i], new_task_count[i], -1.0);
+    double cur_ave = avd_stats_safe_divide_or_default(cur_task_count[i], new_task_count[i], -1.0);
     df->Write(prev_ave, "ave num tasks parent performed");
     df->Write(cur_ave, "ave num tasks cur org performed");
     
@@ -1592,7 +1588,7 @@ void cStats::PrintResourceLocData(const cString& filename, cAvidaContext& ctx)
   
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
   for (int i = 0; i < resLib.GetSize(); i++) {
-    if (resLib.GetResource(i)->GetGradient()) {
+    if (avd_stats_is_gradient_resource(resLib.GetResource(i)->GetGradient() ? 1 : 0)) {
       df->Write(m_world->GetPopulation().GetCurrPeakX(ctx, i) + (m_world->GetPopulation().GetCurrPeakY(ctx, i) * m_world->GetConfig().WORLD_X.Get()), "CellID");
     }
   }
@@ -1616,7 +1612,7 @@ void cStats::PrintResWallLocData(const cString& filename, cAvidaContext& ctx)
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
   for (int i = 0; i < resLib.GetSize(); i++) {
     if (avd_stats_is_wall_gradient(resLib.GetResource(i)->GetGradient() ? 1 : 0, resLib.GetResource(i)->GetHabitat())) {
-      Apto::Array<int>& cells = *(m_world->GetPopulation().GetWallCells(i));
+      AvidaArray<int>& cells = *(m_world->GetPopulation().GetWallCells(i));
       for (int i = 0; i < cells.GetSize() - 1; i++) {
         fp << cells[i] << ",";
       }
@@ -4550,7 +4546,7 @@ void cStats::PrintDenData(const cString& filename) {
       if (avd_stats_is_den_habitat(resource_lib.GetResource(j)->GetHabitat()) && cell_res[j] > 0) {
         Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
         for (int k = 0; k < cell_avs.GetSize(); k++) {
-          if (cell_avs[k]->GetPhenotype().GetTimeUsed() < juv_age) {
+          if (avd_stats_is_juvenile(cell_avs[k]->GetPhenotype().GetTimeUsed(), juv_age)) {
             num_juvs++;
             is_active = true;
           }

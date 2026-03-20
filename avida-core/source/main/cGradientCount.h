@@ -26,6 +26,8 @@
 
 #include "cSpatialResCount.h"
 
+#include "AvidaArray.h"
+
 class cWorld;
 
 class cGradientCount : public cSpatialResCount
@@ -94,9 +96,9 @@ private:
   double m_common_plat_height;
   int m_skip_moves;
   int m_skip_counter;
-  Apto::Array<double> m_plateau_array;
-  Apto::Array<int> m_plateau_cell_IDs;
-  Apto::Array<int> m_wall_cells;
+  AvidaArray<double> m_plateau_array;
+  AvidaArray<int> m_plateau_cell_IDs;
+  AvidaArray<int> m_wall_cells;
   
   double m_mean_plat_inflow;
   double m_var_plat_inflow;
@@ -110,7 +112,7 @@ private:
   int m_guarded_juvs_per_adult;
   
   bool m_probabilistic;
-  Apto::Array<int> m_prob_res_cells;
+  AvidaArray<int> m_prob_res_cells;
 
   int m_min_usedx;
   int m_min_usedy;
@@ -179,7 +181,7 @@ public:
  
   void ResetGradRes(cAvidaContext& ctx, int worldx, int worldy); 
   
-  Apto::Array<int>* GetWallCells() { return &m_wall_cells; }
+  AvidaArray<int>* GetWallCells() { return &m_wall_cells; }
   int GetMinUsedX() { return m_min_usedx; }
   int GetMinUsedY() { return m_min_usedy; }
   int GetMaxUsedX() { return m_max_usedx; }

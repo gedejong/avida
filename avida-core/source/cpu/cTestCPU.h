@@ -47,7 +47,7 @@ public:
 private:
   cWorld* m_world;
   Apto::Array<int> input_array;
-  Apto::Array<int> receive_array;
+  AvidaArray<int> receive_array;
   int cur_input;
   int cur_receive;  
   bool m_use_random_inputs;

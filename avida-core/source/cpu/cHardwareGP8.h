@@ -252,7 +252,7 @@ private:
   const ImmMethod* m_imm_methods;
 
   // Genes
-  Apto::Array<Gene> m_genes;
+  AvidaArray<Gene> m_genes;
 
   // Memory
   Apto::Array<cCPUMemory, Apto::ManagedPointer> m_mem_array;
@@ -267,7 +267,7 @@ private:
   
 
   cOrgSensor m_sensor;
-  Apto::Array<cOrgSensor::sLookInit> m_sensor_sessions;
+  AvidaArray<cOrgSensor::sLookInit> m_sensor_sessions;
   
   // Flags
   struct {
@@ -305,10 +305,10 @@ private:
   char m_hw_queue[3];
   int m_hw_queued;
   
-  Apto::Array<int> m_hw_queue_eat_threads;
+  AvidaArray<int> m_hw_queue_eat_threads;
   
   
-  Apto::Array<int>* m_action_side_effect_queue;
+  AvidaArray<int>* m_action_side_effect_queue;
 
   
   cHeadCPU m_placeholder_head;

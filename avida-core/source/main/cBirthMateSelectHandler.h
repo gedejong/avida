@@ -32,7 +32,7 @@ class cBirthMateSelectHandler : public cBirthSelectionHandler
 {
 private:
   cBirthChamber* m_bc;
-  Apto::Array<cBirthEntry> m_entries;
+  AvidaArray<cBirthEntry> m_entries;
   cBirthEntry m_non_ms_entry;
   
   

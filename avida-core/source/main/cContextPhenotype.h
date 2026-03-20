@@ -23,7 +23,7 @@
 #ifndef cContextPhenotype_h
 #define cContextPhenotype_h
 
-#include "avida/core/Types.h"
+#include "AvidaArray.h"
 
 #include <cassert>
 #include <climits>
@@ -35,15 +35,15 @@ class cContextPhenotype
 public:
   cContextPhenotype() : m_number_tasks(0), m_number_reactions(0) { };
   double m_cur_merit;
-  Apto::Array<int> m_cur_task_count;
-  Apto::Array<int> m_cur_reaction_count;
+  AvidaArray<int> m_cur_task_count;
+  AvidaArray<int> m_cur_reaction_count;
   int m_number_tasks;
   int m_number_reactions;
 
-  void AddTaskCounts(int count, Apto::Array<int>& cur_task_count);
-  Apto::Array<int>& GetTaskCounts() { return m_cur_task_count; }
-  void AddReactionCounts(int count, Apto::Array<int>& cur_task_count);
-  Apto::Array<int>& GetReactionCounts() { return m_cur_reaction_count; }
+  void AddTaskCounts(int count, const AvidaArray<int>& cur_task_count);
+  AvidaArray<int>& GetTaskCounts() { return m_cur_task_count; }
+  void AddReactionCounts(int count, const AvidaArray<int>& cur_task_count);
+  AvidaArray<int>& GetReactionCounts() { return m_cur_reaction_count; }
 
 };
 

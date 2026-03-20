@@ -26,6 +26,7 @@
 #ifndef cEnvironment_h
 #define cEnvironment_h
 
+#include "AvidaArray.h"
 #include "cMutationRates.h"
 #include "cReactionLib.h"
 #include "cResourceLib.h"
@@ -69,16 +70,16 @@ private:
   bool m_true_rand;
   
   bool m_use_specific_inputs; // Use specific inputs, rather than generating random ones
-  Apto::Array<int>  m_specific_inputs;
+  AvidaArray<int>  m_specific_inputs;
   
   unsigned int m_mask;
   
-  Apto::Array<cStateGrid*> m_state_grids;
+  AvidaArray<cStateGrid*> m_state_grids;
 
   std::set<int> possible_group_ids;
   std::set<int> possible_target_ids;
   std::set<int> possible_habitats;
-  Apto::Array<int> pp_fts;
+  AvidaArray<int> pp_fts;
   
   bool m_hammers;
   bool m_paths;
@@ -157,7 +158,7 @@ public:
   bool IsTargetID(int test_id);
   std::set<int> GetTargetIDs() { return possible_target_ids; }
   void SetAttackPreyFTList();
-  Apto::Array<int> GetAttackPreyFTList() { return pp_fts; }
+  AvidaArray<int> GetAttackPreyFTList() { return pp_fts; }
 
   void AddHabitat(int new_habitat) { possible_habitats.insert(new_habitat); }
   bool IsHabitat(int test_habitat);

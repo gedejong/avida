@@ -25,6 +25,7 @@
 
 #include "avida/Avida.h"
 
+#include "AvidaArray.h"
 #include "AvidaTools.h"
 
 #include "avida/core/InstructionSequence.h"
@@ -154,7 +155,7 @@ private:
   Apto::Map<cString, Apto::Array<cString> > m_is_inst_names_map;
   Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_from_message_inst_map;
 
-  Apto::Array<pair<int,int> > m_is_tolerance_exe_counts;
+  AvidaArray<pair<int,int> > m_is_tolerance_exe_counts;
   Apto::Array<s_inst_circumstances, Apto::Smart> m_is_tolerance_exe_insts;
 
   Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_prey_exe_inst_map;
@@ -209,10 +210,10 @@ private:
   int tot_executed;
 
   // --------  Parasite Task Stats  ---------
-  Apto::Array<int> tasks_host_current;
-  Apto::Array<int> tasks_host_last;
-  Apto::Array<int> tasks_parasite_current;
-  Apto::Array<int> tasks_parasite_last;
+  AvidaArray<int> tasks_host_current;
+  AvidaArray<int> tasks_host_last;
+  AvidaArray<int> tasks_parasite_current;
+  AvidaArray<int> tasks_parasite_last;
     
   // ------- Kaboom Stats --------------------
   int num_kabooms;
@@ -226,7 +227,7 @@ private:
   int num_nsa_notkin;
   double sum_perc_lyse;
   double sum_cpu_cycles;
-  Apto::Array<int> hd_list;
+  AvidaArray<int> hd_list;
   
   // Quorum threshold stats
   int num_stop_explode;
@@ -241,39 +242,39 @@ private:
 
   // --------  Organism Task Stats  ---------
   mutable bool m_collect_env_test_stats;
-  Apto::Array<int> task_cur_count;
-  Apto::Array<int> task_last_count;
-  Apto::Array<int> task_test_count;
-  Apto::Array<double> task_cur_quality;
-  Apto::Array<double> task_last_quality;
-  Apto::Array<double> task_cur_max_quality;
-  Apto::Array<double> task_last_max_quality;
-  Apto::Array<int> task_exe_count;
-  Apto::Array<int> new_task_count;
-  Apto::Array<int> prev_task_count;
-  Apto::Array<int> cur_task_count;
-  Apto::Array<int> new_reaction_count;
+  AvidaArray<int> task_cur_count;
+  AvidaArray<int> task_last_count;
+  AvidaArray<int> task_test_count;
+  AvidaArray<double> task_cur_quality;
+  AvidaArray<double> task_last_quality;
+  AvidaArray<double> task_cur_max_quality;
+  AvidaArray<double> task_last_max_quality;
+  AvidaArray<int> task_exe_count;
+  AvidaArray<int> new_task_count;
+  AvidaArray<int> prev_task_count;
+  AvidaArray<int> cur_task_count;
+  AvidaArray<int> new_reaction_count;
 
-  Apto::Array<int> task_internal_cur_count;
-  Apto::Array<int> task_internal_last_count;
-  Apto::Array<double> task_internal_cur_quality;
-  Apto::Array<double> task_internal_last_quality;
-  Apto::Array<double> task_internal_cur_max_quality;
-  Apto::Array<double> task_internal_last_max_quality;
+  AvidaArray<int> task_internal_cur_count;
+  AvidaArray<int> task_internal_last_count;
+  AvidaArray<double> task_internal_cur_quality;
+  AvidaArray<double> task_internal_last_quality;
+  AvidaArray<double> task_internal_cur_max_quality;
+  AvidaArray<double> task_internal_last_max_quality;
 
-  Apto::Array<int> m_reaction_cur_count;
-  Apto::Array<int> m_reaction_last_count;
-  Apto::Array<double> m_reaction_cur_add_reward;
-  Apto::Array<double> m_reaction_last_add_reward;
-  Apto::Array<int> m_reaction_exe_count;
+  AvidaArray<int> m_reaction_cur_count;
+  AvidaArray<int> m_reaction_last_count;
+  AvidaArray<double> m_reaction_cur_add_reward;
+  AvidaArray<double> m_reaction_last_add_reward;
+  AvidaArray<int> m_reaction_exe_count;
 
-  Apto::Array<double> resource_count;
-  Apto::Array<int> resource_geometry;
+  AvidaArray<double> resource_count;
+  AvidaArray<int> resource_geometry;
   Apto::Array< Apto::Array<double> > spatial_res_count;
 
-  Apto::Array<cString> task_names;
-  Apto::Array<cString> reaction_names;
-  Apto::Array<cString> resource_names;
+  AvidaArray<cString> task_names;
+  AvidaArray<cString> reaction_names;
+  AvidaArray<cString> resource_names;
 
   // --------  Resampling Stats  ---------
   int num_resamplings;
@@ -286,13 +287,13 @@ private:
 
   // --------  Sense Instruction Stats  ---------
   int sense_size;
-  Apto::Array<int> sense_last_count;
-  Apto::Array<int> sense_last_exe_count;
-  Apto::Array<cString> sense_names;
+  AvidaArray<int> sense_last_count;
+  AvidaArray<int> sense_last_exe_count;
+  AvidaArray<cString> sense_names;
 
 
   // --------  Competition Stats  ---------
-  Apto::Array<double> avg_trial_fitnesses;
+  AvidaArray<double> avg_trial_fitnesses;
   double avg_competition_fitness;
   double min_competition_fitness;
   double max_competition_fitness;
@@ -346,8 +347,8 @@ private:
 
 
   // --------  Sexual Selection Stats  ---------
-  Apto::Array<cBirthEntry> m_successful_mates;
-  Apto::Array<cBirthEntry> m_choosers;
+  AvidaArray<cBirthEntry> m_successful_mates;
+  AvidaArray<cBirthEntry> m_choosers;
   int m_num_successful_mates;
   
   // --------  Pred-prey Stats  ---------
@@ -395,13 +396,13 @@ private:
   cDoubleSum sum_female_size;
   
   // --------  TopNavTrace Stats  ---------
-  Apto::Array<char> toptrace;
-  Apto::Array<int> topnavtraceupdate;
-  Apto::Array<int> topnavtraceloc;
-  Apto::Array<int> topnavtracefacing;
-  Apto::Array<int> topreactions;
-  Apto::Array<int> topreactioncycles;
-  Apto::Array<int> topreactionexecs;
+  AvidaArray<char> toptrace;
+  AvidaArray<int> topnavtraceupdate;
+  AvidaArray<int> topnavtraceloc;
+  AvidaArray<int> topnavtracefacing;
+  AvidaArray<int> topreactions;
+  AvidaArray<int> topreactioncycles;
+  AvidaArray<int> topreactionexecs;
   int topreac;
   int topcycle;
   int topid;
@@ -710,8 +711,8 @@ public:
   void IncReactionExeCount(int reaction, int count) { m_reaction_exe_count[reaction] += count; }
   void ZeroReactions();
 
-  void SetResources(const Apto::Array<double> &_in) { resource_count = _in; }
-  void SetResourcesGeometry(const Apto::Array<int> &_in) { resource_geometry = _in;}
+  void SetResources(const AvidaArray<double> &_in) { resource_count = _in; }
+  void SetResourcesGeometry(const AvidaArray<int> &_in) { resource_geometry = _in;}
   void SetSpatialRes(const Apto::Array< Apto::Array<double> > &_in) { spatial_res_count = _in; }
 
   void SetInstNames(const cString& inst_set, const Apto::Array<cString>& names) { m_is_inst_names_map[inst_set] = names; }
@@ -772,10 +773,10 @@ public:
   double GetInternalTaskLastQuality(int task_num) const { return task_internal_last_quality[task_num]/(double)task_internal_last_count[task_num]; }
   double GetInternalTaskMaxLastQuality(int task_num) const { return task_internal_last_max_quality[task_num]; }
 
-  const Apto::Array<int>& GetReactions() const { return m_reaction_last_count; }
-  const Apto::Array<double> & GetResources() const { return resource_count; }
-  const Apto::Array<cString>& GetResourceNames() const { return resource_names; }
-  const Apto::Array<int>& GetResourceGeometries() const { return resource_geometry; }
+  const AvidaArray<int>& GetReactions() const { return m_reaction_last_count; }
+  const AvidaArray<double>& GetResources() const { return resource_count; }
+  const AvidaArray<cString>& GetResourceNames() const { return resource_names; }
+  const AvidaArray<int>& GetResourceGeometries() const { return resource_geometry; }
   const Apto::Array< Apto::Array<double> >& GetSpatialResourceCount() const {return spatial_res_count; }
 
   double GetAveReproRate() const  { return sum_repro_rate.Average(); }

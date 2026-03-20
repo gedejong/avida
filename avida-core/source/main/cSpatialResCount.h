@@ -29,6 +29,8 @@
 #include "cSpatialCountElem.h"
 #include "cResource.h"
 
+#include "AvidaArray.h"
+
 
 class cSpatialResCount
 {
@@ -37,7 +39,7 @@ private:
 
   
   
-  Apto::Array<cSpatialCountElem> grid;
+  AvidaArray<cSpatialCountElem> grid;
   double m_initial;
   double xdiffuse, ydiffuse;
   double xgravity, ygravity;
@@ -152,7 +154,7 @@ public:
   int GetCurrPeakX() { return curr_peakx; } 
   int GetCurrPeakY() { return curr_peaky; }
   
-  virtual Apto::Array<int>* GetWallCells() { return NULL; }
+  virtual AvidaArray<int>* GetWallCells() { return NULL; }
   virtual int GetMinUsedX() { return -1; }
   virtual int GetMinUsedY() { return -1; }
   virtual int GetMaxUsedX() { return -1; }

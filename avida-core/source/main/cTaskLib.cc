@@ -2349,7 +2349,7 @@ double cTaskLib::Task_SortInputs(cTaskContext& ctx) const
   // - count number of actual entries
   // - count moves required
   // - update valmap, tracking observed inputs
-  Apto::Array<int> sorted(size);
+  AvidaArray<int> sorted(size);
   const bool ascending = (args.GetInt(1) >= 0);
   int count = 1;
   
@@ -2514,7 +2514,7 @@ double cTaskLib::Task_Optimize(cTaskContext& ctx) const
   const int function = args.GetInt(0);
   
   // get however many variables need, turn them into doubles between 0 and 1
-  Apto::Array<double> vars;
+  AvidaArray<double> vars;
   vars.Resize(args.GetInt(3));
   
   double Fx = 0.0;
@@ -2579,7 +2579,7 @@ double cTaskLib::Task_Optimize(cTaskContext& ctx) const
   }
 
   else if (function == 19) {
-    Apto::Array<double> tempVars;
+    AvidaArray<double> tempVars;
     tempVars.Resize(args.GetInt(3));
     for (int i=0; i<args.GetInt(3); i++) {
       tempVars[i]=0;
@@ -2609,7 +2609,7 @@ double cTaskLib::Task_Optimize(cTaskContext& ctx) const
       int len = args.GetInt(2);
       double base_pow = args.GetDouble(0);
       
-      Apto::Array<double> tempVars;
+      AvidaArray<double> tempVars;
       tempVars.Resize(args.GetInt(3));
       for (int i=0; i<args.GetInt(3); i++) tempVars[i] = 0;
       

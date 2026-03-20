@@ -22,6 +22,7 @@
 #ifndef cPhenPlastUtil_h
 #define cPhenPlastUtil_h
 
+#include "AvidaArray.h"
 #include "avida/core/Types.h"
 #include "avida/systematics/Types.h"
 
@@ -41,7 +42,7 @@ public:
   static int GetNumPhenotypes(cAvidaContext& ctx, cWorld* world, Systematics::GroupPtr bg);
   static double GetPhenotypicEntropy(cAvidaContext& ctx, cWorld* world, Systematics::GroupPtr bg);
   static double GetTaskProbability(cAvidaContext& ctx, cWorld* world, Systematics::GroupPtr bg, int task_id);
-  static const Apto::Array<double>& GetTaskProbabilities(cAvidaContext& ctx, cWorld* world, Systematics::GroupPtr bg);
+  static const AvidaArray<double>& GetTaskProbabilities(cAvidaContext& ctx, cWorld* world, Systematics::GroupPtr bg);
   static cPhenPlastSummary* TestPlasticity(cAvidaContext& ctx, cWorld* world, const Genome& mg);
 };  
 

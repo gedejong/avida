@@ -24,6 +24,8 @@
 
 #include "cString.h"
 
+#include "AvidaArray.h"
+
 
 class cStateGrid
 {
@@ -34,17 +36,17 @@ private:
   int m_init_x;
   int m_init_y;
   int m_init_facing;
-  Apto::Array<cString> m_states;
-  Apto::Array<int> m_sense_values;
-  Apto::Array<int> m_grid;
+  AvidaArray<cString> m_states;
+  AvidaArray<int> m_sense_values;
+  AvidaArray<int> m_grid;
   
   cStateGrid(); // @not_implemented
   cStateGrid(const cStateGrid&); // @not_implemented
   cStateGrid& operator=(const cStateGrid&); // @not_implemented
   
 public:
-  inline cStateGrid(const cString& name, int w, int h, int x, int y, int f, const Apto::Array<cString>& states,
-                    const Apto::Array<int>& sense_values, const Apto::Array<int>& grid);
+  inline cStateGrid(const cString& name, int w, int h, int x, int y, int f, const AvidaArray<cString>& states,
+                    const AvidaArray<int>& sense_values, const AvidaArray<int>& grid);
   ~cStateGrid() { ; }
   
   inline const cString& GetName() const { return m_name; }
@@ -64,8 +66,8 @@ public:
 };
 
 
-inline cStateGrid::cStateGrid(const cString& name, int w, int h, int x, int y, int f, const Apto::Array<cString>& states,
-                  const Apto::Array<int>& sense_values, const Apto::Array<int>& grid)
+inline cStateGrid::cStateGrid(const cString& name, int w, int h, int x, int y, int f, const AvidaArray<cString>& states,
+                  const AvidaArray<int>& sense_values, const AvidaArray<int>& grid)
   : m_name(name), m_w(w), m_h(h), m_init_x(x), m_init_y(y), m_init_facing(f), m_states(states)
   , m_sense_values(sense_values), m_grid(grid)
 {

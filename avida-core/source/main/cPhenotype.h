@@ -109,45 +109,45 @@ private:
   int cur_num_errors;                         // Total instructions executed illeagally.
   int cur_num_donates;                        // Number of donations so far
 
-  Apto::Array<int> cur_task_count;                 // Total times each task was performed
-  Apto::Array<int> cur_para_tasks;                 // Total times each task was performed by the parasite @LZ
-  Apto::Array<int> cur_host_tasks;                 // Total times each task was done by JUST the host @LZ
-  Apto::Array<int> cur_internal_task_count;        // Total times each task was performed using internal resources
-  Apto::Array<int> eff_task_count;                 // Total times each task was performed (resetable during the life of the organism)
-  Apto::Array<double> cur_task_quality;            // Average (total?) quality with which each task was performed
-  Apto::Array<double> cur_task_value;              // Value with which this phenotype performs task
-  Apto::Array<double> cur_internal_task_quality;   // Average (total?) quaility with which each task using internal resources was performed
-  Apto::Array<double> cur_rbins_total;             // Total amount of resources collected over the organism's life
-  Apto::Array<double> cur_rbins_avail;             // Amount of internal resources available
-  Apto::Array<int> cur_collect_spec_counts;        // How many times each nop-specification was used in a collect-type instruction
-  Apto::Array<int> cur_reaction_count;             // Total times each reaction was triggered.
-  Apto::Array<int> first_reaction_cycles;          // CPU cycles of first time reaction was triggered.
-  Apto::Array<int> first_reaction_execs;            // Execution count at first time reaction was triggered (will be > cycles in parallel exec multithreaded orgs).
-  Apto::Array<int> cur_stolen_reaction_count;      // Total counts of reactions stolen by predators.
-  Apto::Array<double> cur_reaction_add_reward;     // Bonus change from triggering each reaction.
-  Apto::Array<int> cur_inst_count;                 // Instruction exection counter
-  Apto::Array<int> cur_from_sensor_count;           // Use of inputs that originated from sensory data were used in execution of this instruction.
+  AvidaArray<int> cur_task_count;                 // Total times each task was performed
+  AvidaArray<int> cur_para_tasks;                 // Total times each task was performed by the parasite @LZ
+  AvidaArray<int> cur_host_tasks;                 // Total times each task was done by JUST the host @LZ
+  AvidaArray<int> cur_internal_task_count;        // Total times each task was performed using internal resources
+  AvidaArray<int> eff_task_count;                 // Total times each task was performed (resetable during the life of the organism)
+  AvidaArray<double> cur_task_quality;            // Average (total?) quality with which each task was performed
+  AvidaArray<double> cur_task_value;              // Value with which this phenotype performs task
+  AvidaArray<double> cur_internal_task_quality;   // Average (total?) quaility with which each task using internal resources was performed
+  AvidaArray<double> cur_rbins_total;             // Total amount of resources collected over the organism's life
+  AvidaArray<double> cur_rbins_avail;             // Amount of internal resources available
+  AvidaArray<int> cur_collect_spec_counts;        // How many times each nop-specification was used in a collect-type instruction
+  AvidaArray<int> cur_reaction_count;             // Total times each reaction was triggered.
+  AvidaArray<int> first_reaction_cycles;          // CPU cycles of first time reaction was triggered.
+  AvidaArray<int> first_reaction_execs;            // Execution count at first time reaction was triggered (will be > cycles in parallel exec multithreaded orgs).
+  AvidaArray<int> cur_stolen_reaction_count;      // Total counts of reactions stolen by predators.
+  AvidaArray<double> cur_reaction_add_reward;     // Bonus change from triggering each reaction.
+  AvidaArray<int> cur_inst_count;                 // Instruction exection counter
+  AvidaArray<int> cur_from_sensor_count;           // Use of inputs that originated from sensory data were used in execution of this instruction.
   Apto::Array< Apto::Array<int> > cur_group_attack_count;
   Apto::Array< Apto::Array<int> > cur_top_pred_group_attack_count;
-  Apto::Array<int> cur_killed_targets;
+  AvidaArray<int> cur_killed_targets;
   int cur_attacks;
   int cur_kills;
   
-  Apto::Array<int> cur_sense_count;                // Total times resource combinations have been sensed; @JEB
-  Apto::Array<double> sensed_resources;            // Resources which the organism has sensed; @JEB
-  Apto::Array<double> cur_task_time;               // Time at which each task was last performed; WRE 03-18-07
+  AvidaArray<int> cur_sense_count;                // Total times resource combinations have been sensed; @JEB
+  AvidaArray<double> sensed_resources;            // Resources which the organism has sensed; @JEB
+  AvidaArray<double> cur_task_time;               // Time at which each task was last performed; WRE 03-18-07
   Apto::Map<void*, cTaskState*> m_task_states;
-  Apto::Array<double> cur_trial_fitnesses;         // Fitnesses of various trials.; @JEB
-  Apto::Array<double> cur_trial_bonuses;           // Bonuses of various trials.; @JEB
-  Apto::Array<int> cur_trial_times_used;           // Time used in of various trials.; @JEB
-  Apto::Array<int> cur_from_message_count;           // Use of inputs that originated from messages were used in execution of this instruction.
+  AvidaArray<double> cur_trial_fitnesses;         // Fitnesses of various trials.; @JEB
+  AvidaArray<double> cur_trial_bonuses;           // Bonuses of various trials.; @JEB
+  AvidaArray<int> cur_trial_times_used;           // Time used in of various trials.; @JEB
+  AvidaArray<int> cur_from_message_count;           // Use of inputs that originated from messages were used in execution of this instruction.
 
   int trial_time_used;                        // like time_used, but reset every trial; @JEB
   int trial_cpu_cycles_used;                  // like cpu_cycles_used, but reset every trial; @JEB
   tList<int> m_tolerance_immigrants;           // record of previous updates tolerance has been decreased towards immigrants 
   tList<int> m_tolerance_offspring_own;        // record of previous updates tolerance has been decreased towards org's own offspring 
   tList<int> m_tolerance_offspring_others;     // record of previous updates tolerance has been decreased towards other offspring in group 
-  Apto::Array<pair<int,int> > m_intolerances;        // caches temporary values of the intolerance and the update
+  AvidaArray<pair<int,int> > m_intolerances;        // caches temporary values of the intolerance and the update
   double last_child_germline_propensity;   // chance of child being a germline cell; @JEB
 
   int mating_type;                            // Organism's phenotypic sex @CHC
@@ -167,28 +167,28 @@ private:
   int last_num_errors;
   int last_num_donates;
 
-  Apto::Array<int> last_task_count;
-  Apto::Array<int> last_para_tasks;
-  Apto::Array<int> last_host_tasks;                // Last task counts from hosts only, before last divide @LZ
-  Apto::Array<int> last_internal_task_count;
-  Apto::Array<double> last_task_quality;
-  Apto::Array<double> last_task_value;
-  Apto::Array<double> last_internal_task_quality;
-  Apto::Array<double> last_rbins_total;
-  Apto::Array<double> last_rbins_avail;
-  Apto::Array<int> last_collect_spec_counts;
-  Apto::Array<int> last_reaction_count;
-  Apto::Array<double> last_reaction_add_reward;
-  Apto::Array<int> last_inst_count;	  // Instruction exection counter
-  Apto::Array<int> last_from_sensor_count;
-  Apto::Array<int> last_sense_count;   // Total times resource combinations have been sensed; @JEB
+  AvidaArray<int> last_task_count;
+  AvidaArray<int> last_para_tasks;
+  AvidaArray<int> last_host_tasks;                // Last task counts from hosts only, before last divide @LZ
+  AvidaArray<int> last_internal_task_count;
+  AvidaArray<double> last_task_quality;
+  AvidaArray<double> last_task_value;
+  AvidaArray<double> last_internal_task_quality;
+  AvidaArray<double> last_rbins_total;
+  AvidaArray<double> last_rbins_avail;
+  AvidaArray<int> last_collect_spec_counts;
+  AvidaArray<int> last_reaction_count;
+  AvidaArray<double> last_reaction_add_reward;
+  AvidaArray<int> last_inst_count;	  // Instruction exection counter
+  AvidaArray<int> last_from_sensor_count;
+  AvidaArray<int> last_sense_count;   // Total times resource combinations have been sensed; @JEB
   Apto::Array< Apto::Array<int> > last_group_attack_count;
   Apto::Array< Apto::Array<int> > last_top_pred_group_attack_count;
-  Apto::Array<int> last_killed_targets;
+  AvidaArray<int> last_killed_targets;
   int last_attacks;
   int last_kills;
 
-  Apto::Array<int> last_from_message_count;
+  AvidaArray<int> last_from_message_count;
 
   double last_fitness;            // Used to determine sterilization.
   int last_cpu_cycles_used;
@@ -217,7 +217,7 @@ private:
   int av_birth_cell_id;
   int birth_group_id;
   int birth_forager_type;
-  Apto::Array<int> testCPU_inst_count;	  // Instruction exection counter as calculated by Test CPU
+  AvidaArray<int> testCPU_inst_count;	  // Instruction exection counter as calculated by Test CPU
   int last_task_id; // id of the previous task
   int num_new_unique_reactions; // count the number of new unique reactions this organism has performed.
   double res_consumed; // amount of resources consumed since the organism last turned them over to the deme.
@@ -253,8 +253,8 @@ private:
   bool is_donor_quanta_threshgb_last;// Did this org's parent quanta_threshgbg_donate?
   bool is_donor_shadedgb; // Has this organism shaded_gb_donated (true shaded green beard)? 
   bool is_donor_shadedgb_last; // Did this org's parent shaded_gb_donate? 
-  Apto::Array<bool> is_donor_locus; // Did this org target a donation at a specific locus.
-  Apto::Array<bool> is_donor_locus_last; // Did this org's parent target a donation at a specific locus.
+  AvidaArray<bool> is_donor_locus; // Did this org target a donation at a specific locus.
+  AvidaArray<bool> is_donor_locus_last; // Did this org's parent target a donation at a specific locus.
   bool is_energy_requestor; // Has this organism requested energy?
   bool is_energy_donor; // Has this organism donated energy?
   bool is_energy_receiver;  // Has this organism received an energy donation?
@@ -315,7 +315,7 @@ private:
   inline void SetGroupAttackInstSetSize(int num_group_attack_inst);
   
 public:
-  cPhenotype() : m_world(NULL), m_reaction_result(NULL) { ; } // Will not construct a valid cPhenotype! Only exists to support incorrect cDeme Apto::Array usage.
+  cPhenotype() : m_world(NULL), m_reaction_result(NULL) { ; } // Will not construct a valid cPhenotype! Only exists to support incorrect cDeme AvidaArray usage.
   cPhenotype(cWorld* world, int parent_generation, int num_nops);
 
 
@@ -422,45 +422,45 @@ public:
   int GetCurNumErrors() const { assert(initialized == true); return cur_num_errors; }
   int GetCurNumDonates() const { assert(initialized == true); return cur_num_donates; }
   int GetCurCountForTask(int idx) const { assert(initialized == true); return cur_task_count[idx]; }
-  const Apto::Array<int>& GetCurTaskCount() const { assert(initialized == true); return cur_task_count; }
-  const Apto::Array<int>& GetCurHostTaskCount() const { assert(initialized == true); return cur_host_tasks; }
-  const Apto::Array<int>& GetCurParasiteTaskCount() const { assert(initialized == true); return cur_para_tasks; }
-  const Apto::Array<int>& GetCurInternalTaskCount() const { assert(initialized == true); return cur_internal_task_count; }
+  const AvidaArray<int>& GetCurTaskCount() const { assert(initialized == true); return cur_task_count; }
+  const AvidaArray<int>& GetCurHostTaskCount() const { assert(initialized == true); return cur_host_tasks; }
+  const AvidaArray<int>& GetCurParasiteTaskCount() const { assert(initialized == true); return cur_para_tasks; }
+  const AvidaArray<int>& GetCurInternalTaskCount() const { assert(initialized == true); return cur_internal_task_count; }
   void ClearEffTaskCount() { assert(initialized == true); eff_task_count.SetAll(0); }
-  const Apto::Array<double> & GetCurTaskQuality() const { assert(initialized == true); return cur_task_quality; }
-  const Apto::Array<double> & GetCurTaskValue() const { assert(initialized == true); return cur_task_value; }
-  const Apto::Array<double> & GetCurInternalTaskQuality() const { assert(initialized == true); return cur_internal_task_quality; }
-  const Apto::Array<double>& GetCurRBinsTotal() const { assert(initialized == true); return cur_rbins_total; }
+  const AvidaArray<double> & GetCurTaskQuality() const { assert(initialized == true); return cur_task_quality; }
+  const AvidaArray<double> & GetCurTaskValue() const { assert(initialized == true); return cur_task_value; }
+  const AvidaArray<double> & GetCurInternalTaskQuality() const { assert(initialized == true); return cur_internal_task_quality; }
+  const AvidaArray<double>& GetCurRBinsTotal() const { assert(initialized == true); return cur_rbins_total; }
   double GetCurRBinTotal(int index) const { assert(initialized == true); return cur_rbins_total[index]; }
-  const Apto::Array<double>& GetCurRBinsAvail() const { assert(initialized == true); return cur_rbins_avail; }
+  const AvidaArray<double>& GetCurRBinsAvail() const { assert(initialized == true); return cur_rbins_avail; }
   double GetCurRBinAvail(int index) const { assert(initialized == true); return cur_rbins_avail[index]; }
 
-  const Apto::Array<int>& GetCurReactionCount() const { assert(initialized == true); return cur_reaction_count;}
-  const Apto::Array<int>& GetFirstReactionCycles() const { assert(initialized == true); return first_reaction_cycles;}
+  const AvidaArray<int>& GetCurReactionCount() const { assert(initialized == true); return cur_reaction_count;}
+  const AvidaArray<int>& GetFirstReactionCycles() const { assert(initialized == true); return first_reaction_cycles;}
   void SetFirstReactionCycle(int idx) { if (first_reaction_cycles[idx] < 0) first_reaction_cycles[idx] = time_used; }
-  const Apto::Array<int>& GetFirstReactionExecs() const { assert(initialized == true); return first_reaction_execs;}
+  const AvidaArray<int>& GetFirstReactionExecs() const { assert(initialized == true); return first_reaction_execs;}
   void SetFirstReactionExec(int idx) { if (first_reaction_execs[idx] < 0) first_reaction_execs[idx] = num_execs; }
 
-  const Apto::Array<int>& GetStolenReactionCount() const { assert(initialized == true); return cur_stolen_reaction_count;}
-  const Apto::Array<double>& GetCurReactionAddReward() const { assert(initialized == true); return cur_reaction_add_reward;}
-  const Apto::Array<int>& GetCurInstCount() const { assert(initialized == true); return cur_inst_count; }
-  const Apto::Array<int>& GetCurSenseCount() const { assert(initialized == true); return cur_sense_count; }
+  const AvidaArray<int>& GetStolenReactionCount() const { assert(initialized == true); return cur_stolen_reaction_count;}
+  const AvidaArray<double>& GetCurReactionAddReward() const { assert(initialized == true); return cur_reaction_add_reward;}
+  const AvidaArray<int>& GetCurInstCount() const { assert(initialized == true); return cur_inst_count; }
+  const AvidaArray<int>& GetCurSenseCount() const { assert(initialized == true); return cur_sense_count; }
 
   double GetSensedResource(int _in) { assert(initialized == true); return sensed_resources[_in]; }
-  const Apto::Array<int>& GetCurCollectSpecCounts() const { assert(initialized == true); return cur_collect_spec_counts; }
+  const AvidaArray<int>& GetCurCollectSpecCounts() const { assert(initialized == true); return cur_collect_spec_counts; }
   int GetCurCollectSpecCount(int spec_id) const { assert(initialized == true); return cur_collect_spec_counts[spec_id]; }
-  const Apto::Array<int>& GetTestCPUInstCount() const { assert(initialized == true); return testCPU_inst_count; }
+  const AvidaArray<int>& GetTestCPUInstCount() const { assert(initialized == true); return testCPU_inst_count; }
 
   void  NewTrial(); //Save the current fitness, and reset the bonus. @JEB
   void  TrialDivideReset(const InstructionSequence & _genome); //Subset of resets specific to division not done by NewTrial. @JEB
-  const Apto::Array<double>& GetTrialFitnesses() { return cur_trial_fitnesses; }; //Return list of trial fitnesses. @JEB
-  const Apto::Array<double>& GetTrialBonuses() { return cur_trial_bonuses; }; //Return list of trial bonuses. @JEB
-  const Apto::Array<int>& GetTrialTimesUsed() { return cur_trial_times_used; }; //Return list of trial times used. @JEB
+  const AvidaArray<double>& GetTrialFitnesses() { return cur_trial_fitnesses; }; //Return list of trial fitnesses. @JEB
+  const AvidaArray<double>& GetTrialBonuses() { return cur_trial_bonuses; }; //Return list of trial bonuses. @JEB
+  const AvidaArray<int>& GetTrialTimesUsed() { return cur_trial_times_used; }; //Return list of trial times used. @JEB
 
   tList<int>& GetToleranceImmigrants() { assert(initialized == true); return m_tolerance_immigrants; }
   tList<int>& GetToleranceOffspringOwn() { assert(initialized == true); return m_tolerance_offspring_own; }
   tList<int>& GetToleranceOffspringOthers() { assert(initialized == true); return m_tolerance_offspring_others; }
-  Apto::Array<pair<int,int> >& GetIntolerances() { assert(initialized == true); return m_intolerances; }
+  AvidaArray<pair<int,int> >& GetIntolerances() { assert(initialized == true); return m_intolerances; }
   int CalcToleranceImmigrants();
   int CalcToleranceOffspringOwn();
   int CalcToleranceOffspringOthers();
@@ -473,30 +473,30 @@ public:
   int GetLastNumDonates() const { assert(initialized == true); return last_num_donates; }
 
   int GetLastCountForTask(int idx) const { assert(initialized == true); return last_task_count[idx]; }
-  const Apto::Array<int>& GetLastTaskCount() const { assert(initialized == true); return last_task_count; }
-  void SetLastTaskCount(Apto::Array<int> tasks) { assert(initialized == true); last_task_count = tasks; }
-  const Apto::Array<int>& GetLastHostTaskCount() const { assert(initialized == true); return last_host_tasks; }
-  const Apto::Array<int>& GetLastParasiteTaskCount() const { assert(initialized == true); return last_para_tasks; }
-  void  SetLastParasiteTaskCount(Apto::Array<int>  oldParaPhenotype);
-  const Apto::Array<int>& GetLastInternalTaskCount() const { assert(initialized == true); return last_internal_task_count; }
-  const Apto::Array<double>& GetLastTaskQuality() const { assert(initialized == true); return last_task_quality; }
-  const Apto::Array<double>& GetLastTaskValue() const { assert(initialized == true); return last_task_value; }
-  const Apto::Array<double>& GetLastInternalTaskQuality() const { assert(initialized == true); return last_internal_task_quality; }
-  const Apto::Array<double>& GetLastRBinsTotal() const { assert(initialized == true); return last_rbins_total; }
-  const Apto::Array<double>& GetLastRBinsAvail() const { assert(initialized == true); return last_rbins_avail; }
-  const Apto::Array<int>& GetLastReactionCount() const { assert(initialized == true); return last_reaction_count; }
-  const Apto::Array<double>& GetLastReactionAddReward() const { assert(initialized == true); return last_reaction_add_reward; }
-  const Apto::Array<int>& GetLastInstCount() const { assert(initialized == true); return last_inst_count; }
-  const Apto::Array<int>& GetLastFromSensorInstCount() const { assert(initialized == true); return last_from_sensor_count; }
-  const Apto::Array<int>& GetLastSenseCount() const { assert(initialized == true); return last_sense_count; }
+  const AvidaArray<int>& GetLastTaskCount() const { assert(initialized == true); return last_task_count; }
+  void SetLastTaskCount(AvidaArray<int> tasks) { assert(initialized == true); last_task_count = tasks; }
+  const AvidaArray<int>& GetLastHostTaskCount() const { assert(initialized == true); return last_host_tasks; }
+  const AvidaArray<int>& GetLastParasiteTaskCount() const { assert(initialized == true); return last_para_tasks; }
+  void  SetLastParasiteTaskCount(AvidaArray<int>  oldParaPhenotype);
+  const AvidaArray<int>& GetLastInternalTaskCount() const { assert(initialized == true); return last_internal_task_count; }
+  const AvidaArray<double>& GetLastTaskQuality() const { assert(initialized == true); return last_task_quality; }
+  const AvidaArray<double>& GetLastTaskValue() const { assert(initialized == true); return last_task_value; }
+  const AvidaArray<double>& GetLastInternalTaskQuality() const { assert(initialized == true); return last_internal_task_quality; }
+  const AvidaArray<double>& GetLastRBinsTotal() const { assert(initialized == true); return last_rbins_total; }
+  const AvidaArray<double>& GetLastRBinsAvail() const { assert(initialized == true); return last_rbins_avail; }
+  const AvidaArray<int>& GetLastReactionCount() const { assert(initialized == true); return last_reaction_count; }
+  const AvidaArray<double>& GetLastReactionAddReward() const { assert(initialized == true); return last_reaction_add_reward; }
+  const AvidaArray<int>& GetLastInstCount() const { assert(initialized == true); return last_inst_count; }
+  const AvidaArray<int>& GetLastFromSensorInstCount() const { assert(initialized == true); return last_from_sensor_count; }
+  const AvidaArray<int>& GetLastSenseCount() const { assert(initialized == true); return last_sense_count; }
   const Apto::Array< Apto::Array<int> >& GetLastGroupAttackInstCount() const { assert(initialized == true); return last_group_attack_count; }
   const Apto::Array< Apto::Array<int> >& GetLastTopPredGroupAttackInstCount() const { assert(initialized == true); return last_top_pred_group_attack_count; }
 
-  const Apto::Array<int>& GetLastFromMessageInstCount() const { assert(initialized == true); return last_from_message_count; }
+  const AvidaArray<int>& GetLastFromMessageInstCount() const { assert(initialized == true); return last_from_message_count; }
 
   double GetLastFitness() const { assert(initialized == true); return last_fitness; }
   double GetPermanentGermlinePropensity() const { assert(initialized == true); return permanent_germline_propensity; }
-  const Apto::Array<int>& GetLastCollectSpecCounts() const { assert(initialized == true); return last_collect_spec_counts; }
+  const AvidaArray<int>& GetLastCollectSpecCounts() const { assert(initialized == true); return last_collect_spec_counts; }
   int GetLastCollectSpecCount(int spec_id) const { assert(initialized == true); return last_collect_spec_counts[spec_id]; }
 
   int GetNumDivides() const { assert(initialized == true); return num_divides;}
@@ -606,7 +606,7 @@ public:
   void SetCrossNum(int _cross_num) { cross_num = _cross_num; }
   void SetToDie() { to_die = true; }
   void SetToDelete() { to_delete = true; }
-  void SetTestCPUInstCount(const Apto::Array<int>& in_counts) { testCPU_inst_count = in_counts; }
+  void SetTestCPUInstCount(const AvidaArray<int>& in_counts) { testCPU_inst_count = in_counts; }
   void IncreaseEnergyDonated(double amount) { assert(amount >=0); total_energy_donated += amount; }
   void IncreaseEnergyReceived(double amount) { assert(amount >=0); total_energy_received += amount; }
   void IncreaseEnergyApplied(double amount) { assert(amount >=0); total_energy_applied += amount; }
@@ -631,8 +631,8 @@ public:
   void ClearKaboomExecuted() {kaboom_executed = false;} //@AEJ
 
 
-  void SetCurRBinsAvail(const Apto::Array<double>& in_avail) { cur_rbins_avail = in_avail; }
-  void SetCurRbinsTotal(const Apto::Array<double>& in_total) { cur_rbins_total = in_total; }
+  void SetCurRBinsAvail(const AvidaArray<double>& in_avail) { cur_rbins_avail = in_avail; }
+  void SetCurRbinsTotal(const AvidaArray<double>& in_total) { cur_rbins_total = in_total; }
   void SetCurRBinAvail(int index, double val) { cur_rbins_avail[index] = val; }
   void SetCurRBinTotal(int index, double val) { cur_rbins_total[index] = val; }
   void AddToCurRBinAvail(int index, double val) { cur_rbins_avail[index] += val; }
@@ -682,7 +682,7 @@ public:
   void IncCurGroupAttackInstCount(int _inst_num, int pack_size_idx)  { assert(initialized == true); cur_group_attack_count[_inst_num][pack_size_idx]++; }
   void IncCurTopPredGroupAttackInstCount(int _inst_num, int pack_size_idx)  { assert(initialized == true); cur_top_pred_group_attack_count[_inst_num][pack_size_idx]++; }
   void IncAttackedPreyFTData(int target_ft);
-  Apto::Array<int> GetKilledPreyFTData() { return cur_killed_targets; }
+  AvidaArray<int> GetKilledPreyFTData() { return cur_killed_targets; }
   void IncAttacks() { cur_attacks++; }
   void IncKills() { cur_kills++; }
   int GetLastAttacks() const { return last_attacks; }
@@ -731,7 +731,7 @@ public:
   int  GetNumNewUniqueReactions() const {assert(initialized == true);  return num_new_unique_reactions; }
   void  ResetNumNewUniqueReactions()  {num_new_unique_reactions =0; }
   double GetResourcesConsumed(); 
-  Apto::Array<int> GetCumulativeReactionCount();
+  AvidaArray<int> GetCumulativeReactionCount();
   void IncCurFromMessageInstCount(int _inst_num)  { assert(initialized == true); cur_from_message_count[_inst_num]++; }
  
 

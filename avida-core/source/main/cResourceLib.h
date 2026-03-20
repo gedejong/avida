@@ -23,7 +23,7 @@
 #ifndef cResourceLib_h
 #define cResourceLib_h
 
-#include "avida/core/Types.h"
+#include "AvidaArray.h"
 
 class cResource;
 class cResourceHistory;
@@ -33,7 +33,7 @@ class cString;
 class cResourceLib
 {
 private:
-  Apto::Array<cResource*> m_resource_array;
+  AvidaArray<cResource*> m_resource_array;
   mutable cResourceHistory* m_initial_levels;
   int m_num_deme_resources;
   

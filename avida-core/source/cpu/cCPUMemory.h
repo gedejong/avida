@@ -25,6 +25,8 @@
 
 #include "avida/core/InstructionSequence.h"
 
+#include "AvidaArray.h"
+
 
 class cCPUMemory : public Avida::InstructionSequence
 {
@@ -38,7 +40,7 @@ private:
 	static const unsigned char MASK_UNUSED1  = 0x40; // unused bit
 	static const unsigned char MASK_UNUSED2  = 0x80; // unused bit
   
-  Apto::Array<unsigned char> m_flag_array;
+  AvidaArray<unsigned char> m_flag_array;
 
   void adjustCapacity(int new_size);
   void prepareInsert(int pos, int num_sites);

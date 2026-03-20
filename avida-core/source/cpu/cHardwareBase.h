@@ -31,6 +31,7 @@
 #include <climits>
 #include <iostream>
 
+#include "AvidaArray.h"
 #include "cHardwareTracer.h"
 #include "cInstSet.h"
 #include "tBuffer.h"
@@ -71,15 +72,15 @@ protected:
   // --------  Instruction Costs  ---------
   int m_inst_cost;
   int m_female_cost;
-  Apto::Array<int> m_inst_ft_cost;
-  Apto::Array<double> m_inst_energy_cost;
-  Apto::Array<double> m_inst_res_cost;
-  Apto::Array<double> m_inst_fem_res_cost;
-  Apto::Array<double> m_inst_bonus_cost;
-  Apto::Array<int> m_thread_inst_cost;
-  Apto::Array<int> m_thread_inst_post_cost;
-  Apto::Array<int> m_active_thread_costs;
-  Apto::Array<int> m_active_thread_post_costs;
+  AvidaArray<int> m_inst_ft_cost;
+  AvidaArray<double> m_inst_energy_cost;
+  AvidaArray<double> m_inst_res_cost;
+  AvidaArray<double> m_inst_fem_res_cost;
+  AvidaArray<double> m_inst_bonus_cost;
+  AvidaArray<int> m_thread_inst_cost;
+  AvidaArray<int> m_thread_inst_post_cost;
+  AvidaArray<int> m_active_thread_costs;
+  AvidaArray<int> m_active_thread_post_costs;
 
   struct {
     bool m_has_any_costs:1;

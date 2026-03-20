@@ -28,108 +28,49 @@
 
 void cMutationRates::Setup(cWorld* world)
 {
-  copy.mut_prob = world->GetConfig().COPY_MUT_PROB.Get();
-  copy.ins_prob = world->GetConfig().COPY_INS_PROB.Get();
-  copy.del_prob = world->GetConfig().COPY_DEL_PROB.Get();
-  copy.uniform_prob = world->GetConfig().COPY_UNIFORM_PROB.Get();
-  copy.slip_prob = world->GetConfig().COPY_SLIP_PROB.Get();
-  
-  divide.ins_prob = world->GetConfig().DIV_INS_PROB.Get();
-  divide.del_prob = world->GetConfig().DIV_DEL_PROB.Get();
-  divide.mut_prob = world->GetConfig().DIV_MUT_PROB.Get();
-  divide.uniform_prob = world->GetConfig().DIV_UNIFORM_PROB.Get();
-  divide.slip_prob = world->GetConfig().DIV_SLIP_PROB.Get();
-  divide.trans_prob = world->GetConfig().DIV_TRANS_PROB.Get();
-  divide.lgt_prob = world->GetConfig().DIV_LGT_PROB.Get();
-  
-  divide.divide_mut_prob = world->GetConfig().DIVIDE_MUT_PROB.Get();
-  divide.divide_ins_prob = world->GetConfig().DIVIDE_INS_PROB.Get();
-  divide.divide_del_prob = world->GetConfig().DIVIDE_DEL_PROB.Get();
-  divide.divide_uniform_prob = world->GetConfig().DIVIDE_UNIFORM_PROB.Get();
-  divide.divide_slip_prob = world->GetConfig().DIVIDE_SLIP_PROB.Get();
-  divide.divide_trans_prob = world->GetConfig().DIVIDE_TRANS_PROB.Get();
-  divide.divide_lgt_prob = world->GetConfig().DIVIDE_LGT_PROB.Get();
-  
-  divide.divide_poisson_mut_mean = world->GetConfig().DIVIDE_POISSON_MUT_MEAN.Get();
-  divide.divide_poisson_ins_mean = world->GetConfig().DIVIDE_POISSON_INS_MEAN.Get();
-  divide.divide_poisson_del_mean = world->GetConfig().DIVIDE_POISSON_DEL_MEAN.Get();
-  divide.divide_poisson_slip_mean = world->GetConfig().DIVIDE_POISSON_SLIP_MEAN.Get();
-  divide.divide_poisson_trans_mean = world->GetConfig().DIVIDE_POISSON_TRANS_MEAN.Get();
-  divide.divide_poisson_lgt_mean = world->GetConfig().DIVIDE_POISSON_LGT_MEAN.Get();
-  
-  divide.parent_mut_prob = world->GetConfig().PARENT_MUT_PROB.Get();  
-  divide.parent_ins_prob = world->GetConfig().PARENT_INS_PROB.Get();
-  divide.parent_del_prob = world->GetConfig().PARENT_DEL_PROB.Get();
-  
-  point.ins_prob = world->GetConfig().POINT_INS_PROB.Get();
-  point.del_prob = world->GetConfig().POINT_DEL_PROB.Get();
-  point.mut_prob = world->GetConfig().POINT_MUT_PROB.Get();
+  SetCopyMutProb(world->GetConfig().COPY_MUT_PROB.Get());
+  SetCopyInsProb(world->GetConfig().COPY_INS_PROB.Get());
+  SetCopyDelProb(world->GetConfig().COPY_DEL_PROB.Get());
+  SetCopyUniformProb(world->GetConfig().COPY_UNIFORM_PROB.Get());
+  SetCopySlipProb(world->GetConfig().COPY_SLIP_PROB.Get());
 
-  inject.ins_prob = world->GetConfig().INJECT_INS_PROB.Get();
-  inject.del_prob = world->GetConfig().INJECT_DEL_PROB.Get();
-  inject.mut_prob = world->GetConfig().INJECT_MUT_PROB.Get();
-  
-  meta.copy_mut_prob = world->GetConfig().META_COPY_MUT.Get();
-  meta.standard_dev = world->GetConfig().META_STD_DEV.Get();
+  SetDivInsProb(world->GetConfig().DIV_INS_PROB.Get());
+  SetDivDelProb(world->GetConfig().DIV_DEL_PROB.Get());
+  SetDivMutProb(world->GetConfig().DIV_MUT_PROB.Get());
+  SetDivUniformProb(world->GetConfig().DIV_UNIFORM_PROB.Get());
+  SetDivSlipProb(world->GetConfig().DIV_SLIP_PROB.Get());
+  SetDivTransProb(world->GetConfig().DIV_TRANS_PROB.Get());
+  SetDivLGTProb(world->GetConfig().DIV_LGT_PROB.Get());
 
-  update.death_prob = world->GetConfig().DEATH_PROB.Get();  
-}
+  SetDivideMutProb(world->GetConfig().DIVIDE_MUT_PROB.Get());
+  SetDivideInsProb(world->GetConfig().DIVIDE_INS_PROB.Get());
+  SetDivideDelProb(world->GetConfig().DIVIDE_DEL_PROB.Get());
+  SetDivideUniformProb(world->GetConfig().DIVIDE_UNIFORM_PROB.Get());
+  SetDivideSlipProb(world->GetConfig().DIVIDE_SLIP_PROB.Get());
+  SetDivideTransProb(world->GetConfig().DIVIDE_TRANS_PROB.Get());
+  SetDivideLGTProb(world->GetConfig().DIVIDE_LGT_PROB.Get());
 
-void cMutationRates::Clear()
-{
-  copy.mut_prob = 0.0;
-  copy.ins_prob = 0.0;
-  copy.del_prob = 0.0;
-  copy.uniform_prob = 0.0;
-  copy.slip_prob = 0.0;
-  
-  divide.ins_prob = 0.0;
-  divide.del_prob = 0.0;
-  divide.mut_prob = 0.0;
-  divide.uniform_prob = 0.0;
-  divide.slip_prob = 0.0;
-  divide.trans_prob = 0.0;
-  divide.lgt_prob = 0.0;
-  
-  divide.divide_mut_prob = 0.0;
-  divide.divide_ins_prob = 0.0;
-  divide.divide_del_prob = 0.0;
-  divide.divide_uniform_prob = 0.0;
-  divide.divide_slip_prob = 0.0;
-  divide.divide_trans_prob = 0.0;
-  divide.divide_lgt_prob = 0.0;
-  
-  divide.divide_poisson_mut_mean = 0.0;
-  divide.divide_poisson_ins_mean = 0.0;
-  divide.divide_poisson_del_mean = 0.0;
-  divide.divide_poisson_slip_mean = 0.0;
-  divide.divide_poisson_trans_mean = 0.0;
-  divide.divide_poisson_lgt_mean = 0.0;
-  
-  divide.parent_mut_prob = 0.0;
-  divide.parent_ins_prob = 0.0;
-  divide.parent_del_prob = 0.0;
+  m_rates.divide.divide_poisson_mut_mean = world->GetConfig().DIVIDE_POISSON_MUT_MEAN.Get();
+  m_rates.divide.divide_poisson_ins_mean = world->GetConfig().DIVIDE_POISSON_INS_MEAN.Get();
+  m_rates.divide.divide_poisson_del_mean = world->GetConfig().DIVIDE_POISSON_DEL_MEAN.Get();
+  m_rates.divide.divide_poisson_slip_mean = world->GetConfig().DIVIDE_POISSON_SLIP_MEAN.Get();
+  m_rates.divide.divide_poisson_trans_mean = world->GetConfig().DIVIDE_POISSON_TRANS_MEAN.Get();
+  m_rates.divide.divide_poisson_lgt_mean = world->GetConfig().DIVIDE_POISSON_LGT_MEAN.Get();
 
-  point.ins_prob = 0.0;
-  point.del_prob = 0.0;
-  point.mut_prob = 0.0;
-  
-  inject.ins_prob = 0.0;
-  inject.del_prob = 0.0;
-  inject.mut_prob = 0.0;
-  
-  meta.copy_mut_prob = 0.0;
-  meta.standard_dev = 0.0;
+  SetParentMutProb(world->GetConfig().PARENT_MUT_PROB.Get());
+  SetParentInsProb(world->GetConfig().PARENT_INS_PROB.Get());
+  SetParentDelProb(world->GetConfig().PARENT_DEL_PROB.Get());
 
-  update.death_prob = 0.0;
-}
+  SetPointInsProb(world->GetConfig().POINT_INS_PROB.Get());
+  SetPointDelProb(world->GetConfig().POINT_DEL_PROB.Get());
+  SetPointMutProb(world->GetConfig().POINT_MUT_PROB.Get());
 
-void cMutationRates::Copy(const cMutationRates& in_muts)
-{
-  copy = in_muts.copy;
-  divide = in_muts.divide;
-  point = in_muts.point;
-  inject = in_muts.inject;
-  meta = in_muts.meta;
-  update = in_muts.update;
+  SetInjectInsProb(world->GetConfig().INJECT_INS_PROB.Get());
+  SetInjectDelProb(world->GetConfig().INJECT_DEL_PROB.Get());
+  SetInjectMutProb(world->GetConfig().INJECT_MUT_PROB.Get());
+
+  SetMetaCopyMutProb(world->GetConfig().META_COPY_MUT.Get());
+  SetMetaStandardDev(world->GetConfig().META_STD_DEV.Get());
+
+  SetDeathProb(world->GetConfig().DEATH_PROB.Get());
 }

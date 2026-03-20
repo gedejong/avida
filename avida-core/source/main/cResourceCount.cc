@@ -787,7 +787,7 @@ int cResourceCount::GetFrozenPeakY(cAvidaContext&, int res_id) const
   return ApplyPeakGetter(spatial_resource_count[res_id], opcode);
 }
 
-Apto::Array<int>* cResourceCount::GetWallCells(int res_id)
+AvidaArray<int>* cResourceCount::GetWallCells(int res_id)
 {
   return spatial_resource_count[res_id]->GetWallCells();
 }

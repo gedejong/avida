@@ -26,6 +26,7 @@
 #include "avida/core/Genome.h"
 #include "avida/core/WorldDriver.h"
 
+#include "AvidaArray.h"
 #include "cCPUMemory.h"
 #include "cPlasticPhenotype.h"
 #include "cPhenotype.h"
@@ -65,7 +66,7 @@ private:
   double m_min_fit_freq;
   double m_min_fitness;
   double m_viable_probability;
-  Apto::Array<double> m_task_probabilities;
+  AvidaArray<double> m_task_probabilities;
     
     
   
@@ -89,7 +90,7 @@ public:
   const cPlasticPhenotype* GetPlasticPhenotype(int num) const;
   const cPlasticPhenotype* GetMostLikelyPhenotype() const;
   const cPlasticPhenotype* GetHighestFitnessPhenotype() const;
-  Apto::Array<double> GetTaskProbabilities() const { return m_task_probabilities; }
+  AvidaArray<double> GetTaskProbabilities() const { return m_task_probabilities; }
   double GetViableProbability() const { return m_viable_probability; }
 };
 

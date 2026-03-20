@@ -22,6 +22,7 @@
 #ifndef cHardwareManager_h
 #define cHardwareManager_h
 
+#include "AvidaArray.h"
 #include "cTestCPU.h"
 
 namespace Avida {
@@ -44,7 +45,7 @@ class cHardwareManager
 {
 private:
   cWorld* m_world;
-  Apto::Array<cInstSet*> m_inst_sets;
+  AvidaArray<cInstSet*> m_inst_sets;
   Apto::Map<Apto::String, int> m_is_name_map;
 
   
