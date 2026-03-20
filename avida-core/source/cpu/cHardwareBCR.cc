@@ -777,7 +777,7 @@ void cHardwareBCR::PrintMiniTraceStatus(cAvidaContext& ctx, ostream& fp)
   if (!m_use_avatar) fp << m_organism->IsNeighborCellOccupied() << " ";  
   else fp << m_organism->GetOrgInterface().FacedHasAV() << " ";
   const cResourceLib& resource_lib = m_world->GetEnvironment().GetResourceLib();
-  Apto::Array<double> cell_resource_levels;
+  AvidaArray<double> cell_resource_levels;
   if (!m_use_avatar) cell_resource_levels = m_organism->GetOrgInterface().GetFacedCellResources(ctx);
   else cell_resource_levels = m_organism->GetOrgInterface().GetAVFacedResources(ctx);
   int wall = 0;
@@ -2783,7 +2783,7 @@ bool cHardwareBCR::Inst_RotateAwayOrgID(cAvidaContext& ctx)
 
 bool cHardwareBCR::Inst_SenseResourceID(cAvidaContext& ctx)
 {
-  Apto::Array<double> cell_res;
+  AvidaArray<double> cell_res;
   if (!m_use_avatar) cell_res = m_organism->GetOrgInterface().GetResources(ctx);
   else if (m_use_avatar) cell_res = m_organism->GetOrgInterface().GetAVResources(ctx); 
   int reg_to_set = FindModifiedRegister(rBX);  
@@ -2800,7 +2800,7 @@ bool cHardwareBCR::Inst_SenseResourceID(cAvidaContext& ctx)
 
 bool cHardwareBCR::Inst_SenseNest(cAvidaContext& ctx)
 {
-  Apto::Array<double> cell_res;
+  AvidaArray<double> cell_res;
   if (!m_use_avatar) cell_res = m_organism->GetOrgInterface().GetResources(ctx);
   else if (m_use_avatar) cell_res = m_organism->GetOrgInterface().GetAVResources(ctx); 
   
@@ -3322,7 +3322,7 @@ bool cHardwareBCR::Inst_SenseFacedHabitat(cAvidaContext& ctx)
   const cResourceLib& resource_lib = m_world->GetEnvironment().GetResourceLib();
   
   // get the destination cell resource levels
-  Apto::Array<double> cell_res;
+  AvidaArray<double> cell_res;
   if (!m_use_avatar) cell_res = m_organism->GetOrgInterface().GetResources(ctx);
   else if (m_use_avatar) cell_res = m_organism->GetOrgInterface().GetAVResources(ctx); 
   
@@ -3467,7 +3467,7 @@ bool cHardwareBCR::Inst_CollectSpecific(cAvidaContext& ctx)
 bool cHardwareBCR::Inst_GetResStored(cAvidaContext& ctx)
 {
   int resource_id = abs(getRegister(FindModifiedRegister(rBX)));
-  Apto::Array<double> bins = m_organism->GetRBins();
+  AvidaArray<double> bins = m_organism->GetRBins();
   resource_id %= bins.GetSize();
   int out_reg = FindModifiedRegister(rBX);
   setRegister(out_reg, (int)(bins[resource_id]), true);
@@ -3701,7 +3701,7 @@ bool cHardwareBCR::Inst_AttackFTPrey(cAvidaContext& ctx)
     if (!target->IsPreyFT())  { return false; }
   }    
   else if (m_use_avatar == 2) {
-    const Apto::Array<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
+    const AvidaArray<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
     bool target_match = false;
     int rand_index = ctx.GetRandom().GetUInt(0, av_neighbors.GetSize());
     int j = 0;
@@ -3743,10 +3743,10 @@ bool cHardwareBCR::Inst_ScrambleReg(cAvidaContext& ctx)
 bool cHardwareBCR::DoActualCollect(cAvidaContext& ctx, int bin_used, bool unit)
 {
   // Set up res_change and max total
-  Apto::Array<double> res_count;
+  AvidaArray<double> res_count;
   if (!m_use_avatar) res_count = m_organism->GetOrgInterface().GetResources(ctx);
   else if (m_use_avatar) res_count = m_organism->GetOrgInterface().GetAVResources(ctx); 
-  Apto::Array<double> res_change(res_count.GetSize());
+  AvidaArray<double> res_change(res_count.GetSize());
   res_change.SetAll(0.0);
   double total = m_organism->GetRBinsTotal();
   double max = m_world->GetConfig().MAX_TOTAL_STORED.Get();
@@ -3903,8 +3903,8 @@ void cHardwareBCR::applyKilledPreyMerit(cAvidaContext& ctx, cOrganism* target, d
 void cHardwareBCR::applyKilledPreyReactions(cOrganism* target)
 {
   // now add on the victims reaction counts to your own, this will allow you to pass any reaction tests...
-  Apto::Array<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
-  Apto::Array<int> org_reactions = m_organism->GetPhenotype().GetStolenReactionCount();
+  AvidaArray<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
+  AvidaArray<int> org_reactions = m_organism->GetPhenotype().GetStolenReactionCount();
   for (int i = 0; i < org_reactions.GetSize(); i++) {
     m_organism->GetPhenotype().SetStolenReactionCount(i, org_reactions[i] + target_reactions[i]);
   }
@@ -3922,7 +3922,7 @@ void cHardwareBCR::applyKilledPreyResBins(cOrganism* target, sAttackReg& reg, do
 {
   // now add the victims internal resource bins to your own, if enabled, after correcting for conversion efficiency
   if (m_world->GetConfig().USE_RESOURCE_BINS.Get()) {
-    Apto::Array<double> target_bins = target->GetRBins();
+    AvidaArray<double> target_bins = target->GetRBins();
     for (int i = 0; i < target_bins.GetSize(); i++) {
       m_organism->AddToRBin(i, target_bins[i] * effic);
       if (effic > 0) target->AddToRBin(i, -1 * (target_bins[i] * effic));
@@ -3951,7 +3951,7 @@ void cHardwareBCR::injureOrg(cAvidaContext& ctx, cOrganism* target)
     target_merit -= target_merit * injury;
     target->UpdateMerit(ctx, target_merit);
   }
-  Apto::Array<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
+  AvidaArray<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
   for (int i = 0; i < target_reactions.GetSize(); i++) {
     target->GetPhenotype().SetReactionCount(i, target_reactions[i] - (int)((target_reactions[i] * injury)));
   }
@@ -3959,7 +3959,7 @@ void cHardwareBCR::injureOrg(cAvidaContext& ctx, cOrganism* target)
   target->GetPhenotype().SetCurBonus(target_bonus - (target_bonus * injury));
   
   if (m_world->GetConfig().USE_RESOURCE_BINS.Get()) {
-    Apto::Array<double> target_bins = target->GetRBins();
+    AvidaArray<double> target_bins = target->GetRBins();
     for (int i = 0; i < target_bins.GetSize(); i++) {
       target->AddToRBin(i, -1 * (target_bins[i] * injury));
     }

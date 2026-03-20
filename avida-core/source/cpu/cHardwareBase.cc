@@ -249,8 +249,8 @@ bool cHardwareBase::Divide_CheckViable(cAvidaContext& ctx, const int parent_size
     const double merit_base = phenotype.CalcSizeMerit();
     const double cur_fitness = merit_base * phenotype.GetCurBonus() / phenotype.GetTimeUsed();
     const double fitness_ratio = cur_fitness / phenotype.GetLastFitness();
-    const Apto::Array<int>& childtasks = phenotype.GetCurTaskCount();
-    const Apto::Array<int>& parenttasks = phenotype.GetLastTaskCount();
+    const AvidaArray<int>& childtasks = phenotype.GetCurTaskCount();
+    const AvidaArray<int>& parenttasks = phenotype.GetLastTaskCount();
     
     bool sterilize = false;
     
@@ -458,9 +458,9 @@ int cHardwareBase::Divide_DoMutations(cAvidaContext& ctx, double mut_multiplier,
     // If we have lines to insert...
     if (num_mut > 0) {
       // Build a sorted list of the sites where mutations occured
-      Apto::Array<int> mut_sites(num_mut);
+      AvidaArray<int> mut_sites(num_mut);
       for (int i = 0; i < num_mut; i++) mut_sites[i] = ctx.GetRandom().GetUInt(offspring_genome.GetSize() + 1);
-      Apto::QSort(mut_sites);
+      std::sort(mut_sites.begin(), mut_sites.end());
       
       // Actually do the mutations (in reverse sort order)
       for (int i = mut_sites.GetSize() - 1; i >= 0; i--) {
@@ -534,9 +534,9 @@ int cHardwareBase::Divide_DoMutations(cAvidaContext& ctx, double mut_multiplier,
     // If we have lines to insert...
     if (num_mut > 0) {
       // Build a sorted list of the sites where mutations occured
-      Apto::Array<int> mut_sites(num_mut);
+      AvidaArray<int> mut_sites(num_mut);
       for (int i = 0; i < num_mut; i++) mut_sites[i] = ctx.GetRandom().GetUInt(memory.GetSize() + 1);
-      Apto::QSort(mut_sites);
+      std::sort(mut_sites.begin(), mut_sites.end());
       
       // Actually do the mutations (in reverse sort order)
       for (int i = mut_sites.GetSize() - 1; i >= 0; i--) {
@@ -634,7 +634,7 @@ void cHardwareBase::doSlipMutation(cAvidaContext& ctx, InstructionSequence& geno
   
   // Fill insertion
   if (insertion_length > 0) {
-    Apto::Array<bool> copied_so_far(insertion_length);
+    AvidaArray<bool> copied_so_far(insertion_length);
     copied_so_far.SetAll(false);
     for (int i = 0; i < insertion_length; i++) {
       switch (m_world->GetConfig().SLIP_FILL_MODE.Get()) {
@@ -725,7 +725,7 @@ void cHardwareBase::doTransMutation(cAvidaContext& ctx, InstructionSequence& gen
         //Scrambled order
       case 1:
       {
-        Apto::Array<bool> copied_so_far(insertion_length);
+        AvidaArray<bool> copied_so_far(insertion_length);
         copied_so_far.SetAll(false);
         for (int i = 0; i < insertion_length; i++) {
           int copy_index = ctx.GetRandom().GetInt(insertion_length - i);
@@ -883,7 +883,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures(cAvidaContext& ctx)
   if (phenotype.CopyTrue() == true) return false;
 	
   const double parent_fitness = m_organism->GetTestFitness(ctx);
-  const Apto::Array<int>& parenttasks = phenotype.GetCurTaskCount();
+  const AvidaArray<int>& parenttasks = phenotype.GetCurTaskCount();
   const double neut_min = parent_fitness * (1.0 - m_organism->GetNeutralMin());
   const double neut_max = parent_fitness * (1.0 + m_organism->GetNeutralMax());
   
@@ -926,7 +926,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures(cAvidaContext& ctx)
     RorS = 2;
   // check if child has lost any tasks parent had AND not gained any new tasks
   if (RorS) {
-    const Apto::Array<int>& childtasks = test_info.GetTestPhenotype().GetLastTaskCount();
+    const AvidaArray<int>& childtasks = test_info.GetTestPhenotype().GetLastTaskCount();
     bool del = false;
     bool added = false;
     for (int i=0; i<childtasks.GetSize(); i++)
@@ -951,7 +951,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures(cAvidaContext& ctx)
   // is not used.
   if (m_organism->GetRevertEquals() != 0) {
     if (ctx.GetRandom().P(m_organism->GetRevertEquals())) {
-      const Apto::Array<int>& child_tasks = test_info.GetTestPhenotype().GetLastTaskCount();
+      const AvidaArray<int>& child_tasks = test_info.GetTestPhenotype().GetLastTaskCount();
       if (child_tasks[child_tasks.GetSize() - 1] >= 1) {
         revert = true;
         m_world->GetStats().AddNewTaskCount(child_tasks.GetSize() - 1);
@@ -995,7 +995,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures1(cAvidaContext& ctx)
   if (phenotype.CopyTrue() == true) return false;
 	
   const double parent_fitness = m_organism->GetTestFitness(ctx);
-  const Apto::Array<int>& parenttasks = phenotype.GetCurTaskCount();
+  const AvidaArray<int>& parenttasks = phenotype.GetCurTaskCount();
   const double neut_min = parent_fitness * (1.0 - m_organism->GetNeutralMin());
   const double neut_max = parent_fitness * (1.0 + m_organism->GetNeutralMax());
   
@@ -1040,7 +1040,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures1(cAvidaContext& ctx)
 	  RorS = 2;
   // check if child has lost any tasks parent had AND not gained any new tasks
   if (RorS) {
-	  const Apto::Array<int>& childtasks = test_info.GetTestPhenotype().GetLastTaskCount();
+	  const AvidaArray<int>& childtasks = test_info.GetTestPhenotype().GetLastTaskCount();
 	  bool del = false;
 	  bool added = false;
 	  for (int i=0; i<childtasks.GetSize(); i++)
@@ -1065,7 +1065,7 @@ bool cHardwareBase::Divide_TestFitnessMeasures1(cAvidaContext& ctx)
   // is not used.
   if (m_organism->GetRevertEquals() != 0) {
     if (ctx.GetRandom().P(m_organism->GetRevertEquals())) {
-      const Apto::Array<int>& child_tasks = test_info.GetTestPhenotype().GetLastTaskCount();
+      const AvidaArray<int>& child_tasks = test_info.GetTestPhenotype().GetLastTaskCount();
       if (child_tasks[child_tasks.GetSize() - 1] >= 1) {
         revert = true;
         m_world->GetStats().AddNewTaskCount(child_tasks.GetSize() - 1);
@@ -1131,9 +1131,9 @@ int cHardwareBase::PointMutate(cAvidaContext& ctx, double override_mut_rate)
     // If we have lines to insert...
     if (num_mut > 0) {
       // Build a sorted list of the sites where mutations occured
-      Apto::Array<int> mut_sites(num_mut);
+      AvidaArray<int> mut_sites(num_mut);
       for (int i = 0; i < num_mut; i++) mut_sites[i] = ctx.GetRandom().GetUInt(memory.GetSize() + 1);
-      Apto::QSort(mut_sites);
+      std::sort(mut_sites.begin(), mut_sites.end());
       
       // Actually do the mutations (in reverse sort order)
       for (int i = mut_sites.GetSize() - 1; i >= 0; i--) {
@@ -1286,8 +1286,8 @@ bool cHardwareBase::SingleProcess_PayPreCosts(cAvidaContext& ctx, const Instruct
     double fem_res_cost = m_organism->GetPhenotype().GetMatingType() == MATING_TYPE_FEMALE ? m_inst_set->GetFemResCost(cur_inst) : 0; 
     double res_req = res_cost + fem_res_cost;
 
-    const Apto::Array<double> res_count = m_organism->GetOrgInterface().GetResources(ctx);
-    Apto::Array<double> res_change(res_count.GetSize());
+    const AvidaArray<double> res_count = m_organism->GetOrgInterface().GetResources(ctx);
+    AvidaArray<double> res_change(res_count.GetSize());
     res_change.SetAll(0.0);
     
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
@@ -1371,8 +1371,8 @@ void cHardwareBase::SingleProcess_PayPostResCosts(cAvidaContext& ctx, const Inst
     double fem_res_cost = m_organism->GetPhenotype().GetMatingType() == MATING_TYPE_FEMALE ? m_inst_set->GetFemResCost(cur_inst) : 0; 
     double res_req = res_cost + fem_res_cost;
     
-    const Apto::Array<double> res_count = m_organism->GetOrgInterface().GetResources(ctx);
-    Apto::Array<double> res_change(res_count.GetSize());
+    const AvidaArray<double> res_count = m_organism->GetOrgInterface().GetResources(ctx);
+    AvidaArray<double> res_change(res_count.GetSize());
     res_change.SetAll(0.0);
     
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();

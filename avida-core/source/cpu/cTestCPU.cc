@@ -392,8 +392,8 @@ void cTestCPU::PrintGenome(cAvidaContext& ctx, const Genome& genome, cString fil
   df->WriteComment("Tasks Performed:");
   
   const cEnvironment& env = m_world->GetEnvironment();
-  const Apto::Array<int>& task_count = test_info.GetTestPhenotype().GetLastTaskCount();
-  const Apto::Array<double>& task_qual = test_info.GetTestPhenotype().GetLastTaskQuality();
+  const AvidaArray<int>& task_count = test_info.GetTestPhenotype().GetLastTaskCount();
+  const AvidaArray<double>& task_qual = test_info.GetTestPhenotype().GetLastTaskQuality();
   for (int i = 0; i < task_count.GetSize(); i++) {
     df->WriteComment(c.Set("%s %d (%f)", static_cast<const char*>(env.GetTask(i).GetName()),
                           task_count[i], task_qual[i]));
@@ -403,16 +403,16 @@ void cTestCPU::PrintGenome(cAvidaContext& ctx, const Genome& genome, cString fil
   if(m_world->GetConfig().USE_RESOURCE_BINS.Get())  {
   	df->WriteComment("Tasks Performed Using Internal Resources:");
   	
-  	const Apto::Array<int>& internal_task_count = test_info.GetTestPhenotype().GetLastInternalTaskCount();
-  	const Apto::Array<double>& internal_task_qual = test_info.GetTestPhenotype().GetLastInternalTaskQuality();
+  	const AvidaArray<int>& internal_task_count = test_info.GetTestPhenotype().GetLastInternalTaskCount();
+  	const AvidaArray<double>& internal_task_qual = test_info.GetTestPhenotype().GetLastInternalTaskQuality();
   	
   	for (int i = 0; i < task_count.GetSize(); i++) {
   		df->WriteComment(c.Set("%s %d (%f)", static_cast<const char*>(env.GetTask(i).GetName()),
   		                      internal_task_count[i], internal_task_qual[i]));
   	}
   	
-  	const Apto::Array<double>& rbins_total = test_info.GetTestPhenotype().GetLastRBinsTotal();
-  	const Apto::Array<double>& rbins_avail = test_info.GetTestPhenotype().GetLastRBinsAvail();
+  	const AvidaArray<double>& rbins_total = test_info.GetTestPhenotype().GetLastRBinsTotal();
+  	const AvidaArray<double>& rbins_avail = test_info.GetTestPhenotype().GetLastRBinsAvail();
   	
   	df->WriteComment(        "Resources Collected: Name\t\tTotal\t\tAvailable");
   	for (int i = 0; i < rbins_total.GetSize(); i++) {
