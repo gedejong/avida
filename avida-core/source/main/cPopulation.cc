@@ -3561,8 +3561,8 @@ void cPopulation::ReplaceDemeFlaggedGermline(cDeme& source_deme, cDeme& target_d
     // do not clear or change founder list
     
     // use it to recreate ancestral state of genotypes
-    Apto::Array<int>& source_founders = source_deme.GetFounderGenotypeIDs();
-    Apto::Array<cPhenotype>& source_founder_phenotypes = source_deme.GetFounderPhenotypes();
+    AvidaArray<int>& source_founders = source_deme.GetFounderGenotypeIDs();
+    AvidaArray<cPhenotype>& source_founder_phenotypes = source_deme.GetFounderPhenotypes();
     for(int i=0; i<source_founders.GetSize(); i++) {
       
       int cellid = DemeSelectInjectionCell(source_deme, i);
@@ -4039,8 +4039,8 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
         // do not clear or change founder list
         
         // use it to recreate ancestral state of genotypes
-        Apto::Array<int>& source_founders = source_deme.GetFounderGenotypeIDs();
-        Apto::Array<cPhenotype>& source_founder_phenotypes = source_deme.GetFounderPhenotypes();
+        AvidaArray<int>& source_founders = source_deme.GetFounderGenotypeIDs();
+        AvidaArray<cPhenotype>& source_founder_phenotypes = source_deme.GetFounderPhenotypes();
         for(int i=0; i<source_founders.GetSize(); i++) {
           
           int cellid = DemeSelectInjectionCell(source_deme, i);
@@ -5199,7 +5199,7 @@ void cPopulation::DumpDemeFounders(ofstream& fp) {
     
     if (deme_array[i].IsEmpty()) continue;
     
-    Apto::Array<int>& deme_founders = deme_array[i].GetFounderGenotypeIDs();
+    AvidaArray<int>& deme_founders = deme_array[i].GetFounderGenotypeIDs();
     
     fp << i << " " << deme_founders.GetSize();
     for(int j=0; j<deme_founders.GetSize(); j++) {

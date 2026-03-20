@@ -24,6 +24,7 @@
 #include <set>
 #include <vector>
 
+#include "AvidaArray.h"
 #include "avida/systematics/Types.h"
 #include "cDemeCellEvent.h"
 #include "cGermline.h"
@@ -54,7 +55,7 @@ class cDeme
 private:
   cWorld* m_world;
   int _id; //!< ID of this deme (position in cPopulation::deme_array).
-  Apto::Array<int> cell_ids;
+  AvidaArray<int> cell_ids;
   int width; //!< Width of this deme.
 
   bool replicateDeme;
@@ -95,17 +96,17 @@ private:
   double total_energy_received;
   double total_energy_applied;
   
-  Apto::Array<int> cur_task_exe_count;
-  Apto::Array<int> cur_reaction_count;
-  Apto::Array<int> last_task_exe_count;
-  Apto::Array<int> last_reaction_count;
+  AvidaArray<int> cur_task_exe_count;
+  AvidaArray<int> cur_reaction_count;
+  AvidaArray<int> last_task_exe_count;
+  AvidaArray<int> last_reaction_count;
   
-  Apto::Array<int> cur_org_task_count;
-  Apto::Array<int> cur_org_task_exe_count;
-  Apto::Array<int> cur_org_reaction_count;
-  Apto::Array<int> last_org_task_count;
-  Apto::Array<int> last_org_task_exe_count;
-  Apto::Array<int> last_org_reaction_count;
+  AvidaArray<int> cur_org_task_count;
+  AvidaArray<int> cur_org_task_exe_count;
+  AvidaArray<int> cur_org_reaction_count;
+  AvidaArray<int> last_org_task_count;
+  AvidaArray<int> last_org_task_exe_count;
+  AvidaArray<int> last_org_reaction_count;
   
   double avg_founder_generation;  //Average generation of current founders                                    
   double generations_per_lifetime; //Generations between current founders and founders of parent  
@@ -117,15 +118,15 @@ private:
   cDeme(const cDeme&); // @not_implemented
   
   cResourceCount deme_resource_count; //!< Resources available to the deme
-  Apto::Array<int> energy_res_ids; //!< IDs of energy resources
+  AvidaArray<int> energy_res_ids; //!< IDs of energy resources
   
   Apto::Array<cDemeCellEvent, Apto::Smart> cell_events;
   std::vector<std::pair<int, int> > event_slot_end_points; // (slot end point, slot flow rate)
   
   int         m_germline_genotype_id; // Genotype id of germline (if in use)
-  Apto::Array<int> m_founder_genotype_ids; // List of genotype ids used to found deme.
+  AvidaArray<int> m_founder_genotype_ids; // List of genotype ids used to found deme.
                                       // Keep a lease on these genotypes for the deme's lifetime.
-  Apto::Array<cPhenotype> m_founder_phenotypes; // List of phenotypes of founder organsisms
+  AvidaArray<cPhenotype> m_founder_phenotypes; // List of phenotypes of founder organsisms
                                       
   cMerit _current_merit; //!< Deme merit applied to all organisms living in this deme.
   cMerit _next_merit; //!< Deme merit that will be inherited upon deme replication.
@@ -148,7 +149,7 @@ public:
   ~cDeme();
   
   cDeme& operator=(const cDeme&); //@JJB**
-  void Setup(int id, const Apto::Array<int>& in_cells, int in_width = -1, cWorld* world = NULL);
+  void Setup(int id, const AvidaArray<int>& in_cells, int in_width = -1, cWorld* world = NULL);
 
   int GetID() const { return _id; }
   int GetSize() const { return cell_ids.GetSize(); }
@@ -255,17 +256,17 @@ public:
   void AddCurTask(int task_num) { cur_task_exe_count[task_num]++; }
   void AddCurReaction (int reaction_num) { cur_reaction_count[reaction_num]++; }
 
-  const Apto::Array<int>& GetCurTaskExeCount() const { return cur_task_exe_count; } //**
-  const Apto::Array<int>& GetLastTaskExeCount() const { return last_task_exe_count; } //**
-  const Apto::Array<int>& GetCurReactionCount() const { return cur_reaction_count; } //**
-  const Apto::Array<int>& GetLastReactionCount() const { return last_reaction_count; } //**
+  const AvidaArray<int>& GetCurTaskExeCount() const { return cur_task_exe_count; } //**
+  const AvidaArray<int>& GetLastTaskExeCount() const { return last_task_exe_count; } //**
+  const AvidaArray<int>& GetCurReactionCount() const { return cur_reaction_count; } //**
+  const AvidaArray<int>& GetLastReactionCount() const { return last_reaction_count; } //**
 
-  const Apto::Array<int>& GetCurOrgTaskCount() const { return cur_org_task_count; }
-  const Apto::Array<int>& GetLastOrgTaskCount() const { return last_org_task_count; }
-  const Apto::Array<int>& GetCurOrgTaskExeCount() const { return cur_org_task_exe_count; }
-  const Apto::Array<int>& GetLastOrgTaskExeCount() const { return last_org_task_exe_count; }
-  const Apto::Array<int>& GetCurOrgReactionCount() const { return cur_org_reaction_count; }
-  const Apto::Array<int>& GetLastOrgReactionCount() const { return last_org_reaction_count; }
+  const AvidaArray<int>& GetCurOrgTaskCount() const { return cur_org_task_count; }
+  const AvidaArray<int>& GetLastOrgTaskCount() const { return last_org_task_count; }
+  const AvidaArray<int>& GetCurOrgTaskExeCount() const { return cur_org_task_exe_count; }
+  const AvidaArray<int>& GetLastOrgTaskExeCount() const { return last_org_task_exe_count; }
+  const AvidaArray<int>& GetCurOrgReactionCount() const { return cur_org_reaction_count; }
+  const AvidaArray<int>& GetLastOrgReactionCount() const { return last_org_reaction_count; }
 
   bool HasDemeMerit() const { return _current_merit.GetDouble() != 1.0; }
 
@@ -286,7 +287,7 @@ public:
   void AdjustResource(cAvidaContext& ctx, int resource_id, double amount);
   void SetDemeResourceCount(const cResourceCount in_res) { deme_resource_count = in_res; }
   void ResizeSpatialGrids(const int in_x, const int in_y) { deme_resource_count.ResizeSpatialGrids(in_x, in_y); }
-  void ModifyDemeResCount(cAvidaContext& ctx, const Apto::Array<double> & res_change, const int absolute_cell_id);
+  void ModifyDemeResCount(cAvidaContext& ctx, const AvidaArray<double> & res_change, const int absolute_cell_id);
   double GetCellEnergy(int absolute_cell_id, cAvidaContext& ctx) const; 
   double GetAndClearCellEnergy(int absolute_cell_id, cAvidaContext& ctx); 
   void GiveBackCellEnergy(int absolute_cell_id, double value, cAvidaContext& ctx); 
@@ -325,10 +326,10 @@ public:
   // --- Founder list management --- //
   void ClearFounders();
   void AddFounder(Systematics::GroupPtr bg, cPhenotype * _in_phenotype = NULL);
-  Apto::Array<int>& GetFounderGenotypeIDs() { return m_founder_genotype_ids; }
-  Apto::Array<cPhenotype>& GetFounderPhenotypes() { return m_founder_phenotypes; }
+  AvidaArray<int>& GetFounderGenotypeIDs() { return m_founder_genotype_ids; }
+  AvidaArray<cPhenotype>& GetFounderPhenotypes() { return m_founder_phenotypes; }
   double GetAvgFounderGeneration() { return avg_founder_generation; }        
-  void UpdateGenerationsPerLifetime(double old_avg_founder_generation, Apto::Array<cPhenotype>& new_founder_phenotypes);
+  void UpdateGenerationsPerLifetime(double old_avg_founder_generation, AvidaArray<cPhenotype>& new_founder_phenotypes);
   double GetGenerationsPerLifetime() { return generations_per_lifetime; }  
 
   // --- Germline management --- //
@@ -403,15 +404,15 @@ public:
   // -------- Deme Input and Output --------
 private:
   int m_input_pointer;
-  Apto::Array<int> m_inputs;
+  AvidaArray<int> m_inputs;
   tBuffer<int> m_input_buf;
   tBuffer<int> m_output_buf;
   Apto::Map<void*, cTaskState*> m_task_states;
   cReactionResult* m_reaction_result;
-  Apto::Array<int> m_task_count;               // Total times each task was performed (resetable during the life of the deme)
-  Apto::Array<int> m_last_task_count;
-  Apto::Array<int> m_reaction_count;
-  Apto::Array<double> m_cur_reaction_add_reward;
+  AvidaArray<int> m_task_count;               // Total times each task was performed (resetable during the life of the deme)
+  AvidaArray<int> m_last_task_count;
+  AvidaArray<int> m_reaction_count;
+  AvidaArray<double> m_cur_reaction_add_reward;
   double m_cur_bonus;
   cMerit m_cur_merit;
 public:
@@ -427,8 +428,8 @@ public:
   const cMerit& GetCurMerit() { return m_cur_merit; }
   void UpdateCurMerit();
   cMerit CalcCurMerit();
-  const Apto::Array<int>& GetTaskCount() const { return m_task_count; }
-  const Apto::Array<int>& GetReactionCount() const { return m_reaction_count; }
+  const AvidaArray<int>& GetTaskCount() const { return m_task_count; }
+  const AvidaArray<int>& GetReactionCount() const { return m_reaction_count; }
 
 
 	// --- Division of Labor --- //
