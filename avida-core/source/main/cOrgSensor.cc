@@ -1288,7 +1288,7 @@ void cOrgSensor::TestConfusion(cAvidaContext& ctx, sLookOut& stuff_seen, cOrgani
 void cOrgSensor::GetConfusionOddsDensity(cAvidaContext& ctx, double& odds, cOrganism* first_org)
 {
   int prey_count = 0;
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   if (!m_use_avatar) {
     if (first_org->IsPreyFT()) {
       prey_count++;
@@ -1320,7 +1320,7 @@ void cOrgSensor::GetConfusionOddsFacings(cAvidaContext& ctx, double& odds, cOrga
   facings.SetAll(0);
   int num_used = 0;
   
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   if (!m_use_avatar) {
     if (first_org->IsPreyFT()) {
       first_org->GetOrgInterface().GetNeighborhoodCellIDs(neighborhood);
@@ -1374,7 +1374,7 @@ void cOrgSensor::GetConfusionOddsOpinions(cAvidaContext& ctx, double& odds, cOrg
   groups_used.Resize(num_groups);
   groups_used.SetAll(0);
   
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   if (!m_use_avatar) {
     if (first_org->IsPreyFT()) {
       first_org->GetOrgInterface().GetNeighborhoodCellIDs(neighborhood);

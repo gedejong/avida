@@ -46,7 +46,7 @@ public:
 
 private:
   cWorld* m_world;
-  Apto::Array<int> input_array;
+  AvidaArray<int> input_array;
   AvidaArray<int> receive_array;
   int cur_input;
   int cur_receive;  
@@ -94,7 +94,7 @@ public:
 
   inline int GetInput();
   inline int GetInputAt(int & input_pointer);
-  inline const Apto::Array<int>& GetInputs() const { return input_array; }
+  inline const AvidaArray<int>& GetInputs() const { return input_array; }
   void ResetInputs(cAvidaContext& ctx);
 
   inline int GetReceiveValue();

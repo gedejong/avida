@@ -236,10 +236,11 @@ bool cTestCPU::TestGenome_Body(cAvidaContext& ctx, cCPUTestInfo& test_info, cons
 
   // Input sizes can vary based on environment settings, must at least initialize
   m_use_random_inputs = test_info.GetUseRandomInputs(); // save this value in case ResetInputs is used.
-  if (!test_info.GetUseManualInputs())
-		m_world->GetEnvironment().SetupInputs(ctx, input_array, m_use_random_inputs);
-  else
+  if (!test_info.GetUseManualInputs()) {
+		Apto::Array<int> a(input_array); m_world->GetEnvironment().SetupInputs(ctx, a, m_use_random_inputs); input_array = a;
+  } else {
 		input_array = test_info.manual_inputs;
+  }
 	
   receive_array.Resize(3);
   if (test_info.GetUseRandomInputs()) {
@@ -430,7 +431,8 @@ void cTestCPU::PrintGenome(cAvidaContext& ctx, const Genome& genome, cString fil
 
 void cTestCPU::ResetInputs(cAvidaContext& ctx) 
 { 
-	if (!m_use_manual_inputs)
-		m_world->GetEnvironment().SetupInputs(ctx, input_array, m_use_random_inputs);
+	if (!m_use_manual_inputs) {
+		Apto::Array<int> a(input_array); m_world->GetEnvironment().SetupInputs(ctx, a, m_use_random_inputs); input_array = a;
+	}
 }
 

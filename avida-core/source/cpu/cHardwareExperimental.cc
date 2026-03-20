@@ -5430,7 +5430,7 @@ bool cHardwareExperimental::Inst_AttackPreyArea(cAvidaContext& ctx)
   if (!TestAttack(ctx)) { results.success = 1; return TestAttackResultsOut(results); }
   
   int prey_count = 0;
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   if (!m_use_avatar) {
     if (m_organism->IsPreyFT()) prey_count++; // self
     m_organism->GetOrgInterface().GetNeighborhoodCellIDs(neighborhood);
@@ -7205,7 +7205,7 @@ void cHardwareExperimental::InjureOrg(cAvidaContext& ctx, cOrganism* target)
 
 Apto::Array<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
 {
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   Apto::Array<cOrganism*> pack;
   pack.Push(m_organism);
   if (!m_use_avatar) {
@@ -7236,7 +7236,7 @@ Apto::Array<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
 Apto::Array<cOrganism*> cHardwareExperimental::GetPredSameGroupAttackNeighbors()
 {
   int opinion = m_organism->GetOpinion().first;
-  Apto::Array<int> neighborhood;
+  AvidaArray<int> neighborhood;
   Apto::Array<cOrganism*> pack;
   pack.Push(m_organism);
   if (!m_use_avatar) {

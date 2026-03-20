@@ -101,8 +101,8 @@ public:
   cOrganism* GetNeighbor();
   bool IsNeighborCellOccupied();
   int GetNumNeighbors();
-  void GetNeighborhoodCellIDs(Apto::Array<int>& list);
-  void GetAVNeighborhoodCellIDs(Apto::Array<int>& list, int av_num = 0);
+  void GetNeighborhoodCellIDs(AvidaArray<int>& list);
+  void GetAVNeighborhoodCellIDs(AvidaArray<int>& list, int av_num = 0);
   int GetFacing(); // Returns the facing of this organism.
   int GetFacedCellID();
   int GetFacedDir(); // Returns the human interpretable facing of this org.
@@ -110,7 +110,7 @@ public:
   void Rotate(cAvidaContext& ctx, int direction = 1);
   int GetInputAt(int& input_pointer);
   void ResetInputs(cAvidaContext& ctx);
-  const Apto::Array<int>& GetInputs() const;
+  const AvidaArray<int>& GetInputs() const;
   const Apto::Array<double>& GetResources(cAvidaContext& ctx); 
   double GetResourceVal(cAvidaContext& ctx, int res_id);
   const Apto::Array<double>& GetFacedCellResources(cAvidaContext& ctx);
@@ -127,9 +127,9 @@ public:
   int GetFrozenPeakY(cAvidaContext& ctx, int res_id);
   cResourceCount* GetResourceCount();
   void TriggerDoUpdates(cAvidaContext& ctx);
-  void UpdateResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
-  void UpdateRandomResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
-  void UpdateDemeResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
+  void UpdateResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
+  void UpdateRandomResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
+  void UpdateDemeResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
   void Die(cAvidaContext& ctx); 
   void KillCellID(int target, cAvidaContext& ctx); 
   void Kaboom(int distance, cAvidaContext& ctx);
@@ -266,7 +266,7 @@ public:
   void TryWriteLookData(cString& string);
   void TryWriteLookOutput(cString& string);
   void TryWriteLookEXOutput(cString& string);
-  Apto::Array<int> GetFormedGroupArray();
+  AvidaArray<int> GetFormedGroupArray();
   
 // -------- Avatar support -------- @JJB
 private:
@@ -322,7 +322,7 @@ public:
   double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
   const Apto::Array<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0);
   double GetAVFacedResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
-  void UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, int av_num = 0);
+  void UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num = 0);
   
   void BeginSleep();
   void EndSleep();

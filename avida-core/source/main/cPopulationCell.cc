@@ -255,7 +255,7 @@ int cPopulationCell::GetFacedDir()
 }
 void cPopulationCell::ResetInputs(cAvidaContext& ctx) 
 { 
-  m_world->GetEnvironment().SetupInputs(ctx, m_inputs); 
+  Apto::Array<int> a(m_inputs); m_world->GetEnvironment().SetupInputs(ctx, a); m_inputs = a;
 }
 
 

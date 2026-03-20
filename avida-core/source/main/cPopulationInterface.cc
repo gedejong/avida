@@ -264,7 +264,7 @@ int cPopulationInterface::GetNumNeighbors()
   return cell.ConnectionList().GetSize();
 }
 
-void cPopulationInterface::GetNeighborhoodCellIDs(Apto::Array<int>& list)
+void cPopulationInterface::GetNeighborhoodCellIDs(AvidaArray<int>& list)
 {
   cPopulationCell& cell = m_world->GetPopulation().GetCell(m_cell_id);
   assert(cell.IsOccupied());
@@ -275,7 +275,7 @@ void cPopulationInterface::GetNeighborhoodCellIDs(Apto::Array<int>& list)
   while (it.Next() != NULL) list[i++] = it.Get()->GetID();
 }
 
-void cPopulationInterface::GetAVNeighborhoodCellIDs(Apto::Array<int>& list, int av_num)
+void cPopulationInterface::GetAVNeighborhoodCellIDs(AvidaArray<int>& list, int av_num)
 {
   cPopulationCell& cell = m_world->GetPopulation().GetCell(m_avatars[av_num].av_cell_id);
   assert(cell.HasAV());
@@ -338,7 +338,7 @@ void cPopulationInterface::ResetInputs(cAvidaContext& ctx)
   m_world->GetPopulation().GetCell(m_cell_id).ResetInputs(ctx); 
 }
 
-const Apto::Array<int>& cPopulationInterface::GetInputs() const
+const AvidaArray<int>& cPopulationInterface::GetInputs() const
 {
   return m_world->GetPopulation().GetCell(m_cell_id).GetInputs();
 }
@@ -423,12 +423,12 @@ void cPopulationInterface::TriggerDoUpdates(cAvidaContext& ctx)
   m_world->GetPopulation().TriggerDoUpdates(ctx);
 }
 
-void cPopulationInterface::UpdateResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cPopulationInterface::UpdateResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
   return m_world->GetPopulation().UpdateCellResources(ctx, res_change, m_cell_id);
 }
 
-void cPopulationInterface::UpdateRandomResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cPopulationInterface::UpdateRandomResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
   //get a random cell ID
   int random_id;
@@ -440,7 +440,7 @@ void cPopulationInterface::UpdateRandomResources(cAvidaContext& ctx, const Apto:
   return m_world->GetPopulation().UpdateCellResources(ctx, res_change, random_id);
 }
 
-void cPopulationInterface::UpdateDemeResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cPopulationInterface::UpdateDemeResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
   return m_world->GetPopulation().UpdateDemeCellResources(ctx, res_change, m_cell_id);
 }
@@ -1659,7 +1659,7 @@ void cPopulationInterface::TryWriteLookEXOutput(cString& string)
   if (m_world->GetConfig().TRACK_LOOK_OUTPUT.Get()) m_world->GetStats().PrintLookEXDataOutput(string);
 }
 
-Apto::Array<int> cPopulationInterface::GetFormedGroupArray()
+AvidaArray<int> cPopulationInterface::GetFormedGroupArray()
 {
   return m_world->GetPopulation().GetFormedGroupArray();
 }
@@ -2401,7 +2401,7 @@ double cPopulationInterface::GetAVFacedResourceVal(cAvidaContext& ctx, int res_i
 }
 
 // Updates the avatar's cell resources
-void cPopulationInterface::UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, int av_num)
+void cPopulationInterface::UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num)
 {
   // If the avatar exists..
   if (av_num < GetNumAV()) {

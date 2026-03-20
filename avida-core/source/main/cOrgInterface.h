@@ -31,6 +31,7 @@
 #ifndef cOrgInterface_h
 #define cOrgInterface_h
 
+#include "AvidaArray.h"
 #include "avida/systematics/Types.h"
 
 namespace Avida {
@@ -94,8 +95,8 @@ public:
   virtual cOrganism* GetNeighbor() = 0;
   virtual bool IsNeighborCellOccupied() = 0;
   virtual int GetNumNeighbors() = 0;
-  virtual void GetNeighborhoodCellIDs(Apto::Array<int>& list) = 0;
-  virtual void GetAVNeighborhoodCellIDs(Apto::Array<int>& list, int av_num = 0) = 0;
+  virtual void GetNeighborhoodCellIDs(AvidaArray<int>& list) = 0;
+  virtual void GetAVNeighborhoodCellIDs(AvidaArray<int>& list, int av_num = 0) = 0;
 
   virtual int GetFacing() = 0; //!< Returns the facing of this organism.
   virtual int GetFacedCellID() = 0;
@@ -107,7 +108,7 @@ public:
   
   virtual int GetInputAt(int& input_pointer) = 0;
   virtual void ResetInputs(cAvidaContext& ctx) = 0;
-  virtual const Apto::Array<int>& GetInputs() const = 0;
+  virtual const AvidaArray<int>& GetInputs() const = 0;
   virtual const Apto::Array<double>& GetResources(cAvidaContext& ctx) = 0; 
   virtual double GetResourceVal(cAvidaContext& ctx, int res_id) = 0;
   virtual const Apto::Array<double>& GetFacedCellResources(cAvidaContext& ctx) = 0; 
@@ -125,9 +126,9 @@ public:
   virtual int GetFrozenPeakY(cAvidaContext& ctx, int res_id) = 0;
   virtual cResourceCount* GetResourceCount() = 0;
   virtual void TriggerDoUpdates(cAvidaContext& ctx) = 0;
-  virtual void UpdateResources(cAvidaContext& ctx, const Apto::Array<double>& res_change) = 0;
-  virtual void UpdateRandomResources(cAvidaContext& ctx, const Apto::Array<double>& res_change) = 0;
-  virtual void UpdateDemeResources(cAvidaContext& ctx, const Apto::Array<double>& res_change) = 0;
+  virtual void UpdateResources(cAvidaContext& ctx, const AvidaArray<double>& res_change) = 0;
+  virtual void UpdateRandomResources(cAvidaContext& ctx, const AvidaArray<double>& res_change) = 0;
+  virtual void UpdateDemeResources(cAvidaContext& ctx, const AvidaArray<double>& res_change) = 0;
   virtual void Die(cAvidaContext& ctx) = 0; 
   virtual void KillCellID(int target, cAvidaContext& ctx) = 0; 
   virtual void Kaboom(int distance, cAvidaContext& ctx) = 0;
@@ -211,7 +212,7 @@ public:
   virtual void TryWriteLookData(cString& string) = 0;
   virtual void TryWriteLookOutput(cString& string) = 0;
   virtual void TryWriteLookEXOutput(cString& string) = 0;
-  virtual Apto::Array<int> GetFormedGroupArray() = 0;
+  virtual AvidaArray<int> GetFormedGroupArray() = 0;
  
   virtual bool HasOutputAV(int av_num = 0) = 0;
   virtual bool FacedHasOutputAV(int av_num = 0) = 0;
@@ -252,7 +253,7 @@ public:
   virtual double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0) = 0;
   virtual const Apto::Array<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0) = 0;
   virtual double GetAVFacedResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0) = 0;
-  virtual void UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, int av_num = 0) = 0;
+  virtual void UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num = 0) = 0;
 
   virtual void BeginSleep() = 0;
   virtual void EndSleep() = 0;

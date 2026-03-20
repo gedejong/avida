@@ -49,7 +49,7 @@ void cTestCPUInterface::ResetInputs(cAvidaContext& ctx)
   m_testcpu->ResetInputs(ctx); 
 }
 
-const Apto::Array<int>& cTestCPUInterface::GetInputs() const
+const AvidaArray<int>& cTestCPUInterface::GetInputs() const
 {
   return m_testcpu->GetInputs();
 }
@@ -104,14 +104,14 @@ const Apto::Array< Apto::Array<int> >& cTestCPUInterface::GetCellIdLists()
 	return m_testcpu->GetCellIdLists();
 }
 
-void cTestCPUInterface::UpdateResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cTestCPUInterface::UpdateResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
-   m_testcpu->ModifyResources(ctx, res_change);
+   m_testcpu->ModifyResources(ctx, Apto::Array<double>(res_change));
 }
 
-void cTestCPUInterface::UpdateRandomResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cTestCPUInterface::UpdateRandomResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
-   m_testcpu->ModifyResources(ctx, res_change);
+   m_testcpu->ModifyResources(ctx, Apto::Array<double>(res_change));
 }
 
 void cTestCPUInterface::Kaboom(int distance, cAvidaContext& ctx)
@@ -149,9 +149,9 @@ int cTestCPUInterface::GetStateGridID(cAvidaContext& ctx)
   return m_test_info.GetStateGridID();
 }
 
-Apto::Array<int> cTestCPUInterface::GetFormedGroupArray()
+AvidaArray<int> cTestCPUInterface::GetFormedGroupArray()
 {
-  Apto::Array<int> null_array;
+  AvidaArray<int> null_array;
   null_array.SetAll(0);
   return null_array;
 }
@@ -197,7 +197,7 @@ double cTestCPUInterface::GetAVFacedResourceVal(cAvidaContext& ctx, int res_id, 
   return m_testcpu->GetAVFacedResourceVal(ctx, res_id);
 }
 
-void cTestCPUInterface::UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, int av_num)
+void cTestCPUInterface::UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num)
 {
-  m_testcpu->ModifyResources(ctx, res_change);
+  m_testcpu->ModifyResources(ctx, Apto::Array<double>(res_change));
 }

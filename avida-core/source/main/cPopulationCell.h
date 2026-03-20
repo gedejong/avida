@@ -23,6 +23,7 @@
 #ifndef cPopulationCell_h
 #define cPopulationCell_h
 
+#include "AvidaArray.h"
 #include "avida/core/InstructionSequence.h"
 
 #include <fstream>
@@ -54,7 +55,7 @@ private:
 
   tList<cPopulationCell> m_connections;  // A list of neighboring cells.
   cMutationRates* m_mut_rates;           // Mutation rates at this cell.
-  Apto::Array<int> m_inputs;                 // Environmental Inputs...
+  AvidaArray<int> m_inputs;                 // Environmental Inputs...
 
   int m_cell_id;           // Unique id for position of cell in population.
   int m_deme_id;           // ID of the deme that this cell is part of.  
@@ -120,7 +121,7 @@ public:
   inline cMutationRates& MutationRates() { assert(m_mut_rates); return *m_mut_rates; }
 
   inline int GetInput(int input_cell) const { return m_inputs[input_cell]; }
-  inline const Apto::Array<int>& GetInputs() const { return m_inputs; }
+  inline const AvidaArray<int>& GetInputs() const { return m_inputs; }
   inline int GetInputAt(int& input_pointer);
   inline int GetInputSize() { return m_inputs.GetSize(); }
   void ResetInputs(cAvidaContext& ctx);

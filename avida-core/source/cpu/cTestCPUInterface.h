@@ -92,15 +92,15 @@ public:
   cOrganism* GetNeighbor() { return NULL; }
   bool IsNeighborCellOccupied() { return false; }
   int GetNumNeighbors() { return 0; }
-  void GetNeighborhoodCellIDs(Apto::Array<int>& list) { ; }
-  void GetAVNeighborhoodCellIDs(Apto::Array<int>& list, int av_num = 0) { ; }
+  void GetNeighborhoodCellIDs(AvidaArray<int>& list) { ; }
+  void GetAVNeighborhoodCellIDs(AvidaArray<int>& list, int av_num = 0) { ; }
   int GetNeighborCellContents() { return 0; }
   void Rotate(cAvidaContext& ctx, int direction = 1) { ; }
   
   void Breakpoint() { ; }
   int GetInputAt(int& input_pointer);
   void ResetInputs(cAvidaContext& ctx);
-  const Apto::Array<int>& GetInputs() const;
+  const AvidaArray<int>& GetInputs() const;
   const Apto::Array<double>& GetResources(cAvidaContext& ctx); 
   double GetResourceVal(cAvidaContext& ctx, int res_id);
   const Apto::Array<double>& GetFacedCellResources(cAvidaContext& ctx); 
@@ -119,10 +119,10 @@ public:
 
   cResourceCount* GetResourceCount() { return NULL; }
   void TriggerDoUpdates(cAvidaContext&) { }
-  void UpdateResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
-  void UpdateRandomResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
-  void UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change);
-  void UpdateDemeResources(cAvidaContext&, const Apto::Array<double>&) { ; }
+  void UpdateResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
+  void UpdateRandomResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
+  void UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
+  void UpdateDemeResources(cAvidaContext&, const AvidaArray<double>&) { ; }
   
   void Die(cAvidaContext& ctx) { ; } 
   void KillCellID(int target, cAvidaContext& ctx) { ; } 
@@ -229,7 +229,7 @@ public:
   void TryWriteLookData(cString& string) { ; }
   void TryWriteLookOutput(cString& string) { ; }
   void TryWriteLookEXOutput(cString& string) { ; }
-  Apto::Array<int> GetFormedGroupArray();
+  AvidaArray<int> GetFormedGroupArray();
 
   bool HasOutputAV(int av_num = 0) { return false; }
   bool FacedHasOutputAV(int av_num = 0) { return false; }
@@ -269,7 +269,7 @@ public:
   double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
   const Apto::Array<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0);
   double GetAVFacedResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
-  void UpdateAVResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, int av_num = 0);
+  void UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num = 0);
   
   void BeginSleep() { ; }
   void EndSleep() { ; }

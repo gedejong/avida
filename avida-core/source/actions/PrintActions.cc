@@ -4876,7 +4876,7 @@ public:
     
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
-    Apto::Array<int> neighborhood;
+    AvidaArray<int> neighborhood;
     const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
