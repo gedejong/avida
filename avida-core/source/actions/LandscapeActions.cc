@@ -81,8 +81,8 @@ public:
   {
     int update = -1;
     cLandscape* land = NULL;
-    Apto::Array<tList<cLandscape> > batches(m_max_dist);
-    Apto::Array<int> depths;
+    AvidaArray<tList<cLandscape> > batches(m_max_dist);
+    AvidaArray<int> depths;
     
     
     if (ctx.GetAnalyzeMode()) {
@@ -139,7 +139,7 @@ public:
   }
   
 private:
-  void LoadGenome(Apto::Array<tList<cLandscape> >& batches, const Genome& genome)
+  void LoadGenome(AvidaArray<tList<cLandscape> >& batches, const Genome& genome)
   {
     cAnalyzeJobQueue& jobqueue = m_world->GetAnalyze().GetJobQueue();
 

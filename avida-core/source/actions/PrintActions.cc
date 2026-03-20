@@ -956,7 +956,7 @@ public:
     // ----- number of instructions available?
     const cInstSet& is = m_world->GetHardwareManager().GetInstSet((const char*)m_inst_set);
     
-    Apto::Array<int> inst_counts(is.GetSize());
+    AvidaArray<int> inst_counts(is.GetSize());
     inst_counts.SetAll(0);
     
     //looping through all CPUs counting up instructions
@@ -1012,7 +1012,7 @@ public:
     assert(max >= min);
     
     // Allocate the array for the bins (& zero)
-    Apto::Array<int> n(max - min + 1);
+    AvidaArray<int> n(max - min + 1);
     n.SetAll(0);
     
     // Loop through all genotypes binning the values
@@ -1072,7 +1072,7 @@ public:
     assert(max >= min);
     
     // Allocate the array for the bins (& zero)
-    Apto::Array<int> n(max - min + 1);
+    AvidaArray<int> n(max - min + 1);
     n.SetAll(0);
     
     // Loop through all genotypes binning the values
@@ -1134,7 +1134,7 @@ public:
     assert(max >= min);
     
     // Allocate the array for the bins (& zero)
-    Apto::Array<int> n(max - min + 1);
+    AvidaArray<int> n(max - min + 1);
     n.SetAll(0);
     
     // Loop through all genotypes binning the values
@@ -1196,7 +1196,7 @@ public:
     // Allocate array for the histogram & zero it
     Systematics::ManagerPtr classmgr = Systematics::Manager::Of(m_world->GetNewWorld());
     Systematics::Arbiter::IteratorPtr it = classmgr->ArbiterForRole("genotype")->Begin();
-    Apto::Array<int> hist(it->Next()->NumUnits());
+    AvidaArray<int> hist(it->Next()->NumUnits());
     hist.SetAll(0);
     
     // Loop through all genotypes binning the values
@@ -1220,7 +1220,7 @@ class cActionPrintLineageCounts : public cAction
 private:
   cString m_filename;
   bool first_run;
-  Apto::Array<int> lineage_labels;
+  AvidaArray<int> lineage_labels;
 public:
   cActionPrintLineageCounts(cWorld* world, const cString& args, Feedback&) : cAction(world, args)
   {
@@ -1500,8 +1500,8 @@ public:
     const double generation = m_world->GetStats().SumGeneration().Average();
     
     // the histogram variables
-    Apto::Array<int> histo;
-    Apto::Array<int> histo_testCPU;
+    AvidaArray<int> histo;
+    AvidaArray<int> histo_testCPU;
     int bins = 0;
     
     if (m_print_fitness_histo) {
@@ -1781,14 +1781,14 @@ public:
   
   //This function may get called by outside classes to generate a histogram of log10 fitnesses;
   //max may be updated by this function if the range is not evenly divisible by the step
-  static Apto::Array<int> MakeHistogram(const Apto::Array<cOrganism*>& orgs, const Apto::Array<Systematics::GroupPtr>& gens,
+  static AvidaArray<int> MakeHistogram(const AvidaArray<cOrganism*>& orgs, const AvidaArray<Systematics::GroupPtr>& gens,
                                         double min, double step, double& max, const cString& mode, cWorld* world,
                                         cAvidaContext& ctx)
   {
     //Set up histogram; extra columns prepended (non-viable, < m_hist_fmin) and appended ( > f_hist_fmax)
     //If the bin size is not a multiple of the step size, the last bin is expanded to make it a multiple.
     //All bins are [min, max)
-    Apto::Array<int> histogram;
+    AvidaArray<int> histogram;
     int num_bins = static_cast<int>(ceil( (max - min) / step)) + 3;
     max  = min + (num_bins - 3) * step;
     histogram.Resize(num_bins, 0);
@@ -1861,8 +1861,8 @@ public:
     cPopulation& pop        = m_world->GetPopulation();
     const int    update     = m_world->GetStats().GetUpdate();
     const double generation = m_world->GetStats().SumGeneration().Average();
-    Apto::Array<cOrganism*> orgs;
-    Apto::Array<Systematics::GroupPtr> gens;
+    AvidaArray<cOrganism*> orgs;
+    AvidaArray<Systematics::GroupPtr> gens;
     
     for (int i = 0; i < pop.GetSize(); i++)
     {
@@ -1873,7 +1873,7 @@ public:
       gens.Push(genotype);
     }
     
-    Apto::Array<int> histogram = MakeHistogram(orgs, gens, m_hist_fmin, m_hist_fstep, m_hist_fmax, m_mode, m_world, ctx);
+    AvidaArray<int> histogram = MakeHistogram(orgs, gens, m_hist_fmin, m_hist_fstep, m_hist_fmax, m_mode, m_world, ctx);
     
     
     //Output histogram
@@ -1956,14 +1956,14 @@ public:
     return retval;
   }
   
-  static Apto::Array<int> MakeHistogram(const Apto::Array<cOrganism*>& orgs, const Apto::Array<Systematics::GroupPtr>& gens,
+  static AvidaArray<int> MakeHistogram(const AvidaArray<cOrganism*>& orgs, const AvidaArray<Systematics::GroupPtr>& gens,
                                         double min, double step, double& max, const cString& mode, cWorld* world,
                                         cAvidaContext& ctx)
   {
     //Set up histogram; extra columns prepended (non-viable, < m_hist_fmin) and appended ( > f_hist_fmax)
     //If the bin size is not a multiple of the step size, the last bin is expanded to make it a multiple.
     //All bins are [min, max)
-    Apto::Array<int> histogram;
+    AvidaArray<int> histogram;
     int num_bins = static_cast<int>(ceil( (max - min) / step)) + 3;
     max  = min + (num_bins - 3) * step;
     histogram.Resize(num_bins, 0);
@@ -2041,8 +2041,8 @@ public:
     cPopulation& pop        = m_world->GetPopulation();
     const int    update     = m_world->GetStats().GetUpdate();
     const double generation = m_world->GetStats().SumGeneration().Average();
-    Apto::Array<cOrganism*> orgs;
-    Apto::Array<Systematics::GroupPtr> gens;
+    AvidaArray<cOrganism*> orgs;
+    AvidaArray<Systematics::GroupPtr> gens;
     
     for (int i = 0; i < pop.GetSize(); i++)
     {
@@ -2053,7 +2053,7 @@ public:
       gens.Push(genotype);
     }
     
-    Apto::Array<int> histogram = MakeHistogram(orgs, gens, m_hist_fmin, m_hist_fstep, m_hist_fmax, m_mode, m_world, ctx);
+    AvidaArray<int> histogram = MakeHistogram(orgs, gens, m_hist_fmin, m_hist_fstep, m_hist_fmax, m_mode, m_world, ctx);
     
     
     //Output histogram
@@ -2137,8 +2137,8 @@ public:
     //Gather data objects
     cPopulation& pop        = m_world->GetPopulation();
     const int    update     = m_world->GetStats().GetUpdate();
-    map< int, Apto::Array<cOrganism*> > org_map;  //Map of ccladeID to array of organism IDs
-    map< int, Apto::Array<Systematics::GroupPtr> > gen_map;  //Map of ccladeID to array of genotype IDs
+    map< int, AvidaArray<cOrganism*> > org_map;  //Map of ccladeID to array of organism IDs
+    map< int, AvidaArray<Systematics::GroupPtr> > gen_map;  //Map of ccladeID to array of genotype IDs
     
     //Collect clade information
     for (int i = 0; i < pop.GetSize(); i++){
@@ -2147,8 +2147,8 @@ public:
       Systematics::GroupPtr genotype = organism->SystematicsGroup("genotype");
       int cladeID = organism->GetCCladeLabel();
       
-      map< int, Apto::Array<cOrganism*> >::iterator oit = org_map.find(cladeID);
-      map< int, Apto::Array<Systematics::GroupPtr> >::iterator git = gen_map.find(cladeID);
+      map< int, AvidaArray<cOrganism*> >::iterator oit = org_map.find(cladeID);
+      map< int, AvidaArray<Systematics::GroupPtr> >::iterator git = gen_map.find(cladeID);
       if (oit == org_map.end()) {
         //The clade is new
         org_map[cladeID].Resize(1); org_map[cladeID][0] = organism;
@@ -2167,10 +2167,10 @@ public:
       ctx.Driver().Feedback().Error("PrintCCladeFitnessHistogram: Unable to open output file.");
       ctx.Driver().Abort(Avida::IO_ERROR);
     }
-    map< int, Apto::Array<cOrganism*> >::iterator oit = org_map.begin();
-    map< int, Apto::Array<Systematics::GroupPtr> >::iterator git = gen_map.begin();
+    map< int, AvidaArray<cOrganism*> >::iterator oit = org_map.begin();
+    map< int, AvidaArray<Systematics::GroupPtr> >::iterator git = gen_map.begin();
     for (; oit != org_map.end(); oit++, git++) {
-      Apto::Array<int> hist =
+      AvidaArray<int> hist =
       cActionPrintLogFitnessHistogram::MakeHistogram((oit->second), (git->second), m_hist_fmin, m_hist_fstep, m_hist_fmax, m_mode, m_world, ctx );
       if (first_run) {
         // Print header information if first time through
@@ -2266,8 +2266,8 @@ public:
     ///Gather data objects
     cPopulation& pop        = m_world->GetPopulation();
     const int    update     = m_world->GetStats().GetUpdate();
-    map< int, Apto::Array<cOrganism*> > org_map;  //Map of ccladeID to array of organism IDs
-    map< int, Apto::Array<Systematics::GroupPtr> > gen_map;  //Map of ccladeID to array of genotype IDs
+    map< int, AvidaArray<cOrganism*> > org_map;  //Map of ccladeID to array of organism IDs
+    map< int, AvidaArray<Systematics::GroupPtr> > gen_map;  //Map of ccladeID to array of genotype IDs
     
     //Collect clade information
     for (int i = 0; i < pop.GetSize(); i++) {
@@ -2276,8 +2276,8 @@ public:
       Systematics::GroupPtr genotype = organism->SystematicsGroup("genotype");
       int cladeID = organism->GetCCladeLabel();
       
-      map< int, Apto::Array<cOrganism*> >::iterator oit = org_map.find(cladeID);
-      map< int, Apto::Array<Systematics::GroupPtr> >::iterator git = gen_map.find(cladeID);
+      map< int, AvidaArray<cOrganism*> >::iterator oit = org_map.find(cladeID);
+      map< int, AvidaArray<Systematics::GroupPtr> >::iterator git = gen_map.find(cladeID);
       if (oit == org_map.end()) {
         // The clade is new
         org_map[cladeID].Resize(1); org_map[cladeID][0] = organism;
@@ -2296,10 +2296,10 @@ public:
       ctx.Driver().Feedback().Error("PrintCCladeRelativeFitnessHistogram: Unable to open output file.");
       ctx.Driver().Abort(Avida::IO_ERROR);      
     }
-    map< int, Apto::Array<cOrganism*> >::iterator oit = org_map.begin();
-    map< int, Apto::Array<Systematics::GroupPtr> >::iterator git = gen_map.begin();
+    map< int, AvidaArray<cOrganism*> >::iterator oit = org_map.begin();
+    map< int, AvidaArray<Systematics::GroupPtr> >::iterator git = gen_map.begin();
     for (; oit != org_map.end(); oit++, git++) {
-      Apto::Array<int> hist = cActionPrintRelativeFitnessHistogram::MakeHistogram( (oit->second), (git->second),
+      AvidaArray<int> hist = cActionPrintRelativeFitnessHistogram::MakeHistogram( (oit->second), (git->second),
                                                                                   m_hist_fmin, m_hist_fstep, m_hist_fmax,
                                                                                   m_mode, m_world, ctx );
       if (first_run){  //Print header information if first time through
@@ -2348,7 +2348,7 @@ public:
   void Process(cAvidaContext& ctx)
   {
     const int        num_insts  = m_world->GetHardwareManager().GetDefaultInstSet().GetSize();
-    Apto::Array<cString> aligned;  //This will hold all of our aligned sequences
+    AvidaArray<cString> aligned;  //This will hold all of our aligned sequences
     
     if (ctx.GetAnalyzeMode()) //We're in analyze mode, so process the current batch
     {
@@ -2382,10 +2382,10 @@ public:
     }
     
     const int gen_size = aligned[0].GetSize();
-    Apto::Array<double> site_entropy(gen_size);
+    AvidaArray<double> site_entropy(gen_size);
     site_entropy.SetAll(0.0);
     
-    Apto::Array<int> inst_count( (m_use_gap) ? num_insts + 1 : num_insts);  //Add an extra place if we're using gaps
+    AvidaArray<int> inst_count( (m_use_gap) ? num_insts + 1 : num_insts);  //Add an extra place if we're using gaps
     inst_count.SetAll(0);
     for (int pos = 0; pos < gen_size; pos++)
     {
@@ -2409,7 +2409,7 @@ public:
   
   
 private:
-  void AlignStringArray(Apto::Array<cString>& unaligned)  //Taken from cAnalyze::CommandAnalyze
+  void AlignStringArray(AvidaArray<cString>& unaligned)  //Taken from cAnalyze::CommandAnalyze
   {
     // Create an array of all the sequences we need to align.
     const int num_sequences = unaligned.GetSize();
@@ -2494,10 +2494,10 @@ private:
       << pp->GetFitness() << " "
       << pp->GetMerit() << " "
       << pp->GetGestationTime() << " ";
-      Apto::Array<int> tasks = pp->GetLastTaskCount();
+      AvidaArray<int> tasks = pp->GetLastTaskCount();
       for (int t = 0; t < tasks.GetSize(); t++)
         fot << tasks[t] << " ";
-      Apto::Array<int> env_inputs = pp->GetEnvInputs();
+      AvidaArray<int> env_inputs = pp->GetEnvInputs();
       for (int e = 0; e < env_inputs.GetSize(); e++)
         fot << env_inputs[e] << " ";
       fot << endl;
@@ -2610,7 +2610,7 @@ public:
       tListIterator<cAnalyzeGenotype> batch_it(m_world->GetAnalyze().GetCurrentBatch().List());
       cAnalyzeGenotype* genotype = NULL;
       while((genotype = batch_it.Next())){                               //For each genotype
-        Apto::Array<double> task_prob = genotype->GetTaskProbabilities();     //    get the taks probabilities
+        AvidaArray<double> task_prob = genotype->GetTaskProbabilities();     //    get the taks probabilities
         int weight = (m_weighted) ? genotype->GetNumCPUs() : 1;          //    get the proper tally weighting
         for (int k = 0; k < task_prob.GetSize(); k++){                   //    For each task
           int bin_id = (task_prob[k] < 1.0) ? (int) ceil( ( task_prob[k] * 100 ) / 5 ) : 21;  // find the bin to put it into
@@ -2625,7 +2625,7 @@ public:
         Systematics::GroupPtr bg = it->Get();
         
         int weight = (m_weighted) ? bg->NumUnits() : 1;
-        Apto::Array<double> task_prob = cPhenPlastUtil::GetTaskProbabilities(ctx, m_world, bg);
+        AvidaArray<double> task_prob = cPhenPlastUtil::GetTaskProbabilities(ctx, m_world, bg);
         for (int k = 0; k < task_prob.GetSize(); k++){
           int bin_id = (task_prob[k] < 1.0) ? (int) ceil( ( task_prob[k] * 100 ) / 5 ) : 21;
           m_bins(k,bin_id) += weight;
@@ -2676,7 +2676,7 @@ private:
     <<  "# median_taskplast_entropy   Median entropy of task-plastic genotypes." << endl << endl;
   }
   
-  inline bool HasPlasticTasks(Apto::Array<double> task_probs){
+  inline bool HasPlasticTasks(AvidaArray<double> task_probs){
     for (int k = 0; k < task_probs.GetSize(); k++)
       if (task_probs[k] != 0 && task_probs[k] != 1) return true;
     return false;
@@ -2707,8 +2707,8 @@ public:
     }
     double median = -1.0;           // Will hold the median phenotypic value (excluding 0.0)
     double task_median = -1.0;      // Will hold the median phenotypic entropy value of only those genotypes showing task plasticity
-    Apto::Array<double> pp_entropy;      // Will hold the phenotypic entropy values greater than 0.0
-    Apto::Array<double> pp_taskentropy;  // Will hold phenotypic entropy values for only those organisms with task plasticity
+    AvidaArray<double> pp_entropy;      // Will hold the phenotypic entropy values greater than 0.0
+    AvidaArray<double> pp_taskentropy;  // Will hold phenotypic entropy values for only those organisms with task plasticity
     int num_plast_genotypes = 0;    // Number of plastic genotypes
     int num_genotypes = 0;          // Number of genotypes in the population
     int num_orgs = 0;               // Number of organisms in the population
@@ -2764,11 +2764,11 @@ public:
     //    of the middle two elements if there is an even number of elements.
     int update = (ctx.GetAnalyzeMode()) ? -1 : m_world->GetStats().GetUpdate();
     if (num_plast_genotypes > 0){   //Handle our array of entropies if we need to
-      Apto::QSort(pp_entropy, 0, num_plast_genotypes-1);
+      std::sort(pp_entropy.begin(), pp_entropy.begin() + num_plast_genotypes);
       int ndx    = num_plast_genotypes / 2;
       median     = (num_plast_genotypes % 2 == 1) ? pp_entropy[ndx] : (pp_entropy[ndx-1] + pp_entropy[ndx]) / 2.0;
       if (gen_task_plast > 0){      //Handle our second array of entropies if we need to
-        Apto::QSort(pp_taskentropy, 0, gen_task_plast-1);
+        std::sort(pp_taskentropy.begin(), pp_taskentropy.begin() + gen_task_plast);
         ndx    = gen_task_plast / 2;
         task_median  = (gen_task_plast % 2 == 1) ? pp_taskentropy[ndx] : (pp_taskentropy[ndx-1] + pp_taskentropy[ndx]) / 2.0;
       }
@@ -3137,7 +3137,7 @@ public:
     cPopulation& pop = m_world->GetPopulation();
     const int num_tasks = m_world->GetEnvironment().GetNumTasks();
     
-    Apto::Array<int> tasks(num_tasks);
+    AvidaArray<int> tasks(num_tasks);
     tasks.SetAll(0);
     
     for (int i = 0; i < pop.GetSize(); i++) {
@@ -3189,7 +3189,7 @@ public:
     const int update = m_world->GetStats().GetUpdate();
     
     // Setup the histogtams...
-    Apto::Array<cHistogram> inst_hist(MAX_GENOME_LENGTH);
+    AvidaArray<cHistogram> inst_hist(MAX_GENOME_LENGTH);
     for (int i = 0; i < MAX_GENOME_LENGTH; i++) inst_hist[i].Resize(num_inst,-1);
     
     // Loop through all of the genotypes adding them to the histograms.
@@ -3587,7 +3587,7 @@ private:
   int m_num_colors;
   int m_threshold;
   cString m_filename;
-  Apto::Array<int> m_genotype_chart;
+  AvidaArray<int> m_genotype_chart;
   
 public:
   cActionDumpGenotypeColorGrid(cWorld* world, const cString& args, Feedback&)
@@ -3837,7 +3837,7 @@ public:
     
     for (int j = 0; j < m_world->GetPopulation().GetWorldY(); j++) {
       for (int i = 0; i < m_world->GetPopulation().GetWorldX(); i++) {
-        const Apto::Array<double> res_count = m_world->GetPopulation().GetCellResources(j * m_world->GetPopulation().GetWorldX() + i, ctx);
+        const AvidaArray<double> res_count = m_world->GetPopulation().GetCellResources(j * m_world->GetPopulation().GetWorldX() + i, ctx);
         double max_resource = 0.0;    
         // get the resource library
         const cResourceLib& resource_lib = m_world->GetEnvironment().GetResourceLib();
@@ -4250,7 +4250,7 @@ public:
           cOrganism* organism = pop->GetCell(cell_num).GetOrganism();
           if(organism->GetNumParasites() > 0)
           {
-            Apto::Array<Systematics::UnitPtr> parasites = organism->GetParasites();
+            AvidaArray<Systematics::UnitPtr> parasites = organism->GetParasites();
             Apto::SmartPtr<cParasite, Apto::InternalRCObject> parasite;
             parasite.DynamicCastFrom(parasites[0]);
             virulence = parasite->GetVirulence();
@@ -4644,7 +4644,7 @@ public:
           cOrganism* organism = pop->GetCell(cell_num).GetOrganism();
           if (organism->GetNumParasites() > 0)
           {
-            Apto::Array<Systematics::UnitPtr> parasites = organism->GetParasites();
+            AvidaArray<Systematics::UnitPtr> parasites = organism->GetParasites();
             Apto::SmartPtr<cParasite, Apto::InternalRCObject> parasite;
             parasite.DynamicCastFrom(parasites[0]);
             genome_seq = parasite->UnitGenome().Representation()->AsString();
@@ -4688,7 +4688,7 @@ public:
           cOrganism* organism = pop->GetCell(cell_num).GetOrganism();
           if(organism->GetNumParasites() > 0)
           {
-            Apto::Array<Systematics::UnitPtr> parasites = organism->GetParasites();
+            AvidaArray<Systematics::UnitPtr> parasites = organism->GetParasites();
             Apto::SmartPtr<cParasite, Apto::InternalRCObject> parasite;
             parasite.DynamicCastFrom(parasites[0]);
             genome_seq = parasite->UnitGenome().Representation()->AsString();
@@ -4785,7 +4785,7 @@ public:
     
     fp << "# org_id,age,num_divides" << endl;
     
-    const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {  
       cOrganism* org = live_orgs[i];
       const int id = org->GetID();
@@ -4824,7 +4824,7 @@ public:
     
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
-    const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {  
       cOrganism* org = live_orgs[i];
       const int id = org->GetID();
@@ -4877,7 +4877,7 @@ public:
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
     AvidaArray<int> neighborhood;
-    const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
       if (!org->IsPreyFT()) continue;
@@ -4969,7 +4969,7 @@ public:
       
       //Find out if the organism is in a den:
       bool on_den = false;
-      Apto::Array<double> res_count = m_world->GetPopulation().GetCellResources(loc, ctx);
+      AvidaArray<double> res_count = m_world->GetPopulation().GetCellResources(loc, ctx);
       if (use_av) res_count = m_world->GetPopulation().GetCellResources(org->GetOrgInterface().GetAVCellID(), ctx);
       const cResourceLib& resource_lib = m_world->GetEnvironment().GetResourceLib();
       for (int i = 0; i < res_count.GetSize(); i++) {
