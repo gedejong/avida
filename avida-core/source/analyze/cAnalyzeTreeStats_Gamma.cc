@@ -47,14 +47,14 @@ int CompareAGUpdateBorn(cAnalyzeGenotype* const& a, cAnalyzeGenotype* const& b)
 }
 
 // Quicksort functions.
-void QSortAGPhyloDepth(Apto::Array<cAnalyzeGenotype*>& gen_array)
+void QSortAGPhyloDepth(AvidaArray<cAnalyzeGenotype*>& gen_array)
 {
-  Apto::QSort(gen_array, Apto::Functor<int, Apto::TL::Create<cAnalyzeGenotype* const&, cAnalyzeGenotype* const&> >(CompareAGPhyloDepth));
-} 
+  std::sort(gen_array.begin(), gen_array.end(), [](cAnalyzeGenotype* a, cAnalyzeGenotype* b) { return a->GetDepth() < b->GetDepth(); });
+}
 
-void QSortAGUpdateBorn(Apto::Array<cAnalyzeGenotype*>& gen_array)
+void QSortAGUpdateBorn(AvidaArray<cAnalyzeGenotype*>& gen_array)
 {
-  Apto::QSort(gen_array, Apto::Functor<int, Apto::TL::Create<cAnalyzeGenotype* const&, cAnalyzeGenotype* const&> >(CompareAGUpdateBorn));
+  std::sort(gen_array.begin(), gen_array.end(), [](cAnalyzeGenotype* a, cAnalyzeGenotype* b) { return a->GetUpdateBorn() < b->GetUpdateBorn(); });
 }  
 
 
@@ -113,7 +113,7 @@ void cAnalyzeTreeStats_Gamma::LoadGenotypes(tList<cAnalyzeGenotype> &genotype_li
   }
 }
 
-void cAnalyzeTreeStats_Gamma::MapIDToGenotypePos(Apto::Array<cAnalyzeGenotype*>& lineage, Apto::Map<int, int>& out_mapping)
+void cAnalyzeTreeStats_Gamma::MapIDToGenotypePos(AvidaArray<cAnalyzeGenotype*>& lineage, Apto::Map<int, int>& out_mapping)
 {
   out_mapping.Clear();
   for (int i = 0; i < lineage.GetSize(); i++) {
@@ -121,14 +121,14 @@ void cAnalyzeTreeStats_Gamma::MapIDToGenotypePos(Apto::Array<cAnalyzeGenotype*>&
   }
 }
 
-void cAnalyzeTreeStats_Gamma::Unlink(Apto::Array<cAnalyzeGenotype *>& lineage)
+void cAnalyzeTreeStats_Gamma::Unlink(AvidaArray<cAnalyzeGenotype *>& lineage)
 {
   for(int i = 0; i < lineage.GetSize(); i++){
     lineage[i]->Unlink();
   }
 }
 
-void cAnalyzeTreeStats_Gamma::EstablishLinks(Apto::Array<cAnalyzeGenotype*>& lineage, Apto::Map<int, int>& out_mapping)
+void cAnalyzeTreeStats_Gamma::EstablishLinks(AvidaArray<cAnalyzeGenotype*>& lineage, Apto::Map<int, int>& out_mapping)
 {
   this->Unlink(lineage);
   this->MapIDToGenotypePos(lineage, out_mapping);
@@ -146,8 +146,8 @@ void cAnalyzeTreeStats_Gamma::EstablishLinks(Apto::Array<cAnalyzeGenotype*>& lin
 }
 
 void cAnalyzeTreeStats_Gamma::FindFurcations(
-  Apto::Array<cAnalyzeGenotype *> &lineage,
-  Apto::Array<cAnalyzeLineageFurcation> &out_furcations
+  AvidaArray<cAnalyzeGenotype *> &lineage,
+  AvidaArray<cAnalyzeLineageFurcation> &out_furcations
 ){
   cAnalyzeGenotype *parent(0);
   cAnalyzeLineageFurcation furcation(0,0,0);
@@ -178,9 +178,9 @@ void cAnalyzeTreeStats_Gamma::FindFurcations(
 }
 
 void cAnalyzeTreeStats_Gamma::FindFurcationTimes(
-  Apto::Array<cAnalyzeGenotype *> &lineage,
+  AvidaArray<cAnalyzeGenotype *> &lineage,
   int (*furcation_time_policy)(cAnalyzeLineageFurcation &furcation),
-  Apto::Array<int> &out_furcation_times
+  AvidaArray<int> &out_furcation_times
 ){
   /*
   furcation_time_policy is one of
@@ -200,7 +200,7 @@ void cAnalyzeTreeStats_Gamma::FindFurcationTimes(
       << out_furcation_times[i] <<  endl;
     }
   }
-  Apto::QSort(out_furcation_times);
+  std::sort(out_furcation_times.begin(), out_furcation_times.end());
   if (m_world->GetVerbosity() >= VERBOSE_DETAILS){
     for(int i = 0; i < size; i++){
       cout << "SortedFurcationTime("
@@ -211,9 +211,9 @@ void cAnalyzeTreeStats_Gamma::FindFurcationTimes(
 }
 
 void cAnalyzeTreeStats_Gamma::FindInternodeDistances(
-  Apto::Array<int> &furcation_times,
+  AvidaArray<int> &furcation_times,
   int end_time,
-  Apto::Array<int> &out_internode_distances
+  AvidaArray<int> &out_internode_distances
 ){
   int size = furcation_times.GetSize();
   out_internode_distances.Resize(size, 0);
@@ -232,7 +232,7 @@ void cAnalyzeTreeStats_Gamma::FindInternodeDistances(
   }
 }
 
-double cAnalyzeTreeStats_Gamma::CalculateGamma(Apto::Array<int> &inode_dists){
+double cAnalyzeTreeStats_Gamma::CalculateGamma(AvidaArray<int> &inode_dists){
   // n: number of leaves, constant for a given tree.
   int n = inode_dists.GetSize() + 1;
   
@@ -249,7 +249,7 @@ double cAnalyzeTreeStats_Gamma::CalculateGamma(Apto::Array<int> &inode_dists){
    gamma.
    */
   
-  Apto::Array<int> g(2);
+  AvidaArray<int> g(2);
   g.SetAll(0);
   g = g + inode_dists;
   
@@ -257,7 +257,7 @@ double cAnalyzeTreeStats_Gamma::CalculateGamma(Apto::Array<int> &inode_dists){
   for(int j = 2; j <= n; j++) { T += j*g[j]; }
 
   // si: interior summation values, cached
-  Apto::Array<unsigned long long> si(n);
+  AvidaArray<unsigned long long> si(n);
   si.SetAll(0);
   for(int k = 2; k <= n-1; k++) { si[k] = k*g[k] + si[k-1]; }    
 
@@ -287,11 +287,11 @@ double cAnalyzeTreeStats_Gamma::CalculateGamma(Apto::Array<int> &inode_dists){
 
 
 // Accessors.
-const Apto::Array<int> &cAnalyzeTreeStats_Gamma::FurcationTimes(void) const {
+const AvidaArray<int> &cAnalyzeTreeStats_Gamma::FurcationTimes(void) const {
   return m_furcation_times;
 }
 
-const Apto::Array<int> &cAnalyzeTreeStats_Gamma::InternodeDistances(void) const {
+const AvidaArray<int> &cAnalyzeTreeStats_Gamma::InternodeDistances(void) const {
   return m_internode_distances;
 }
 

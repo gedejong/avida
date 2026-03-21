@@ -23,6 +23,7 @@
 
 #include "apto/core.h"
 
+#include "AvidaArray.h"
 #include "tList.h"
 
 class cAnalyzeGenotype;
@@ -33,8 +34,8 @@ int CompareAGPhyloDepth(cAnalyzeGenotype* const& a, cAnalyzeGenotype* const& b);
 int CompareAGUpdateBorn(cAnalyzeGenotype* const& a, cAnalyzeGenotype* const& b);
 
 // Quicksort functions.
-void QSortAGPhyloDepth(Apto::Array<cAnalyzeGenotype *> &gen_array);
-void QSortAGUpdateBorn(Apto::Array<cAnalyzeGenotype *> &gen_array);
+void QSortAGPhyloDepth(AvidaArray<cAnalyzeGenotype *> &gen_array);
+void QSortAGUpdateBorn(AvidaArray<cAnalyzeGenotype *> &gen_array);
 
 
 
@@ -57,37 +58,37 @@ public:
 class cAnalyzeTreeStats_Gamma {
 public:
   cWorld* m_world;
-  Apto::Array<cAnalyzeGenotype *> m_gen_array;
-  Apto::Array<cAnalyzeLineageFurcation> m_furcations;
-  Apto::Array<int> m_furcation_times;
-  Apto::Array<int> m_internode_distances;
+  AvidaArray<cAnalyzeGenotype *> m_gen_array;
+  AvidaArray<cAnalyzeLineageFurcation> m_furcations;
+  AvidaArray<int> m_furcation_times;
+  AvidaArray<int> m_internode_distances;
   double m_gamma;
 public:
   cAnalyzeTreeStats_Gamma(cWorld* world);
   
   void LoadGenotypes(tList<cAnalyzeGenotype> &genotype_list);
-  void MapIDToGenotypePos(Apto::Array<cAnalyzeGenotype *>&lineage, Apto::Map<int, int>& out_mapping);
-  void Unlink(Apto::Array<cAnalyzeGenotype *>& lineage);
-  void EstablishLinks(Apto::Array<cAnalyzeGenotype *>& lineage, Apto::Map<int, int>& out_mapping);
+  void MapIDToGenotypePos(AvidaArray<cAnalyzeGenotype *>&lineage, Apto::Map<int, int>& out_mapping);
+  void Unlink(AvidaArray<cAnalyzeGenotype *>& lineage);
+  void EstablishLinks(AvidaArray<cAnalyzeGenotype *>& lineage, Apto::Map<int, int>& out_mapping);
   void FindFurcations(
-    Apto::Array<cAnalyzeGenotype *> &lineage,
-    Apto::Array<cAnalyzeLineageFurcation> &out_furcations
+    AvidaArray<cAnalyzeGenotype *> &lineage,
+    AvidaArray<cAnalyzeLineageFurcation> &out_furcations
   );
   void FindFurcationTimes(
-    Apto::Array<cAnalyzeGenotype *> &lineage,
+    AvidaArray<cAnalyzeGenotype *> &lineage,
     int (*furcation_time_policy)(cAnalyzeLineageFurcation &furcation),
-    Apto::Array<int> &out_furcation_times
+    AvidaArray<int> &out_furcation_times
   );
   void FindInternodeDistances(
-    Apto::Array<int> &furcation_times,
+    AvidaArray<int> &furcation_times,
     int end_time,
-    Apto::Array<int> &out_internode_distances
+    AvidaArray<int> &out_internode_distances
   );
-  double CalculateGamma(Apto::Array<int> &inode_dists);
+  double CalculateGamma(AvidaArray<int> &inode_dists);
 
   // Accessors.
-  const Apto::Array<int> &FurcationTimes(void) const;
-  const Apto::Array<int> &InternodeDistances(void) const;
+  const AvidaArray<int> &FurcationTimes(void) const;
+  const AvidaArray<int> &InternodeDistances(void) const;
   double Gamma(void);
   
   // Commands.
