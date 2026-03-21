@@ -719,7 +719,7 @@ public:
   void SetReactionName(int id, const cString & name) { reaction_names[id] = name; }
   void SetResourceName(int id, const cString & name) { resource_names[id] = name; }
 
-  void SetCompetitionTrialFitnesses(Apto::Array<double> _in) { avg_trial_fitnesses = _in; }
+  void SetCompetitionTrialFitnesses(AvidaArray<double> _in) { avg_trial_fitnesses = _in; }
   void SetCompetitionFitnesses(double _in_avg, double _in_min, double _in_max, double _in_cp_avg, double _in_cp_min, double _in_cp_max)
     { avg_competition_fitness = _in_avg; min_competition_fitness = _in_min; max_competition_fitness = _in_max;
       avg_competition_copied_fitness = _in_cp_avg; min_competition_copied_fitness = _in_cp_min; max_competition_copied_fitness = _in_cp_max; }
