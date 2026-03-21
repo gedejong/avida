@@ -80,7 +80,7 @@ private:
   // Keep list of live organisms
   Apto::Array<cOrganism*, Apto::Smart> live_org_list;
   
-  Apto::Array<cPopulationOrgStatProviderPtr> m_org_stat_providers;
+  AvidaArray<cPopulationOrgStatProviderPtr> m_org_stat_providers;
   
   
   Apto::Array<pair<int,int>, Apto::Smart>* sleep_log;
