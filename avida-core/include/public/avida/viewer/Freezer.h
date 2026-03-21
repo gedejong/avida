@@ -25,6 +25,7 @@
 #ifndef AvidaViewerFreezer_h
 #define AvidaViewerFreezer_h
 
+#include "AvidaArray.h"
 #include "avida/core/Types.h"
 #include "avida/viewer/Types.h"
 
@@ -79,7 +80,7 @@ namespace Avida {
         LIB_EXPORT inline Entry() : active(false) { ; }
         LIB_EXPORT inline Entry(const Apto::String& in_name, const Apto::String& in_path) : name(in_name), path(in_path), active(true) { ; }
       };
-      Apto::Array<Entry> m_entries[3];
+      AvidaArray<Entry> m_entries[3];
       int m_next_id[3];
       
       
@@ -131,10 +132,10 @@ namespace Avida {
         friend class Freezer;
         
       private:
-        const Apto::Array<Entry>& m_entries;
+        const AvidaArray<Entry>& m_entries;
         FreezerID m_id;
         
-        LIB_EXPORT inline Iterator(FreezerObjectType type, const Apto::Array<Entry>& entries)
+        LIB_EXPORT inline Iterator(FreezerObjectType type, const AvidaArray<Entry>& entries)
           : m_entries(entries), m_id(type, -1) { ; }
         
       public:

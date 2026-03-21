@@ -54,9 +54,9 @@ private:
   Apto::String m_prop_desc;
   Apto::String m_prop_desc_rescale;
   
-  Apto::Array<int> m_color_grid;
-  Apto::Array<int> m_color_count;
-  Apto::Array<DiscreteScale::Entry> m_scale_labels;
+  AvidaArray<int> m_color_grid;
+  AvidaArray<int> m_color_count;
+  AvidaArray<DiscreteScale::Entry> m_scale_labels;
   
   double m_cur_min;
   double m_cur_max;
@@ -81,8 +81,8 @@ public:
   
   // MapMode Interface
   const Apto::String& GetName() const { return m_prop_desc; }
-  const Apto::Array<int>& GetGridValues() const { return m_color_grid; }
-  const Apto::Array<int>& GetValueCounts() const { return m_color_count; }
+  const AvidaArray<int>& GetGridValues() const { return m_color_grid; }
+  const AvidaArray<int>& GetValueCounts() const { return m_color_count; }
   
   const DiscreteScale& GetScale() const { return *this; }
   const Apto::String& GetScaleLabel() const;
@@ -216,9 +216,9 @@ private:
   const Apto::String m_role_desc;
   
   Avida::Viewer::ClassificationInfo* m_info;
-  Apto::Array<int> m_color_grid;
-  Apto::Array<int> m_color_count;
-  Apto::Array<DiscreteScale::Entry> m_scale_labels;
+  AvidaArray<int> m_color_grid;
+  AvidaArray<int> m_color_count;
+  AvidaArray<DiscreteScale::Entry> m_scale_labels;
   
 public:
   ClassificationMapMode(cWorld* world, const Apto::String& role_id, const Apto::String& role_desc);
@@ -228,8 +228,8 @@ public:
   
   // MapMode Interface
   const Apto::String& GetName() const { return m_role_desc; }
-  const Apto::Array<int>& GetGridValues() const { return m_color_grid; }
-  const Apto::Array<int>& GetValueCounts() const { return m_color_count; }
+  const AvidaArray<int>& GetGridValues() const { return m_color_grid; }
+  const AvidaArray<int>& GetValueCounts() const { return m_color_count; }
   
   const DiscreteScale& GetScale() const { return *this; }
   const Apto::String& GetScaleLabel() const { return m_role_desc; }
@@ -303,12 +303,12 @@ class EnvActionMapMode : public Avida::Viewer::MapMode, public Avida::Viewer::Di
 {
 private:
   cWorld* m_world;
-  Apto::Array<int> m_action_grid;
-  Apto::Array<Apto::Array<int> > m_raw_action_counts;
-  Apto::Array<int> m_action_counts;
-  Apto::Array<Apto::String> m_action_ids;
+  AvidaArray<int> m_action_grid;
+  AvidaArray<AvidaArray<int> > m_raw_action_counts;
+  AvidaArray<int> m_action_counts;
+  AvidaArray<Apto::String> m_action_ids;
   int m_num_enabled;
-  Apto::Array<bool> m_enabled_actions;
+  AvidaArray<bool> m_enabled_actions;
   Apto::String m_enabled_action_string;
   DiscreteScale::Entry m_scale_label_entry;
   Apto::String m_scale_label;
@@ -320,8 +320,8 @@ public:
   
   // MapMode Interface
   const Apto::String& GetName() const { return m_name; }
-  const Apto::Array<int>& GetGridValues() const { return m_action_grid; }
-  const Apto::Array<int>& GetValueCounts() const { return m_action_counts; }
+  const AvidaArray<int>& GetGridValues() const { return m_action_grid; }
+  const AvidaArray<int>& GetValueCounts() const { return m_action_counts; }
   
   const DiscreteScale& GetScale() const { return *this; }
   const Apto::String& GetScaleLabel() const { return m_scale_label; }
@@ -364,7 +364,7 @@ bool EnvActionMapMode::SetProperty(const Apto::String& property, const Apto::Str
 {
   if (property == "enabled_actions") {
     Apto::String vstr(value);
-    Apto::Array<bool> earr(m_action_ids.GetSize());
+    AvidaArray<bool> earr(m_action_ids.GetSize());
     earr.SetAll(false);
     int num_enabled = 0;
     while (vstr.GetSize()) {
@@ -421,7 +421,7 @@ void EnvActionMapMode::Update(cPopulation& pop)
 //        else if (org->GetPhenotype().GetCurTaskCount()[task_id] > 0) m_raw_action_counts[i][task_id] = 2;
         Systematics::GroupPtr genotype = org->SystematicsGroup("genotype");
         Systematics::GenomeTestMetricsPtr metrics(Systematics::GenomeTestMetrics::GetMetrics(m_world, ctx, genotype));
-        const Apto::Array<int>& task_counts = metrics->GetTaskCounts();
+        const AvidaArray<int>& task_counts = metrics->GetTaskCounts();
         if (task_counts[task_id] > 0) m_raw_action_counts[i][task_id] = 1;
         else m_raw_action_counts[i][task_id] = 0;
       }
