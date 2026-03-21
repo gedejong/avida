@@ -792,7 +792,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
       if(ctx.GetRandom().P(m_world->GetConfig().FULL_VERTICAL_TRANS.Get()))
       {
         
-        Apto::Array<Systematics::UnitPtr> parasites_to_inject = parent_organism->GetParasites();
+        AvidaArray<Systematics::UnitPtr> parasites_to_inject = parent_organism->GetParasites();
         cOrganism* target_organism = offspring_array[i];
         // target_organism-> target_organism->GetHardware().GetCurThread()
         for (int p=0; p<parasites_to_inject.GetSize(); ++p)
@@ -4883,7 +4883,7 @@ void cPopulation::PrintDemeInstructions()
       df->WriteTimeStamp();
       df->Write(stats.GetUpdate(), "update");
       
-      Apto::Array<Apto::Stat::Accumulator<int> > single_deme_inst(num_inst);
+      AvidaArray<Apto::Stat::Accumulator<int> > single_deme_inst(num_inst);
       
       const cDeme& cur_deme = deme_array[deme_id];
       for (int i = 0; i < cur_deme.GetSize(); i++) {
@@ -5166,7 +5166,7 @@ void cPopulation::PrintDemeTasks() {
   for (int deme_id = 0; deme_id < num_demes; deme_id++) {
     cString comment;
     const cDeme & cur_deme = deme_array[deme_id];
-    Apto::Array<Apto::Stat::Accumulator<int> > single_deme_task(num_task);
+    AvidaArray<Apto::Stat::Accumulator<int> > single_deme_task(num_task);
     
     for (int i = 0; i < cur_deme.GetSize(); i++) {
       int cur_cell = cur_deme.GetCellID(i);
@@ -6371,7 +6371,7 @@ bool cPopulation::SavePopulation(const cString& filename, bool save_historic, bo
       cOrganism* org = cell_array[cell].GetOrganism();
       
       // Handle any parasites
-      const Apto::Array<Systematics::UnitPtr>& parasites = org->GetParasites();
+      const AvidaArray<Systematics::UnitPtr>& parasites = org->GetParasites();
       for (int p = 0; p < parasites.GetSize(); p++) {
         Systematics::GroupPtr pg = parasites[p]->SystematicsGroup("genotype");
         if (pg == NULL) continue;
@@ -6575,7 +6575,7 @@ bool cPopulation::SaveStructuredSystematicsGroup(const Systematics::RoleID& role
       cOrganism* org = cell_array[cell].GetOrganism();
       
       // Handle any parasites
-      const Apto::Array<Systematics::UnitPtr>& parasites = org->GetParasites();
+      const AvidaArray<Systematics::UnitPtr>& parasites = org->GetParasites();
       for (int p = 0; p < parasites.GetSize(); p++) {
         Systematics::GroupPtr pg = parasites[p]->SystematicsGroup(role);
         if (pg == NULL) continue;
@@ -6675,7 +6675,7 @@ bool cPopulation::SaveFlameData(const cString& filename)
       cOrganism* org = cell_array[cell].GetOrganism();
       
       // Handle any parasites
-      const Apto::Array<Systematics::UnitPtr>& parasites = org->GetParasites();
+      const AvidaArray<Systematics::UnitPtr>& parasites = org->GetParasites();
       for (int p = 0; p < parasites.GetSize(); p++) {
         Systematics::GroupPtr pg = parasites[p]->SystematicsGroup("genotype");
         if (pg == NULL) continue;
@@ -6779,7 +6779,7 @@ public:
   }
 };
 
-bool cPopulation::LoadGenotypeList(const cString& filename, cAvidaContext& ctx, Apto::Array<GeneticRepresentationPtr>& list_obj)
+bool cPopulation::LoadGenotypeList(const cString& filename, cAvidaContext& ctx, AvidaArray<GeneticRepresentationPtr>& list_obj)
 {
   cInitFile input_file(filename, m_world->GetWorkingDir(), ctx.Driver().Feedback());
   if (!input_file.WasOpened()) return false;

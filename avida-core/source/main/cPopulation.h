@@ -85,8 +85,8 @@ private:
   
   Apto::Array<pair<int,int>, Apto::Smart>* sleep_log;
   
-  Apto::Array<GeneticRepresentationPtr> parasite_genotype_list;
-  Apto::Array<GeneticRepresentationPtr> host_genotype_list;
+  AvidaArray<GeneticRepresentationPtr> parasite_genotype_list;
+  AvidaArray<GeneticRepresentationPtr> host_genotype_list;
   
   // Data Tracking...
   tList<cPopulationCell> reaper_queue; // Death order in some mass-action runs
@@ -491,7 +491,7 @@ private:
   
   inline void AdjustSchedule(const cPopulationCell& cell, const cMerit& merit);
   
-  bool LoadGenotypeList(const cString& filename, cAvidaContext& ctx, Apto::Array<GeneticRepresentationPtr>& list_obj);
+  bool LoadGenotypeList(const cString& filename, cAvidaContext& ctx, AvidaArray<GeneticRepresentationPtr>& list_obj);
 };
 
 #endif

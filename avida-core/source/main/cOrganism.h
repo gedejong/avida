@@ -67,7 +67,7 @@ private:
   Systematics::Source m_src;
   
   const Genome m_initial_genome;         // Initial genome; can never be changed!
-  Apto::Array<Systematics::UnitPtr> m_parasites;   // List of all parasites associated with this organism.
+  AvidaArray<Systematics::UnitPtr> m_parasites;   // List of all parasites associated with this organism.
   cMutationRates m_mut_rates;             // Rate of all possible mutations.
   cOrgInterface* m_interface;             // Interface back to the population.
   int m_id;                               // unique id for each org, is just the number it was born
@@ -302,7 +302,7 @@ public:
   bool InjectParasite(Systematics::UnitPtr parent, const cString& label, const InstructionSequence& genome);
   bool ParasiteInfectHost(Systematics::UnitPtr parasite);
   int GetNumParasites() const { return m_parasites.GetSize(); }
-  const Apto::Array<Systematics::UnitPtr>& GetParasites() const { return m_parasites; }
+  const AvidaArray<Systematics::UnitPtr>& GetParasites() const { return m_parasites; }
   void ClearParasites();
 
   // --------  Mutation Rate Convenience Methods  --------
