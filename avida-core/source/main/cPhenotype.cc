@@ -1514,10 +1514,8 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   
   // Run everything through the environment.
   // Adapter: env.TestOutput takes Apto::Array<int>& for reaction_count (non-const output param)
-  Apto::Array<int> reaction_count_adapter(cur_reaction_count);
-  bool found = env.TestOutput(ctx, result, taskctx, Apto::Array<int>(eff_task_count), reaction_count_adapter, res_in, rbins_in,
-                              is_parasite, context_phenotype); //NEED different eff_task_count and cur_reaction_count for deme resource
-  cur_reaction_count = reaction_count_adapter;
+  bool found = env.TestOutput(ctx, result, taskctx, eff_task_count, cur_reaction_count, res_in, rbins_in,
+                              is_parasite, context_phenotype);
   
   // If nothing was found, stop here.
   if (found == false) {

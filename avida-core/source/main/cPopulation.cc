@@ -914,7 +914,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
     else {
       // Reset inputs and re-calculate merit if required
       if (m_world->GetConfig().RESET_INPUTS_ON_DIVIDE.Get() > 0){
-        { Apto::Array<int> a(parent_cell.m_inputs); environment.SetupInputs(ctx, a); parent_cell.m_inputs = a; }
+        environment.SetupInputs(ctx, parent_cell.m_inputs);
         
         int pc_phenotype = m_world->GetConfig().PRECALC_PHENOTYPE.Get();
         if (pc_phenotype) {
@@ -1363,7 +1363,7 @@ bool cPopulation::ActivateOrganism(cAvidaContext& ctx, cOrganism* in_organism, c
   AddLiveOrg(in_organism); 
   
   // Setup the inputs in the target cell.
-  { Apto::Array<int> a(target_cell.m_inputs); environment.SetupInputs(ctx, a); target_cell.m_inputs = a; }
+  environment.SetupInputs(ctx, target_cell.m_inputs);
   
   // Precalculate the phenotype if requested
   int pc_phenotype = m_world->GetConfig().PRECALC_PHENOTYPE.Get();
@@ -2509,7 +2509,7 @@ void cPopulation::SwapCells(int cell_id1, int cell_id2, cAvidaContext& ctx)
   }
   
   //LHZ: Take organism imputs from the PopulationCell along with the organisms
-  { Apto::Array<int> a1(cell1.m_inputs), a2(cell2.m_inputs); environment.SwapInputs(ctx, a1, a2); cell1.m_inputs = a1; cell2.m_inputs = a2; }
+  environment.SwapInputs(ctx, cell1.m_inputs, cell2.m_inputs);
   
 }
 

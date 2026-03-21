@@ -1259,9 +1259,7 @@ cDemeNetwork& cDeme::GetNetwork()
 
 void cDeme::ResetInputs(cAvidaContext& ctx)
 {
-  Apto::Array<int> inputs_adapter(m_inputs);
-  m_world->GetEnvironment().SetupInputs(ctx, inputs_adapter);
-  m_inputs = inputs_adapter;
+  m_world->GetEnvironment().SetupInputs(ctx, m_inputs);
 }
 
 //@JJB**
@@ -1309,10 +1307,7 @@ void cDeme::DoDemeOutput(cAvidaContext& ctx, int value)
   AvidaArray<double> rbins_in;
 
   // The environment, evaluates if a task and if a resulting reaction were completed
-  Apto::Array<int> reaction_count_adapter(m_reaction_count);
-  bool found = env.TestOutput(ctx, result, taskctx, Apto::Array<int>(m_task_count), reaction_count_adapter,
-                              Apto::Array<double>(res_in), Apto::Array<double>(rbins_in));
-  m_reaction_count = reaction_count_adapter;
+  bool found = env.TestOutput(ctx, result, taskctx, m_task_count, m_reaction_count, res_in, rbins_in);
 
   // No task completed, end here
   if (found == false) {

@@ -96,18 +96,18 @@ public:
   bool LoadLine(cString line, Feedback& feedback);  // Reads in a single environment configuration line
 
   // Interaction with the organisms
-  void SetupInputs(cAvidaContext& ctx, Apto::Array<int>& input_array, bool random = true) const;
-  void SetSpecificInputs(const Apto::Array<int> in_input_array) { m_use_specific_inputs = true; m_specific_inputs = in_input_array; }
+  void SetupInputs(cAvidaContext& ctx, AvidaArray<int>& input_array, bool random = true) const;
+  void SetSpecificInputs(const AvidaArray<int> in_input_array) { m_use_specific_inputs = true; m_specific_inputs = in_input_array; }
   void SetSpecificRandomMask(unsigned int mask) { m_mask = mask; }
-  void SwapInputs(cAvidaContext& ctx, Apto::Array<int>& src_input_array, Apto::Array<int>& dest_input_array) const;
+  void SwapInputs(cAvidaContext& ctx, AvidaArray<int>& src_input_array, AvidaArray<int>& dest_input_array) const;
 
 
   bool TestInput(cReactionResult& result, const tBuffer<int>& inputs,
-                 const tBuffer<int>& outputs, const Apto::Array<double>& resource_count) const;
+                 const tBuffer<int>& outputs, const AvidaArray<double>& resource_count) const;
 
   bool TestOutput(cAvidaContext& ctx, cReactionResult& result, cTaskContext& taskctx,
-                  const Apto::Array<int>& task_count, Apto::Array<int>& reaction_count,
-                  const Apto::Array<double>& resource_count, const Apto::Array<double>& rbins_count,
+                  const AvidaArray<int>& task_count, AvidaArray<int>& reaction_count,
+                  const AvidaArray<double>& resource_count, const AvidaArray<double>& rbins_count,
                   bool is_parasite=false, cContextPhenotype* context_phenotype = 0) const;
 
   // Accessors
@@ -189,11 +189,11 @@ private:
                             const tList<cReactionProcess>& req_proc, bool& force_mark_task) const;
   
   bool TestRequisites(cTaskContext& taskctx, const cReaction* cur_reaction, int task_count,
-                      const Apto::Array<int>& reaction_count, const bool on_divide = false, bool is_parasite=false) const;
-  bool TestContextRequisites(const cReaction* cur_reaction, int task_count, 
-                      const Apto::Array<int>& reaction_count, const bool on_divide = false) const;
-  void DoProcesses(cAvidaContext& ctx, const tList<cReactionProcess>& process_list, 
-                   const Apto::Array<double>& resource_count, const Apto::Array<double>& rbin_count,
+                      const AvidaArray<int>& reaction_count, const bool on_divide = false, bool is_parasite=false) const;
+  bool TestContextRequisites(const cReaction* cur_reaction, int task_count,
+                      const AvidaArray<int>& reaction_count, const bool on_divide = false) const;
+  void DoProcesses(cAvidaContext& ctx, const tList<cReactionProcess>& process_list,
+                   const AvidaArray<double>& resource_count, const AvidaArray<double>& rbin_count,
                    const double task_quality, const double task_probability,
                    const int task_count, const int reaction_id, 
                    cReactionResult& result, cTaskContext& taskctx) const;
