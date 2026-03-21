@@ -518,7 +518,7 @@ bool cEnvironment::LoadResource(cString desc, Feedback& feedback)
         }
       }
       else if (res_var == AVD_ENV_RES_CELLS) {
-        Apto::Array<int> cell_list = cStringUtil::ReturnArray(var_value);
+        AvidaArray<int> cell_list = cStringUtil::ReturnArray(var_value);
         new_resource->SetCellIdList(cell_list);
       }
       else if (res_var == AVD_ENV_RES_INFLOWX1) {
@@ -701,7 +701,7 @@ bool cEnvironment::LoadCell(cString desc, Feedback& feedback)
       this_resource = resource_lib.GetResource(name);
     }
     cString cell_list_str = cur_resource.Pop(':');
-    Apto::Array<int> cell_list = cStringUtil::ReturnArray(cell_list_str);
+    AvidaArray<int> cell_list = cStringUtil::ReturnArray(cell_list_str);
     double tmp_initial = 0.0;
     double tmp_inflow = 0.0;
     double tmp_outflow = 0.0;

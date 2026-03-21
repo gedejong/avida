@@ -92,7 +92,7 @@ class InstructionExecCountsProvider : public cPopulationOrgStatProvider
 {
 private:
   cWorld* m_world;
-  Apto::Map<Apto::String, Apto::Array<Apto::Stat::Accumulator<int> >, Apto::DefaultHashBTree, Apto::ImplicitDefault> m_is_exe_inst_map;
+  Apto::Map<Apto::String, AvidaArray<Apto::Stat::Accumulator<int> >, Apto::DefaultHashBTree, Apto::ImplicitDefault> m_is_exe_inst_map;
   Data::DataSetPtr m_provides;
 
 public:
@@ -141,7 +141,7 @@ public:
   {
     Apto::SmartPtr<Data::ArrayPackage, Apto::InternalRCObject> pkg(new Data::ArrayPackage);
     
-    const Apto::Array<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[arg];
+    const AvidaArray<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[arg];
     for (int i = 0; i < inst_exe_counts.GetSize(); i++) {
       pkg->AddComponent(Data::PackagePtr(new Data::Wrap<int>(inst_exe_counts[i].Sum())));
     }
@@ -152,8 +152,8 @@ public:
   
   void UpdateReset()
   {
-    for (Apto::Map<Apto::String, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_exe_inst_map.Values(); it.Next();) {
-      Apto::Array<Apto::Stat::Accumulator<int> >& inst_counts = (*it.Get());
+    for (Apto::Map<Apto::String, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_exe_inst_map.Values(); it.Next();) {
+      AvidaArray<Apto::Stat::Accumulator<int> >& inst_counts = (*it.Get());
       for (int i = 0; i < inst_counts.GetSize(); i++) inst_counts[i].Clear();
     }
   }
@@ -161,7 +161,7 @@ public:
   void HandleOrganism(cOrganism* organism)
   {
     Apto::String inst_set = organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue();
-    Apto::Array<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[inst_set];
+    AvidaArray<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[inst_set];
     for (int j = 0; j < organism->GetPhenotype().GetLastInstCount().GetSize(); j++) {
       inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
     }
@@ -180,7 +180,7 @@ class FromMessageInstructionExecCountsProvider : public cPopulationOrgStatProvid
 {
 private:
   cWorld* m_world;
-  Apto::Map<Apto::String, Apto::Array<Apto::Stat::Accumulator<int> >, Apto::DefaultHashBTree, Apto::ImplicitDefault> m_is_exe_inst_map;
+  Apto::Map<Apto::String, AvidaArray<Apto::Stat::Accumulator<int> >, Apto::DefaultHashBTree, Apto::ImplicitDefault> m_is_exe_inst_map;
   Data::DataSetPtr m_provides;
   
 public:
@@ -229,7 +229,7 @@ public:
   {
     Apto::SmartPtr<Data::ArrayPackage, Apto::InternalRCObject> pkg(new Data::ArrayPackage);
     
-    const Apto::Array<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[arg];
+    const AvidaArray<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[arg];
     for (int i = 0; i < inst_exe_counts.GetSize(); i++) {
       pkg->AddComponent(Data::PackagePtr(new Data::Wrap<int>(inst_exe_counts[i].Sum())));
     }
@@ -240,8 +240,8 @@ public:
   
   void UpdateReset()
   {
-    for (Apto::Map<Apto::String, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_exe_inst_map.Values(); it.Next();) {
-      Apto::Array<Apto::Stat::Accumulator<int> >& inst_counts = (*it.Get());
+    for (Apto::Map<Apto::String, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_exe_inst_map.Values(); it.Next();) {
+      AvidaArray<Apto::Stat::Accumulator<int> >& inst_counts = (*it.Get());
       for (int i = 0; i < inst_counts.GetSize(); i++) inst_counts[i].Clear();
     }
   }
@@ -249,7 +249,7 @@ public:
   void HandleOrganism(cOrganism* organism)
   {
     Apto::String inst_set = organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue();
-    Apto::Array<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[inst_set];
+    AvidaArray<Apto::Stat::Accumulator<int> >& inst_exe_counts = m_is_exe_inst_map[inst_set];
     for (int j = 0; j < organism->GetPhenotype().GetLastFromMessageInstCount().GetSize(); j++) {
       inst_exe_counts[j].Add(organism->GetPhenotype().GetLastFromMessageInstCount()[j]);
     }
@@ -5968,7 +5968,7 @@ void cPopulation::UpdateOrganismStats(cAvidaContext& ctx)
     const int cur_gestation_time = phenotype.GetGestationTime();
     const int cur_genome_length = phenotype.GetGenomeLength();
     
-    Apto::Array<Apto::Stat::Accumulator<int> >& from_message_exec_counts = stats.InstFromMessageExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+    AvidaArray<Apto::Stat::Accumulator<int> >& from_message_exec_counts = stats.InstFromMessageExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
     for (int j = 0; j < phenotype.GetLastFromMessageInstCount().GetSize(); j++) {
       from_message_exec_counts[j].Add(organism->GetPhenotype().GetLastFromMessageInstCount()[j]);
     }
@@ -6151,11 +6151,11 @@ void cPopulation::UpdateFTOrgStats(cAvidaContext&)
       stats.SumPreyCreatureAge().Add(phenotype.GetAge());
       stats.SumPreyGeneration().Add(phenotype.GetGeneration());
       
-      Apto::Array<Apto::Stat::Accumulator<int> >& prey_inst_exe_counts = stats.InstPreyExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& prey_inst_exe_counts = stats.InstPreyExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastInstCount().GetSize(); j++) {
         prey_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
       }
-      Apto::Array<Apto::Stat::Accumulator<int> >& prey_from_sensor_exec_counts = stats.InstPreyFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& prey_from_sensor_exec_counts = stats.InstPreyFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastFromSensorInstCount().GetSize(); j++) {
         prey_from_sensor_exec_counts[j].Add(organism->GetPhenotype().GetLastFromSensorInstCount()[j]);
       }
@@ -6169,19 +6169,19 @@ void cPopulation::UpdateFTOrgStats(cAvidaContext&)
       stats.SumAttacks().Add(phenotype.GetLastAttacks());
       stats.SumKills().Add(phenotype.GetLastKills());
 
-      Apto::Array<Apto::Stat::Accumulator<int> >& pred_inst_exe_counts = stats.InstPredExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& pred_inst_exe_counts = stats.InstPredExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastInstCount().GetSize(); j++) {
         pred_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
       }
 
-      Apto::Array<Apto::Stat::Accumulator<int> >& pred_from_sensor_exec_counts = stats.InstPredFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& pred_from_sensor_exec_counts = stats.InstPredFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastFromSensorInstCount().GetSize(); j++) {
         pred_from_sensor_exec_counts[j].Add(organism->GetPhenotype().GetLastFromSensorInstCount()[j]);
       }
 
-      Apto::Array<cString> att_inst = m_world->GetStats().GetGroupAttackInsts((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<cString> att_inst = m_world->GetStats().GetGroupAttackInsts((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int k = 0; k < att_inst.GetSize(); k++) {
-        Apto::Array<Apto::Stat::Accumulator<int> >& group_attack_inst_exe_counts = stats.ExecCountsForGroupAttackInst((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue(), att_inst[k]);
+        AvidaArray<Apto::Stat::Accumulator<int> >& group_attack_inst_exe_counts = stats.ExecCountsForGroupAttackInst((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue(), att_inst[k]);
         for (int j = 0; j < phenotype.GetLastGroupAttackInstCount()[k].GetSize(); j++) {
           group_attack_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastGroupAttackInstCount()[k][j]);
         }
@@ -6196,17 +6196,17 @@ void cPopulation::UpdateFTOrgStats(cAvidaContext&)
       stats.SumAttacks().Add(phenotype.GetLastAttacks());
       stats.SumKills().Add(phenotype.GetLastKills());
      
-      Apto::Array<Apto::Stat::Accumulator<int> >& tpred_inst_exe_counts = stats.InstTopPredExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& tpred_inst_exe_counts = stats.InstTopPredExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastInstCount().GetSize(); j++) {
         tpred_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
       }
-      Apto::Array<Apto::Stat::Accumulator<int> >& tpred_from_sensor_exec_counts = stats.InstTopPredFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& tpred_from_sensor_exec_counts = stats.InstTopPredFromSensorExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastFromSensorInstCount().GetSize(); j++) {
         tpred_from_sensor_exec_counts[j].Add(organism->GetPhenotype().GetLastFromSensorInstCount()[j]);
       }
-      Apto::Array<cString> att_inst = m_world->GetStats().GetGroupAttackInsts((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<cString> att_inst = m_world->GetStats().GetGroupAttackInsts((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int k = 0; k < att_inst.GetSize(); k++) {
-        Apto::Array<Apto::Stat::Accumulator<int> >& group_attack_inst_exe_counts = stats.ExecCountsForGroupAttackInst((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue(), att_inst[k]);
+        AvidaArray<Apto::Stat::Accumulator<int> >& group_attack_inst_exe_counts = stats.ExecCountsForGroupAttackInst((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue(), att_inst[k]);
         for (int j = 0; j < phenotype.GetLastTopPredGroupAttackInstCount()[k].GetSize(); j++) {
           group_attack_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastTopPredGroupAttackInstCount()[k][j]);
         }
@@ -6263,7 +6263,7 @@ void cPopulation::UpdateMaleFemaleOrgStats(cAvidaContext& ctx)
       stats.SumMaleCreatureAge().Add(phenotype.GetAge());
       stats.SumMaleGeneration().Add(phenotype.GetGeneration());
       
-      Apto::Array<Apto::Stat::Accumulator<int> >& male_inst_exe_counts = stats.InstMaleExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& male_inst_exe_counts = stats.InstMaleExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastInstCount().GetSize(); j++) {
         male_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
       }
@@ -6275,7 +6275,7 @@ void cPopulation::UpdateMaleFemaleOrgStats(cAvidaContext& ctx)
       stats.SumFemaleCreatureAge().Add(phenotype.GetAge());
       stats.SumFemaleGeneration().Add(phenotype.GetGeneration());
       
-      Apto::Array<Apto::Stat::Accumulator<int> >& female_inst_exe_counts = stats.InstFemaleExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
+      AvidaArray<Apto::Stat::Accumulator<int> >& female_inst_exe_counts = stats.InstFemaleExeCountsForInstSet((const char*)organism->GetGenome().Properties().Get(s_prop_id_instset).StringValue());
       for (int j = 0; j < phenotype.GetLastInstCount().GetSize(); j++) {
         female_inst_exe_counts[j].Add(organism->GetPhenotype().GetLastInstCount()[j]);
       }

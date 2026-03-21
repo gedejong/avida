@@ -49,7 +49,7 @@ private:
   int    world_x, world_y, num_cells;
   int    curr_peakx, curr_peaky;
   /* instead of creating a new array use the existing one from cResource */
-  Apto::Array<cCellResource> *cell_list_ptr;
+  AvidaArray<cCellResource> *cell_list_ptr;
   bool m_modified;
   
 public:
@@ -63,7 +63,7 @@ public:
   void ResizeClear(int inworld_x, int inworld_y, int ingeometry);
   void SetPointers();
   void CheckRanges();
-  void SetCellList(Apto::Array<cCellResource> *in_cell_list_ptr);
+  void SetCellList(AvidaArray<cCellResource> *in_cell_list_ptr);
   int GetSize() const { return grid.GetSize(); }
   int GetX() const { return world_x; }
   int GetY() const { return world_y; }

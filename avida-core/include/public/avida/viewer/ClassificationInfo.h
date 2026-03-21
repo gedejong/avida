@@ -23,6 +23,7 @@
  */
 
 #ifndef AvidaViewerClassificationInfo_h
+#include "AvidaArray.h"
 #define AvidaViewerClassificationInfo_h
 
 // The ClassificationInfo object is responsible for holding on to all of the general information about the state of
@@ -64,8 +65,8 @@ namespace Avida {
       Systematics::RoleID m_role;
       
       // Constant Inforation setup by specific viewer.
-      Apto::Array<int> m_color_chart_id;
-      Apto::Array<Systematics::GroupPtr> m_color_chart_ptr;
+      AvidaArray<int> m_color_chart_id;
+      AvidaArray<Systematics::GroupPtr> m_color_chart_ptr;
       int m_threshold_colors;
       int m_next_color;
     

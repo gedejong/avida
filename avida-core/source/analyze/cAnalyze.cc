@@ -6804,7 +6804,7 @@ void cAnalyze::CommandAnalyzeModularity(cString cur_string)
     
     const Instruction null_inst = m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).ActivateNullInst();
     
-    tMatrix<bool> task_matrix(num_traits, base_length);
+    tMatrix<int> task_matrix(num_traits, base_length);
     AvidaArray<int> num_inst(num_traits);  // Number of instructions for each task
     AvidaArray<int> num_task(base_length); // Number of traits at each locus
     task_matrix.SetAll(false);

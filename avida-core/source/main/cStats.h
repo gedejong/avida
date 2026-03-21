@@ -152,27 +152,27 @@ private:
 
 
   // --------  Instruction Counts  ---------
-  Apto::Map<cString, Apto::Array<cString> > m_is_inst_names_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_from_message_inst_map;
+  Apto::Map<cString, AvidaArray<cString> > m_is_inst_names_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_from_message_inst_map;
 
   AvidaArray<pair<int,int> > m_is_tolerance_exe_counts;
   AvidaArray<s_inst_circumstances> m_is_tolerance_exe_insts;
 
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_prey_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_pred_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_prey_fail_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_pred_fail_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_tpred_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_prey_from_sensor_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_pred_from_sensor_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_tpred_from_sensor_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_prey_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_pred_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_prey_fail_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_pred_fail_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_tpred_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_prey_from_sensor_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_pred_from_sensor_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_tpred_from_sensor_inst_map;
 
 
-  Apto::Map<cString, Apto::Array<cString> > m_group_attack_names;
-  Apto::Map<cString, Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > > m_group_attack_exe_map; // exec_count_per_num_neighbor = exe_map[inst_set[inst[num_neigbors]]]
+  Apto::Map<cString, AvidaArray<cString> > m_group_attack_names;
+  Apto::Map<cString, Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > > m_group_attack_exe_map; // exec_count_per_num_neighbor = exe_map[inst_set[inst[num_neigbors]]]
 
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_male_exe_inst_map;
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_female_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_male_exe_inst_map;
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > m_is_female_exe_inst_map;
   
   // --------  Calculated Stats  ---------
 
@@ -494,7 +494,7 @@ public:
   cDoubleSum& SumExeSize()       { return sum_exe_size; }
   cDoubleSum& SumMemSize()       { return sum_mem_size; }
 
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstFromMessageExeCountsForInstSet(const cString& inst_set) { return m_is_from_message_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstFromMessageExeCountsForInstSet(const cString& inst_set) { return m_is_from_message_inst_map[inst_set]; }
 
   //deme
   Apto::Stat::Accumulator<int>& SumDemeAge()          { return sum_deme_age; }
@@ -524,8 +524,8 @@ public:
   cDoubleSum& SumPreyCreatureAge()   { return sum_prey_creature_age; }
   cDoubleSum& SumPreyGeneration()    { return sum_prey_generation; }  
   cDoubleSum& SumPreySize()          { return sum_prey_size; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstPreyExeCountsForInstSet(const cString& inst_set) { return m_is_prey_exe_inst_map[inst_set]; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstPreyFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_prey_from_sensor_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstPreyExeCountsForInstSet(const cString& inst_set) { return m_is_prey_exe_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstPreyFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_prey_from_sensor_inst_map[inst_set]; }
 
   cDoubleSum& SumPredFitness()       { return sum_pred_fitness; }
   cDoubleSum& SumPredGestation()     { return sum_pred_gestation; }
@@ -533,8 +533,8 @@ public:
   cDoubleSum& SumPredCreatureAge()   { return sum_pred_creature_age; }
   cDoubleSum& SumPredGeneration()    { return sum_pred_generation; }  
   cDoubleSum& SumPredSize()          { return sum_pred_size; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstPredExeCountsForInstSet(const cString& inst_set) { return m_is_pred_exe_inst_map[inst_set]; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstPredFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_pred_from_sensor_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstPredExeCountsForInstSet(const cString& inst_set) { return m_is_pred_exe_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstPredFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_pred_from_sensor_inst_map[inst_set]; }
 
   cDoubleSum& SumTopPredFitness()       { return sum_tpred_fitness; }
   cDoubleSum& SumTopPredGestation()     { return sum_tpred_gestation; }
@@ -542,14 +542,14 @@ public:
   cDoubleSum& SumTopPredCreatureAge()   { return sum_tpred_creature_age; }
   cDoubleSum& SumTopPredGeneration()    { return sum_tpred_generation; }
   cDoubleSum& SumTopPredSize()          { return sum_tpred_size; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstTopPredExeCountsForInstSet(const cString& inst_set) { return m_is_tpred_exe_inst_map[inst_set]; }
-  Apto::Array<Apto::Stat::Accumulator<int> >&  InstTopPredFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_tpred_from_sensor_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstTopPredExeCountsForInstSet(const cString& inst_set) { return m_is_tpred_exe_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >&  InstTopPredFromSensorExeCountsForInstSet(const cString& inst_set) { return m_is_tpred_from_sensor_inst_map[inst_set]; }
 
   cDoubleSum& SumAttacks()       { return sum_attacks; }
   cDoubleSum& SumKills()       { return sum_kills; }
   
-  Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >& ExecCountsForGroupAttackInstSet(const cString& inst_set) { return m_group_attack_exe_map[inst_set]; }
-  Apto::Array<Apto::Stat::Accumulator<int> >&  ExecCountsForGroupAttackInst(const cString& inst_set, const cString& inst) { return m_group_attack_exe_map[inst_set][inst]; }
+  Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >& ExecCountsForGroupAttackInstSet(const cString& inst_set) { return m_group_attack_exe_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >&  ExecCountsForGroupAttackInst(const cString& inst_set, const cString& inst) { return m_group_attack_exe_map[inst_set][inst]; }
 
   void ZeroMessageInst();
   void ZeroFTInst();
@@ -562,7 +562,7 @@ public:
   cDoubleSum& SumMaleCreatureAge()   { return sum_male_creature_age; }
   cDoubleSum& SumMaleGeneration()    { return sum_male_generation; }
   cDoubleSum& SumMaleSize()          { return sum_male_size; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstMaleExeCountsForInstSet(const cString& inst_set) { return m_is_male_exe_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstMaleExeCountsForInstSet(const cString& inst_set) { return m_is_male_exe_inst_map[inst_set]; }
   
   cDoubleSum& SumFemaleFitness()       { return sum_female_fitness; }
   cDoubleSum& SumFemaleGestation()     { return sum_female_gestation; }
@@ -570,7 +570,7 @@ public:
   cDoubleSum& SumFemaleCreatureAge()   { return sum_female_creature_age; }
   cDoubleSum& SumFemaleGeneration()    { return sum_female_generation; }
   cDoubleSum& SumFemaleSize()          { return sum_female_size; }
-  Apto::Array<Apto::Stat::Accumulator<int> >& InstFemaleExeCountsForInstSet(const cString& inst_set) { return m_is_female_exe_inst_map[inst_set]; }
+  AvidaArray<Apto::Stat::Accumulator<int> >& InstFemaleExeCountsForInstSet(const cString& inst_set) { return m_is_female_exe_inst_map[inst_set]; }
   void ZeroMTInst();
   
   std::map<int, flow_rate_tuple >&  FlowRateTuples() { return flow_rate_tuples; }
@@ -715,7 +715,7 @@ public:
   void SetResourcesGeometry(const AvidaArray<int> &_in) { resource_geometry = _in;}
   void SetSpatialRes(const AvidaArray<Apto::Array<double> > &_in) { spatial_res_count = _in; }
 
-  void SetInstNames(const cString& inst_set, const Apto::Array<cString>& names) { m_is_inst_names_map[inst_set] = names; }
+  void SetInstNames(const cString& inst_set, const AvidaArray<cString>& names) { m_is_inst_names_map[inst_set] = names; }
   void SetReactionName(int id, const cString & name) { reaction_names[id] = name; }
   void SetResourceName(int id, const cString & name) { resource_names[id] = name; }
 
@@ -826,7 +826,7 @@ public:
   int GetNumTopPredCreatures() const;
   int GetNumTotalPredCreatures() const;
   void SetGroupAttackInstNames(const cString& inst_set);
-  Apto::Array<cString>& GetGroupAttackInsts(const cString& inst_set) { return m_group_attack_names[inst_set]; }
+  AvidaArray<cString>& GetGroupAttackInsts(const cString& inst_set) { return m_group_attack_names[inst_set]; }
   
   // this value gets recorded when a creature with the particular
   // fitness value gets born. It will never change to a smaller value,

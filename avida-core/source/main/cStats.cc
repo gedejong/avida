@@ -505,40 +505,40 @@ void cStats::ZeroReactions()
 void cStats::ZeroMessageInst()
 {
 
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_from_message_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_from_message_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
 }
 
 void cStats::ZeroFTInst()
 {
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_prey_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_prey_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_fail_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_fail_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_tpred_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_tpred_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_prey_from_sensor_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_prey_from_sensor_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_from_sensor_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_pred_from_sensor_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_tpred_from_sensor_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_tpred_from_sensor_inst_map.Values(); it.Next();) {
     for (int i = 0; i < (*it.Get()).GetSize(); i++) (*it.Get())[i].Clear();
   }
 }
 
 void cStats::ZeroGroupAttackInst()
 {
-  for (Apto::Map<cString, Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > >::ValueIterator oit = m_group_attack_exe_map.Values(); oit.Next();) {
-    for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator iit = (*oit.Get()).Values(); iit.Next();) {
+  for (Apto::Map<cString, Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > > >::ValueIterator oit = m_group_attack_exe_map.Values(); oit.Next();) {
+    for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator iit = (*oit.Get()).Values(); iit.Next();) {
       for (int i = 0; i < (*iit.Get()).GetSize(); i++) {
         (*iit.Get())[i].Clear();
       }
@@ -548,10 +548,10 @@ void cStats::ZeroGroupAttackInst()
 
 void cStats::ZeroMTInst()
 {
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_male_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_male_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < it.Get()->GetSize(); i++) it.Get()->Get(i).Clear();
   }
-  for (Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_female_exe_inst_map.Values(); it.Next();) {
+  for (Apto::Map<cString, AvidaArray<Apto::Stat::Accumulator<int> > >::ValueIterator it = m_is_female_exe_inst_map.Values(); it.Next();) {
     for (int i = 0; i < it.Get()->GetSize(); i++) it.Get()->Get(i).Clear();
   }
 }

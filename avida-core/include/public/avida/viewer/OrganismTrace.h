@@ -73,7 +73,7 @@ namespace Avida {
         LIB_LOCAL inline Jump(int fm, int fi, int tm, int ti, int f)
           : from_mem_space(fm), from_idx(fi), to_mem_space(tm), to_idx(ti), freq(f) { ; }
       };
-      Apto::Array<Jump, Apto::Smart> m_jumps;
+      AvidaArray<Jump> m_jumps;
       
       Instruction m_next_inst;
       

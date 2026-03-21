@@ -23,6 +23,7 @@
  */
 
 #ifndef AvidaViewerGraphic_h
+#include "AvidaArray.h"
 #define AvidaViewerGraphic_h
 
 #include "avida/viewer/Color.h"
@@ -109,7 +110,7 @@ namespace Avida {
     class Graphic
     {
     private:
-      Apto::Array<GraphicObject*, Apto::Smart> m_objects;
+      AvidaArray<GraphicObject*> m_objects;
       
     public:
       LIB_EXPORT inline Graphic() { ; }

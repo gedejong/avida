@@ -25,6 +25,7 @@
 #ifndef cResource_h
 #define cResource_h
 
+#include "AvidaArray.h"
 #include "cString.h"
 
 
@@ -134,8 +135,8 @@ private:
   double m_threshold;
   int m_refuge;
   bool isgradient;
-  Apto::Array<cCellResource> cell_list;
-  Apto::Array<int> cell_id_list;
+  AvidaArray<cCellResource> cell_list;
+  AvidaArray<int> cell_id_list;
   double m_predator_odds;
   bool m_predator;
   double m_death_odds;
@@ -231,8 +232,8 @@ public:
   double GetInitialPlatVal() { return m_init_plat; }
   double GetThreshold() { return m_threshold; }
   int GetRefuge() { return m_refuge; }
-  Apto::Array<cCellResource>* GetCellListPtr() { return &cell_list; }
-  Apto::Array<int>* GetCellIdListPtr() { return &cell_id_list; }
+  AvidaArray<cCellResource>* GetCellListPtr() { return &cell_list; }
+  AvidaArray<int>* GetCellIdListPtr() { return &cell_id_list; }
   bool IsPredatory() { return m_predator; }
   bool IsDeadly() { return m_deadly; }
   bool IsPath()  { return m_path; }
@@ -330,7 +331,7 @@ public:
   cCellResource *GetCellResourcePtr(int _id);
   void UpdateCellResource(cCellResource *_CellResoucePtr, double _initial,
                           double _inflow, double _outflow);
-  void SetCellIdList(Apto::Array<int>& id_list); //SLG partial resources
+  void SetCellIdList(AvidaArray<int>& id_list); //SLG partial resources
 	void SetHGTMetabolize(int _in) { hgt_metabolize = _in; }
 };
 
