@@ -1241,19 +1241,19 @@ void cStats::PrintSoloTaskSnapshot(const cString& filename, cAvidaContext& ctx)
 	df->Write(m_update,   "Update");
 	df->Write(sum_generation.Average(),      "Generation");
   
-  Apto::Array<int> reac_list;
+  AvidaArray<int> reac_list;
   reac_list.Resize(m_world->GetEnvironment().GetNumTasks());
   reac_list.SetAll(0);
   
-  Apto::Array<int> total_reacs;
+  AvidaArray<int> total_reacs;
   total_reacs.Resize(m_world->GetEnvironment().GetNumTasks());
   total_reacs.SetAll(0);
   
-  Apto::Array<int> task_list;
+  AvidaArray<int> task_list;
   task_list.Resize(m_world->GetEnvironment().GetNumTasks());
   task_list.SetAll(0);
   
-  Apto::Array<int> totals_list;
+  AvidaArray<int> totals_list;
   totals_list.Resize(m_world->GetEnvironment().GetNumTasks());
   totals_list.SetAll(0);
   
@@ -2111,7 +2111,7 @@ void cStats::PrintDemeOrgGermlineSequestration(const cString& filename)
     df->Write(deme.GetDemeID(), "Deme ID for cell [demeid]");
     df->Write(deme.GetTotalResourceAmountConsumed(), "Deme resources consumed [demeres]");
     
-    Apto::Array<int> react_count = deme.GetReactionCount();
+    AvidaArray<int> react_count = deme.GetReactionCount();
     for (int k=0; k<react_count.GetSize(); ++k){
       react_count[k] = 0;
     }
@@ -2134,7 +2134,7 @@ void cStats::PrintDemeOrgGermlineSequestration(const cString& filename)
         numMut += o->GetNumOfPointMutationsApplied();
         numPresent++;
         
-        Apto::Array<int> org_react_count = o->GetPhenotype().GetCumulativeReactionCount();
+        AvidaArray<int> org_react_count = o->GetPhenotype().GetCumulativeReactionCount();
         for (int k=0; k<org_react_count.GetSize(); ++k){
           react_count[k] += org_react_count[k];
         }
@@ -2415,14 +2415,14 @@ void cStats::PrintKilledPreyFTData(const cString& filename)
   
   df->Write(m_update, "Update");
   
-  Apto::Array<int> poss_targets = m_world->GetEnvironment().GetAttackPreyFTList();
-  Apto::Array<int> org_targets;
+  AvidaArray<int> poss_targets = m_world->GetEnvironment().GetAttackPreyFTList();
+  AvidaArray<int> org_targets;
   org_targets.Resize(poss_targets.GetSize());
   org_targets.SetAll(0);
   
   const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
-    Apto::Array<int> killed_list = live_orgs[i]->GetPhenotype().GetKilledPreyFTData();
+    AvidaArray<int> killed_list = live_orgs[i]->GetPhenotype().GetKilledPreyFTData();
     if (killed_list.GetSize() > 0) {
       assert(killed_list.GetSize() == org_targets.GetSize());
       for (int i = 0; i < killed_list.GetSize(); i++) org_targets[i] += killed_list[i];
@@ -2754,7 +2754,7 @@ void cStats::PrintDemeTasksData(const cString& filename)
   
   const int num_tasks = m_world->GetEnvironment().GetNumTasks();
   
-  Apto::Array<int> deme_tasks;
+  AvidaArray<int> deme_tasks;
   deme_tasks.ResizeClear(num_tasks);
   deme_tasks.SetAll(num_tasks);
   int occupied_demes = 0;
@@ -2786,7 +2786,7 @@ void cStats::PrintDemeTasksExeData(const cString& filename)
   
   const int num_tasks = m_world->GetEnvironment().GetNumTasks();
   
-  Apto::Array<int> deme_tasks;
+  AvidaArray<int> deme_tasks;
   deme_tasks.ResizeClear(num_tasks);
   deme_tasks.SetAll(num_tasks);
   int occupied_demes = 0;
@@ -2817,7 +2817,7 @@ void cStats::PrintDemeReactionData(const cString& filename)
   
   const int num_reactions = m_world->GetEnvironment().GetReactionLib().GetSize();
   
-  Apto::Array<int> deme_reactions;
+  AvidaArray<int> deme_reactions;
   deme_reactions.ResizeClear(num_reactions);
   deme_reactions.SetAll(0);
   int occupied_demes = 0;
@@ -3937,7 +3937,7 @@ void cStats::PrintGroupMTTolerance(const cString& filename)
 void cStats::PrintToleranceInstructionData(const cString& filename)
 {
   const int num_tol_inst = 8;
-  Apto::Array<cString> m_is_tolerance_inst_names(num_tol_inst);
+  AvidaArray<cString> m_is_tolerance_inst_names(num_tol_inst);
   m_is_tolerance_inst_names[0] = "inc-tolerance_Immigrants";
   m_is_tolerance_inst_names[1] = "inc-tolerance_OffspringOwn";
   m_is_tolerance_inst_names[2] = "inc-tolerance_OffspringOthers";
@@ -3973,7 +3973,7 @@ void cStats::PrintToleranceData(const cString& filename)
   }
   
   const int num_tol_inst = 8;
-  Apto::Array<cString> m_is_tolerance_inst_names(num_tol_inst);
+  AvidaArray<cString> m_is_tolerance_inst_names(num_tol_inst);
   m_is_tolerance_inst_names[0] = "inc-tolerance_Immigrants";
   m_is_tolerance_inst_names[1] = "inc-tolerance_OffspringOwn";
   m_is_tolerance_inst_names[2] = "inc-tolerance_OffspringOthers";
@@ -4105,7 +4105,7 @@ void cStats::PrintTargets(const cString& filename)
     }
   }
   
-  Apto::Array<int> raw_target_list;
+  AvidaArray<int> raw_target_list;
   raw_target_list.Resize(num_targets);
   raw_target_list.SetAll(0);
   int this_index = 0;
@@ -4114,7 +4114,7 @@ void cStats::PrintTargets(const cString& filename)
     this_index++;
   }
   
-  Apto::Array<int> target_list;
+  AvidaArray<int> target_list;
   int tot_targets = num_targets + offset;
   target_list.Resize(tot_targets);
   target_list.SetAll(0);
@@ -4129,7 +4129,7 @@ void cStats::PrintTargets(const cString& filename)
     if (raw_target_list[i] >= 0) target_list[i + offset] = raw_target_list[i];
   }
   
-  Apto::Array<int> org_targets;
+  AvidaArray<int> org_targets;
   org_targets.Resize(tot_targets);
   org_targets.SetAll(0);
   
@@ -4164,7 +4164,7 @@ void cStats::PrintMimicDisplays(const cString& filename)
   
   std::set<int> fts_avail = m_world->GetEnvironment().GetTargetIDs();
   
-  Apto::Array<int> poss_fts;
+  AvidaArray<int> poss_fts;
   poss_fts.Resize(0);
   
   set <int>::iterator itr;
@@ -4175,7 +4175,7 @@ void cStats::PrintMimicDisplays(const cString& filename)
     }
   }
   
-  Apto::Array<int> displayed_fts;
+  AvidaArray<int> displayed_fts;
   displayed_fts.Resize(poss_fts.GetSize());
   displayed_fts.SetAll(0);
   
@@ -4244,7 +4244,7 @@ void cStats::PrintTopPredTargets(const cString& filename)
     }
   }
   
-  Apto::Array<int> raw_target_list;
+  AvidaArray<int> raw_target_list;
   raw_target_list.Resize(num_targets);
   raw_target_list.SetAll(0);
   int this_index = 0;
@@ -4253,7 +4253,7 @@ void cStats::PrintTopPredTargets(const cString& filename)
     this_index++;
   }
   
-  Apto::Array<int> target_list;
+  AvidaArray<int> target_list;
   int tot_targets = num_targets + offset;
   target_list.Resize(tot_targets);
   target_list.SetAll(0);
@@ -4269,7 +4269,7 @@ void cStats::PrintTopPredTargets(const cString& filename)
     if (raw_target_list[i] >= 0) target_list[i + offset] = raw_target_list[i];
   }
   
-  Apto::Array<int> org_targets;
+  AvidaArray<int> org_targets;
   org_targets.Resize(tot_targets);
   org_targets.SetAll(0);
   
@@ -4538,7 +4538,7 @@ void cStats::PrintDenData(const cString& filename) {
     cPopulationCell& cell = m_world->GetPopulation().GetCell(i);
     if (!cell.HasAV()) continue;
     
-    Apto::Array<double> cell_res;
+    AvidaArray<double> cell_res;
     cell_res = m_world->GetPopulation().GetCellResources(i, m_world->GetDefaultContext());
     
     bool is_active = false;
@@ -5023,9 +5023,9 @@ void cStats::PrintMiniTraceReactions(cOrganism* org)
   
   std::ofstream& fp = df->OFStream();
   
-  Apto::Array<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
-  Apto::Array<int> reaction_cycles = org->GetPhenotype().GetFirstReactionCycles();
-  Apto::Array<int> reaction_execs = org->GetPhenotype().GetFirstReactionExecs();
+  AvidaArray<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
+  AvidaArray<int> reaction_cycles = org->GetPhenotype().GetFirstReactionCycles();
+  AvidaArray<int> reaction_execs = org->GetPhenotype().GetFirstReactionExecs();
   
   fp << org->GetID() << " " << org->GetPhenotype().GetUpdateBorn() << " ";
   for (int i = 0; i < reaction_count.GetSize() - 1; i++) {
@@ -5072,7 +5072,7 @@ void cStats::PrintMicroTraces(Apto::Array<char, Apto::Smart>& exec_trace, int bi
 void cStats::UpdateTopNavTrace(cOrganism* org, bool force_update)
 {
   int best_reac = -1;
-  Apto::Array<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
+  AvidaArray<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
   if (!firstnavtrace) {
     // 'best' org is the one among the orgs with the highest reaction achieved that reproduced in the least number of cycles
     // using cycles, so any inst executions in parallel multi-threads are only counted as one exec
@@ -5124,8 +5124,8 @@ void cStats::UpdateTopNavTrace(cOrganism* org, bool force_update)
     
     topstart = org->GetPhenotype().GetNumExecs() - toptrace.GetSize();
 
-    Apto::Array<int> reaction_cycles = org->GetPhenotype().GetFirstReactionCycles();
-    Apto::Array<int> reaction_execs = org->GetPhenotype().GetFirstReactionExecs();
+    AvidaArray<int> reaction_cycles = org->GetPhenotype().GetFirstReactionCycles();
+    AvidaArray<int> reaction_execs = org->GetPhenotype().GetFirstReactionExecs();
     
     topreactioncycles.Resize(reaction_cycles.GetSize());
     topreactioncycles.SetAll(-1);
@@ -5258,7 +5258,7 @@ void cStats::PrintReproData(cOrganism* org)
   std::ofstream& fp = df->OFStream();
   fp << update << " " << org->SystematicsGroup("genotype")->ID()<< " " << org->GetID() << " " << org->GetPhenotype().GetAge() << " " << org->GetPhenotype().GetTimeUsed()
   << " " << org->GetPhenotype().GetNumExecs() << " ";
-  Apto::Array<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
+  AvidaArray<int> reaction_count = org->GetPhenotype().GetCurReactionCount();
   for (int i = 0; i < reaction_count.GetSize() - 1; i++) {
     fp << reaction_count[i] << ",";
   }
