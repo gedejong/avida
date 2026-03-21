@@ -144,7 +144,7 @@ struct cOrgMovementPred_EventMovedIntoCenter : public cOrgMovementPredicate {
  *  Modified from cOrgMovementPred_EventMovedIntoCenter
 */
 struct cOrgMovementPred_EventMovedBetweenTargets : public cOrgMovementPredicate {
-  cOrgMovementPred_EventMovedBetweenTargets(Apto::Array<cDemeCellEvent*, Apto::Smart> events, cPopulation& population, unsigned int times) :
+  cOrgMovementPred_EventMovedBetweenTargets(AvidaArray<cDemeCellEvent*> events, cPopulation& population, unsigned int times) :
   pop(population)
   , m_event_received(false)
   , m_stats_updated(false)
@@ -286,7 +286,7 @@ struct cOrgMovementPred_EventMovedBetweenTargets : public cOrgMovementPredicate 
   cPopulation& pop;
   bool m_event_received;
   bool m_stats_updated;
-  Apto::Array<cDemeCellEvent*, Apto::Smart> m_events;
+  AvidaArray<cDemeCellEvent*> m_events;
   unsigned int m_total_times;
   unsigned int m_total_orgs;
 

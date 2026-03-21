@@ -74,7 +74,7 @@ public:
     int post_cost;             // cpu cost to be paid AFTER instruction executed the first time (e.g. post-kill handling time in predators)
     double bonus_cost;          // current bonus required to execute inst
   };
-  Apto::Array<sInstEntry, Apto::Smart> m_lib_name_map;
+  AvidaArray<sInstEntry> m_lib_name_map;
   
   AvidaArray<int> m_lib_nopmod_map;
   

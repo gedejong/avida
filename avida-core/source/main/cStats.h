@@ -156,7 +156,7 @@ private:
   Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_from_message_inst_map;
 
   AvidaArray<pair<int,int> > m_is_tolerance_exe_counts;
-  Apto::Array<s_inst_circumstances, Apto::Smart> m_is_tolerance_exe_insts;
+  AvidaArray<s_inst_circumstances> m_is_tolerance_exe_insts;
 
   Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_prey_exe_inst_map;
   Apto::Map<cString, Apto::Array<Apto::Stat::Accumulator<int> > > m_is_pred_exe_inst_map;

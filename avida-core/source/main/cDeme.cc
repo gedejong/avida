@@ -1125,7 +1125,7 @@ void cDeme::AddEventMoveBetweenTargetsPred(int times)
     exit(1);
   }
   
-  Apto::Array<cDemeCellEvent*, Apto::Smart> alive_events;
+  AvidaArray<cDemeCellEvent*> alive_events;
   
   for (int i = 0; i < cell_events.GetSize(); i++) {
     if (!cell_events[i].IsDead()) {

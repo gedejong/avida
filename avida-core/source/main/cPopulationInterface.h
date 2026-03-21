@@ -281,7 +281,7 @@ private:
     sIO_avatar(int in_av_cell_id, int in_av_facing, int in_av_faced_cell, bool input, bool output) : av_cell_id(in_av_cell_id), av_facing(in_av_facing), av_faced_cell(in_av_faced_cell), av_input(input), av_output(output) { ; }
   };
 
-  Apto::Array<sIO_avatar, Apto::Smart> m_avatars;
+  AvidaArray<sIO_avatar> m_avatars;
   inline int GetNumAV() { return m_avatars.GetSize(); }
 public:
   bool HasOutputAV(int av_num = 0);

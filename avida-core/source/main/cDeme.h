@@ -120,7 +120,7 @@ private:
   cResourceCount deme_resource_count; //!< Resources available to the deme
   AvidaArray<int> energy_res_ids; //!< IDs of energy resources
   
-  Apto::Array<cDemeCellEvent, Apto::Smart> cell_events;
+  AvidaArray<cDemeCellEvent> cell_events;
   std::vector<std::pair<int, int> > event_slot_end_points; // (slot end point, slot flow rate)
   
   int         m_germline_genotype_id; // Genotype id of germline (if in use)
@@ -131,9 +131,9 @@ private:
   cMerit _current_merit; //!< Deme merit applied to all organisms living in this deme.
   cMerit _next_merit; //!< Deme merit that will be inherited upon deme replication.
 
-  Apto::Array<cDemePredicate*, Apto::Smart> deme_pred_list; // Deme Predicates
-  Apto::Array<cOrgMessagePredicate*, Apto::Smart> message_pred_list; // Message Predicates
-  Apto::Array<cOrgMovementPredicate*, Apto::Smart> movement_pred_list;  // Movement Predicates
+  AvidaArray<cDemePredicate*> deme_pred_list; // Deme Predicates
+  AvidaArray<cOrgMessagePredicate*> message_pred_list; // Message Predicates
+  AvidaArray<cOrgMovementPredicate*> movement_pred_list;  // Movement Predicates
 	
 	// For the points infrastructure
 	double points; 
