@@ -24,6 +24,7 @@
 
 #include <iostream>
 
+#include "AvidaArray.h"
 #include "cAvidaContext.h"
 #include "cString.h"
 
@@ -51,7 +52,7 @@ public:
   
 private:
   Apto::Array< Apto::Array<double, Apto::Smart>, Apto::Smart > m_migration_matrix;
-  Apto::Array<double> m_row_connectivity_sums;
+  AvidaArray<double> m_row_connectivity_sums;
   Apto::Array< Apto::Array<int, Apto::Smart>, Apto::Smart > m_parasite_migration_counts;
   Apto::Array< Apto::Array<int, Apto::Smart>, Apto::Smart >  m_offspring_migration_counts;
 };

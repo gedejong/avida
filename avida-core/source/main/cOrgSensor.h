@@ -109,7 +109,7 @@ class cOrgSensor
     int max_x;
     int max_y;
   };
-  Apto::Array<sBounds> m_soloBounds;
+  AvidaArray<sBounds> m_soloBounds;
   struct sWalkLimits {
     bool visible;
     int start;
