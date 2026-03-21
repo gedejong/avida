@@ -133,7 +133,7 @@ class cOrgSensor
   void GetConfusionOddsDensity(cAvidaContext& ctx, double& odds, cOrganism* first_org);
   void GetConfusionOddsFacings(cAvidaContext& ctx, double& odds, cOrganism* first_org);
   void GetConfusionOddsOpinions(cAvidaContext& ctx, double& odds, cOrganism* first_org);
-  int GetGroupIdx(Apto::Array<int>& group_ids, int test_id);
+  int GetGroupIdx(AvidaArray<int>& group_ids, int test_id);
   
   sLookOut FindOrg(cAvidaContext& ctx, cOrganism* target_org, const int distance, const int facing);
   sLookOut FindResCenter(cAvidaContext& ctx, const int res_id, const int distance_sought, const int facing);

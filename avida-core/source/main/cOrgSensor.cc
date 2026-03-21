@@ -1316,7 +1316,7 @@ void cOrgSensor::GetConfusionOddsDensity(cAvidaContext& ctx, double& odds, cOrga
 
 void cOrgSensor::GetConfusionOddsFacings(cAvidaContext& ctx, double& odds, cOrganism* first_org)
 {
-  Apto::Array<int> facings(8);
+  AvidaArray<int> facings(8);
   facings.SetAll(0);
   int num_used = 0;
   
@@ -1368,9 +1368,9 @@ void cOrgSensor::GetConfusionOddsFacings(cAvidaContext& ctx, double& odds, cOrga
 void cOrgSensor::GetConfusionOddsOpinions(cAvidaContext& ctx, double& odds, cOrganism* first_org)
 {
   int num_used = 0;
-  Apto::Array<int> group_ids = first_org->GetOrgInterface().GetFormedGroupArray();
+  AvidaArray<int> group_ids = first_org->GetOrgInterface().GetFormedGroupArray();
   int num_groups = group_ids.GetSize();
-  Apto::Array<int> groups_used;
+  AvidaArray<int> groups_used;
   groups_used.Resize(num_groups);
   groups_used.SetAll(0);
   
@@ -1425,7 +1425,7 @@ void cOrgSensor::GetConfusionOddsOpinions(cAvidaContext& ctx, double& odds, cOrg
   odds = 1 - (double (num_used) / (double) num_groups); // if 10 opinions, 0 friend = 0% confusion, 1 friend = 10%, 10 friends = 100%
 }
 
-int cOrgSensor::GetGroupIdx(Apto::Array<int>& group_ids, int test_id)
+int cOrgSensor::GetGroupIdx(AvidaArray<int>& group_ids, int test_id)
 {
   for (int i = 0; i < group_ids.GetSize(); i++) {
     if (group_ids[i] == test_id) return i;

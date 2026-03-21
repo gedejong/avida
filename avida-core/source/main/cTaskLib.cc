@@ -3365,9 +3365,9 @@ double cTaskLib::Task_SGPathTraversal(cTaskContext& ctx) const
   
   // Build and sort history
   const int history_offset = 3 + sg.GetNumStates();
-  Apto::Array<int> history(ext_mem.GetSize() - history_offset);
+  AvidaArray<int> history(ext_mem.GetSize() - history_offset);
   for (int i = 0; i < history.GetSize(); i++) history[i] = ext_mem[i + history_offset];
-  Apto::QSort(history);
+  std::sort(history.begin(), history.end());
   
   // Calculate how many unique non-poison cells have been touched
   int traversed = 0;
@@ -3986,7 +3986,7 @@ double cTaskLib::Task_ConsumePublicGood(cTaskContext& ctx) const
 
 double cTaskLib::Task_XorMax(cTaskContext& ctx) const
 {
-  Apto::Array<double> cell_res;
+  AvidaArray<double> cell_res;
   if (!m_world->GetConfig().USE_AVATARS.Get()) cell_res = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
   else if (m_world->GetConfig().USE_AVATARS.Get()) cell_res = ctx.GetOrganism()->GetOrgInterface().GetAVResources(m_world->GetDefaultContext());
   
