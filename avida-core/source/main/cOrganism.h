@@ -168,7 +168,7 @@ public:
   const Apto::Array<double>& GetRBins() const { return m_phenotype.GetCurRBinsAvail(); }
   double GetRBin(int index) { return m_phenotype.GetCurRBinAvail(index); }
   double GetRBinsTotal();
-  void SetRBins(const Apto::Array<double>& rbins_in);
+  void SetRBins(const AvidaArray<double>& rbins_in);
   void SetRBin(const int index, const double value);
   void AddToRBin(const int index, const double value);
   void IncCollectSpecCount(const int spec_id);

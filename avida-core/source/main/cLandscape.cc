@@ -404,7 +404,7 @@ void cLandscape::PredictWProcess(cAvidaContext& ctx, Avida::Output::File& df, in
     total_neg_found = 0;
     total_fitness = 0.0;
     total_sqr_fitness = 0.0;
-    Apto::Array<int> mut_lines(num_muts);
+    AvidaArray<int> mut_lines(num_muts);
     
     int test_id = 0;
     while ((test_id < min_tests) ||
@@ -539,7 +539,7 @@ void cLandscape::PredictNuProcess(cAvidaContext& ctx, Avida::Output::File& df, i
     total_fitness = 0.0;
     total_sqr_fitness = 0.0;
     max_found_fitness = 0.0;
-    Apto::Array<int> mut_lines(num_muts);
+    AvidaArray<int> mut_lines(num_muts);
     
     int test_id = 0;
     while ((test_id < min_tests) ||
@@ -671,7 +671,7 @@ void cLandscape::RandomProcess(cAvidaContext& ctx)
   if (trials == 0) trials = inst_set.GetSize() - 1;
   
   int mut_num;
-  Apto::Array<int> mut_lines(distance);
+  AvidaArray<int> mut_lines(distance);
   
   // Loop through all the lines of genome, testing many combinations.
   int cur_trial = 0;
@@ -764,8 +764,8 @@ void cLandscape::TestPairs(cAvidaContext& ctx)
   const InstructionSequence& base_seq = *base_seq_p;
   const int genome_size = base_seq.GetSize();
   
-  Apto::Array<int> mut_lines(2);
-  Apto::Array<Instruction> mut_insts(2);
+  AvidaArray<int> mut_lines(2);
+  AvidaArray<Instruction> mut_insts(2);
   
   // Loop through all the lines of genome, testing many combinations.
   for (int i = 0; i < trials; i++) {

@@ -336,7 +336,7 @@ double cOrganism::GetRBinsTotal()
 	return total;
 }
 
-void cOrganism::SetRBins(const Apto::Array<double>& rbins_in)
+void cOrganism::SetRBins(const AvidaArray<double>& rbins_in)
 { 
 	m_phenotype.SetCurRBinsAvail(rbins_in);
 }
@@ -848,7 +848,7 @@ bool cOrganism::Divide_CheckViable(cAvidaContext& ctx)
   
   if (max_task_count > 0) {
     int task_limit = max_task_count;
-    Apto::Array<int> task_counts = m_phenotype.GetCurTaskCount();
+    AvidaArray<int> task_counts = m_phenotype.GetCurTaskCount();
     for (int i=0; i < task_counts.GetSize(); i++) {
       if (task_counts[i] > 0)
         task_limit--;
@@ -864,13 +864,13 @@ bool cOrganism::Divide_CheckViable(cAvidaContext& ctx)
   
   if (single_reaction != 0) {
     int toFail = single_reaction;
-    Apto::Array<int> reactionCounts = m_phenotype.GetCurReactionCount();
+    AvidaArray<int> reactionCounts = m_phenotype.GetCurReactionCount();
     for (int i=0; i<reactionCounts.GetSize() && toFail; i++) {
       if (reactionCounts[i] > 0) --toFail;
     }
     
     if (toFail) {
-      const Apto::Array<int>& stolenReactions = m_phenotype.GetStolenReactionCount();
+      const AvidaArray<int>& stolenReactions = m_phenotype.GetStolenReactionCount();
       for (int i = 0; i < stolenReactions.GetSize() && toFail; i++)
       {
         if (stolenReactions[i] > 0) --toFail;

@@ -360,7 +360,7 @@ void cPopulation::SetupCellGrid()
   assert(m_world->GetConfig().DEMES_REPLICATE_SIZE.Get() <= deme_size);
   
   // Setup the deme structures.
-  Apto::Array<int> deme_cells(deme_size);
+  AvidaArray<int> deme_cells(deme_size);
   for (int deme_id = 0; deme_id < num_demes; deme_id++) {
     for (int offset = 0; offset < deme_size; offset++) {
       int cell_id = deme_id * deme_size + offset;
@@ -701,7 +701,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
     merit_array = non_migrant_merits;
   }
   
-  Apto::Array<int> target_cells(offspring_array.GetSize());
+  AvidaArray<int> target_cells(offspring_array.GetSize());
   
   // Loop through choosing the later placement of each offspring in the population.
   bool parent_alive = true;  // Will the parent live through this process?
@@ -1038,8 +1038,8 @@ bool cPopulation::TestForParasiteInteraction(cOrganism* infected_host, cOrganism
   
   cPhenotype& parent_phenotype = infected_host->GetPhenotype();
   
-  Apto::Array<int> host_task_counts = target_host->GetPhenotype().GetLastHostTaskCount();
-  Apto::Array<int> parasite_task_counts = parent_phenotype.GetLastParasiteTaskCount();
+  AvidaArray<int> host_task_counts = target_host->GetPhenotype().GetLastHostTaskCount();
+  AvidaArray<int> parasite_task_counts = parent_phenotype.GetLastParasiteTaskCount();
   
   
   if (infection_mechanism == 0) {
@@ -1643,7 +1643,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetRandomTraceQ(int max_samples)
   if (max_samples) max_bgs = max_samples;
   if (max_samples > live_orgs.GetSize()) max_bgs = live_orgs.GetSize();
   
-  Apto::Array<bool> used_orgs;
+  AvidaArray<bool> used_orgs;
   used_orgs.Resize(live_orgs.GetSize());
   used_orgs.SetAll(false);
   
@@ -1671,7 +1671,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetRandomPreyTraceQ(int max_samples)
   if (max_samples) max_bgs = max_samples;
   if (max_samples > num_prey_organisms) max_bgs = num_prey_organisms;
   
-  Apto::Array<bool> used_orgs;
+  AvidaArray<bool> used_orgs;
   used_orgs.Resize(live_orgs.GetSize());
   used_orgs.SetAll(false);
   
@@ -1701,7 +1701,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetRandomPredTraceQ(int max_samples)
   if (max_samples) max_bgs = max_samples;
   if (max_samples > num_pred_organisms) max_bgs = num_pred_organisms;
   
-  Apto::Array<bool> used_orgs;
+  AvidaArray<bool> used_orgs;
   used_orgs.Resize(live_orgs.GetSize());
   used_orgs.SetAll(false);
   
@@ -1956,9 +1956,9 @@ Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int sav
   return bg_id_list;
 }
 
-Apto::Array<int> cPopulation::GetFormedGroupArray()
+AvidaArray<int> cPopulation::GetFormedGroupArray()
 {
-  Apto::Array<int> group_ids;
+  AvidaArray<int> group_ids;
   group_ids.Resize(0);
   map<int,int> groups_formed = m_world->GetPopulation().GetFormedGroups();
   map <int,int>::iterator itr;    
@@ -2333,7 +2333,7 @@ void cPopulation::InjureOrg(cAvidaContext& ctx, cPopulationCell& in_cell, double
     target->UpdateMerit(ctx, target_merit);
   }
   if (ding_reacs) {
-    Apto::Array<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
+    AvidaArray<int> target_reactions = target->GetPhenotype().GetLastReactionCount();
     for (int i = 0; i < target_reactions.GetSize(); i++) {
       target->GetPhenotype().SetReactionCount(i, target_reactions[i] - (int)((target_reactions[i] * injury)));
     }
@@ -2342,7 +2342,7 @@ void cPopulation::InjureOrg(cAvidaContext& ctx, cPopulationCell& in_cell, double
   target->GetPhenotype().SetCurBonus(target_bonus - (target_bonus * injury));
   
   if (m_world->GetConfig().USE_RESOURCE_BINS.Get()) {
-    Apto::Array<double> target_bins = target->GetRBins();
+    AvidaArray<double> target_bins = target->GetRBins();
     for (int i = 0; i < target_bins.GetSize(); i++) {
       target->AddToRBin(i, -1 * (target_bins[i] * injury));
     }
@@ -2534,7 +2534,7 @@ void cPopulation::CompeteDemes(cAvidaContext& ctx, int competition_type)
   const int num_demes = deme_array.GetSize();
   
   double total_fitness = 0;
-  Apto::Array<double> deme_fitness(num_demes);
+  AvidaArray<double> deme_fitness(num_demes);
   
   switch(competition_type) {
     case 0:    // deme fitness = 1;
@@ -2595,7 +2595,7 @@ void cPopulation::CompeteDemes(cAvidaContext& ctx, int competition_type)
         deme_fitness[deme_id] = single_deme_fitness.Ave();
       }
       // ... then determine the rank of each deme based on its fitness
-      Apto::Array<double> deme_rank(num_demes);
+      AvidaArray<double> deme_rank(num_demes);
       deme_rank.SetAll(1);
       for (int deme_id = 0; deme_id < num_demes; deme_id++) {
         for (int test_deme = 0; test_deme < num_demes; test_deme++) {
@@ -2643,7 +2643,7 @@ void cPopulation::CompeteDemes(cAvidaContext& ctx, int competition_type)
         deme_fitness[deme_id] = single_deme_life_fitness.Ave();
       }
       // ... then determine the rank of each deme based on its fitness
-      Apto::Array<double> deme_rank(num_demes);
+      AvidaArray<double> deme_rank(num_demes);
       deme_rank.SetAll(1);
       for (int deme_id = 0; deme_id < num_demes; deme_id++) {
         for (int test_deme = 0; test_deme < num_demes; test_deme++) {
@@ -2665,7 +2665,7 @@ void cPopulation::CompeteDemes(cAvidaContext& ctx, int competition_type)
   }
   
   // Pick which demes should be in the next generation.
-  Apto::Array<int> new_demes(num_demes);
+  AvidaArray<int> new_demes(num_demes);
   for (int i = 0; i < num_demes; i++) {
     double birth_choice = (double) ctx.GetRandom().GetDouble(total_fitness);
     double test_total = 0;
@@ -2679,13 +2679,13 @@ void cPopulation::CompeteDemes(cAvidaContext& ctx, int competition_type)
   }
   
   // Track how many of each deme we should have.
-  Apto::Array<int> deme_count(num_demes);
+  AvidaArray<int> deme_count(num_demes);
   deme_count.SetAll(0);
   for (int i = 0; i < num_demes; i++) {
     deme_count[new_demes[i]]++;
   }
   
-  Apto::Array<bool> is_init(num_demes);
+  AvidaArray<bool> is_init(num_demes);
   is_init.SetAll(false);
   
   // Copy demes until all deme counts are 1.
@@ -3088,7 +3088,7 @@ void cPopulation::ReplicateDeme(cDeme& source_deme, cAvidaContext& ctx)
   
   // Update stats calculate how many different reactions the deme performed.
   double deme_performed_rx=0;
-  Apto::Array<int> deme_reactions = source_deme.GetCurReactionCount();
+  AvidaArray<int> deme_reactions = source_deme.GetCurReactionCount();
   for(int i=0; i< deme_reactions.GetSize(); ++i) {
     //HJG
     if (deme_reactions[i] > 0){
