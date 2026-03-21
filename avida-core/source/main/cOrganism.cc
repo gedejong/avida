@@ -452,17 +452,17 @@ void cOrganism::doOutput(cAvidaContext& ctx,
   global_res_change.SetAll(0.0);
   AvidaArray<double> deme_res_change(deme_resource_count.GetSize());
   deme_res_change.SetAll(0.0);
-  Apto::Array<cString> insts_triggered;
-  
+  AvidaArray<cString> insts_triggered;
+
   tBuffer<int>* received_messages_point = &m_received_messages;
   if (!m_world->GetConfig().SAVE_RECEIVED.Get()) received_messages_point = NULL;
-  
+
   cTaskContext taskctx(this, input_buffer, output_buffer, other_input_list, other_output_list,
                        m_hardware->GetExtendedMemory(), on_divide, received_messages_point);
-  
+
   //combine global and deme resource counts
   AvidaArray<double> globalAndDeme_resource_count = global_resource_count + deme_resource_count;
-  Apto::Array<double> globalAndDeme_res_change(globalAndDeme_resource_count.GetSize());
+  AvidaArray<double> globalAndDeme_res_change(globalAndDeme_resource_count.GetSize());
   globalAndDeme_res_change.SetAll(0.0);
   
   // set any resource amount to 0 if a cell cannot access this resource
@@ -571,18 +571,18 @@ void cOrganism::doAVOutput(cAvidaContext& ctx,
   //  tArray<double> deme_res_change(deme_resource_count.GetSize());
   //  deme_res_change.SetAll(0.0);
 
-  Apto::Array<cString> insts_triggered;
-  
+  AvidaArray<cString> insts_triggered;
+
   tBuffer<int>* received_messages_point = &m_received_messages;
   if (!m_world->GetConfig().SAVE_RECEIVED.Get()) received_messages_point = NULL;
-  
+
   cTaskContext taskctx(this, input_buffer, output_buffer, other_input_list, other_output_list,
                        m_hardware->GetExtendedMemory(), on_divide, received_messages_point);
-  
+
   //combine global and deme resource counts
   const AvidaArray<double>& av_res_count = m_interface->GetAVResources(ctx);
   AvidaArray<double> avatarAndDeme_res_count = av_res_count; // + deme_resource_count;
-  Apto::Array<double> avatarAndDeme_res_change(avatar_res_change); // + deme_res_change;
+  AvidaArray<double> avatarAndDeme_res_change(avatar_res_change); // + deme_res_change;
   
   // set any resource amount to 0 if a cell cannot access this resource
   int cell_id = m_interface->GetAVCellID();

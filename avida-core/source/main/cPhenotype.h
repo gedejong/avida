@@ -346,8 +346,8 @@ public:
   // Input and Output Reaction Tests
   bool TestInput(tBuffer<int>& inputs, tBuffer<int>& outputs);
   bool TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
-                  const Apto::Array<double>& res_in, const Apto::Array<double>& rbins_in, Apto::Array<double>& res_change,
-                  Apto::Array<cString>& insts_triggered, bool is_parasite=false, cContextPhenotype* context_phenotype = 0);
+                  const AvidaArray<double>& res_in, const AvidaArray<double>& rbins_in, AvidaArray<double>& res_change,
+                  AvidaArray<cString>& insts_triggered, bool is_parasite=false, cContextPhenotype* context_phenotype = 0);
 
   // State saving and loading, and printing...
   void PrintStatus(std::ostream& fp) const;

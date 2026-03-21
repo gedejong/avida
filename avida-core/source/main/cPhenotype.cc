@@ -1492,8 +1492,8 @@ bool cPhenotype::TestInput(tBuffer<int>&, tBuffer<int>&)
 }
 
 bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
-                            const Apto::Array<double>& res_in, const Apto::Array<double>& rbins_in,
-                            Apto::Array<double>& res_change, Apto::Array<cString>& insts_triggered,
+                            const AvidaArray<double>& res_in, const AvidaArray<double>& rbins_in,
+                            AvidaArray<double>& res_change, AvidaArray<cString>& insts_triggered,
                             bool is_parasite, cContextPhenotype* context_phenotype)
 {
   assert(initialized == true);
@@ -1513,7 +1513,6 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   cReactionResult& result = *m_reaction_result;
   
   // Run everything through the environment.
-  // Adapter: env.TestOutput takes Apto::Array<int>& for reaction_count (non-const output param)
   bool found = env.TestOutput(ctx, result, taskctx, eff_task_count, cur_reaction_count, res_in, rbins_in,
                               is_parasite, context_phenotype);
   
