@@ -88,9 +88,10 @@ When working at program scale, always read and maintain these documents:
 
 ---
 
-## Current Migration State (as of 2026-03-17, post debt-tranche)
+## Current Migration State (as of 2026-03-19, post cStats depth extraction)
 
-**268 unique `avd_*` FFI exports, ~260 C++ call-sites across 18 actively-routed files. 193 Rust tests.**
+**416 unique `avd_*` FFI exports, ~264 C++ call-sites across 18 actively-routed files. 287 Rust tests.**
+**4 `#[repr(C)]` type replacements**: Merit, CpuStack, CodeLabel, MutationRates.
 
 | File | avd_ calls | Status |
 |---|---:|---|
@@ -101,7 +102,7 @@ When working at program scale, always read and maintain these documents:
 | `cPopulation.cc` | 21 | Active — depth extraction ongoing |
 | `PrintActions.cc` | 18 | Near saturation |
 | `cHardwareCPU.cc` | 16 | Active — depth extraction ongoing |
-| `cStats.cc` | 9 | Covered |
+| `cStats.cc` | 12 | Covered |
 | `cHardwareExperimental.cc` | 9 | Covered |
 | `cHardwareBCR.cc` | 7 | Covered |
 | `cHardwareGP8.cc` | 7 | Covered |
@@ -113,7 +114,7 @@ When working at program scale, always read and maintain these documents:
 
 - **Waves 1–5**: Complete.
 - **Waves 6–8**: Executing in parallel by seam-readiness.
-- **ABI baseline**: Refreshed to 268 symbols (2026-03-17).
+- **ABI baseline**: Refreshed to 416 symbols (2026-03-19).
 - **Remaining untouched files**: `cPopulationInterface.cc` (2.4K), `cOrganism.cc` (1.7K), `cDeme.cc` (1.7K), `cLandscape.cc` (1K).
 
 **Next candidates**: Deeper `cHardwareCPU.cc` / `cPopulation.cc` extraction, or `cPopulationInterface.cc` as a fresh target.
