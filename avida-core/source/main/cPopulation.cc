@@ -627,8 +627,8 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
   assert(parent_organism != NULL);
   bool is_doomed = false;
   int doomed_cell = (world_x * world_y) - 1; //Also at the end of cPopulation::ActivateOrganism
-  Apto::Array<cOrganism*> offspring_array;
-  Apto::Array<cMerit> merit_array;
+  AvidaArray<cOrganism*> offspring_array;
+  AvidaArray<cMerit> merit_array;
   
   // If divide method is split, parent will be reset to completely tolerant
   // must remove their intolerance from the group's cached total.
@@ -684,8 +684,8 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
   // work below in the case of a migration event and 2) so that we don't mess up
   // and mistakenly kill the parent.
   if (m_world->GetConfig().ENABLE_MP.Get()) {
-    Apto::Array<cOrganism*> non_migrants;
-    Apto::Array<cMerit> non_migrant_merits;
+    AvidaArray<cOrganism*> non_migrants;
+    AvidaArray<cMerit> non_migrant_merits;
     for (int i=0; i<offspring_array.GetSize(); ++i) {
       if (m_world->TestForMigration()) {
         // this offspring is outta here!
@@ -875,7 +875,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
       }
       if (m_world->GetConfig().MAX_PREY_BT.Get()) {
         int in_use = 0;
-        Apto::Array<cOrganism*> orgs;
+        AvidaArray<cOrganism*> orgs;
         const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
         for (int i = 0; i < live_orgs.GetSize(); i++) {
           cOrganism* org = live_orgs[i];
@@ -2194,7 +2194,7 @@ void cPopulation::KillRandPred(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* org_to_kill = org;
   const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
-  Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
+  AvidaArray<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
   
@@ -2214,7 +2214,7 @@ void cPopulation::KillRandPrey(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* org_to_kill = org;
   const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
-  Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
+  AvidaArray<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
   
@@ -2234,7 +2234,7 @@ cOrganism* cPopulation::GetRandPrey(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* target_org = org;
   const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
-  Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
+  AvidaArray<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
   
@@ -3433,12 +3433,12 @@ void cPopulation::ReplaceDemeFlaggedGermline(cDeme& source_deme, cDeme& target_d
   /* Seed deme part... */
   Apto::Random& random = m_world->GetRandom();
   //bool successfully_seeded = true;
-  Apto::Array<cOrganism*> source_founders; // List of organisms we're going to transfer.
-  Apto::Array<cOrganism*> target_founders; // List of organisms we're going to transfer.
+  AvidaArray<cOrganism*> source_founders; // List of organisms we're going to transfer.
+  AvidaArray<cOrganism*> target_founders; // List of organisms we're going to transfer.
   
   // Grab a random org from the set of orgs that have
   // flagged themselves as part of the germline.
-  Apto::Array<cOrganism*> potential_founders; // List of organisms we might transfer.
+  AvidaArray<cOrganism*> potential_founders; // List of organisms we might transfer.
   
   // Get list of potential founders
   for (int i = 0; i<source_deme.GetSize(); ++i) {
@@ -3708,14 +3708,14 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
       // Updated seed deme method that maintains genotype inheritance.
       
       // deconstruct founders into two lists...
-      Apto::Array<cOrganism*> source_founders; // List of organisms we're going to transfer.
-      Apto::Array<cOrganism*> target_founders; // List of organisms we're going to transfer.
+      AvidaArray<cOrganism*> source_founders; // List of organisms we're going to transfer.
+      AvidaArray<cOrganism*> target_founders; // List of organisms we're going to transfer.
       
       
       switch(m_world->GetConfig().DEMES_ORGANISM_SELECTION.Get()) {
         case 0: { // Random w/ replacement (meaning, we don't prevent the same genotype from
           // being selected more than once).
-          Apto::Array<cOrganism*> founders; // List of organisms we're going to transfer.
+          AvidaArray<cOrganism*> founders; // List of organisms we're going to transfer.
           while(founders.GetSize() < m_world->GetConfig().DEMES_REPLICATE_SIZE.Get()) {
             int cellid = source_deme.GetCellID(random.GetUInt(source_deme.GetSize()));
             if (cell_array[cellid].IsOccupied()) {
@@ -3727,7 +3727,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
           break;
         }
         case 1: { // Sequential selection, from the beginning.  Good with DEMES_ORGANISM_PLACEMENT=3.
-          Apto::Array<cOrganism*> founders; // List of organisms we're going to transfer.
+          AvidaArray<cOrganism*> founders; // List of organisms we're going to transfer.
           for(int i=0; i<m_world->GetConfig().DEMES_REPLICATE_SIZE.Get(); ++i) {
             int cellid = source_deme.GetCellID(i);
             if (cell_array[cellid].IsOccupied()) {
@@ -3772,7 +3772,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
         }
         case 7: { // Grab the organisms that have flagged themselves as
           // part of the germline. Ignores replicate size...
-          Apto::Array<cOrganism*> founders; // List of organisms we're going to transfer.
+          AvidaArray<cOrganism*> founders; // List of organisms we're going to transfer.
           for (int i = 0; i<source_deme.GetSize(); ++i) {
             cPopulationCell& cell = source_deme.GetCell(i);
             if (cell.IsOccupied()) {
@@ -3789,8 +3789,8 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
         }
         case 8: { // Grab a random org from the set of orgs that have
           // flagged themselves as part of the germline.
-          Apto::Array<cOrganism*> potential_founders; // List of organisms we might transfer.
-          Apto::Array<cOrganism*> founders; // List of organisms we're going to transfer.
+          AvidaArray<cOrganism*> potential_founders; // List of organisms we might transfer.
+          AvidaArray<cOrganism*> founders; // List of organisms we're going to transfer.
           
           // Get list of potential founders
           for (int i = 0; i<source_deme.GetSize(); ++i) {
@@ -3823,7 +3823,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
           // 3: treat germline propensities as zero or nonzero for picking
           // 4: same as 3: but replication to target fails if only one germ.
           // 5: same as 3: but replication fails and source dies if fewer than two germs.
-          Apto::Array<cOrganism*> founders; // List of organisms we're going to transfer.
+          AvidaArray<cOrganism*> founders; // List of organisms we're going to transfer.
           
           if (source_deme.GetOrgCount() >= 2) {
             
@@ -3832,7 +3832,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
               ctx.Driver().Abort(Avida::INVALID_CONFIG);
             }
             
-            Apto::Array<cOrganism*> prospective_founders;
+            AvidaArray<cOrganism*> prospective_founders;
             
             cDoubleSum gp_sum;
             double min = -1;
@@ -3960,7 +3960,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
       // or it will be prematurely deleted before we are done!
       
       // cDoubleSum gen;
-      Apto::Array<cOrganism*> old_source_organisms;
+      AvidaArray<cOrganism*> old_source_organisms;
       for(int i=0; i<source_deme.GetSize(); ++i) {
         int cell_id = source_deme.GetCellID(i);
         
@@ -3972,7 +3972,7 @@ bool cPopulation::SeedDeme(cDeme& source_deme, cDeme& target_deme, cAvidaContext
       }
       
       
-      Apto::Array<cOrganism*> old_target_organisms;
+      AvidaArray<cOrganism*> old_target_organisms;
       for(int i=0; i<target_deme.GetSize(); ++i) {
         int cell_id = target_deme.GetCellID(i);
         
@@ -8568,11 +8568,11 @@ void cPopulation::ExecutePredatoryResource(cAvidaContext& ctx, const int cell_id
   }
   
   if (m_world->GetConfig().USE_AVATARS.Get() && cell.HasAV()) {
-    Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
+    AvidaArray<cOrganism*> cell_avs = cell.GetCellAVs();
     
     // on den, kill juvs only
     if (cell_has_den) {
-      Apto::Array<cOrganism*> juvs;
+      AvidaArray<cOrganism*> juvs;
       juvs.Resize(0);
       int num_juvs = 0;
       int num_guards = 0;
@@ -8637,7 +8637,7 @@ void cPopulation::ExecuteDamagingResource(cAvidaContext& ctx, const int cell_id,
   }
 
   if (m_world->GetConfig().USE_AVATARS.Get() && cell.HasAV()) {
-    Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
+    AvidaArray<cOrganism*> cell_avs = cell.GetCellAVs();
     for (int i = 0; i < cell_avs.GetSize(); i++) {
       InjureOrg(ctx, GetCell(cell_avs[i]->GetCellID()), damage, false);
     }
@@ -8660,7 +8660,7 @@ void cPopulation::ExecuteDeadlyResource(cAvidaContext& ctx, const int cell_id, c
     }
   }
   if (m_world->GetConfig().USE_AVATARS.Get() && cell.HasAV()) {
-    Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
+    AvidaArray<cOrganism*> cell_avs = cell.GetCellAVs();
     for (int i = 0; i < cell_avs.GetSize(); i++) {
       if (ctx.GetRandom().P(odds)) {
         cOrganism* target_org = cell_avs[i];

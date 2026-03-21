@@ -246,9 +246,9 @@ public:
   virtual cOrganism* GetRandFacedPredAV(int av_num = 0) = 0;
   virtual cOrganism* GetRandFacedPreyAV(int av_num = 0) = 0;
 
-  virtual Apto::Array<cOrganism*> GetFacedAVs(int av_num = 0) = 0;
-  virtual Apto::Array<cOrganism*> GetCellAVs(int av_cell_id, int av_num=0) =0;
-  virtual Apto::Array<cOrganism*> GetFacedPreyAVs(int av_num = 0) = 0;
+  virtual AvidaArray<cOrganism*> GetFacedAVs(int av_num = 0) = 0;
+  virtual AvidaArray<cOrganism*> GetCellAVs(int av_cell_id, int av_num=0) =0;
+  virtual AvidaArray<cOrganism*> GetFacedPreyAVs(int av_num = 0) = 0;
   virtual const AvidaArray<double>& GetAVResources(cAvidaContext& ctx, int av_num = 0) = 0;
   virtual double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0) = 0;
   virtual const AvidaArray<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0) = 0;

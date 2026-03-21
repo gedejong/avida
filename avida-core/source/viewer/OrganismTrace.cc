@@ -143,7 +143,7 @@ private:
     void Notify(const char* fmt, ...) { (void)fmt; }
   } m_feedback;
 
-  Apto::Array<HardwareSnapshot*>* m_snapshots;
+  AvidaArray<HardwareSnapshot*>* m_snapshots;
   int m_snapshot_count;
   
   int m_genome_length;
@@ -157,7 +157,7 @@ private:
 public:
   LIB_LOCAL inline SnapshotTracer(cWorld* world) : m_world(world), m_snapshots(NULL) { ; }
   
-  LIB_LOCAL void TraceGenome(GenomePtr genome, Apto::Array<HardwareSnapshot*>& snapshots, double mut_rate, int seed);
+  LIB_LOCAL void TraceGenome(GenomePtr genome, AvidaArray<HardwareSnapshot*>& snapshots, double mut_rate, int seed);
   
   LIB_LOCAL GenomePtr OffspringGenome() { return m_offspring_genome; }
   
@@ -183,7 +183,7 @@ public:
 // Private::SnapshotTracer Implementation
 // --------------------------------------------------------------------------------------------------------------  
 
-void Private::SnapshotTracer::TraceGenome(GenomePtr genome, Apto::Array<HardwareSnapshot*>& snapshots, double mut_rate, int seed)
+void Private::SnapshotTracer::TraceGenome(GenomePtr genome, AvidaArray<HardwareSnapshot*>& snapshots, double mut_rate, int seed)
 {
   // Create internal reference to the snapshot array so that the tracing methods can create snapshots
   m_snapshots = &snapshots;
@@ -252,7 +252,7 @@ void Private::SnapshotTracer::TraceHardware(cAvidaContext& ctx, cHardwareBase& h
   // Store register states
   for (int reg = 0; reg < hw.GetNumRegisters(); reg++) snapshot->SetRegister(reg, hw.GetRegister(reg));
   
-  Apto::Array<int> buffer_values;
+  AvidaArray<int> buffer_values;
 
   // Handle Input Buffer
   buffer_values.Resize(hw.GetInputBuf().GetCapacity());
@@ -273,14 +273,14 @@ void Private::SnapshotTracer::TraceHardware(cAvidaContext& ctx, cHardwareBase& h
   snapshot->SetSelectedBuffer(Apto::FormatStr("stack %c", 'A' + hw.GetCurStack()));
   
   // Handle function counts
-  const Apto::Array<int>& task_counts = hw.GetOrganism()->GetPhenotype().GetCurTaskCount();
+  const AvidaArray<int>& task_counts = hw.GetOrganism()->GetPhenotype().GetCurTaskCount();
   for (int i = 0; i < task_counts.GetSize(); i++) {
     snapshot->SetFunctionCount((const char*)m_world->GetEnvironment().GetTask(i).GetName(), task_counts[i]);
   }
   
   // Handle memory spaces
-  Apto::Array<Instruction> memory;
-  Apto::Array<bool> mutated;
+  AvidaArray<Instruction> memory;
+  AvidaArray<bool> mutated;
   
   // - handle the genome part of the memory
   memory.Resize((m_genome_length < hw.GetMemory().GetSize()) ? m_genome_length : hw.GetMemory().GetSize());
@@ -375,7 +375,7 @@ void Private::SnapshotTracer::TraceTestCPU(int time_used, int time_allocated, co
     // Store register states
     for (int reg = 0; reg < hw.GetNumRegisters(); reg++) snapshot->SetRegister(reg, hw.GetRegister(reg));
     
-    Apto::Array<int> buffer_values;
+    AvidaArray<int> buffer_values;
     
     // Handle Input Buffer
     buffer_values.Resize(hw.GetInputBuf().GetCapacity());
@@ -396,7 +396,7 @@ void Private::SnapshotTracer::TraceTestCPU(int time_used, int time_allocated, co
     snapshot->SetSelectedBuffer(Apto::FormatStr("stack %c", 'A' + hw.GetCurStack()));
     
     // Handle function counts
-    const Apto::Array<int>& task_counts = organism.GetPhenotype().GetLastTaskCount();
+    const AvidaArray<int>& task_counts = organism.GetPhenotype().GetLastTaskCount();
     for (int i = 0; i < task_counts.GetSize(); i++) {
       snapshot->SetFunctionCount((const char*)m_world->GetEnvironment().GetTask(i).GetName(), task_counts[i]);
     }
@@ -405,8 +405,8 @@ void Private::SnapshotTracer::TraceTestCPU(int time_used, int time_allocated, co
     
     
     // Handle memory spaces
-    Apto::Array<Instruction> memory;
-    Apto::Array<bool> mutated;
+    AvidaArray<Instruction> memory;
+    AvidaArray<bool> mutated;
     ConstInstructionSequencePtr seq;
     
     // - handle the genome part of the memory
@@ -430,7 +430,7 @@ void Private::SnapshotTracer::TraceTestCPU(int time_used, int time_allocated, co
     }
     
     // Hack to get mutated state into the final state... potential for offset, etc.
-    const Apto::Array<bool>& prev_mutated = prev_snapshot->MutatedStateOfMemSpace(1);
+    const AvidaArray<bool>& prev_mutated = prev_snapshot->MutatedStateOfMemSpace(1);
     for (int i = 0; i < mutated.GetSize() && i < prev_mutated.GetSize(); i++) {
       mutated[i] = prev_mutated[i];
     }
@@ -459,7 +459,7 @@ HardwareSnapshot::~HardwareSnapshot()
 }
 
 
-void HardwareSnapshot::AddBuffer(const Apto::String& description, const Apto::Array<int>& values)
+void HardwareSnapshot::AddBuffer(const Apto::String& description, const AvidaArray<int>& values)
 {
   m_buffers.Set(description, values);
 }
@@ -471,7 +471,7 @@ void HardwareSnapshot::SetFunctionCount(const Apto::String& function, int count)
 }
 
 
-int HardwareSnapshot::AddMemSpace(const Apto::String& label, const Apto::Array<Instruction>& memory, const Apto::Array<bool>& mutated)
+int HardwareSnapshot::AddMemSpace(const Apto::String& label, const AvidaArray<Instruction>& memory, const AvidaArray<bool>& mutated)
 {
   int idx = m_mem_spaces.GetSize();
   m_mem_spaces.Resize(idx + 1);
@@ -536,7 +536,7 @@ Avida::Viewer::ConstGraphicPtr Avida::Viewer::HardwareSnapshot::GraphicForContex
       // Intra-memory space jump, handle internal arcs
       
       const MemSpace& cur_memspace = m_mem_spaces[jmp.from_mem_space];
-      const Apto::Array<Instruction>& cur_mem = cur_memspace.memory;
+      const AvidaArray<Instruction>& cur_mem = cur_memspace.memory;
       const int cur_length = cur_mem.GetSize();
       
       const double genome_circumference = ((double) cur_length) * inst_spacing;
@@ -594,7 +594,7 @@ Avida::Viewer::ConstGraphicPtr Avida::Viewer::HardwareSnapshot::GraphicForContex
   int num_mem_spaces = m_mem_spaces.GetSize();
   for (int cur_mem_id = 0; cur_mem_id < 2 && cur_mem_id < num_mem_spaces; cur_mem_id++) {
     const MemSpace& cur_memspace = m_mem_spaces[cur_mem_id];
-    const Apto::Array<Instruction>& cur_mem = cur_memspace.memory;
+    const AvidaArray<Instruction>& cur_mem = cur_memspace.memory;
     const int cur_length = cur_mem.GetSize();
 
     const double genome_circumference = ((double) cur_length) * inst_spacing;
@@ -688,7 +688,7 @@ Avida::Viewer::ConstGraphicPtr Avida::Viewer::HardwareSnapshot::GraphicForContex
   return graphic;
 }
 
-const Apto::Array<bool>& Avida::Viewer::HardwareSnapshot::MutatedStateOfMemSpace(int idx) const
+const AvidaArray<bool>& Avida::Viewer::HardwareSnapshot::MutatedStateOfMemSpace(int idx) const
 {
   return m_mem_spaces[idx].mutated;
 }

@@ -72,10 +72,10 @@ private:
   cBirthChamber birth_chamber;         // Global birth chamber.
   //Keeps track of which organisms are in which group.
   Apto::Map<int, AvidaArray<cOrganism*> > m_group_list;
-  Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances;
-  Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_females;
-  Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_males;
-  Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_juvs;
+  Apto::Map<int, AvidaArray<pair<int,int> > > m_group_intolerances;
+  Apto::Map<int, AvidaArray<pair<int,int> > > m_group_intolerances_females;
+  Apto::Map<int, AvidaArray<pair<int,int> > > m_group_intolerances_males;
+  Apto::Map<int, AvidaArray<pair<int,int> > > m_group_intolerances_juvs;
   
   // Keep list of live organisms
   AvidaArray<cOrganism*> live_org_list;

@@ -25,6 +25,7 @@
 #ifndef AvidaViewerOrganismTrace_h
 #define AvidaViewerOrganismTrace_h
 
+#include "AvidaArray.h"
 #include "avida/core/Genome.h"
 #include "avida/core/InstructionSequence.h"
 #include "avida/viewer/Graphic.h"
@@ -45,17 +46,17 @@ namespace Avida {
     private:
       const cInstSet* m_inst_set;
       
-      Apto::Array<int> m_registers;
-      Apto::Map<Apto::String, Apto::Array<int> > m_buffers;
+      AvidaArray<int> m_registers;
+      Apto::Map<Apto::String, AvidaArray<int> > m_buffers;
       Apto::String m_selected_buffer;
-      Apto::Array<int> m_default_buffer;
+      AvidaArray<int> m_default_buffer;
       Apto::Map<Apto::String, int> m_function_counts;
       
       struct MemSpace
       {
         Apto::String label;
-        Apto::Array<Instruction> memory;
-        Apto::Array<bool> mutated;
+        AvidaArray<Instruction> memory;
+        AvidaArray<bool> mutated;
         Apto::Map<Apto::String, int> heads;
       };
       Apto::Array<MemSpace, Apto::ManagedPointer> m_mem_spaces;
@@ -88,9 +89,9 @@ namespace Avida {
       LIB_LOCAL inline void SetPostDivide() { m_post_divide = true; }
       
       LIB_LOCAL inline void SetRegister(int idx, int value) { m_registers[idx] = value; }
-      LIB_LOCAL void AddBuffer(const Apto::String& description, const Apto::Array<int>& values);
+      LIB_LOCAL void AddBuffer(const Apto::String& description, const AvidaArray<int>& values);
       LIB_LOCAL void SetFunctionCount(const Apto::String& function, int count);
-      LIB_LOCAL int AddMemSpace(const Apto::String& label, const Apto::Array<Instruction>& memory, const Apto::Array<bool>& mutated);
+      LIB_LOCAL int AddMemSpace(const Apto::String& label, const AvidaArray<Instruction>& memory, const AvidaArray<bool>& mutated);
       LIB_LOCAL void AddHead(const Apto::String& label, int mem_space, int index);
       LIB_LOCAL void AddJump(int from_mem_space, int from_idx, int to_mem_space, int to_idx);
       LIB_LOCAL inline void SetNextInst(Instruction inst) { m_next_inst = inst; }
@@ -104,7 +105,7 @@ namespace Avida {
       LIB_EXPORT inline int Register(int idx) const { return m_registers[idx]; }
       
       LIB_EXPORT inline int NumBuffers() const { return m_buffers.GetSize(); };
-      LIB_EXPORT inline const Apto::Array<int>& Buffer(const Apto::String& desc) const { return m_buffers.GetWithDefault(desc, m_default_buffer); }
+      LIB_EXPORT inline const AvidaArray<int>& Buffer(const Apto::String& desc) const { return m_buffers.GetWithDefault(desc, m_default_buffer); }
       LIB_EXPORT inline const Apto::String& SelectedBuffer() const { return m_selected_buffer; }
       
       LIB_EXPORT inline int FunctionCount(const Apto::String& function) const { return m_function_counts.GetWithDefault(function, 0); };
@@ -117,7 +118,7 @@ namespace Avida {
       
       
       // Internal Access Methods
-      LIB_LOCAL const Apto::Array<bool>& MutatedStateOfMemSpace(int idx) const;
+      LIB_LOCAL const AvidaArray<bool>& MutatedStateOfMemSpace(int idx) const;
     };
     
 
@@ -128,7 +129,7 @@ namespace Avida {
     {      
     private:
       GenomePtr m_genome;
-      Apto::Array<HardwareSnapshot*> m_snapshots;
+      AvidaArray<HardwareSnapshot*> m_snapshots;
       GenomePtr m_offspring_genome;
       
     public:

@@ -4544,7 +4544,7 @@ void cStats::PrintDenData(const cString& filename) {
     bool is_active = false;
     for (int j = 0; j < cell_res.GetSize(); j++) {
       if (avd_stats_is_den_habitat(resource_lib.GetResource(j)->GetHabitat()) && cell_res[j] > 0) {
-        Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
+        AvidaArray<cOrganism*> cell_avs = cell.GetCellAVs();
         for (int k = 0; k < cell_avs.GetSize(); k++) {
           if (avd_stats_is_juvenile(cell_avs[k]->GetPhenotype().GetTimeUsed(), juv_age)) {
             num_juvs++;
@@ -4561,7 +4561,7 @@ void cStats::PrintDenData(const cString& filename) {
         break;  // only do this once if two dens overlap
       } 
       else {
-	Apto::Array<cOrganism*> cell_avs = cell.GetCellAVs();
+	AvidaArray<cOrganism*> cell_avs = cell.GetCellAVs();
         for (int k = 0; k < cell_avs.GetSize(); k++) {
 	      num_adults++;
 	      if (cell_avs[k]->IsGuard()) num_guards_off++;

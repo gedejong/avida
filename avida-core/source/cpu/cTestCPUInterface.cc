@@ -156,23 +156,23 @@ AvidaArray<int> cTestCPUInterface::GetFormedGroupArray()
   return null_array;
 }
 
-Apto::Array<cOrganism*> cTestCPUInterface::GetFacedAVs(int av_num)
+AvidaArray<cOrganism*> cTestCPUInterface::GetFacedAVs(int av_num)
 {
-  Apto::Array<cOrganism*> null_array;
+  AvidaArray<cOrganism*> null_array;
   null_array.SetAll(NULL);
   return null_array;
 }
 
-Apto::Array<cOrganism*> cTestCPUInterface::GetCellAVs(int cell_id, int av_num)
+AvidaArray<cOrganism*> cTestCPUInterface::GetCellAVs(int cell_id, int av_num)
 {
-  Apto::Array<cOrganism*> null_array;
+  AvidaArray<cOrganism*> null_array;
   null_array.SetAll(NULL);
   return null_array;
 }
 
-Apto::Array<cOrganism*> cTestCPUInterface::GetFacedPreyAVs(int av_num)
+AvidaArray<cOrganism*> cTestCPUInterface::GetFacedPreyAVs(int av_num)
 {
-  Apto::Array<cOrganism*> null_array;
+  AvidaArray<cOrganism*> null_array;
   null_array.SetAll(NULL);
   return null_array;
 }

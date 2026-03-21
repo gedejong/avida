@@ -109,7 +109,7 @@ public:
   void GetNeighboringCells(std::set<cPopulationCell*>& cell_set, int depth) const;
   //! Recursively build a set of occupied cells that neighbor this one, out to the given depth.
   void GetOccupiedNeighboringCells(std::set<cPopulationCell*>& occupied_cell_set, int depth) const;
-  void GetOccupiedNeighboringCells(Apto::Array<cPopulationCell*>& occupied_cells) const;
+  void GetOccupiedNeighboringCells(AvidaArray<cPopulationCell*>& occupied_cells) const;
   inline cPopulationCell& GetCellFaced() { return *(m_connections.GetFirst()); }
   int GetFacing();  // Returns the facing of this cell.
   int GetFacedDir(); // Returns the human interpretable facing of this org.
@@ -169,9 +169,9 @@ public:
   cOrganism* GetRandAV(cAvidaContext& ctx) const;
   cOrganism* GetRandPredAV() const;
   cOrganism* GetRandPreyAV() const;
-  Apto::Array<cOrganism*> GetCellInputAVs();
-  Apto::Array<cOrganism*> GetCellOutputAVs();
-  Apto::Array<cOrganism*> GetCellAVs();
+  AvidaArray<cOrganism*> GetCellInputAVs();
+  AvidaArray<cOrganism*> GetCellOutputAVs();
+  AvidaArray<cOrganism*> GetCellAVs();
 
 // -------- Neural support -------- 
 private:

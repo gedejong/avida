@@ -4367,7 +4367,7 @@ bool cHardwareExperimental::Inst_SetRandPFTOnce(cAvidaContext& ctx)
     }
 
     int in_use = 0;
-    Apto::Array<cOrganism*> orgs;
+    AvidaArray<cOrganism*> orgs;
     const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
@@ -5501,7 +5501,7 @@ bool cHardwareExperimental::Inst_AttackPreyShare(cAvidaContext& ctx)
   cOrganism* target = GetPreyTarget(ctx);
   if (!TestPreyTarget(target))  { results.success = 1; return TestAttackResultsOut(results); }
   
-  Apto::Array<cOrganism*> pack = GetPredGroupAttackNeighbors();
+  AvidaArray<cOrganism*> pack = GetPredGroupAttackNeighbors();
 
   double odds = m_world->GetConfig().PRED_ODDS.Get();
   results.size = pack.GetSize();
@@ -5590,7 +5590,7 @@ bool cHardwareExperimental::Inst_AttackPreyGroupShare(cAvidaContext& ctx)
   if (!TestPreyTarget(target))  { results.success = 1; return TestAttackResultsOut(results); }
   
   double odds = m_world->GetConfig().PRED_ODDS.Get();
-  Apto::Array<cOrganism*> pack = GetPredSameGroupAttackNeighbors();
+  AvidaArray<cOrganism*> pack = GetPredSameGroupAttackNeighbors();
   results.size = pack.GetSize();
   if (results.size <= 1) { results.success = 2; return TestAttackResultsOut(results); }
   if (results.size > 1) odds += (odds * (results.size - 1)); // 1 friend = 20%, 8 friends = 90%
@@ -5746,7 +5746,7 @@ bool cHardwareExperimental::Inst_AttackFTPrey(cAvidaContext& ctx)
     if (!target->IsPreyFT())  { results.success = 1; return TestAttackResultsOut(results); }
   }    
   else if (m_use_avatar == 2) {
-    const Apto::Array<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
+    const AvidaArray<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
     bool target_match = false;
     int rand_index = ctx.GetRandom().GetUInt(0, av_neighbors.GetSize());
     int j = 0;
@@ -5817,7 +5817,7 @@ bool cHardwareExperimental::Inst_AttackPoisonFTPrey(cAvidaContext& ctx)
     if (!target->IsPreyFT())  { results.success = 1; return TestAttackResultsOut(results); }
   }    
   else if (m_use_avatar == 2) {
-    const Apto::Array<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
+    const AvidaArray<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
     bool target_match = false;
     int rand_index = ctx.GetRandom().GetUInt(0, av_neighbors.GetSize());
     int j = 0;
@@ -5879,7 +5879,7 @@ bool cHardwareExperimental::Inst_AttackPoisonFTPreyGenetic(cAvidaContext& ctx)
     if (!target->IsPreyFT())  { results.success = 1; return TestAttackResultsOut(results); }
   }
   else if (m_use_avatar == 2) {
-    const Apto::Array<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
+    const AvidaArray<cOrganism*>& av_neighbors = m_organism->GetOrgInterface().GetFacedPreyAVs();
     bool target_match = false;
     int rand_index = ctx.GetRandom().GetUInt(0, av_neighbors.GetSize());
     int j = 0;
@@ -6505,7 +6505,7 @@ bool cHardwareExperimental::Inst_GetNumGuards(cAvidaContext& ctx)
   if (on_den){
     if (m_use_avatar) {
       int cell_id = m_organism->GetOrgInterface().GetAVCellID();
-      Apto::Array<cOrganism*> cell_avs = m_organism->GetOrgInterface().GetCellAVs(cell_id);
+      AvidaArray<cOrganism*> cell_avs = m_organism->GetOrgInterface().GetCellAVs(cell_id);
       for (int k = 0; k < cell_avs.GetSize(); k++) {
         if( cell_avs[k]->IsGuard()) num_guards++;
       }
@@ -6534,7 +6534,7 @@ bool cHardwareExperimental::Inst_GetNumJuvs(cAvidaContext& ctx)
   if (on_den){
     if (m_use_avatar) {
       int cell_id = m_organism->GetOrgInterface().GetAVCellID();
-      Apto::Array<cOrganism*> cell_avs = m_organism->GetOrgInterface().GetCellAVs(cell_id);
+      AvidaArray<cOrganism*> cell_avs = m_organism->GetOrgInterface().GetCellAVs(cell_id);
       
       for (int k = 0; k < cell_avs.GetSize(); k++) {
         if (cell_avs[k]->GetPhenotype().GetTimeUsed() < juv_age) num_juvs++;
@@ -7011,7 +7011,7 @@ bool cHardwareExperimental::ExecuteAttack(cAvidaContext& ctx, cOrganism* target,
   return true;
 }
 
-bool cHardwareExperimental::ExecuteShareAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, Apto::Array<cOrganism*>& pack, double odds)
+bool cHardwareExperimental::ExecuteShareAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, AvidaArray<cOrganism*>& pack, double odds)
 {
   if (!TestAttackChance(ctx, target, reg, odds)) return false;
   double effic = m_world->GetConfig().PRED_EFFICIENCY.Get();
@@ -7203,10 +7203,10 @@ void cHardwareExperimental::InjureOrg(cAvidaContext& ctx, cOrganism* target)
   }
 }
 
-Apto::Array<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
+AvidaArray<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
 {
   AvidaArray<int> neighborhood;
-  Apto::Array<cOrganism*> pack;
+  AvidaArray<cOrganism*> pack;
   pack.Push(m_organism);
   if (!m_use_avatar) {
     m_organism->GetOrgInterface().GetNeighborhoodCellIDs(neighborhood);
@@ -7223,7 +7223,7 @@ Apto::Array<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
     m_organism->GetOrgInterface().GetAVNeighborhoodCellIDs(neighborhood);
     for (int j = 0; j < neighborhood.GetSize(); j++) {
       if (m_organism->GetOrgInterface().GetCell(neighborhood[j])->HasPredAV()) {
-        Apto::Array<cOrganism*> predators = m_organism->GetOrgInterface().GetCell(neighborhood[j])->GetCellInputAVs();
+        AvidaArray<cOrganism*> predators = m_organism->GetOrgInterface().GetCell(neighborhood[j])->GetCellInputAVs();
         for (int i = 0; i < predators.GetSize(); i++) {
           if (!predators[i]->IsDead() && !predators[i]->IsPreyFT()) pack.Push(predators[i]);
          }
@@ -7233,11 +7233,11 @@ Apto::Array<cOrganism*> cHardwareExperimental::GetPredGroupAttackNeighbors()
   return pack;
 }
 
-Apto::Array<cOrganism*> cHardwareExperimental::GetPredSameGroupAttackNeighbors()
+AvidaArray<cOrganism*> cHardwareExperimental::GetPredSameGroupAttackNeighbors()
 {
   int opinion = m_organism->GetOpinion().first;
   AvidaArray<int> neighborhood;
-  Apto::Array<cOrganism*> pack;
+  AvidaArray<cOrganism*> pack;
   pack.Push(m_organism);
   if (!m_use_avatar) {
     m_organism->GetOrgInterface().GetNeighborhoodCellIDs(neighborhood);
@@ -7257,7 +7257,7 @@ Apto::Array<cOrganism*> cHardwareExperimental::GetPredSameGroupAttackNeighbors()
     m_organism->GetOrgInterface().GetAVNeighborhoodCellIDs(neighborhood);
     for (int j = 0; j < neighborhood.GetSize(); j++) {
       if (m_organism->GetOrgInterface().GetCell(neighborhood[j])->HasPredAV()) {
-        Apto::Array<cOrganism*> predators = m_organism->GetOrgInterface().GetCell(neighborhood[j])->GetCellInputAVs();
+        AvidaArray<cOrganism*> predators = m_organism->GetOrgInterface().GetCell(neighborhood[j])->GetCellInputAVs();
         for (int i = 0; i < predators.GetSize(); i++) {
           if (!predators[i]->IsDead() && !predators[i]->IsPreyFT() && predators[i]->HasOpinion()) {
             if (predators[i]->GetOpinion().first == opinion) pack.Push(predators[i]);

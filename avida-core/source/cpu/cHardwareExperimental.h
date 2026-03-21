@@ -712,7 +712,7 @@ private:
   bool TestPreyTarget(cOrganism* target);
   void SetAttackReg(sAttackReg& reg);
   bool ExecuteAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, double odds = -1);
-  bool ExecuteShareAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, Apto::Array<cOrganism*>& pack, double odds = -1);
+  bool ExecuteShareAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, AvidaArray<cOrganism*>& pack, double odds = -1);
   bool ExecuteFakeShareAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, double share, double odds = -1);
   bool ExecutePoisonPreyAttack(cAvidaContext& ctx, cOrganism* target, sAttackReg& reg, double odds = -1);
   
@@ -727,8 +727,8 @@ private:
   void ApplySharedKilledPreyBonus(cOrganism* target, sAttackReg& reg, double effic, cOrganism* org, double share);
   void ApplySharedKilledPreyResBins(cOrganism* target, sAttackReg& reg, double effic, cOrganism* org, double share);
 
-  Apto::Array<cOrganism*> GetPredGroupAttackNeighbors();
-  Apto::Array<cOrganism*> GetPredSameGroupAttackNeighbors();
+  AvidaArray<cOrganism*> GetPredGroupAttackNeighbors();
+  AvidaArray<cOrganism*> GetPredSameGroupAttackNeighbors();
   void TryPreyClone(cAvidaContext& ctx);
   void UpdateGroupAttackStats(const cString& inst, sAttackResult& result, bool get_size = true);
   void TryWriteGroupAttackBits(unsigned char raw_bits);

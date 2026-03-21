@@ -1337,7 +1337,7 @@ void cOrgSensor::GetConfusionOddsFacings(cAvidaContext& ctx, double& odds, cOrga
   }
   else {
     // self cell
-    Apto::Array<cOrganism*> prey_friends = first_org->GetOrgInterface().GetCell(first_org->GetOrgInterface().GetAVCellID())->GetCellOutputAVs();
+    AvidaArray<cOrganism*> prey_friends = first_org->GetOrgInterface().GetCell(first_org->GetOrgInterface().GetAVCellID())->GetCellOutputAVs();
     for (int k = 0; k < prey_friends.GetSize(); k++) {
       if (prey_friends[k] != first_org) {
         if (facings[prey_friends[k]->GetOrgInterface().GetAVFacing()] == 0) num_used++;
@@ -1393,7 +1393,7 @@ void cOrgSensor::GetConfusionOddsOpinions(cAvidaContext& ctx, double& odds, cOrg
   }
   else {
     // self cell
-    Apto::Array<cOrganism*> prey_friends = first_org->GetOrgInterface().GetCell(first_org->GetOrgInterface().GetAVCellID())->GetCellOutputAVs();
+    AvidaArray<cOrganism*> prey_friends = first_org->GetOrgInterface().GetCell(first_org->GetOrgInterface().GetAVCellID())->GetCellOutputAVs();
     for (int k = 0; k < prey_friends.GetSize(); k++) {
       if (prey_friends[k] != first_org) {
         if (prey_friends[k]->HasOpinion()) {

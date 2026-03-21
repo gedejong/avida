@@ -164,7 +164,7 @@ bool cPopulationInterface::GetLGTFragment(cAvidaContext& ctx, int region, const 
       // Local Neighborhood
     case 0:
     {
-      Apto::Array<cPopulationCell*> occupied_cells;
+      AvidaArray<cPopulationCell*> occupied_cells;
       GetCell()->GetOccupiedNeighboringCells(occupied_cells);
       
       int num_cells = occupied_cells.GetSize();
@@ -1617,7 +1617,7 @@ void cPopulationInterface::InjectPreyClone(cAvidaContext& ctx, int gen_id)
 {
   cOrganism* org_to_clone = NULL;
   const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
-  Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
+  AvidaArray<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
   
@@ -2341,35 +2341,35 @@ cOrganism* cPopulationInterface::GetRandFacedPreyAV(int av_num)
 }
 
 // Returns an array of all avatars in the organism's avatar's faced cell
-Apto::Array<cOrganism*> cPopulationInterface::GetFacedAVs(int av_num)
+AvidaArray<cOrganism*> cPopulationInterface::GetFacedAVs(int av_num)
 {
   // If the avatar exists..
   if (av_num < GetNumAV()) {
     return m_world->GetPopulation().GetCell(m_avatars[av_num].av_faced_cell).GetCellAVs();
   }
-  Apto::Array<cOrganism*> null_array(0);
+  AvidaArray<cOrganism*> null_array(0);
   return null_array;
 }
 
 //Returns an array of all avatars in the organism's avatar's cell
-Apto::Array<cOrganism*> cPopulationInterface::GetCellAVs(int cell_id, int av_num)
+AvidaArray<cOrganism*> cPopulationInterface::GetCellAVs(int cell_id, int av_num)
 {
   //If the avatar exists...
   if (av_num < GetNumAV()) {
     return m_world->GetPopulation().GetCell(cell_id).GetCellAVs();
   }
-  Apto::Array<cOrganism*> null_array(0);
+  AvidaArray<cOrganism*> null_array(0);
   return null_array;
 }
 
 // Returns an array of all prey avatars in the organism's avatar's faced cell
-Apto::Array<cOrganism*> cPopulationInterface::GetFacedPreyAVs(int av_num)
+AvidaArray<cOrganism*> cPopulationInterface::GetFacedPreyAVs(int av_num)
 {
   // If the avatar exists..
   if (av_num < GetNumAV()) {
     return m_world->GetPopulation().GetCell(m_avatars[av_num].av_faced_cell).GetCellOutputAVs();
   }
-  Apto::Array<cOrganism*> null_array(0);
+  AvidaArray<cOrganism*> null_array(0);
   return null_array;
 }
 

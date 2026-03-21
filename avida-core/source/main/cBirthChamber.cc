@@ -224,7 +224,7 @@ void cBirthChamber::GenomeSwap(InstructionSequence& genome0, InstructionSequence
 
 
 bool cBirthChamber::DoAsexBirth(cAvidaContext& ctx, const Genome& offspring, cOrganism& parent,
-                                Apto::Array<cOrganism*>& child_array, Apto::Array<cMerit>& merit_array)
+                                AvidaArray<cOrganism*>& child_array, AvidaArray<cMerit>& merit_array)
 {
   // This is asexual who doesn't need to wait in the birth chamber
   // just build the child and return.
@@ -262,7 +262,7 @@ bool cBirthChamber::DoAsexBirth(cAvidaContext& ctx, const Genome& offspring, cOr
 }
 
 bool cBirthChamber::DoPairAsexBirth(cAvidaContext& ctx, const cBirthEntry& old_entry, const Genome& new_genome,
-                                    cOrganism& parent, Apto::Array<cOrganism*>& child_array, Apto::Array<cMerit>& merit_array)
+                                    cOrganism& parent, AvidaArray<cOrganism*>& child_array, AvidaArray<cMerit>& merit_array)
 {
   // Build both child organisms...
   child_array.Resize(2);
@@ -441,7 +441,7 @@ void cBirthChamber::SetupGenotypeInfo(cOrganism* organism, Systematics::ConstGro
 }
 
 bool cBirthChamber::SubmitOffspring(cAvidaContext& ctx, const Genome& offspring, cOrganism* parent,
-                                    Apto::Array<cOrganism*>& child_array, Apto::Array<cMerit>& merit_array)
+                                    AvidaArray<cOrganism*>& child_array, AvidaArray<cMerit>& merit_array)
 {
   cPhenotype& parent_phenotype = parent->GetPhenotype();
 

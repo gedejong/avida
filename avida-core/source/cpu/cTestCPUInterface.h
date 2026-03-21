@@ -262,9 +262,9 @@ public:
   cOrganism* GetRandFacedAV(cAvidaContext& ctx, int av_num = 0) { return NULL; }
   cOrganism* GetRandFacedPredAV(int av_num = 0) { return NULL; }
   cOrganism* GetRandFacedPreyAV(int av_num = 0) { return NULL; }
-  Apto::Array<cOrganism*> GetFacedAVs(int av_num = 0);
-  Apto::Array<cOrganism*> GetCellAVs(int cell_id, int av_num = 0);
-  Apto::Array<cOrganism*> GetFacedPreyAVs(int av_num = 0);
+  AvidaArray<cOrganism*> GetFacedAVs(int av_num = 0);
+  AvidaArray<cOrganism*> GetCellAVs(int cell_id, int av_num = 0);
+  AvidaArray<cOrganism*> GetFacedPreyAVs(int av_num = 0);
   const AvidaArray<double>& GetAVResources(cAvidaContext& ctx, int av_num = 0);
   double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
   const AvidaArray<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0);

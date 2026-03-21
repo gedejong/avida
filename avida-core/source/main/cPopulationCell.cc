@@ -174,7 +174,7 @@ void cPopulationCell::GetOccupiedNeighboringCells(std::set<cPopulationCell*>& oc
 	}
 }
 
-void cPopulationCell::GetOccupiedNeighboringCells(Apto::Array<cPopulationCell*>& occupied_cells) const
+void cPopulationCell::GetOccupiedNeighboringCells(AvidaArray<cPopulationCell*>& occupied_cells) const
 {
   occupied_cells.Resize(m_connections.GetSize());
   int occupied_count = 0;
@@ -426,10 +426,10 @@ cOrganism* cPopulationCell::GetRandPreyAV() const
 }
 
 // Returns all input avatars (organisms) contained in the cell
-Apto::Array<cOrganism*> cPopulationCell::GetCellInputAVs()
+AvidaArray<cOrganism*> cPopulationCell::GetCellInputAVs()
 {
   assert(HasInputAV());
-  Apto::Array<cOrganism*> avatar_inputs;
+  AvidaArray<cOrganism*> avatar_inputs;
   avatar_inputs.Resize(GetNumAVInputs());
   for (int i = 0; i < GetNumAVInputs(); i++) {
     avatar_inputs[i] = m_av_pred[i];
@@ -438,10 +438,10 @@ Apto::Array<cOrganism*> cPopulationCell::GetCellInputAVs()
 }
 
 // Returns all output avatars (organisms) contained in the cell
-Apto::Array<cOrganism*> cPopulationCell::GetCellOutputAVs()
+AvidaArray<cOrganism*> cPopulationCell::GetCellOutputAVs()
 {
   assert(HasOutputAV());
-  Apto::Array<cOrganism*> avatar_outputs;
+  AvidaArray<cOrganism*> avatar_outputs;
   avatar_outputs.Resize(GetNumAVOutputs());
   for (int i = 0; i < GetNumAVOutputs(); i++) {
     avatar_outputs[i] = m_av_prey[i];
@@ -450,10 +450,10 @@ Apto::Array<cOrganism*> cPopulationCell::GetCellOutputAVs()
 }
 
 // Returns all avatars (organisms) contained in the cell
-Apto::Array<cOrganism*> cPopulationCell::GetCellAVs()
+AvidaArray<cOrganism*> cPopulationCell::GetCellAVs()
 {
   assert(HasAV());
-  Apto::Array<cOrganism*> avatars;
+  AvidaArray<cOrganism*> avatars;
   const int num_prey = GetNumPreyAV();
   avatars.Resize(GetNumAV());
   for (int i = 0; i < GetNumPreyAV(); i++) {

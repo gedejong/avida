@@ -672,6 +672,76 @@ int avd_stats_is_spatial_resource(int geometry);
 double avd_stats_task_quality_average(double quality, int count);
 int avd_stats_is_wall_gradient(int is_gradient, int habitat);
 int avd_stats_is_den_habitat(int habitat);
+int avd_stats_is_gradient_resource(int is_gradient);
+double avd_stats_safe_divide_or_default(int numerator, int denominator, double default_val);
+int avd_stats_is_juvenile(int time_used, int juv_period);
+
+typedef struct {
+  double mut_prob;
+  double ins_prob;
+  double del_prob;
+  double uniform_prob;
+  double slip_prob;
+} AvidaCopyMuts;
+
+typedef struct {
+  double ins_prob;
+  double del_prob;
+  double mut_prob;
+  double uniform_prob;
+  double slip_prob;
+  double trans_prob;
+  double lgt_prob;
+  double divide_mut_prob;
+  double divide_ins_prob;
+  double divide_del_prob;
+  double divide_uniform_prob;
+  double divide_slip_prob;
+  double divide_trans_prob;
+  double divide_lgt_prob;
+  double divide_poisson_mut_mean;
+  double divide_poisson_ins_mean;
+  double divide_poisson_del_mean;
+  double divide_poisson_slip_mean;
+  double divide_poisson_trans_mean;
+  double divide_poisson_lgt_mean;
+  double parent_mut_prob;
+  double parent_ins_prob;
+  double parent_del_prob;
+} AvidaDivideMuts;
+
+typedef struct {
+  double ins_prob;
+  double del_prob;
+  double mut_prob;
+} AvidaPointMuts;
+
+typedef struct {
+  double ins_prob;
+  double del_prob;
+  double mut_prob;
+} AvidaInjectMuts;
+
+typedef struct {
+  double copy_mut_prob;
+  double standard_dev;
+} AvidaMetaMuts;
+
+typedef struct {
+  double death_prob;
+} AvidaUpdateMuts;
+
+typedef struct {
+  AvidaCopyMuts copy;
+  AvidaDivideMuts divide;
+  AvidaPointMuts point;
+  AvidaInjectMuts inject;
+  AvidaMetaMuts meta;
+  AvidaUpdateMuts update;
+} AvidaMutationRates;
+
+AvidaMutationRates avd_mutation_rates_default(void);
+void avd_mutation_rates_clear(AvidaMutationRates* m);
 
 int avd_env_process_type(const char* type_str);
 int avd_env_phenplast_bonus_method(const char* method_str);
