@@ -1286,7 +1286,7 @@ void cDeme::DoDemeOutput(cAvidaContext& ctx, int value)
   // Needed to setup taskctx, but will not actually be used
   tList<tBuffer<int> > other_input_list;
   tList<tBuffer<int> > other_output_list;
-  Apto::Array<int, Apto::Smart> ext_mem;
+  AvidaArray<int> ext_mem;
 
   // Setup the task context
   cTaskContext taskctx(NULL, m_input_buf, m_output_buf, other_input_list, other_output_list,

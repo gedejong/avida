@@ -57,10 +57,10 @@ protected:
   cInstSet* m_inst_set;             // Instruction set being used.
 
   HardwareTracerPtr m_tracer;        // Set this if you want execution traced.
-  Apto::Array<char, Apto::Smart> m_microtracer;
-  Apto::Array<int, Apto::Smart> m_navtraceloc;
-  Apto::Array<int, Apto::Smart> m_navtracefacing;
-  Apto::Array<int, Apto::Smart> m_navtraceupdate;
+  AvidaArray<char> m_microtracer;
+  AvidaArray<int> m_navtraceloc;
+  AvidaArray<int> m_navtracefacing;
+  AvidaArray<int> m_navtraceupdate;
   
   struct {
     bool m_minitrace:1;
@@ -98,7 +98,7 @@ protected:
   int m_task_switching_cost;
 
   // --------  Base Hardware Feature Support  ---------
-  Apto::Array<int, Apto::Smart> m_ext_mem;
+  AvidaArray<int> m_ext_mem;
   bool m_implicit_repro_active;
   
 	// --------  Bit masks  ---------
@@ -156,13 +156,13 @@ public:
   void RecordMicroTrace(const Instruction& cur_inst);
   void PrintMicroTrace(int gen_id);
   void RecordNavTrace(bool use_avatar);
-  Apto::Array<char, Apto::Smart>& GetMicroTrace() { return m_microtracer; }
-  Apto::Array<int, Apto::Smart>& GetNavTraceLoc() { return m_navtraceloc; }
-  Apto::Array<int, Apto::Smart>& GetNavTraceFacing() { return m_navtracefacing; }
-  Apto::Array<int, Apto::Smart>& GetNavTraceUpdate() { return m_navtraceupdate; }
+  AvidaArray<char>& GetMicroTrace() { return m_microtracer; }
+  AvidaArray<int>& GetNavTraceLoc() { return m_navtraceloc; }
+  AvidaArray<int>& GetNavTraceFacing() { return m_navtracefacing; }
+  AvidaArray<int>& GetNavTraceUpdate() { return m_navtraceupdate; }
   void DeleteMiniTrace(bool print_reacs, bool repro_split = false);
   virtual void SetupMiniTraceFileHeader(Avida::Output::File& df, const int gen_id, const Apto::String& genotype) = 0;
-  void SetupExtendedMemory(const Apto::Array<int, Apto::Smart>& ext_mem) { m_ext_mem = ext_mem; }
+  void SetupExtendedMemory(const AvidaArray<int>& ext_mem) { m_ext_mem = ext_mem; }
   void PrintMiniTraceReactions();
   
   // --------  Stack Manipulation...  --------
@@ -193,7 +193,7 @@ public:
   virtual int GetMemSize(int value) const = 0;
   virtual int GetNumMemSpaces() const = 0;
   
-  const Apto::Array<int, Apto::Smart>& GetExtendedMemory() const { return m_ext_mem; }
+  const AvidaArray<int>& GetExtendedMemory() const { return m_ext_mem; }
   
   
   // --------  Register Manipulation  --------

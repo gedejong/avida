@@ -51,10 +51,10 @@ public:
   void ResetOffspringCounts();
   
 private:
-  Apto::Array< Apto::Array<double, Apto::Smart>, Apto::Smart > m_migration_matrix;
+  Apto::Array< AvidaArray<double>, Apto::Smart > m_migration_matrix;
   AvidaArray<double> m_row_connectivity_sums;
-  Apto::Array< Apto::Array<int, Apto::Smart>, Apto::Smart > m_parasite_migration_counts;
-  Apto::Array< Apto::Array<int, Apto::Smart>, Apto::Smart >  m_offspring_migration_counts;
+  Apto::Array< AvidaArray<int>, Apto::Smart > m_parasite_migration_counts;
+  Apto::Array< AvidaArray<int>, Apto::Smart >  m_offspring_migration_counts;
 };
 
 #endif

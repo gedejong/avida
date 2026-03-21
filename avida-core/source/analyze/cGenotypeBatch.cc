@@ -356,7 +356,7 @@ cGenotypeBatch* cGenotypeBatch::FindClade(int start_genotype_id) const
 {
   cGenotypeBatch* batch = new cGenotypeBatch;
   tList<cAnalyzeGenotype> list(m_list);
-  Apto::Array<int, Apto::Smart> scan_list;
+  AvidaArray<int> scan_list;
   cAnalyzeGenotype* found_gen = FindGenotypeID(start_genotype_id);
  
   if ((found_gen)) {
@@ -403,7 +403,7 @@ void cGenotypeBatch::RemoveClade(int start_genotype_id)
     }
     while ((genotype = it.Next())) { it.Remove(); delete genotype; }
   } else {
-    Apto::Array<int, Apto::Smart> scan_list;
+    AvidaArray<int> scan_list;
     cAnalyzeGenotype* found_gen = PopGenotypeID(start_genotype_id);
     
     if ((found_gen)) scan_list.Push(found_gen->GetID());

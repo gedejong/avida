@@ -3361,7 +3361,7 @@ double cTaskLib::Task_SGPathTraversal(cTaskContext& ctx) const
   int state = sg.GetStateID(args.GetString(1));
   if (state < 0) return 0.0;
   
-  const Apto::Array<int, Apto::Smart>& ext_mem = ctx.GetExtendedMemory();
+  const AvidaArray<int>& ext_mem = ctx.GetExtendedMemory();
   
   // Build and sort history
   const int history_offset = 3 + sg.GetNumStates();

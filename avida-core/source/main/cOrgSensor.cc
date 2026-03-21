@@ -388,7 +388,7 @@ cOrgSensor::sLookOut cOrgSensor::PreWalk(cAvidaContext& ctx, sLookInit& in_defs,
   //  Apto::Coord<int> direction = left;
   const Apto::Coord<int> ahead_dir(faced_cell.X() - this_cell.X(), faced_cell.Y() - this_cell.Y());
   
-  Apto::Array<int, Apto::Smart> val_res;                                                     // resource ids of this habitat type
+  AvidaArray<int> val_res;                                                     // resource ids of this habitat type
   
   val_res.Resize(0);
   // END definitions
@@ -424,7 +424,7 @@ cOrgSensor::sLookOut cOrgSensor::PreWalk(cAvidaContext& ctx, sLookInit& in_defs,
   return stuff_seen;
 }
 
-void cOrgSensor::WalkCells(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const Apto::Array<int, Apto::Smart>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx)
+void cOrgSensor::WalkCells(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const AvidaArray<int>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx)
 {
   
   int& habitat_used = in_defs.habitat;
@@ -637,7 +637,7 @@ void cOrgSensor::WalkCells(cAvidaContext& ctx, sLookInit& in_defs, const int fac
   return;
 }
 
-void cOrgSensor::WalkTorus(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const Apto::Array<int, Apto::Smart>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx)
+void cOrgSensor::WalkTorus(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const AvidaArray<int>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx)
 {
   int& habitat_used = in_defs.habitat;
   int& distance_sought = in_defs.distance;
@@ -843,13 +843,13 @@ void cOrgSensor::CorrectTorusEdge(Apto::Coord<int>& cell, sBounds& worldBounds)
   else if (cell.Y() < worldBounds.min_y) { cell.Y() = worldBounds.max_y - (worldBounds.min_y - cell.Y() - 1); }
 }
 
-void cOrgSensor::SetWalkLimits(cAvidaContext& ctx, sLookInit& in_defs, sWalkLimits& limits, sBounds& worldBounds, sBounds& tot_bounds, Apto::Array<int, Apto::Smart>& val_res, int worldx, Apto::Coord<int>& this_cell, int facing, int cell, Apto::Coord<int>& center_cell, const Apto::Coord<int>& ahead_dir)
+void cOrgSensor::SetWalkLimits(cAvidaContext& ctx, sLookInit& in_defs, sWalkLimits& limits, sBounds& worldBounds, sBounds& tot_bounds, AvidaArray<int>& val_res, int worldx, Apto::Coord<int>& this_cell, int facing, int cell, Apto::Coord<int>& center_cell, const Apto::Coord<int>& ahead_dir)
 {
   limits.start = 0;
   limits.end = in_defs.distance;
   
   // set geometric bounds, and fast-forward, if possible
-  Apto::Array<int, Apto::Smart> val_res2 = val_res;
+  AvidaArray<int> val_res2 = val_res;
   if (in_defs.habitat != -2 && in_defs.habitat != 3) {
     bool has_global = false;
     bool in_res = false; //check to see org in resource RKB
@@ -969,7 +969,7 @@ void cOrgSensor::SetCoords(Apto::Coord<int>& left, Apto::Coord<int>& right, cons
  *
  */
 cOrgSensor::sSearchInfo cOrgSensor::TestCell(cAvidaContext& ctx, sLookInit& in_defs, const Apto::Coord<int>& target_cell_coords,
-                                             const Apto::Array <int, Apto::Smart>& val_res, bool first_step,
+                                             const AvidaArray<int>& val_res, bool first_step,
                                              bool stop_at_first_found)
 {
   const int worldx = m_world->GetConfig().WORLD_X.Get();
@@ -1190,10 +1190,10 @@ cOrgSensor::sBounds cOrgSensor::GetBounds(cAvidaContext& ctx, const int res_id)
   return res_bounds;
 }
 
-Apto::Array<int, Apto::Smart> cOrgSensor::BuildResArray(sLookInit& in_defs, bool single_bound)
+AvidaArray<int> cOrgSensor::BuildResArray(sLookInit& in_defs, bool single_bound)
 {
   // for hills and walls, we treat them all as generic and don't allow orgs to select individuals instances of that sort of resource
-  Apto::Array<int, Apto::Smart> val_res;
+  AvidaArray<int> val_res;
   val_res.Resize(0);
   if (single_bound) val_res.Push(in_defs.id_sought);
   else if (!single_bound) {

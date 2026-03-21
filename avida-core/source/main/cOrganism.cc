@@ -643,7 +643,7 @@ void cOrganism::HardwareReset(cAvidaContext& ctx)
     
     const cStateGrid& sg = GetStateGrid();
     
-    Apto::Array<int, Apto::Smart> sg_state(3 + sg.GetNumStates());
+    AvidaArray<int> sg_state(3 + sg.GetNumStates());
     sg_state.SetAll(0);
     
     sg_state[0] = sg.GetInitialX();

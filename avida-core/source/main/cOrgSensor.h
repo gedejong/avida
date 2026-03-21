@@ -120,14 +120,14 @@ class cOrgSensor
   void Reset() { ResetOrgSensor(); }
   const sLookOut SetLooking(cAvidaContext& ctx, sLookInit& in_defs, int facing, int cell_id, bool use_ft);
   sSearchInfo TestCell(cAvidaContext& ctx, sLookInit& in_defs, const Apto::Coord<int>& target_cell_coords,
-                      const Apto::Array<int, Apto::Smart>& val_res, bool first_step, bool stop_at_first_found);
+                      const AvidaArray<int>& val_res, bool first_step, bool stop_at_first_found);
   sLookOut PreWalk(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell_id);
-  void SetWalkLimits(cAvidaContext& ctx, sLookInit& in_defs, sWalkLimits& limits, sBounds& worldBounds, sBounds& tot_bounds, Apto::Array<int, Apto::Smart>& val_res, int worldx, Apto::Coord<int>& this_cell, int facing, int cell, Apto::Coord<int>& center_cell, const Apto::Coord<int>& ahead_dir);
+  void SetWalkLimits(cAvidaContext& ctx, sLookInit& in_defs, sWalkLimits& limits, sBounds& worldBounds, sBounds& tot_bounds, AvidaArray<int>& val_res, int worldx, Apto::Coord<int>& this_cell, int facing, int cell, Apto::Coord<int>& center_cell, const Apto::Coord<int>& ahead_dir);
   void SetCoords(Apto::Coord<int>& left, Apto::Coord<int>& right, const int facing);
   
-  void WalkCells(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell_id, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const Apto::Array<int, Apto::Smart>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx);
+  void WalkCells(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell_id, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const AvidaArray<int>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx);
 
-  void WalkTorus(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell_id, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const Apto::Array<int, Apto::Smart>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx);
+  void WalkTorus(cAvidaContext& ctx, sLookInit& in_defs, const int facing, const int cell_id, sWalkLimits& limits, sLookOut& stuff_seen, Apto::Coord<int>& center_cell, sBounds& tot_bounds, sBounds& worldBounds, const AvidaArray<int>& val_res, Apto::Coord<int>& this_cell, const Apto::Coord<int>& ahead_dir, const int& worldx);
   void CorrectTorusEdge(Apto::Coord<int>& cell, sBounds& worldBounds);
   void GetTorusTravelDist(int& travel_dist, int& x_dist, int& y_dist, const int facing, const int worldx, const int worldy);
   void GetConfusionOddsDensity(cAvidaContext& ctx, double& odds, cOrganism* first_org);
@@ -144,7 +144,7 @@ class cOrgSensor
   int GetMaxDist(const int worldx, const int cell_id, const int distance_sought, sBounds& res_bounds);
   sBounds GetBounds(cAvidaContext& ctx, const int res_id);
   inline bool TestBounds(const Apto::Coord<int>& cell_id, sBounds& bounds_set);
-  Apto::Array<int, Apto::Smart> BuildResArray(sLookInit& in_defs, bool single_bound);
+  AvidaArray<int> BuildResArray(sLookInit& in_defs, bool single_bound);
   
   void SetReturnRelativeFacing(bool do_set) { m_return_rel_facing = do_set; }
   int ReturnRelativeFacing(cOrganism* sighted_org);

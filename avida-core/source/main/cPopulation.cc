@@ -1572,7 +1572,7 @@ void cPopulation::PrintMiniTraceGenome(cOrganism* in_organism, cString& filename
   delete testcpu;
 }
 
-void cPopulation::SetMiniTraceQueue(Apto::Array<int, Apto::Smart> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro)
+void cPopulation::SetMiniTraceQueue(AvidaArray<int> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro)
 {
   minitrace_queue.Resize(0);
   for (int i = 0; i < new_queue.GetSize(); i++) minitrace_queue.Push(new_queue[i]);
@@ -1581,7 +1581,7 @@ void cPopulation::SetMiniTraceQueue(Apto::Array<int, Apto::Smart> new_queue, con
   use_micro_traces = use_micro;
 }
 
-void cPopulation::AppendMiniTraces(Apto::Array<int, Apto::Smart> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro)
+void cPopulation::AppendMiniTraces(AvidaArray<int> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro)
 {
   for (int i = 0; i < new_queue.GetSize(); i++) minitrace_queue.Push(new_queue[i]); 
   print_mini_trace_genomes = print_genomes;
@@ -1603,8 +1603,8 @@ void cPopulation::LoadMiniTraceQ(const cString& filename, int orgs_per, bool pri
     }
   }
   
-  Apto::Array<int, Apto::Smart> bg_id_list;
-  Apto::Array<int, Apto::Smart> queue = m_world->GetPopulation().GetMiniTraceQueue();
+  AvidaArray<int> bg_id_list;
+  AvidaArray<int> queue = m_world->GetPopulation().GetMiniTraceQueue();
   for (int line_id = 0; line_id < input_file.GetNumLines(); line_id++) {
     cString cur_line = input_file.GetLine(line_id);
     
@@ -1633,10 +1633,10 @@ void cPopulation::LoadMiniTraceQ(const cString& filename, int orgs_per, bool pri
   }
 }
 
-Apto::Array<int, Apto::Smart> cPopulation::SetRandomTraceQ(int max_samples)
+AvidaArray<int> cPopulation::SetRandomTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
-  Apto::Array<int, Apto::Smart> bg_id_list;
+  AvidaArray<int> bg_id_list;
   Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
@@ -1661,10 +1661,10 @@ Apto::Array<int, Apto::Smart> cPopulation::SetRandomTraceQ(int max_samples)
   return bg_id_list;
 }
 
-Apto::Array<int, Apto::Smart> cPopulation::SetRandomPreyTraceQ(int max_samples)
+AvidaArray<int> cPopulation::SetRandomPreyTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
-  Apto::Array<int, Apto::Smart> bg_id_list;
+  AvidaArray<int> bg_id_list;
   const Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
@@ -1691,10 +1691,10 @@ Apto::Array<int, Apto::Smart> cPopulation::SetRandomPreyTraceQ(int max_samples)
   return bg_id_list;
 }
 
-Apto::Array<int, Apto::Smart> cPopulation::SetRandomPredTraceQ(int max_samples)
+AvidaArray<int> cPopulation::SetRandomPredTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
-  Apto::Array<int, Apto::Smart> bg_id_list;
+  AvidaArray<int> bg_id_list;
   const Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
@@ -1737,7 +1737,7 @@ void cPopulation::SetNextPredQ(int num_pred, bool print_genomes, bool print_reac
   use_micro_traces = use_micro;
 }
 
-Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int save_groups, int save_foragers, int orgs_per, int max_samples)
+AvidaArray<int> cPopulation::SetTraceQ(int save_dominants, int save_groups, int save_foragers, int orgs_per, int max_samples)
 {
   // setup the genotype 'list' which will be checked in activateorg
   // this should setup a 'list' of genotypes at each event update which should be followed (e.g. if orgs_per = 10, save top 10 prey genotypes + top 10 predator genotypes at this update or one org from top 10 most common genotypes over all)
@@ -1748,13 +1748,13 @@ Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int sav
   // if it is 0, there is nothing to check, if it is > 0, there are genotypes waiting
   // this will allow genotypes to wait until the next event (which will overwrite the array contents)
   // only tracing for orgs within threshold (unless none are, then just use first bg)
-  Apto::Array<int, Apto::Smart> bg_id_list;
+  AvidaArray<int> bg_id_list;
   
   Systematics::ManagerPtr classmgr = Systematics::Manager::Of(m_world->GetNewWorld());
   Systematics::Arbiter::IteratorPtr it = classmgr->ArbiterForRole("genotype")->Begin();
   Systematics::GroupPtr bg = (it->Next());
-  Apto::Array<int, Apto::Smart> fts_to_use;
-  Apto::Array<int, Apto::Smart> groups_to_use;
+  AvidaArray<int> fts_to_use;
+  AvidaArray<int> groups_to_use;
   int num_doms = 0;
   int fts_left = 0;
   int groups_left = 0;
@@ -1762,7 +1762,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int sav
   if (save_dominants) num_doms = orgs_per;
   
   // get forager types in pop
-  Apto::Array<int, Apto::Smart> ft_check_counts;
+  AvidaArray<int> ft_check_counts;
   ft_check_counts.Resize(0);
   if (save_foragers) {
     if (avd_cpop_is_pred_prey_tracking_active(m_world->GetConfig().PRED_PREY_SWITCH.Get())) {
@@ -1779,7 +1779,7 @@ Apto::Array<int, Apto::Smart> cPopulation::SetTraceQ(int save_dominants, int sav
   }
   
   // get groups in pop
-  Apto::Array<int, Apto::Smart> group_check_counts;
+  AvidaArray<int> group_check_counts;
   group_check_counts.Resize(0);
   if (save_groups) {
     map<int,int> groups_formed = m_world->GetPopulation().GetFormedGroups();

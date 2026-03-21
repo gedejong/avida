@@ -942,7 +942,7 @@ void cHardwareExperimental::PrintMiniTraceStatus(cAvidaContext& ctx, ostream& fp
   // any trailing nops (up to NUM_REGISTERS)
   cCPUMemory& memory = m_memory;
   int pos = getIP().GetPosition();
-  Apto::Array<int, Apto::Smart> seq;
+  AvidaArray<int> seq;
   seq.Resize(0);
   for (int i = 0; i < NUM_REGISTERS; i++) {
     pos += 1;

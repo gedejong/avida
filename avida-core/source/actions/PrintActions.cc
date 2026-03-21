@@ -1338,7 +1338,7 @@ public:
       if (cur_size > 0) num_groups++; 
     }
     
-    Apto::Array<int, Apto::Smart> birth_groups_checked;
+    AvidaArray<int> birth_groups_checked;
     
     for (int i = 0; i < num_groups; i++) {
       Systematics::GroupPtr bg = it->Next();
@@ -1402,7 +1402,7 @@ public:
     set <int>::iterator itr;    
     for(itr = fts_avail.begin();itr!=fts_avail.end();itr++) if (*itr != -1 && *itr != -2 && *itr != -3) num_fts++;
     
-    Apto::Array<int, Apto::Smart> birth_forage_types_checked;
+    AvidaArray<int> birth_forage_types_checked;
     
     for (int i = 0; i < num_fts; i++) {
       bool already_used = false;

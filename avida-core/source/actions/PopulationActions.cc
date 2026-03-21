@@ -1480,7 +1480,7 @@ public:
     
     const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     
-    Apto::Array<int, Apto::Smart> doomed_orgs;
+    AvidaArray<int> doomed_orgs;
     
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       if (live_orgs[i]->SystematicsGroup("genotype")->ID() == dom_id) doomed_orgs.Push(live_orgs[i]->GetCellID());
@@ -1513,7 +1513,7 @@ public:
   void Process(cAvidaContext& ctx)
   {
     const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
-    Apto::Array<int, Apto::Smart> doomed_orgs;
+    AvidaArray<int> doomed_orgs;
     
     const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
     HashPropertyMap props;
@@ -6013,7 +6013,7 @@ public:
   
   void Process(cAvidaContext&)
   {
-    Apto::Array<int, Apto::Smart> target_bgs;
+    AvidaArray<int> target_bgs;
     target_bgs.Resize(0);
     if (m_random) target_bgs = m_world->GetPopulation().SetRandomTraceQ(m_max_samples);
     else target_bgs = m_world->GetPopulation().SetTraceQ(m_save_dominants, m_save_groups, m_save_foragers, m_orgs_per, m_max_samples);
@@ -6080,7 +6080,7 @@ public:
   
   void Process(cAvidaContext& ctx)
   { 
-    Apto::Array<int, Apto::Smart> target_bgs;
+    AvidaArray<int> target_bgs;
     target_bgs.Resize(0);
     if (m_next_prey || m_next_pred) {
       if (m_next_prey) m_world->GetPopulation().SetNextPreyQ(m_next_prey, m_print_genomes, m_print_reacs, true);
@@ -6091,7 +6091,7 @@ public:
       if (m_rand_pred) {
         if (target_bgs.GetSize() == 0) target_bgs = m_world->GetPopulation().SetRandomPredTraceQ(m_max_samples);
         else {
-          Apto::Array<int, Apto::Smart> pred_bgs = m_world->GetPopulation().SetRandomPredTraceQ(m_max_samples);
+          AvidaArray<int> pred_bgs = m_world->GetPopulation().SetRandomPredTraceQ(m_max_samples);
           for (int i = 0; i < pred_bgs.GetSize(); i++) target_bgs.Push(pred_bgs[i]); 
         }
       }

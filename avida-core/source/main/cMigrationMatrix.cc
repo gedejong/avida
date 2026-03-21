@@ -89,7 +89,7 @@ bool cMigrationMatrix::Load(const int num_demes, const cString& filename, const 
     return false;
   }
   
-  Apto::Array<double, Apto::Smart> f_temp_row;
+  AvidaArray<double> f_temp_row;
   for (int line_id = 0; line_id < infile.GetNumLines(); line_id++) {
     // Load the next line from the file.
     f_temp_row.ResizeClear(0);
@@ -130,7 +130,7 @@ bool cMigrationMatrix::Load(const int num_demes, const cString& filename, const 
   }
   
   if(p_count_parasites && !p_is_reload){
-    Apto::Array<int, Apto::Smart> blank(num_demes);
+    AvidaArray<int> blank(num_demes);
     blank.SetAll(0);
     
     m_parasite_migration_counts.Resize(num_demes, blank);
@@ -138,7 +138,7 @@ bool cMigrationMatrix::Load(const int num_demes, const cString& filename, const 
   }
   
   if(p_count_offspring && !p_is_reload){
-    Apto::Array<int, Apto::Smart> blank(num_demes);
+    AvidaArray<int> blank(num_demes);
     blank.SetAll(0);
     m_offspring_migration_counts.Resize(num_demes, blank);
     ResetOffspringCounts();

@@ -2308,7 +2308,7 @@ void cStats::PrintGermlineData(const cString& filename)
 
 void cStats::SetGroupAttackInstNames(const cString& inst_set) {
   cString inst;
-  Apto::Array <cString, Apto::Smart> names;
+  AvidaArray<cString> names;
   for (int i = 0; i < m_is_inst_names_map[inst_set].GetSize(); i++) {
     inst = m_is_inst_names_map[inst_set][i];
     if (inst == "attack-prey" || inst == "attack-ft-prey" || inst == "attack-prey-group" ||
@@ -5045,7 +5045,7 @@ void cStats::PrintMiniTraceReactions(cOrganism* org)
   fp << endl;  
 }
 
-void cStats::PrintMicroTraces(Apto::Array<char, Apto::Smart>& exec_trace, int birth_update, int org_id, int ft, int gen_id)
+void cStats::PrintMicroTraces(AvidaArray<char>& exec_trace, int birth_update, int org_id, int ft, int gen_id)
 {
   int death_update = GetUpdate();
   Avida::Output::FilePtr df = Avida::Output::File::StaticWithPath(m_world->GetNewWorld(), "microtrace.dat");
@@ -5099,10 +5099,10 @@ void cStats::UpdateTopNavTrace(cOrganism* org, bool force_update)
     toprepro = org->GetPhenotype().GetNumExecs();
     topgenome = Genome(org->SystematicsGroup("genotype")->Properties().Get("genome"));
     
-    Apto::Array<char, Apto::Smart> trace = org->GetHardware().GetMicroTrace();
-    Apto::Array<int, Apto::Smart> traceloc = org->GetHardware().GetNavTraceLoc();
-    Apto::Array<int, Apto::Smart> tracefacing = org->GetHardware().GetNavTraceFacing();
-    Apto::Array<int, Apto::Smart> traceupdate = org->GetHardware().GetNavTraceUpdate();
+    AvidaArray<char> trace = org->GetHardware().GetMicroTrace();
+    AvidaArray<int> traceloc = org->GetHardware().GetNavTraceLoc();
+    AvidaArray<int> tracefacing = org->GetHardware().GetNavTraceFacing();
+    AvidaArray<int> traceupdate = org->GetHardware().GetNavTraceUpdate();
     
     toptrace.Resize(trace.GetSize());
     topnavtraceloc.Resize(traceloc.GetSize());

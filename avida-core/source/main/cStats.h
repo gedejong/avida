@@ -926,7 +926,7 @@ public:
   void PrintFemaleInstructionData(const cString& filename, const cString& inst_set);
 
   void PrintMiniTraceReactions(cOrganism* org);
-  void PrintMicroTraces(Apto::Array<char, Apto::Smart>& exec_trace, int birth_update, int org_id, int ft, int gen_id);
+  void PrintMicroTraces(AvidaArray<char>& exec_trace, int birth_update, int org_id, int ft, int gen_id);
   void UpdateTopNavTrace(cOrganism* org, bool force_update = false);
   void SetNavTrace(bool use_first) { firstnavtrace = use_first; }
   void PrintTopNavTrace(bool flush = false);

@@ -90,7 +90,7 @@ private:
   
   // Data Tracking...
   tList<cPopulationCell> reaper_queue; // Death order in some mass-action runs
-  Apto::Array<int, Apto::Smart> minitrace_queue;
+  AvidaArray<int> minitrace_queue;
   bool print_mini_trace_genomes;
   bool print_mini_trace_reacs;
   bool use_micro_traces;
@@ -281,16 +281,16 @@ public:
                       bool load_groups = false, bool load_birth_cells = false, bool load_avatars = false, bool load_rebirth = false, bool load_parent_dat = false, int traceq = 0);
   bool SaveFlameData(const cString& filename);
   
-  void SetMiniTraceQueue(Apto::Array<int, Apto::Smart> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro = false);
-  void AppendMiniTraces(Apto::Array<int, Apto::Smart> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro = false);
+  void SetMiniTraceQueue(AvidaArray<int> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro = false);
+  void AppendMiniTraces(AvidaArray<int> new_queue, const bool print_genomes, const bool print_reacs, const bool use_micro = false);
   void LoadMiniTraceQ(const cString& filename, int orgs_per, bool print_genomes, bool print_reacs);
-  Apto::Array<int, Apto::Smart> SetRandomTraceQ(int max_samples);
-  Apto::Array<int, Apto::Smart> SetRandomPreyTraceQ(int max_samples);
-  Apto::Array<int, Apto::Smart> SetRandomPredTraceQ(int max_samples);
+  AvidaArray<int> SetRandomTraceQ(int max_samples);
+  AvidaArray<int> SetRandomPreyTraceQ(int max_samples);
+  AvidaArray<int> SetRandomPredTraceQ(int max_samples);
   void SetNextPreyQ(int num_prey, bool print_genomes, bool print_reacs, bool use_micro);
   void SetNextPredQ(int num_pred, bool print_genomes, bool print_reacs, bool use_micro);
-  Apto::Array<int, Apto::Smart> SetTraceQ(int save_dominants, int save_groups, int save_foragers, int orgs_per, int max_samples);
-  const Apto::Array<int, Apto::Smart>& GetMiniTraceQueue() const { return minitrace_queue; }
+  AvidaArray<int> SetTraceQ(int save_dominants, int save_groups, int save_foragers, int orgs_per, int max_samples);
+  const AvidaArray<int>& GetMiniTraceQueue() const { return minitrace_queue; }
   void AppendRecordReproQ(cOrganism* new_org);
   void SetTopNavQ();
   Apto::Array<cOrganism*, Apto::Smart>& GetTopNavQ() { return topnav_q; }
