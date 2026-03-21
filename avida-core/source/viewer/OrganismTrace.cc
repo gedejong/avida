@@ -67,7 +67,7 @@ namespace Avida {
 class Private::InstructionColorChart : public GraphicsContextData
 {
 private:
-  Apto::Array<Color> m_inst_colors;
+  AvidaArray<Color> m_inst_colors;
   
   static const char* s_id_format;
   
