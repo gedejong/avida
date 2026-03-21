@@ -32,6 +32,7 @@ pub mod merit;
 pub mod mutation_rates;
 pub mod ordered_weighted_index;
 pub mod package;
+pub mod phenotype;
 pub mod population_action_helpers;
 pub mod population_helpers;
 pub mod print_action_helpers;

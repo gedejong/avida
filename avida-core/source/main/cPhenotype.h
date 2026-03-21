@@ -31,6 +31,7 @@
 #include "cString.h"
 #include "cCodeLabel.h"
 #include "cWorld.h"
+#include "rust/running_stats_ffi.h"
 
 
 /*************************************************************************
@@ -79,23 +80,11 @@ private:
   cWorld* m_world;
   bool initialized;
 
-  // 1. These are values calculated at the last divide (of self or offspring)
-  cMerit merit;             // Relative speed of CPU
-  double executionRatio;    //  ratio of current execution merit over base execution merit
-  double energy_store;      // Amount of energy.  Determines relative speed of CPU when turned on.
-  int genome_length;        // Number of instructions in genome.
-  int bonus_instruction_count; // Number of times MERIT_BONUS_INT is in genome.
-  int copied_size;          // Instructions copied into genome.
-  int executed_size;        // Instructions executed from genome.
-  int gestation_time;       // CPU cycles to produce offspring (or be produced),
-                            // including additional time costs of some instructions.
-  int gestation_start;      // Total instructions executed at last divide.
-  double fitness;           // Relative effective replication rate...
-  double div_type;          // Type of the divide command used
-
-  // 2. These are "in progress" variables, updated as the organism operates
-  double cur_bonus;                           // Current Bonus
-  double cur_energy_bonus;                    // Current energy bonus
+  // 1+2. Core scalar metrics — stored in Rust-owned #[repr(C)] struct.
+  // Fields: merit, execution_ratio (was executionRatio), energy_store,
+  //   genome_length, bonus_instruction_count, copied_size, executed_size,
+  //   gestation_time, gestation_start, fitness, div_type, cur_bonus, cur_energy_bonus
+  PhenotypeCoreMetrics m_core;
   double energy_tobe_applied;                 // Energy that has not yet been added to energy store.
   double energy_testament;
   double energy_received_buffer;              // Energy received through donation, but not yet applied to energy store
@@ -361,7 +350,7 @@ public:
     
     //LZ this was int!
     const double merit_base = CalcSizeMerit();
-    const double cur_fitness = merit_base * cur_bonus / time_used;
+    const double cur_fitness = merit_base * m_core.cur_bonus / time_used;
     return cur_fitness / last_fitness;
   }
   int CalcID() const {
@@ -373,22 +362,23 @@ public:
   }
 
   /////////////////////  Accessors -- Retrieving  ////////////////////
-  const cMerit & GetMerit() const { assert(initialized == true); return merit; }
-  double GetEnergyUsageRatio() const { assert(initialized == true); return executionRatio; }
-  int GetGenomeLength() const { assert(initialized == true); return genome_length; }
-  int GetCopiedSize() const { assert(initialized == true); return copied_size; }
-  int GetExecutedSize() const { assert(initialized == true); return executed_size; }
-  int GetGestationTime() const { assert(initialized == true); return gestation_time; }
-  int GetGestationStart() const { assert(initialized == true); return gestation_start; }
-  double GetFitness() const { assert(initialized == true); return fitness; }
-  double GetDivType() const { assert(initialized == true); return div_type; }
+  // cMerit and AvidaMerit share identical memory layout.
+  const cMerit & GetMerit() const { assert(initialized == true); return reinterpret_cast<const cMerit&>(m_core.merit); }
+  double GetEnergyUsageRatio() const { assert(initialized == true); return m_core.execution_ratio; }
+  int GetGenomeLength() const { assert(initialized == true); return m_core.genome_length; }
+  int GetCopiedSize() const { assert(initialized == true); return m_core.copied_size; }
+  int GetExecutedSize() const { assert(initialized == true); return m_core.executed_size; }
+  int GetGestationTime() const { assert(initialized == true); return m_core.gestation_time; }
+  int GetGestationStart() const { assert(initialized == true); return m_core.gestation_start; }
+  double GetFitness() const { assert(initialized == true); return m_core.fitness; }
+  double GetDivType() const { assert(initialized == true); return m_core.div_type; }
 
-  double GetCurBonus() const { assert(initialized == true); return cur_bonus; }
-  int    GetCurBonusInstCount() const { assert(bonus_instruction_count >= 0); return bonus_instruction_count; }
+  double GetCurBonus() const { assert(initialized == true); return m_core.cur_bonus; }
+  int    GetCurBonusInstCount() const { assert(m_core.bonus_instruction_count >= 0); return m_core.bonus_instruction_count; }
 
   double GetCurMeritBase() const { assert(initialized == true); return CalcSizeMerit(); }
-  double GetStoredEnergy() const { return energy_store; }
-  double GetEnergyBonus() const { assert(initialized == true); return cur_energy_bonus; }
+  double GetStoredEnergy() const { return m_core.energy_store; }
+  double GetEnergyBonus() const { assert(initialized == true); return m_core.cur_energy_bonus; }
   int GetDiscreteEnergyLevel() const;
   double GetEnergyInBufferAmount() const { return energy_received_buffer; }
   
@@ -586,11 +576,11 @@ public:
 
 
   ////////////////////  Accessors -- Modifying  ///////////////////
-  void SetMerit(const cMerit& in_merit) { merit = in_merit; }
-  void SetFitness(const double in_fit) { fitness = in_fit; }
+  void SetMerit(const cMerit& in_merit) { reinterpret_cast<cMerit&>(m_core.merit) = in_merit; }
+  void SetFitness(const double in_fit) { m_core.fitness = in_fit; }
   void ReduceEnergy(const double cost);
   void SetEnergy(const double value);
-  void SetGestationTime(int in_time) { gestation_time = in_time; }
+  void SetGestationTime(int in_time) { m_core.gestation_time = in_time; }
   void SetTimeUsed(int in_time) { time_used = in_time; }
   void SetTrialTimeUsed(int in_time) { trial_time_used = in_time; }
   void SetGeneration(int in_generation) { generation = in_generation; }
@@ -598,9 +588,9 @@ public:
   void SetFault(const cString& in_fault) { fault_desc = in_fault; }
   void SetNeutralMetric(double _in){ neutral_metric = _in; }
   void SetLifeFitness(double _in){ life_fitness = _in; }
-  void SetLinesExecuted(int _exe_size) { executed_size = _exe_size; }
+  void SetLinesExecuted(int _exe_size) { m_core.executed_size = _exe_size; }
   void SetLinesCopied(int _copied_size) { child_copied_size = _copied_size; }
-  void SetDivType(double _div_type) { div_type = _div_type; }  
+  void SetDivType(double _div_type) { m_core.div_type = _div_type; }
   void SetDivideSex(bool _divide_sex) { divide_sex = _divide_sex; }  
   void SetMateSelectID(int _select_id) { mate_select_id = _select_id; }
   void SetCrossNum(int _cross_num) { cross_num = _cross_num; }
@@ -673,8 +663,8 @@ public:
   void ClearHasOpenEnergyRequest() { has_open_energy_request = false; }
   void ClearIsMultiThread() { is_multi_thread = false; }
   
-  void SetCurBonus(double _bonus) { cur_bonus = _bonus; }
-  void SetCurBonusInstCount(int _num_bonus_inst) {bonus_instruction_count = _num_bonus_inst;}
+  void SetCurBonus(double _bonus) { m_core.cur_bonus = _bonus; }
+  void SetCurBonusInstCount(int _num_bonus_inst) { m_core.bonus_instruction_count = _num_bonus_inst; }
 
   void IncCurInstCount(int _inst_num)  { assert(initialized == true); cur_inst_count[_inst_num]++; } 
   void DecCurInstCount(int _inst_num)  { assert(initialized == true); cur_inst_count[_inst_num]--; }
