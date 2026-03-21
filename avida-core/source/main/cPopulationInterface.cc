@@ -73,7 +73,7 @@ cOrganism* cPopulationInterface::GetOrganism() {
 	return GetCell()->GetOrganism();
 }
 
-const Apto::Array<cOrganism*, Apto::Smart>& cPopulationInterface::GetLiveOrgList() const {
+const AvidaArray<cOrganism*>& cPopulationInterface::GetLiveOrgList() const {
   return m_world->GetPopulation().GetLiveOrgList();
 }
 
@@ -189,7 +189,7 @@ bool cPopulationInterface::GetLGTFragment(cAvidaContext& ctx, int region, const 
       // Entire Population
     case 1:
     {
-      const Apto::Array<cOrganism*, Apto::Smart>& live_org_list = m_world->GetPopulation().GetLiveOrgList();
+      const AvidaArray<cOrganism*>& live_org_list = m_world->GetPopulation().GetLiveOrgList();
       for (int i = 0; i < MAX_POP_SAMPLES; i++) {
         int org_idx = ctx.GetRandom().GetInt(live_org_list.GetSize());
         const Genome* org_genome = &live_org_list[org_idx]->GetGenome();
@@ -1616,7 +1616,7 @@ void cPopulationInterface::TryWriteBirthLocData(int org_idx)
 void cPopulationInterface::InjectPreyClone(cAvidaContext& ctx, int gen_id)
 {
   cOrganism* org_to_clone = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_org_list = GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
   Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }

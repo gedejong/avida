@@ -876,7 +876,7 @@ bool cPopulation::ActivateOffspring(cAvidaContext& ctx, const Genome& offspring_
       if (m_world->GetConfig().MAX_PREY_BT.Get()) {
         int in_use = 0;
         Apto::Array<cOrganism*> orgs;
-        const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
+        const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
         for (int i = 0; i < live_orgs.GetSize(); i++) {
           cOrganism* org = live_orgs[i];
           int this_target = org->GetForageTarget();
@@ -1637,7 +1637,7 @@ AvidaArray<int> cPopulation::SetRandomTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
   AvidaArray<int> bg_id_list;
-  Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
+  AvidaArray<cOrganism*> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
   if (max_samples) max_bgs = max_samples;
@@ -1665,7 +1665,7 @@ AvidaArray<int> cPopulation::SetRandomPreyTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
   AvidaArray<int> bg_id_list;
-  const Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
   if (max_samples) max_bgs = max_samples;
@@ -1695,7 +1695,7 @@ AvidaArray<int> cPopulation::SetRandomPredTraceQ(int max_samples)
 {
   // randomly sample (w/ replacement) bgs in pop
   AvidaArray<int> bg_id_list;
-  const Apto::Array<cOrganism*, Apto::Smart> live_orgs = GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = GetLiveOrgList();
 
   int max_bgs = 1;
   if (max_samples) max_bgs = max_samples;
@@ -2193,7 +2193,7 @@ void cPopulation::AttackFacedOrg(cAvidaContext& ctx, int loser)
 void cPopulation::KillRandPred(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* org_to_kill = org;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_org_list = GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
   Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
@@ -2213,7 +2213,7 @@ void cPopulation::KillRandPred(cAvidaContext& ctx, cOrganism* org)
 void cPopulation::KillRandPrey(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* org_to_kill = org;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_org_list = GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
   Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
@@ -2233,7 +2233,7 @@ void cPopulation::KillRandPrey(cAvidaContext& ctx, cOrganism* org)
 cOrganism* cPopulation::GetRandPrey(cAvidaContext& ctx, cOrganism* org)
 {
   cOrganism* target_org = org;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_org_list = GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_org_list = GetLiveOrgList();
   Apto::Array<cOrganism*> TriedIdx(live_org_list.GetSize());
   int list_size = TriedIdx.GetSize();
   for (int i = 0; i < list_size; i ++) { TriedIdx[i] = live_org_list[i]; }
@@ -8774,7 +8774,7 @@ void  cPopulation::JoinGroup(cOrganism* org, int group_id)
   if (it == m_groups.end()) {
     // new group
     m_groups[group_id] = 0;
-    Apto::Array<cOrganism*, Apto::Smart> temp;
+    AvidaArray<cOrganism*> temp;
     m_group_list.Set(group_id, temp);
     // If tolerance is on, create the new group's tolerance cache
     if (m_world->GetConfig().TOLERANCE_WINDOW.Get() > 0) {

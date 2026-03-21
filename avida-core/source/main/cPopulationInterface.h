@@ -59,7 +59,7 @@ public:
   cPopulationInterface(cWorld* world);
   virtual ~cPopulationInterface();
 
-  const Apto::Array<cOrganism*, Apto::Smart>& GetLiveOrgList() const;
+  const AvidaArray<cOrganism*>& GetLiveOrgList() const;
 	//! Retrieve this organism.
 	cOrganism* GetOrganism();
 	//! Retrieve the ID of this cell.

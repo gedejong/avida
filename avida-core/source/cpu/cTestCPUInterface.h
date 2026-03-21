@@ -41,7 +41,7 @@ private:
   cTestCPU* m_testcpu;
   cCPUTestInfo& m_test_info;
   int m_cur_depth;
-  Apto::Array<cOrganism*, Apto::Smart> m_empty_live_org_list;
+  AvidaArray<cOrganism*> m_empty_live_org_list;
   
 public:
   cTestCPUInterface(cTestCPU* testcpu, cCPUTestInfo& test_info, int cur_depth)
@@ -49,7 +49,7 @@ public:
   virtual ~cTestCPUInterface() { ; }
 
   
-  const Apto::Array<cOrganism*, Apto::Smart>& GetLiveOrgList() const;
+  const AvidaArray<cOrganism*>& GetLiveOrgList() const;
   cPopulationCell* GetCell() { return NULL; }
 	cPopulationCell* GetCell(int) { return NULL; }
   int GetCellID() { return -1; }

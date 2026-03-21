@@ -3500,7 +3500,7 @@ bool cHardwareExperimental::Inst_RotateOrgID(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target_org  = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {  
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {
@@ -3605,7 +3605,7 @@ bool cHardwareExperimental::Inst_RotateAwayOrgID(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target_org = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {  
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {
@@ -4368,7 +4368,7 @@ bool cHardwareExperimental::Inst_SetRandPFTOnce(cAvidaContext& ctx)
 
     int in_use = 0;
     Apto::Array<cOrganism*> orgs;
-    const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
       int this_target = org->GetForageTarget();
@@ -5652,7 +5652,7 @@ bool cHardwareExperimental::Inst_AttackSpecPrey(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {
@@ -5695,7 +5695,7 @@ bool cHardwareExperimental::Inst_AttackSpecPreyChance(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target  = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {
@@ -5936,7 +5936,7 @@ bool cHardwareExperimental::Inst_AttackPoisonFTMixedPrey(cAvidaContext& ctx)
 
   cOrganism* target = NULL;
   bool have_org2use = false;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
 
   AvidaArray<bool> used_orgs;
   used_orgs.Resize(live_orgs.GetSize());

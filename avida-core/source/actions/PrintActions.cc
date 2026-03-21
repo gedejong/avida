@@ -1236,7 +1236,7 @@ public:
     const double generation = m_world->GetStats().SumGeneration().Average();
     
     //only loop through living organisms
-    const Apto::Array<cOrganism*, Apto::Smart>& living_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*>& living_orgs = m_world->GetPopulation().GetLiveOrgList();
     
     Apto::Map<int, int> lineage_label_counts;
     
@@ -4785,7 +4785,7 @@ public:
     
     fp << "# org_id,age,num_divides" << endl;
     
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {  
       cOrganism* org = live_orgs[i];
       const int id = org->GetID();
@@ -4824,7 +4824,7 @@ public:
     
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {  
       cOrganism* org = live_orgs[i];
       const int id = org->GetID();
@@ -4877,7 +4877,7 @@ public:
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
     AvidaArray<int> neighborhood;
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
       if (!org->IsPreyFT()) continue;
@@ -4940,7 +4940,7 @@ public:
     
     const int worldx = m_world->GetConfig().WORLD_X.Get();
     
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       cOrganism* org = live_orgs[i];
       const int id = org->GetID();

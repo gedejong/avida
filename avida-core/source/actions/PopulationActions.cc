@@ -1478,7 +1478,7 @@ public:
     Systematics::GroupPtr dom_g = it->Next();
     int dom_id = dom_g->ID();
     
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     
     AvidaArray<int> doomed_orgs;
     
@@ -1512,7 +1512,7 @@ public:
   
   void Process(cAvidaContext& ctx)
   {
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     AvidaArray<int> doomed_orgs;
     
     const cInstSet& is = m_world->GetHardwareManager().GetDefaultInstSet();
@@ -6158,7 +6158,7 @@ public:
 
   void Process(cAvidaContext& ctx)
   { 
-    const Apto::Array<cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {  
       m_world->GetPopulation().AppendRecordReproQ(live_orgs[i]);
     }

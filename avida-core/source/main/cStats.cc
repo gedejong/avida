@@ -1257,7 +1257,7 @@ void cStats::PrintSoloTaskSnapshot(const cString& filename, cAvidaContext& ctx)
   totals_list.Resize(m_world->GetEnvironment().GetNumTasks());
   totals_list.SetAll(0);
   
-  const Apto::Array <cOrganism*, Apto::Smart> pop = m_world->GetPopulation().GetLiveOrgList();
+  const AvidaArray<cOrganism*> pop = m_world->GetPopulation().GetLiveOrgList();
 	df->Write(pop.GetSize(),   "PopSize");
   
   for (int i = 0; i < pop.GetSize(); i++) {
@@ -2420,7 +2420,7 @@ void cStats::PrintKilledPreyFTData(const cString& filename)
   org_targets.Resize(poss_targets.GetSize());
   org_targets.SetAll(0);
   
-  const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     AvidaArray<int> killed_list = live_orgs[i]->GetPhenotype().GetKilledPreyFTData();
     if (killed_list.GetSize() > 0) {
@@ -4133,7 +4133,7 @@ void cStats::PrintTargets(const cString& filename)
   org_targets.Resize(tot_targets);
   org_targets.SetAll(0);
   
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     cOrganism* org = live_orgs[i];
     int this_target = org->GetForageTarget();
@@ -4179,7 +4179,7 @@ void cStats::PrintMimicDisplays(const cString& filename)
   displayed_fts.Resize(poss_fts.GetSize());
   displayed_fts.SetAll(0);
   
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_world->GetPopulation().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     cOrganism* org = live_orgs[i];
     if (org->GetForageTarget() == 1) {
@@ -4273,7 +4273,7 @@ void cStats::PrintTopPredTargets(const cString& filename)
   org_targets.Resize(tot_targets);
   org_targets.SetAll(0);
   
-  const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+  const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {
     cOrganism* org = live_orgs[i];
     int this_target = org->GetForageTarget();
@@ -5175,7 +5175,7 @@ void cStats::PrintTopNavTrace(bool flush)
   
   // in case nobody has reproduced (e.g. in single org trial) print what we know to date
   if (!topreactions.GetSize()) {
-    const Apto::Array <cOrganism*, Apto::Smart> live_orgs = m_world->GetPopulation().GetLiveOrgList();
+    const AvidaArray<cOrganism*> live_orgs = m_world->GetPopulation().GetLiveOrgList();
     for (int i = 0; i < live_orgs.GetSize(); i++) {
       UpdateTopNavTrace(live_orgs[i], true);
       topcycle = -1;

@@ -147,8 +147,8 @@ public:
   
 // -------- Avatar support -------- 
 private:
-  Apto::Array<cOrganism*, Apto::Smart>  m_av_prey;
-  Apto::Array<cOrganism*, Apto::Smart>  m_av_pred;
+  AvidaArray<cOrganism*>  m_av_prey;
+  AvidaArray<cOrganism*>  m_av_pred;
 
 public:
   inline int GetNumAVInputs() const { return GetNumPredAV(); }

@@ -2614,7 +2614,7 @@ bool cHardwareBCR::Inst_RotateOrgID(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target_org  = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {  
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {
@@ -2707,7 +2707,7 @@ bool cHardwareBCR::Inst_RotateAwayOrgID(cAvidaContext& ctx)
   
   // if valid number, does the value represent a living organism?
   cOrganism* target_org = NULL;
-  const Apto::Array<cOrganism*, Apto::Smart>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
+  const AvidaArray<cOrganism*>& live_orgs = m_organism->GetOrgInterface().GetLiveOrgList();
   for (int i = 0; i < live_orgs.GetSize(); i++) {  
     cOrganism* org = live_orgs[i];
     if (id_sought == org->GetID()) {

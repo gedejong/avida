@@ -71,14 +71,14 @@ private:
   cResourceCount resource_count;       // Global resources available
   cBirthChamber birth_chamber;         // Global birth chamber.
   //Keeps track of which organisms are in which group.
-  Apto::Map<int, Apto::Array<cOrganism*, Apto::Smart> > m_group_list;
+  Apto::Map<int, AvidaArray<cOrganism*> > m_group_list;
   Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances;
   Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_females;
   Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_males;
   Apto::Map<int, Apto::Array<pair<int,int> > > m_group_intolerances_juvs;
   
   // Keep list of live organisms
-  Apto::Array<cOrganism*, Apto::Smart> live_org_list;
+  AvidaArray<cOrganism*> live_org_list;
   
   AvidaArray<cPopulationOrgStatProviderPtr> m_org_stat_providers;
   
@@ -97,8 +97,8 @@ private:
   int m_next_prey_q;
   int m_next_pred_q;
   
-  Apto::Array<cOrganism*, Apto::Smart> repro_q;
-  Apto::Array<cOrganism*, Apto::Smart> topnav_q;
+  AvidaArray<cOrganism*> repro_q;
+  AvidaArray<cOrganism*> topnav_q;
   
   // Default organism setups...
   cEnvironment& environment;          // Physics & Chemistry description
@@ -293,7 +293,7 @@ public:
   const AvidaArray<int>& GetMiniTraceQueue() const { return minitrace_queue; }
   void AppendRecordReproQ(cOrganism* new_org);
   void SetTopNavQ();
-  Apto::Array<cOrganism*, Apto::Smart>& GetTopNavQ() { return topnav_q; }
+  AvidaArray<cOrganism*>& GetTopNavQ() { return topnav_q; }
   
   int GetSize() const { return cell_array.GetSize(); }
   int GetWorldX() const { return world_x; }
@@ -400,7 +400,7 @@ public:
   void AddLiveOrg(cOrganism* org);  
   // Remove an org from live org list
   void RemoveLiveOrg(cOrganism* org); 
-  const Apto::Array<cOrganism*, Apto::Smart>& GetLiveOrgList() const { return live_org_list; }
+  const AvidaArray<cOrganism*>& GetLiveOrgList() const { return live_org_list; }
 	
   // Adds an organism to a group  
   void JoinGroup(cOrganism* org, int group_id);
