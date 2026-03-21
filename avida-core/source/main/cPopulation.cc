@@ -5714,7 +5714,7 @@ int cPopulation::FindRandEmptyCell(cAvidaContext& ctx)
   // full world
   if (num_organisms >= world_size) return -1;
 
-  Apto::Array<int>& cells = GetEmptyCellIDArray();
+  AvidaArray<int>& cells = GetEmptyCellIDArray();
   int cell_idx = ctx.GetRandom().GetUInt(world_size);
   int cell_id = cells[cell_idx];
   while (GetCell(cell_id).IsOccupied()) {
@@ -7725,8 +7725,8 @@ void cPopulation::PrintPhenotypeData(const cString& filename)
   double average_num_tasks = 0.0;
   
   //implementing a very poor man's hash...
-  Apto::Array<int> phenotypes;
-  Apto::Array<int> phenotype_counts;
+  AvidaArray<int> phenotypes;
+  AvidaArray<int> phenotype_counts;
   
   for (int i = 0; i < cell_array.GetSize(); i++) {
     // Only look at cells with organisms in them.
@@ -7849,8 +7849,8 @@ void cPopulation::PrintHostPhenotypeData(const cString& filename)
   double average_num_tasks = 0.0;
   
   //implementing a very poor man's hash...
-  Apto::Array<int> phenotypes;
-  Apto::Array<int> phenotype_counts;
+  AvidaArray<int> phenotypes;
+  AvidaArray<int> phenotype_counts;
   
   for (int i = 0; i < cell_array.GetSize(); i++) {
     // Only look at cells with organisms in them.
@@ -7927,8 +7927,8 @@ void cPopulation::PrintParasitePhenotypeData(const cString& filename)
   double average_num_tasks = 0.0;
   
   //implementing a very poor man's hash...
-  Apto::Array<int> phenotypes;
-  Apto::Array<int> phenotype_counts;
+  AvidaArray<int> phenotypes;
+  AvidaArray<int> phenotype_counts;
   
   for (int i = 0; i < cell_array.GetSize(); i++) {
     // Only look at cells with organisms in them.
@@ -8069,7 +8069,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
   
   double total_fitness = 0;
   int num_cells = GetSize();
-  Apto::Array<double> org_fitness(num_cells);
+  AvidaArray<double> org_fitness(num_cells);
   
   double lowest_fitness = -1.0;
   double average_fitness = 0;
@@ -8110,9 +8110,9 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
   
   if (m_world->GetVerbosity() > VERBOSE_SILENT) cout << "==Compete Organisms==" << endl;
   
-  Apto::Array<double> min_trial_fitnesses(num_trials);
-  Apto::Array<double> max_trial_fitnesses(num_trials);
-  Apto::Array<double> avg_trial_fitnesses(num_trials);
+  AvidaArray<double> min_trial_fitnesses(num_trials);
+  AvidaArray<double> max_trial_fitnesses(num_trials);
+  AvidaArray<double> avg_trial_fitnesses(num_trials);
   avg_trial_fitnesses.SetAll(0);
   
   bool init = false;
@@ -8121,7 +8121,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
     if (GetCell(i).IsOccupied()) {
       num_competed_orgs++;
       cPhenotype& p = GetCell(i).GetOrganism()->GetPhenotype();
-      Apto::Array<double> trial_fitnesses = p.GetTrialFitnesses();
+      AvidaArray<double> trial_fitnesses = p.GetTrialFitnesses();
       for (int t=0; t < num_trials; t++) {
         if ((!init) || (min_trial_fitnesses[t] > trial_fitnesses[t])) {
           min_trial_fitnesses[t] = trial_fitnesses[t];
@@ -8154,7 +8154,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
       double fitness = 0.0;
       cPhenotype& p = GetCell(i).GetOrganism()->GetPhenotype();
       //Don't need to reset trial_fitnesses because we will call cPhenotype::OffspringReset on the entire pop
-      Apto::Array<double> trial_fitnesses = p.GetTrialFitnesses();
+      AvidaArray<double> trial_fitnesses = p.GetTrialFitnesses();
       
       //If there are no trial fitnesses...use the actual fitness.
       if (trial_fitnesses.GetSize() == 0) {
@@ -8261,7 +8261,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
   }
   
   // Pick which orgs should be in the next generation. (Filling all cells)
-  Apto::Array<int> new_orgs(num_cells);
+  AvidaArray<int> new_orgs(num_cells);
   for (int i = 0; i < num_cells; i++) {
     double birth_choice = (double) ctx.GetRandom().GetDouble(total_fitness);
     double test_total = 0;
@@ -8281,7 +8281,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
   average_fitness_copied /= num_cells;
   
   // Track how many of each org we should have.
-  Apto::Array<int> org_count(num_cells);
+  AvidaArray<int> org_count(num_cells);
   org_count.SetAll(0);
   for (int i = 0; i < num_cells; i++) {
     org_count[new_orgs[i]]++;
@@ -8310,7 +8310,7 @@ void cPopulation::CompeteOrganisms(cAvidaContext& ctx, int competition_type, int
     }
   }
   
-  Apto::Array<bool> is_init(num_cells);
+  AvidaArray<bool> is_init(num_cells);
   is_init.SetAll(false);
   
   // Copy orgs until all org counts are 1.
@@ -8778,7 +8778,7 @@ void  cPopulation::JoinGroup(cOrganism* org, int group_id)
     m_group_list.Set(group_id, temp);
     // If tolerance is on, create the new group's tolerance cache
     if (m_world->GetConfig().TOLERANCE_WINDOW.Get() > 0) {
-      Apto::Array<pair<int,int> > temp_array(2);
+      AvidaArray<pair<int,int> > temp_array(2);
       temp_array[0] = make_pair(-1, -1);
       temp_array[1] = make_pair(-1, -1);
       m_group_intolerances.Set(group_id, temp_array);

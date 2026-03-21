@@ -67,7 +67,7 @@ private:
   cWorld* m_world;
   Apto::PriorityScheduler* m_scheduler;                // Handles allocation of CPU cycles
   Apto::Array<cPopulationCell> cell_array;  // Local cells composing the population
-  Apto::Array<int> empty_cell_id_array;     // Used for PREFER_EMPTY birth methods
+  AvidaArray<int> empty_cell_id_array;     // Used for PREFER_EMPTY birth methods
   cResourceCount resource_count;       // Global resources available
   cBirthChamber birth_chamber;         // Global birth chamber.
   //Keeps track of which organisms are in which group.
@@ -461,7 +461,7 @@ private:
   cPopulationCell& PositionDemeMigration(cPopulationCell& parent_cell, bool parent_ok = true);
   cPopulationCell& PositionDemeRandom(int deme_id, cPopulationCell& parent_cell, bool parent_ok = true);
   int UpdateEmptyCellIDArray(int deme_id = -1);
-  Apto::Array<int>& GetEmptyCellIDArray() { return empty_cell_id_array; }
+  AvidaArray<int>& GetEmptyCellIDArray() { return empty_cell_id_array; }
   void FindEmptyCell(tList<cPopulationCell>& cell_list, tList<cPopulationCell>& found_list);
   int FindRandEmptyCell(cAvidaContext& ctx);
   
