@@ -99,7 +99,7 @@ double cTestCPUInterface::GetCellResVal(cAvidaContext& ctx, int cell_id, int res
   return m_testcpu->GetCellResVal(ctx, cell_id, res_id);
 }
 
-const Apto::Array< Apto::Array<int> >& cTestCPUInterface::GetCellIdLists()
+const AvidaArray<Apto::Array<int> >& cTestCPUInterface::GetCellIdLists()
 {
 	return m_testcpu->GetCellIdLists();
 }

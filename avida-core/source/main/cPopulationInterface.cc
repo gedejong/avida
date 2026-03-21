@@ -393,7 +393,7 @@ const AvidaArray<double>& cPopulationInterface::GetDemeResources(int deme_id, cA
   return m_world->GetPopulation().GetDemeCellResources(deme_id, m_cell_id, ctx);
 }
 
-const Apto::Array< Apto::Array<int> >& cPopulationInterface::GetCellIdLists()
+const AvidaArray<Apto::Array<int> >& cPopulationInterface::GetCellIdLists()
 {
 	return m_world->GetPopulation().GetCellIdLists();
 }

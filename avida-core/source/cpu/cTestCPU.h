@@ -111,7 +111,7 @@ public:
   inline const AvidaArray<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id);
   inline double GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
   inline double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
-  inline const Apto::Array< Apto::Array<int> >& GetCellIdLists();
+  inline const AvidaArray<Apto::Array<int> >& GetCellIdLists();
   
   // Used by cTestCPUInterface to get/update resources
   void ModifyResources(cAvidaContext& ctx, const AvidaArray<double>& res_change);
@@ -212,7 +212,7 @@ inline double cTestCPU::GetCellResVal(cAvidaContext& ctx, int cell_id, int res_i
   return cell_res[res_id];
 }
 
-inline const Apto::Array< Apto::Array<int> >& cTestCPU::GetCellIdLists()
+inline const AvidaArray<Apto::Array<int> >& cTestCPU::GetCellIdLists()
 {
 	return m_resource_count.GetCellIdLists();
 }

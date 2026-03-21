@@ -127,8 +127,8 @@ private:
   AvidaArray<double> cur_reaction_add_reward;     // Bonus change from triggering each reaction.
   AvidaArray<int> cur_inst_count;                 // Instruction exection counter
   AvidaArray<int> cur_from_sensor_count;           // Use of inputs that originated from sensory data were used in execution of this instruction.
-  Apto::Array< Apto::Array<int> > cur_group_attack_count;
-  Apto::Array< Apto::Array<int> > cur_top_pred_group_attack_count;
+  AvidaArray<Apto::Array<int> > cur_group_attack_count;
+  AvidaArray<Apto::Array<int> > cur_top_pred_group_attack_count;
   AvidaArray<int> cur_killed_targets;
   int cur_attacks;
   int cur_kills;
@@ -182,8 +182,8 @@ private:
   AvidaArray<int> last_inst_count;	  // Instruction exection counter
   AvidaArray<int> last_from_sensor_count;
   AvidaArray<int> last_sense_count;   // Total times resource combinations have been sensed; @JEB
-  Apto::Array< Apto::Array<int> > last_group_attack_count;
-  Apto::Array< Apto::Array<int> > last_top_pred_group_attack_count;
+  AvidaArray<Apto::Array<int> > last_group_attack_count;
+  AvidaArray<Apto::Array<int> > last_top_pred_group_attack_count;
   AvidaArray<int> last_killed_targets;
   int last_attacks;
   int last_kills;
@@ -489,8 +489,8 @@ public:
   const AvidaArray<int>& GetLastInstCount() const { assert(initialized == true); return last_inst_count; }
   const AvidaArray<int>& GetLastFromSensorInstCount() const { assert(initialized == true); return last_from_sensor_count; }
   const AvidaArray<int>& GetLastSenseCount() const { assert(initialized == true); return last_sense_count; }
-  const Apto::Array< Apto::Array<int> >& GetLastGroupAttackInstCount() const { assert(initialized == true); return last_group_attack_count; }
-  const Apto::Array< Apto::Array<int> >& GetLastTopPredGroupAttackInstCount() const { assert(initialized == true); return last_top_pred_group_attack_count; }
+  const AvidaArray<Apto::Array<int> >& GetLastGroupAttackInstCount() const { assert(initialized == true); return last_group_attack_count; }
+  const AvidaArray<Apto::Array<int> >& GetLastTopPredGroupAttackInstCount() const { assert(initialized == true); return last_top_pred_group_attack_count; }
 
   const AvidaArray<int>& GetLastFromMessageInstCount() const { assert(initialized == true); return last_from_message_count; }
 

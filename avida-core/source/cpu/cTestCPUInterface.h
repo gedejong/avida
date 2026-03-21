@@ -110,7 +110,7 @@ public:
   const AvidaArray<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id);
   double GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
   double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
-  const Apto::Array< Apto::Array<int> >& GetCellIdLists();
+  const AvidaArray<Apto::Array<int> >& GetCellIdLists();
   
   int GetCurrPeakX(cAvidaContext& ctx, int res_id) { return 0; } 
   int GetCurrPeakY(cAvidaContext& ctx, int res_id) { return 0; } 

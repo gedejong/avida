@@ -3849,7 +3849,7 @@ void cAnalyze::CommandPrintResourceFitnessMap(cString cur_string)
   
   // this is our grid where we are going to calculate the fitness of an org in each box
   // given current resource contributions
-  Apto::Array< Apto::Array<double> > fitnesses(fsize[0]+1);
+  AvidaArray<Apto::Array<double> > fitnesses(fsize[0]+1);
   for (int i=0; i<fitnesses.GetSize(); i++)
 	  fitnesses[i].Resize(fsize[1]+1,1);
   
@@ -4354,7 +4354,7 @@ void cAnalyze::AnalyzeComplexityDelta(cString cur_string)
     int start_length = genotype->GetLength();
     int start_gest = genotype->GetGestTime();
     const AvidaArray<int>& start_task_counts = genotype->GetTaskCounts();
-    const Apto::Array< Apto::Array<int> >& start_KO_task_counts = genotype->GetKO_TaskCounts();
+    const AvidaArray<Apto::Array<int> >& start_KO_task_counts = genotype->GetKO_TaskCounts();
     
     cAnalyzeGenotype new_genotype(m_world, mod_genome);
     new_genotype.Recalculate(m_ctx);
@@ -4363,7 +4363,7 @@ void cAnalyze::AnalyzeComplexityDelta(cString cur_string)
     int end_length = new_genotype.GetLength();
     int end_gest = new_genotype.GetGestTime();
     const AvidaArray<int> & end_task_counts = new_genotype.GetTaskCounts();
-    const Apto::Array< Apto::Array<int> >& end_KO_task_counts = new_genotype.GetKO_TaskCounts();
+    const AvidaArray<Apto::Array<int> >& end_KO_task_counts = new_genotype.GetKO_TaskCounts();
     
     // Calculate the complexities....
     double complexity_change = end_complexity - start_complexity;

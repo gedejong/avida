@@ -165,7 +165,7 @@ private:
     int pair_pos_count;
     
     bool has_chart_info; // Keep a chart of which sites affect which tasks?
-    Apto::Array< Apto::Array<int> > task_counts;
+    AvidaArray<Apto::Array<int> > task_counts;
 
     void Reset() {
       dead_count = 0;
@@ -354,7 +354,7 @@ public:
   int GetKOPair_NeutCount() const;
   int GetKOPair_PosCount() const;
   int GetKOPair_Complexity() const;
-  const Apto::Array< Apto::Array<int> > & GetKO_TaskCounts() const;
+  const AvidaArray<Apto::Array<int> > & GetKO_TaskCounts() const;
   
   // Landscape accessors
   double GetFracDead() const  { CheckLand(); return m_land->GetProbDead(); }

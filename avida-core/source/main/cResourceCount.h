@@ -72,9 +72,9 @@ private:
   AvidaArray<int> geometry;           // Spatial layout of each resource
   mutable AvidaArray<cSpatialResCount* > spatial_resource_count;
   mutable AvidaArray<double> curr_grid_res_cnt;
-  mutable Apto::Array< Apto::Array<double> > curr_spatial_res_cnt;
+  mutable AvidaArray<Apto::Array<double> > curr_spatial_res_cnt;
   int verbosity;
-  Apto::Array< Apto::Array<int> > cell_lists;
+  AvidaArray<Apto::Array<int> > cell_lists;
 
   // Setup the update process to use lazy evaluation...
   mutable double update_time;     // Portion of an update compleated...
@@ -165,8 +165,8 @@ public:
   double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id) const;
   const AvidaArray<int>& GetResourcesGeometry() const;
   int GetResourceGeometry(int res_id) const { return geometry[res_id]; }
-  const Apto::Array<Apto::Array<double> >& GetSpatialRes(cAvidaContext& ctx);
-  const Apto::Array<Apto::Array<int> >& GetCellIdLists() const { return cell_lists; }
+  const AvidaArray<Apto::Array<double> >& GetSpatialRes(cAvidaContext& ctx);
+  const AvidaArray<Apto::Array<int> >& GetCellIdLists() const { return cell_lists; }
   void Modify(cAvidaContext& ctx, const AvidaArray<double>& res_change);
   void Modify(cAvidaContext& ctx, int id, double change);
   void ModifyCell(cAvidaContext& ctx, const AvidaArray<double> & res_change, int cell_id);

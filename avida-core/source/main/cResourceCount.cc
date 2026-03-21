@@ -667,7 +667,7 @@ const AvidaArray<int> & cResourceCount::GetResourcesGeometry() const
   return geometry;
 }
 
-const Apto::Array< Apto::Array<double> > &  cResourceCount::GetSpatialRes(cAvidaContext& ctx)
+const AvidaArray<Apto::Array<double> > &  cResourceCount::GetSpatialRes(cAvidaContext& ctx)
 {
   const int num_spatial_resources = spatial_resource_count.GetSize();
   if (num_spatial_resources > 0) {

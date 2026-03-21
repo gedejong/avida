@@ -118,7 +118,7 @@ public:
   virtual double GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id) = 0;
   virtual double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id) = 0;
   virtual const AvidaArray<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id) = 0;
-  virtual const Apto::Array< Apto::Array<int> >& GetCellIdLists() = 0; 
+  virtual const AvidaArray<Apto::Array<int> >& GetCellIdLists() = 0; 
 
   virtual int GetCurrPeakX(cAvidaContext& ctx, int res_id) = 0;
   virtual int GetCurrPeakY(cAvidaContext& ctx, int res_id) = 0;

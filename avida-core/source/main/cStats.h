@@ -270,7 +270,7 @@ private:
 
   AvidaArray<double> resource_count;
   AvidaArray<int> resource_geometry;
-  Apto::Array< Apto::Array<double> > spatial_res_count;
+  AvidaArray<Apto::Array<double> > spatial_res_count;
 
   AvidaArray<cString> task_names;
   AvidaArray<cString> reaction_names;
@@ -713,7 +713,7 @@ public:
 
   void SetResources(const AvidaArray<double> &_in) { resource_count = _in; }
   void SetResourcesGeometry(const AvidaArray<int> &_in) { resource_geometry = _in;}
-  void SetSpatialRes(const Apto::Array< Apto::Array<double> > &_in) { spatial_res_count = _in; }
+  void SetSpatialRes(const AvidaArray<Apto::Array<double> > &_in) { spatial_res_count = _in; }
 
   void SetInstNames(const cString& inst_set, const Apto::Array<cString>& names) { m_is_inst_names_map[inst_set] = names; }
   void SetReactionName(int id, const cString & name) { reaction_names[id] = name; }
@@ -777,7 +777,7 @@ public:
   const AvidaArray<double>& GetResources() const { return resource_count; }
   const AvidaArray<cString>& GetResourceNames() const { return resource_names; }
   const AvidaArray<int>& GetResourceGeometries() const { return resource_geometry; }
-  const Apto::Array< Apto::Array<double> >& GetSpatialResourceCount() const {return spatial_res_count; }
+  const AvidaArray<Apto::Array<double> >& GetSpatialResourceCount() const {return spatial_res_count; }
 
   double GetAveReproRate() const  { return sum_repro_rate.Average(); }
 

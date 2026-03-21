@@ -802,7 +802,7 @@ int cAnalyzeGenotype::GetKOPair_Complexity() const
   return knockout_stats->pair_dead_count + knockout_stats->pair_neg_count;
 }
 
-const Apto::Array< Apto::Array<int> > & cAnalyzeGenotype::GetKO_TaskCounts() const
+const AvidaArray<Apto::Array<int> > & cAnalyzeGenotype::GetKO_TaskCounts() const
 {
   CalcKnockouts(false, true);  // Make sure knockouts are calculated
   return knockout_stats->task_counts;

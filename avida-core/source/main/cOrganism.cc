@@ -416,7 +416,7 @@ void cOrganism::doOutput(cAvidaContext& ctx,
   const int deme_id = m_interface->GetDemeID();
   const AvidaArray<double> & global_resource_count = m_interface->GetResources(ctx);
   const AvidaArray<double> & deme_resource_count = m_interface->GetDemeResources(deme_id, ctx);
-  const Apto::Array< Apto::Array<int> > & cell_id_lists = m_interface->GetCellIdLists();
+  const AvidaArray<Apto::Array<int> > & cell_id_lists = m_interface->GetCellIdLists();
   
   tList<tBuffer<int> > other_input_list;
   tList<tBuffer<int> > other_output_list;
@@ -533,7 +533,7 @@ void cOrganism::doAVOutput(cAvidaContext& ctx,
   //Avatar output has to be seperate from doOutput to ensure avatars, not the true orgs, are triggering reactions
   //  const int deme_id = m_interface->GetDemeID();
   //  const tArray<double> & deme_resource_count = m_interface->GetDemeResources(deme_id, ctx); //todo: DemeAVResources
-  const Apto::Array< Apto::Array<int> > & cell_id_lists = m_interface->GetCellIdLists();
+  const AvidaArray<Apto::Array<int> > & cell_id_lists = m_interface->GetCellIdLists();
   
   tList<tBuffer<int> > other_input_list;
   tList<tBuffer<int> > other_output_list;
