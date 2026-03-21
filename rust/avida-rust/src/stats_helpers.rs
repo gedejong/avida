@@ -75,6 +75,49 @@ pub extern "C" fn avd_stats_is_den_habitat(habitat: c_int) -> c_int {
     }
 }
 
+// --- Gradient resource classifier ---
+
+/// Returns 1 if the resource is a gradient resource (is_gradient != 0).
+/// Completes the resource-type classifier family (wall_gradient, den_habitat, gradient).
+#[no_mangle]
+pub extern "C" fn avd_stats_is_gradient_resource(is_gradient: c_int) -> c_int {
+    if is_gradient != 0 {
+        1
+    } else {
+        0
+    }
+}
+
+// --- Safe integer division ---
+
+/// Computes safe integer division: numerator/denominator if denominator > 0, else default_val.
+/// Used for task-count averages where -1.0 signals "no data".
+#[no_mangle]
+pub extern "C" fn avd_stats_safe_divide_or_default(
+    numerator: c_int,
+    denominator: c_int,
+    default_val: f64,
+) -> f64 {
+    if denominator > 0 {
+        f64::from(numerator) / f64::from(denominator)
+    } else {
+        default_val
+    }
+}
+
+// --- Juvenile age classification ---
+
+/// Returns 1 if time_used < juv_period (organism is a juvenile), else 0.
+/// Returns 0 when juv_period <= 0 (no juvenile period defined).
+#[no_mangle]
+pub extern "C" fn avd_stats_is_juvenile(time_used: c_int, juv_period: c_int) -> c_int {
+    if juv_period > 0 && time_used < juv_period {
+        1
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +222,72 @@ mod tests {
         assert_eq!(avd_stats_is_den_habitat(2), 0);
         assert_eq!(avd_stats_is_den_habitat(5), 0);
         assert_eq!(avd_stats_is_den_habitat(-1), 0);
+    }
+
+    // --- Gradient resource classifier tests ---
+
+    #[test]
+    fn gradient_resource_policy() {
+        assert_eq!(avd_stats_is_gradient_resource(1), 1);
+        assert_eq!(avd_stats_is_gradient_resource(0), 0);
+        assert_eq!(avd_stats_is_gradient_resource(-1), 1);
+        assert_eq!(avd_stats_is_gradient_resource(99), 1);
+    }
+
+    // --- Safe divide tests ---
+
+    #[test]
+    fn safe_divide_normal() {
+        let r = avd_stats_safe_divide_or_default(10, 5, -1.0);
+        assert!((r - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn safe_divide_zero_denominator() {
+        assert_eq!(avd_stats_safe_divide_or_default(10, 0, -1.0), -1.0);
+    }
+
+    #[test]
+    fn safe_divide_negative_denominator() {
+        assert_eq!(avd_stats_safe_divide_or_default(10, -1, -1.0), -1.0);
+    }
+
+    #[test]
+    fn safe_divide_zero_numerator() {
+        assert_eq!(avd_stats_safe_divide_or_default(0, 5, -1.0), 0.0);
+    }
+
+    #[test]
+    fn safe_divide_custom_default() {
+        assert_eq!(avd_stats_safe_divide_or_default(10, 0, 0.0), 0.0);
+        assert_eq!(avd_stats_safe_divide_or_default(10, 0, 42.0), 42.0);
+    }
+
+    // --- Juvenile age classification tests ---
+
+    #[test]
+    fn juvenile_below_threshold() {
+        assert_eq!(avd_stats_is_juvenile(5, 10), 1);
+    }
+
+    #[test]
+    fn juvenile_at_threshold() {
+        assert_eq!(avd_stats_is_juvenile(10, 10), 0);
+    }
+
+    #[test]
+    fn juvenile_above_threshold() {
+        assert_eq!(avd_stats_is_juvenile(15, 10), 0);
+    }
+
+    #[test]
+    fn juvenile_zero_period() {
+        assert_eq!(avd_stats_is_juvenile(0, 0), 0);
+        assert_eq!(avd_stats_is_juvenile(5, 0), 0);
+    }
+
+    #[test]
+    fn juvenile_negative_period() {
+        assert_eq!(avd_stats_is_juvenile(0, -1), 0);
     }
 }
