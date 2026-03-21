@@ -25,6 +25,7 @@
 
 #include "avida/Avida.h"
 
+#include "AvidaArray.h"
 #include "cSpatialResCount.h"
 #include "cString.h"
 #include "cAvidaContext.h"
@@ -61,16 +62,16 @@ class cWorld;
 class cResourceCount
 {
 private:
-  mutable Apto::Array<cString> resource_name;    // The name of each resource
-  mutable Apto::Array<double> resource_initial;  // Initial quantity of each resource
-  mutable Apto::Array<double> resource_count;  // Current quantity of each resource
-  Apto::Array<double> decay_rate;      // Multiplies resource count at each step
-  Apto::Array<double> inflow_rate;     // An increment for resource at each step
+  mutable AvidaArray<cString> resource_name;    // The name of each resource
+  mutable AvidaArray<double> resource_initial;  // Initial quantity of each resource
+  mutable AvidaArray<double> resource_count;  // Current quantity of each resource
+  AvidaArray<double> decay_rate;      // Multiplies resource count at each step
+  AvidaArray<double> inflow_rate;     // An increment for resource at each step
   tMatrix<double> decay_precalc;  // Precalculation of decay values
   tMatrix<double> inflow_precalc; // Precalculation of inflow values
-  Apto::Array<int> geometry;           // Spatial layout of each resource
-  mutable Apto::Array<cSpatialResCount* > spatial_resource_count;
-  mutable Apto::Array<double> curr_grid_res_cnt;
+  AvidaArray<int> geometry;           // Spatial layout of each resource
+  mutable AvidaArray<cSpatialResCount* > spatial_resource_count;
+  mutable AvidaArray<double> curr_grid_res_cnt;
   mutable Apto::Array< Apto::Array<double> > curr_spatial_res_cnt;
   int verbosity;
   Apto::Array< Apto::Array<int> > cell_lists;
@@ -99,7 +100,7 @@ public:
   const cResourceCount& operator=(const cResourceCount&);
 
   void SetSize(int num_resources);
-  void SetCellResources(int cell_id, const Apto::Array<double> & res);
+  void SetCellResources(int cell_id, const AvidaArray<double> & res);
 
   void Setup(cWorld* world, const int& id, const cString& name, const double& initial, const double& inflow, const double& decay,                      
 	   const int& in_geometry, const double& in_xdiffuse, const double& in_xgravity, 
@@ -156,19 +157,19 @@ public:
   void Update(double in_time);
 
   int GetSize(void) const { return resource_count.GetSize(); }
-  const Apto::Array<double>& ReadResources(void) const { return resource_count; }
-  const Apto::Array<double>& GetResources(cAvidaContext& ctx) const; 
-  const Apto::Array<double>& GetCellResources(int cell_id, cAvidaContext& ctx) const;
-  const Apto::Array<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id) const;
+  const AvidaArray<double>& ReadResources(void) const { return resource_count; }
+  const AvidaArray<double>& GetResources(cAvidaContext& ctx) const;
+  const AvidaArray<double>& GetCellResources(int cell_id, cAvidaContext& ctx) const;
+  const AvidaArray<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id) const;
   double GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id) const;
   double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id) const;
-  const Apto::Array<int>& GetResourcesGeometry() const;
+  const AvidaArray<int>& GetResourcesGeometry() const;
   int GetResourceGeometry(int res_id) const { return geometry[res_id]; }
   const Apto::Array<Apto::Array<double> >& GetSpatialRes(cAvidaContext& ctx);
   const Apto::Array<Apto::Array<int> >& GetCellIdLists() const { return cell_lists; }
-  void Modify(cAvidaContext& ctx, const Apto::Array<double>& res_change);
+  void Modify(cAvidaContext& ctx, const AvidaArray<double>& res_change);
   void Modify(cAvidaContext& ctx, int id, double change);
-  void ModifyCell(cAvidaContext& ctx, const Apto::Array<double> & res_change, int cell_id);
+  void ModifyCell(cAvidaContext& ctx, const AvidaArray<double> & res_change, int cell_id);
   void Set(cAvidaContext& ctx, int id, double new_level);
   double Get(cAvidaContext& ctx, int id) const;
   void ResizeSpatialGrids(int in_x, int in_y);

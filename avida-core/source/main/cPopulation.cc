@@ -7288,7 +7288,7 @@ void cPopulation::InjectParasite(const cString& label, const InstructionSequence
 }
 
 
-void cPopulation::UpdateResources(cAvidaContext& ctx, const Apto::Array<double> & res_change)
+void cPopulation::UpdateResources(cAvidaContext& ctx, const AvidaArray<double> & res_change)
 {
   resource_count.Modify(ctx, res_change);
 }
@@ -7298,12 +7298,12 @@ void cPopulation::UpdateResource(cAvidaContext& ctx, int res_index, double chang
   resource_count.Modify(ctx, res_index, change);
 }
 
-void cPopulation::UpdateCellResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, const int cell_id)
+void cPopulation::UpdateCellResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, const int cell_id)
 {
   resource_count.ModifyCell(ctx, res_change, cell_id);
 }
 
-void cPopulation::UpdateDemeCellResources(cAvidaContext& ctx, const Apto::Array<double>& res_change, const int cell_id)
+void cPopulation::UpdateDemeCellResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, const int cell_id)
 {
   GetDeme(GetCell(cell_id).GetDemeID()).ModifyDemeResCount(ctx, res_change, cell_id);
 }

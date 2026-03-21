@@ -133,7 +133,7 @@ inline void cTestCPU::SetResourceUpdate(cAvidaContext& ctx, int update, bool rou
   m_res->GetResourceCountForUpdate(ctx, update, m_resource_count, !round_to_closest);
 }
 
-void cTestCPU::ModifyResources(cAvidaContext& ctx, const Apto::Array<double>& res_change)
+void cTestCPU::ModifyResources(cAvidaContext& ctx, const AvidaArray<double>& res_change)
 {
   //We only let the testCPU modify the resources if we are using a DEPLETABLE option. @JEB
   if (m_res_method >= RES_UPDATED_DEPLETABLE) m_resource_count.Modify(ctx, res_change);

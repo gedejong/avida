@@ -35,7 +35,7 @@
 using namespace std;
 
 namespace {
-int LookupResourceIndex(const Apto::Array<cString>& resource_names, const cString& query)
+int LookupResourceIndex(const AvidaArray<cString>& resource_names, const cString& query)
 {
   const int count = resource_names.GetSize();
   if (count <= 0) return -1;
@@ -230,7 +230,7 @@ cResourceCount::~cResourceCount()
   }
 }
 
-void cResourceCount::SetCellResources(int cell_id, const Apto::Array<double> & res)
+void cResourceCount::SetCellResources(int cell_id, const AvidaArray<double> & res)
 {
   assert(resource_count.GetSize() == res.GetSize());
 
@@ -613,13 +613,13 @@ double cResourceCount::ReadCellResourceValue(int cell_id, int res_id) const
 }
 
  
-const Apto::Array<double> & cResourceCount::GetResources(cAvidaContext& ctx) const
+const AvidaArray<double> & cResourceCount::GetResources(cAvidaContext& ctx) const
 {
   DoUpdates(ctx); 
   return resource_count;
 }
  
-const Apto::Array<double> & cResourceCount::GetCellResources(int cell_id, cAvidaContext& ctx) const
+const AvidaArray<double> & cResourceCount::GetCellResources(int cell_id, cAvidaContext& ctx) const
   // Get amount of the resource for a given cell in the grid.  If it is a
   // global resource pass out the entire content of that resource.
 {
@@ -634,7 +634,7 @@ const Apto::Array<double> & cResourceCount::GetCellResources(int cell_id, cAvida
 
 }
 
-const Apto::Array<double> & cResourceCount::GetFrozenResources(cAvidaContext&, int cell_id) const
+const AvidaArray<double> & cResourceCount::GetFrozenResources(cAvidaContext&, int cell_id) const
 // Get amount of the resource for a given cell in the grid.  If it is a
 // global resource pass out the entire content of that resource.
 // This differs from GetCellResources by leaving out DoUpdates which is
@@ -662,7 +662,7 @@ double cResourceCount::GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id
   return ReadCellResourceValue(cell_id, res_id);
 }
 
-const Apto::Array<int> & cResourceCount::GetResourcesGeometry() const
+const AvidaArray<int> & cResourceCount::GetResourcesGeometry() const
 {
   return geometry;
 }
@@ -682,7 +682,7 @@ const Apto::Array< Apto::Array<double> > &  cResourceCount::GetSpatialRes(cAvida
   return curr_spatial_res_cnt;
 }
 
-void cResourceCount::Modify(cAvidaContext& ctx, const Apto::Array<double> & res_change)
+void cResourceCount::Modify(cAvidaContext& ctx, const AvidaArray<double> & res_change)
 {
   assert(resource_count.GetSize() == res_change.GetSize());
 
@@ -703,7 +703,7 @@ void cResourceCount::Modify(cAvidaContext& ctx, int res_index, double change)
   assert(resource_count[res_index] >= 0.0);
 }
 
-void cResourceCount::ModifyCell(cAvidaContext& ctx, const Apto::Array<double> & res_change, int cell_id)
+void cResourceCount::ModifyCell(cAvidaContext& ctx, const AvidaArray<double> & res_change, int cell_id)
 {
   assert(resource_count.GetSize() == res_change.GetSize());
 

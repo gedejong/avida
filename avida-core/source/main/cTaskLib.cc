@@ -594,7 +594,7 @@ double cTaskLib::Task_Nand_ResourceDependent(cTaskContext& ctx) const
   if (!(logic_id == 63 || logic_id == 95 || logic_id == 119)) return 0.0;
 		
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
-  const Apto::Array<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
+  const AvidaArray<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
   const cResourceCount& resource_count = m_world->GetPopulation().GetResourceCount();
 	
   if (resource_count.GetSize() == 0) assert(false); // change to: return false;
@@ -619,7 +619,7 @@ double cTaskLib::Task_Nor_ResourceDependent(cTaskContext& ctx) const
   if (!(logic_id == 3 || logic_id == 5 || logic_id == 17))  return 0.0;
 	
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
-  const Apto::Array<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
+  const AvidaArray<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
   const cResourceCount& resource_count = m_world->GetPopulation().GetResourceCount();
   
   //if (resource_count.GetSize() == 0) assert(false); // change to: return false;

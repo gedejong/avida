@@ -93,6 +93,21 @@ public:
     return *this;
   }
 
+  // Concatenation operators (matches Apto::Array semantics)
+  AvidaArray operator+(const AvidaArray& rhs) const {
+    AvidaArray result(GetSize() + rhs.GetSize());
+    for (int i = 0; i < GetSize(); i++) result[i] = m_data[i];
+    for (int i = 0; i < rhs.GetSize(); i++) result[GetSize() + i] = rhs[i];
+    return result;
+  }
+
+  AvidaArray& operator+=(const AvidaArray& rhs) {
+    int old_size = GetSize();
+    m_data.resize(old_size + rhs.GetSize());
+    for (int i = 0; i < rhs.GetSize(); i++) m_data[old_size + i] = rhs[i];
+    return *this;
+  }
+
   // Raw data access for FFI bridging
   T* GetData() { return m_data.data(); }
   const T* GetData() const { return m_data.data(); }

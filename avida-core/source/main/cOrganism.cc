@@ -414,8 +414,8 @@ void cOrganism::doOutput(cAvidaContext& ctx,
                          cContextPhenotype* context_phenotype)
 {  
   const int deme_id = m_interface->GetDemeID();
-  const Apto::Array<double> & global_resource_count = m_interface->GetResources(ctx);
-  const Apto::Array<double> & deme_resource_count = m_interface->GetDemeResources(deme_id, ctx);
+  const AvidaArray<double> & global_resource_count = m_interface->GetResources(ctx);
+  const AvidaArray<double> & deme_resource_count = m_interface->GetDemeResources(deme_id, ctx);
   const Apto::Array< Apto::Array<int> > & cell_id_lists = m_interface->GetCellIdLists();
   
   tList<tBuffer<int> > other_input_list;
@@ -448,9 +448,9 @@ void cOrganism::doOutput(cAvidaContext& ctx,
   // Do the testing of tasks performed...
   
   
-  Apto::Array<double> global_res_change(global_resource_count.GetSize());
+  AvidaArray<double> global_res_change(global_resource_count.GetSize());
   global_res_change.SetAll(0.0);
-  Apto::Array<double> deme_res_change(deme_resource_count.GetSize());
+  AvidaArray<double> deme_res_change(deme_resource_count.GetSize());
   deme_res_change.SetAll(0.0);
   Apto::Array<cString> insts_triggered;
   
@@ -461,8 +461,9 @@ void cOrganism::doOutput(cAvidaContext& ctx,
                        m_hardware->GetExtendedMemory(), on_divide, received_messages_point);
   
   //combine global and deme resource counts
-  Apto::Array<double> globalAndDeme_resource_count = global_resource_count + deme_resource_count;
-  Apto::Array<double> globalAndDeme_res_change = global_res_change + deme_res_change;
+  AvidaArray<double> globalAndDeme_resource_count = global_resource_count + deme_resource_count;
+  Apto::Array<double> globalAndDeme_res_change(globalAndDeme_resource_count.GetSize());
+  globalAndDeme_res_change.SetAll(0.0);
   
   // set any resource amount to 0 if a cell cannot access this resource
   int cell_id=GetCellID();
@@ -564,7 +565,7 @@ void cOrganism::doAVOutput(cAvidaContext& ctx,
   }
   
   // Do the testing of tasks performed...
-  Apto::Array<double> avatar_res_change(m_world->GetEnvironment().GetResourceLib().GetSize());
+  AvidaArray<double> avatar_res_change(m_world->GetEnvironment().GetResourceLib().GetSize());
   avatar_res_change.SetAll(0.0);
 
   //  tArray<double> deme_res_change(deme_resource_count.GetSize());
@@ -579,9 +580,9 @@ void cOrganism::doAVOutput(cAvidaContext& ctx,
                        m_hardware->GetExtendedMemory(), on_divide, received_messages_point);
   
   //combine global and deme resource counts
-  const Apto::Array<double>& av_res_count = m_interface->GetAVResources(ctx);
-  Apto::Array<double> avatarAndDeme_res_count = av_res_count; // + deme_resource_count;
-  Apto::Array<double> avatarAndDeme_res_change = avatar_res_change; // + deme_res_change;
+  const AvidaArray<double>& av_res_count = m_interface->GetAVResources(ctx);
+  AvidaArray<double> avatarAndDeme_res_count = av_res_count; // + deme_resource_count;
+  Apto::Array<double> avatarAndDeme_res_change(avatar_res_change); // + deme_res_change;
   
   // set any resource amount to 0 if a cell cannot access this resource
   int cell_id = m_interface->GetAVCellID();

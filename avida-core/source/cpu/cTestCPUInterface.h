@@ -101,13 +101,13 @@ public:
   int GetInputAt(int& input_pointer);
   void ResetInputs(cAvidaContext& ctx);
   const AvidaArray<int>& GetInputs() const;
-  const Apto::Array<double>& GetResources(cAvidaContext& ctx); 
+  const AvidaArray<double>& GetResources(cAvidaContext& ctx);
   double GetResourceVal(cAvidaContext& ctx, int res_id);
-  const Apto::Array<double>& GetFacedCellResources(cAvidaContext& ctx); 
+  const AvidaArray<double>& GetFacedCellResources(cAvidaContext& ctx);
   double GetFacedResourceVal(cAvidaContext& ctx, int res_id);
-  const Apto::Array<double>& GetDemeResources(int deme_id, cAvidaContext& ctx); 
-  const Apto::Array<double>& GetCellResources(int cell_id, cAvidaContext& ctx); 
-  const Apto::Array<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id);
+  const AvidaArray<double>& GetDemeResources(int deme_id, cAvidaContext& ctx);
+  const AvidaArray<double>& GetCellResources(int cell_id, cAvidaContext& ctx);
+  const AvidaArray<double>& GetFrozenResources(cAvidaContext& ctx, int cell_id);
   double GetFrozenCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
   double GetCellResVal(cAvidaContext& ctx, int cell_id, int res_id);
   const Apto::Array< Apto::Array<int> >& GetCellIdLists();
@@ -265,9 +265,9 @@ public:
   Apto::Array<cOrganism*> GetFacedAVs(int av_num = 0);
   Apto::Array<cOrganism*> GetCellAVs(int cell_id, int av_num = 0);
   Apto::Array<cOrganism*> GetFacedPreyAVs(int av_num = 0);
-  const Apto::Array<double>& GetAVResources(cAvidaContext& ctx, int av_num = 0);
+  const AvidaArray<double>& GetAVResources(cAvidaContext& ctx, int av_num = 0);
   double GetAVResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
-  const Apto::Array<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0);
+  const AvidaArray<double>& GetAVFacedResources(cAvidaContext& ctx, int av_num = 0);
   double GetAVFacedResourceVal(cAvidaContext& ctx, int res_id, int av_num = 0);
   void UpdateAVResources(cAvidaContext& ctx, const AvidaArray<double>& res_change, int av_num = 0);
   
