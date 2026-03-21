@@ -129,6 +129,39 @@ pub(crate) fn boxed_free<T>(handle: *mut T) {
     }
 }
 
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[allow(dead_code)]
+pub(crate) fn boxed_clone<T: Clone>(handle: *const T) -> *mut T {
+    if handle.is_null() {
+        return std::ptr::null_mut();
+    }
+    // SAFETY: handle checked for null, read-only borrow for clone.
+    let h = unsafe { &*handle };
+    boxed_new(h.clone())
+}
+
+/// Generic read-only handle accessor. Returns `default` if handle is null.
+#[allow(dead_code)]
+pub(crate) fn with_handle_ref<H, T>(handle: *const H, default: T, f: impl FnOnce(&H) -> T) -> T {
+    if handle.is_null() {
+        return default;
+    }
+    // SAFETY: handle checked for null, read-only borrow.
+    let h = unsafe { &*handle };
+    f(h)
+}
+
+/// Generic mutable handle accessor. No-op if handle is null.
+#[allow(dead_code)]
+pub(crate) fn with_handle_mut<H>(handle: *mut H, f: impl FnOnce(&mut H)) {
+    if handle.is_null() {
+        return;
+    }
+    // SAFETY: handle checked for null, exclusive borrow.
+    let h = unsafe { &mut *handle };
+    f(h);
+}
+
 pub(crate) fn apto_bool_from_bytes(text: &[u8]) -> c_int {
     if text.len() == 1 {
         if text[0] == b'1' || text[0] == b'T' || text[0] == b't' {

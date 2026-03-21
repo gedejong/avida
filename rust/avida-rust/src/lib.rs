@@ -23,6 +23,7 @@ pub mod deme_helpers;
 pub mod double_sum;
 pub mod environment_helpers;
 pub mod event_list_helpers;
+pub mod ffi_string;
 pub mod ffi_vec;
 pub mod histogram;
 pub mod landscape_helpers;
