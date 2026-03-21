@@ -4308,7 +4308,7 @@ void cPopulation::DivideDemes(cAvidaContext& ctx)
     // Setup an array to collect the total number of tasks performed.
     const int num_tasks = cell_array[source_deme.GetCellID(0)].GetOrganism()->
     GetPhenotype().GetLastTaskCount().GetSize();
-    Apto::Array<int> tot_tasks(num_tasks);
+    AvidaArray<int> tot_tasks(num_tasks);
     tot_tasks.SetAll(0);
     
     // Move over the odd numbered cells.
@@ -4318,7 +4318,7 @@ void cPopulation::DivideDemes(cAvidaContext& ctx)
       cOrganism * org1 = cell_array[cell1_id].GetOrganism();
       
       // Keep track of what tasks have been done.
-      const Apto::Array<int> & cur_tasks = org1->GetPhenotype().GetLastTaskCount();
+      const AvidaArray<int> & cur_tasks = org1->GetPhenotype().GetLastTaskCount();
       for (int i = 0; i < num_tasks; i++) {
         tot_tasks[i] += cur_tasks[i];
       }
@@ -6040,7 +6040,7 @@ void cPopulation::UpdateOrganismStats(cAvidaContext& ctx)
     if (stats.ShouldCollectEnvTestStats()) {
       Systematics::GroupPtr genotype = organism->SystematicsGroup("genotype");
       Systematics::GenomeTestMetricsPtr metrics(Systematics::GenomeTestMetrics::GetMetrics(m_world, ctx, genotype));
-      const Apto::Array<int>& test_task_counts = metrics->GetTaskCounts();
+      const AvidaArray<int>& test_task_counts = metrics->GetTaskCounts();
       
       for (int j = 0; j < m_world->GetEnvironment().GetNumTasks(); j++) if (test_task_counts[j] > 0) stats.AddTestTask(j);
     }
@@ -6349,7 +6349,7 @@ struct sOrgInfo {
 
 struct sGroupInfo {
   Systematics::GroupPtr bg;
-  Apto::Array<sOrgInfo> orgs;
+  AvidaArray<sOrgInfo> orgs;
   bool parasite;
   
   sGroupInfo(Systematics::GroupPtr in_bg, bool is_para = false) : bg(in_bg), parasite(is_para) { ; }
@@ -6465,7 +6465,7 @@ bool cPopulation::SavePopulation(const cString& filename, bool save_historic, bo
     
     genotype->LegacySave(Apto::GetInternalPtr(df));
     
-    Apto::Array<sOrgInfo>& cells = group_info->orgs;
+    AvidaArray<sOrgInfo>& cells = group_info->orgs;
     cString cellstr;
     cString offsetstr;
     cString lineagestr;
@@ -6614,7 +6614,7 @@ bool cPopulation::SaveStructuredSystematicsGroup(const Systematics::RoleID& role
     
     group->LegacySave(Apto::GetInternalPtr(df));
     
-    Apto::Array<sOrgInfo>& cells = group_info->orgs;
+    AvidaArray<sOrgInfo>& cells = group_info->orgs;
     cString cellstr;
     cellstr.Set("%d", cells[0].cell_id);
     for (int cell_i = 1; cell_i < cells.GetSize(); cell_i++) cellstr += cStringUtil::Stringf(",%d", cells[cell_i].cell_id);
@@ -6729,16 +6729,16 @@ public:
   Apto::SmartPtr<Apto::Map<Apto::String, Apto::String> > props;
   
   int num_cpus;
-  Apto::Array<int> cells;
-  Apto::Array<int> offsets;
-  Apto::Array<int> lineage_labels;
-  Apto::Array<int> group_ids;
-  Apto::Array<int> forager_types;
-  Apto::Array<int> birth_cells;
-  Apto::Array<int> avatar_cells;
-  Apto::Array<double> parent_merit;
-  Apto::Array<bool> parent_teacher;
-  Apto::Array<int> parent_ft;
+  AvidaArray<int> cells;
+  AvidaArray<int> offsets;
+  AvidaArray<int> lineage_labels;
+  AvidaArray<int> group_ids;
+  AvidaArray<int> forager_types;
+  AvidaArray<int> birth_cells;
+  AvidaArray<int> avatar_cells;
+  AvidaArray<double> parent_merit;
+  AvidaArray<bool> parent_teacher;
+  AvidaArray<int> parent_ft;
 
   Systematics::Source source = Systematics::Source(Systematics::TransmissionType::UNKNOWN, "", true);
   Systematics::GroupPtr bg;
