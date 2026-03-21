@@ -389,7 +389,7 @@ void cAnalyzeGenotype::CalcKnockouts(bool check_pairs, bool check_chart) const
   cAnalyzeGenotype base_genotype(m_world, m_genome);
   base_genotype.Recalculate(ctx);
   double base_fitness = base_genotype.GetFitness();
-  const Apto::Array<int> base_task_counts( base_genotype.GetTaskCounts() );
+  const AvidaArray<int> base_task_counts( base_genotype.GetTaskCounts() );
   
   // If the base fitness is 0, the organism is dead and has no complexity.
   if (base_fitness == 0.0) {
@@ -412,7 +412,7 @@ void cAnalyzeGenotype::CalcKnockouts(bool check_pairs, bool check_chart) const
   
   // Loop through all the lines of code, testing the removal of each.
   // -2=lethal, -1=detrimental, 0=neutral, 1=beneficial
-  Apto::Array<int> ko_effect(length);
+  AvidaArray<int> ko_effect(length);
   for (int line_num = 0; line_num < length; line_num++) {
     // Save a copy of the current instruction and replace it with "NULL"
     InstructionSequencePtr mod_seq_p;
@@ -424,7 +424,7 @@ void cAnalyzeGenotype::CalcKnockouts(bool check_pairs, bool check_chart) const
     cAnalyzeGenotype ko_genotype(m_world, mod_genome);
     ko_genotype.Recalculate(ctx);
     if (check_chart == true) {
-      const Apto::Array<int> ko_task_counts( ko_genotype.GetTaskCounts() );
+      const AvidaArray<int> ko_task_counts( ko_genotype.GetTaskCounts() );
       knockout_stats->task_counts[line_num] = ko_task_counts;
     }
     
@@ -456,7 +456,7 @@ void cAnalyzeGenotype::CalcKnockouts(bool check_pairs, bool check_chart) const
     return;
   }
   
-  Apto::Array<int> ko_pair_effect(ko_effect);
+  AvidaArray<int> ko_pair_effect(ko_effect);
   for (int line1 = 0; line1 < length; line1++) {
     // If this line has already been changed, keep going...
     if (ko_effect[line1] != ko_pair_effect[line1]) continue;

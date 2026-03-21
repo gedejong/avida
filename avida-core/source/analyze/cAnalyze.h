@@ -21,6 +21,7 @@
  */
 
 #ifndef cAnalyze_h
+#include "AvidaArray.h"
 #define cAnalyze_h
 
 #include "apto/rng.h"
@@ -81,13 +82,13 @@ private:
   int GetTempNextUpdate(){ return temporary_next_update; }
   int GetTempNextID(){ return temporary_next_id; }
 
-  Apto::Array<cGenotypeBatch> batch;
+  AvidaArray<cGenotypeBatch> batch;
   tList<cAnalyzeCommand> command_list;
   tList<cAnalyzeFunction> function_list;
   tList<cAnalyzeCommandDefBase> command_lib;
-  Apto::Array<cString> variables;
-  Apto::Array<cString> local_variables;
-  Apto::Array<cString> arg_variables;
+  AvidaArray<cString> variables;
+  AvidaArray<cString> local_variables;
+  AvidaArray<cString> arg_variables;
 
   bool exit_on_error;
 

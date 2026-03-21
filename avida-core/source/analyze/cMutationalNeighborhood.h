@@ -20,6 +20,7 @@
  */
 
 #ifndef cMutationalNeighborhood_h
+#include "AvidaArray.h"
 #define cMutationalNeighborhood_h
 
 #include "apto/core.h"
@@ -67,7 +68,7 @@ private:
   double m_base_fitness;
   double m_base_merit;
   double m_base_gestation;
-  Apto::Array<int> m_base_tasks;
+  AvidaArray<int> m_base_tasks;
   double m_neut_min;  // These two variables are a range around the base
   double m_neut_max;  //   fitness to be counted as neutral mutations.
   
@@ -91,7 +92,7 @@ private:
     double size_pos;
     double size_neg;
     
-    Apto::Array<int> site_count;
+    AvidaArray<int> site_count;
     
     int task_target;
     int task_total;
@@ -106,9 +107,9 @@ private:
       size_pos(0.0), size_neg(0.0), task_target(0), task_total(0), task_knockout(0), task_size_target(0.0),
       task_size_total(0.0), task_size_knockout(0.0) { ; }
   };
-  Apto::Array<sStep> m_onestep_point;
-  Apto::Array<sStep> m_onestep_insert;
-  Apto::Array<sStep> m_onestep_delete;
+  AvidaArray<sStep> m_onestep_point;
+  AvidaArray<sStep> m_onestep_insert;
+  AvidaArray<sStep> m_onestep_delete;
   
 
   // Two Step Per-Site Data
@@ -135,13 +136,13 @@ private:
     
     sTwoStep() : sStep() { ; }
   };  
-  Apto::Array<sTwoStep> m_twostep_point;
-  Apto::Array<sTwoStep> m_twostep_insert;
-  Apto::Array<sTwoStep> m_twostep_delete;
+  AvidaArray<sTwoStep> m_twostep_point;
+  AvidaArray<sTwoStep> m_twostep_insert;
+  AvidaArray<sTwoStep> m_twostep_delete;
 
-  Apto::Array<sTwoStep> m_insert_point;
-  Apto::Array<sTwoStep> m_insert_delete;
-  Apto::Array<sTwoStep> m_delete_point;
+  AvidaArray<sTwoStep> m_insert_point;
+  AvidaArray<sTwoStep> m_insert_delete;
+  AvidaArray<sTwoStep> m_delete_point;
 
 
   // One Step Fitness Data
@@ -170,7 +171,7 @@ private:
     double size_pos; 
     double size_neg; 
     
-    Apto::Array<int> site_count;
+    AvidaArray<int> site_count;
     
     double total_entropy;
     double complexity;
@@ -247,7 +248,7 @@ private:
   void ProcessOneStepDelete(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, int cur_site);
   double ProcessOneStepGenome(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, const Genome& mod_genome,
                               sStep& odata, int cur_site);
-  void AggregateOneStep(Apto::Array<sStep>& steps, sOneStepAggregate& osa);
+  void AggregateOneStep(AvidaArray<sStep>& steps, sOneStepAggregate& osa);
 
   void ProcessTwoStepPoint(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, int cur_site, Genome& mod_genome);
   void ProcessTwoStepInsert(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, int cur_site, Genome& mod_genome);
@@ -257,7 +258,7 @@ private:
   void ProcessDeletePointCombo(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, int cur_site, Genome& mod_genome);
   double ProcessTwoStepGenome(cAvidaContext& ctx, cTestCPU* testcpu, cCPUTestInfo& test_info, const Genome& mod_genome,
                               sTwoStep& tdata, const sPendFit& cur, const sPendFit& oth);
-  void AggregateTwoStep(Apto::Array<sTwoStep>& steps, sTwoStepAggregate& osa);
+  void AggregateTwoStep(AvidaArray<sTwoStep>& steps, sTwoStepAggregate& osa);
   
   void ProcessComplete(cAvidaContext& ctx);
   
