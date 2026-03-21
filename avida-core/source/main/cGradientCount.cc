@@ -1026,7 +1026,7 @@ void cGradientCount::BuildProbabilisticRes(cAvidaContext& ctx, double lambda, do
   int max_idx = world_size - 1;
   int max_tries = min(1000, world_size);
   
-  Apto::Array <int> cell_id_array;
+  AvidaArray<int> cell_id_array;
   cell_id_array.ResizeClear(world_size);
   for (int i = 0; i < cell_id_array.GetSize(); i++) cell_id_array[i] = i;
   

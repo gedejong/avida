@@ -385,7 +385,7 @@ void cBirthChamber::DoModularShuffleRecombination(cAvidaContext& ctx, Instructio
                                                    double& merit0, double& merit1)
 {
   const int num_modules = m_world->GetConfig().MODULE_NUM.Get();
-  Apto::Array<bool> swapped_region(num_modules);
+  AvidaArray<bool> swapped_region(num_modules);
   swapped_region.SetAll(false);
 
   int swap_count = 0;
