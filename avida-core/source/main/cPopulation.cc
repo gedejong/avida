@@ -330,7 +330,7 @@ void cPopulation::SetupCellGrid()
   const int num_cells = world_x * world_y;
   const int geometry = m_world->GetConfig().WORLD_GEOMETRY.Get();
   
-  if (m_world->GetConfig().LOG_SLEEP_TIMES.Get() == 1) sleep_log = new Apto::Array<pair<int,int>, Apto::Smart>(world_x * world_y);
+  if (m_world->GetConfig().LOG_SLEEP_TIMES.Get() == 1) sleep_log = new AvidaArray<pair<int,int> >(world_x * world_y);
   else sleep_log = NULL;
   
   if (num_demes <= 0) num_demes = 1; // One population == one deme.  

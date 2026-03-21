@@ -83,7 +83,7 @@ private:
   AvidaArray<cPopulationOrgStatProviderPtr> m_org_stat_providers;
   
   
-  Apto::Array<pair<int,int>, Apto::Smart>* sleep_log;
+  AvidaArray<pair<int,int> >* sleep_log;
   
   AvidaArray<GeneticRepresentationPtr> parasite_genotype_list;
   AvidaArray<GeneticRepresentationPtr> host_genotype_list;
@@ -370,7 +370,7 @@ public:
   void AddBeginSleep(int cellID, int start_time);
   void AddEndSleep(int cellID, int end_time);
  
-  const Apto::Array<pair<int,int>, Apto::Smart>& getCellSleepLog(int i) const { return sleep_log[i]; }
+  const AvidaArray<pair<int,int> >& getCellSleepLog(int i) const { return sleep_log[i]; }
 
   // Trials and genetic algorithm @JEB
   void NewTrial(cAvidaContext& ctx);

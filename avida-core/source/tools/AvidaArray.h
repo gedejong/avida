@@ -66,6 +66,7 @@ public:
   T Pop() { T val = m_data.back(); m_data.pop_back(); return val; }
 
   void Swap(int i, int j) { std::swap(m_data[i], m_data[j]); }
+  void RemoveAt(int index) { m_data.erase(m_data.begin() + index); }
 
   // Apto::Array compatibility aliases
   T Get(int index) const { return m_data[index]; }
