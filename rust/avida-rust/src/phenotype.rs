@@ -248,6 +248,128 @@ pub struct PhenotypeStatusFlags {
 }
 
 // ---------------------------------------------------------------------------
+// PhenotypeLifetimeData — Slice 4 of cPhenotype migration (issue #48)
+// ---------------------------------------------------------------------------
+
+/// Lifetime records, mating, reproduction, and remaining scalars from
+/// cPhenotype sections 2 (in-progress extras), 3 (last divide), 4 (lifetime),
+/// and 7 (set once).
+///
+/// All `bool` fields are represented as `c_int` for FFI safety.
+/// `fault_desc` (cString) stays in C++; `testCPU_inst_count` (AvidaArray)
+/// stays in C++.
+///
+/// Layout must remain `repr(C)` so C++ can embed it directly.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct PhenotypeLifetimeData {
+    // --- Section 2 in-progress extras (not in CoreMetrics) ---
+    pub cur_num_errors: c_int,
+    pub cur_num_donates: c_int,
+    pub trial_time_used: c_int,
+    pub trial_cpu_cycles_used: c_int,
+    pub last_child_germline_propensity: c_double,
+    pub mating_type: c_int,
+    pub mate_preference: c_int,
+    pub cur_mating_display_a: c_int,
+    pub cur_mating_display_b: c_int,
+
+    // --- Section 3: last divide scalars ---
+    pub last_merit_base: c_double,
+    pub last_bonus: c_double,
+    pub last_energy_bonus: c_double,
+    pub last_num_errors: c_int,
+    pub last_num_donates: c_int,
+    pub last_fitness: c_double,
+    pub last_cpu_cycles_used: c_int,
+    pub cur_child_germline_propensity: c_double,
+    pub last_mating_display_a: c_int,
+    pub last_mating_display_b: c_int,
+
+    // --- Section 4: lifetime records ---
+    pub num_divides_failed: c_int,
+    pub num_divides: c_int,
+    pub generation: c_int,
+    pub cpu_cycles_used: c_int,
+    pub time_used: c_int,
+    pub num_execs: c_int,
+    pub age: c_int,
+    // fault_desc (cString) stays in C++
+    pub neutral_metric: c_double,
+    pub life_fitness: c_double,
+    pub exec_time_born: c_int,
+    pub gmu_exec_time_born: c_double,
+    pub birth_update: c_int,
+    pub birth_cell_id: c_int,
+    pub av_birth_cell_id: c_int,
+    pub birth_group_id: c_int,
+    pub birth_forager_type: c_int,
+    pub last_task_id: c_int,
+    pub num_new_unique_reactions: c_int,
+    pub res_consumed: c_double,
+    pub is_germ_cell: c_int, // bool as c_int
+    pub last_task_time: c_int,
+
+    // --- Section 7: set once ---
+    pub permanent_germline_propensity: c_double,
+}
+
+impl Default for PhenotypeLifetimeData {
+    fn default() -> Self {
+        Self {
+            // Section 2 in-progress extras
+            cur_num_errors: 0,
+            cur_num_donates: 0,
+            trial_time_used: 0,
+            trial_cpu_cycles_used: 0,
+            last_child_germline_propensity: 0.0,
+            mating_type: -1,    // MATING_TYPE_JUVENILE
+            mate_preference: 0, // MATE_PREFERENCE_RANDOM
+            cur_mating_display_a: 0,
+            cur_mating_display_b: 0,
+
+            // Section 3 last divide
+            last_merit_base: 0.0,
+            last_bonus: 0.0,
+            last_energy_bonus: 0.0,
+            last_num_errors: 0,
+            last_num_donates: 0,
+            last_fitness: 0.0,
+            last_cpu_cycles_used: 0,
+            cur_child_germline_propensity: 0.0,
+            last_mating_display_a: 0,
+            last_mating_display_b: 0,
+
+            // Section 4 lifetime
+            num_divides_failed: 0,
+            num_divides: 0,
+            generation: 0,
+            cpu_cycles_used: 0,
+            time_used: 0,
+            num_execs: 0,
+            age: 0,
+            neutral_metric: 0.0,
+            life_fitness: 0.0,
+            exec_time_born: 0,
+            gmu_exec_time_born: 0.0,
+            birth_update: 0,
+            birth_cell_id: 0,
+            av_birth_cell_id: 0,
+            birth_group_id: 0,
+            birth_forager_type: -1,
+            last_task_id: -1,
+            num_new_unique_reactions: 0,
+            res_consumed: 0.0,
+            is_germ_cell: 0,
+            last_task_time: 0,
+
+            // Section 7 set once
+            permanent_germline_propensity: 0.0,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // FFI: construction / default
 // ---------------------------------------------------------------------------
 
@@ -259,6 +381,11 @@ pub extern "C" fn avd_pheno_core_default() -> PhenotypeCoreMetrics {
 #[no_mangle]
 pub extern "C" fn avd_pheno_flags_default() -> PhenotypeStatusFlags {
     PhenotypeStatusFlags::default()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_pheno_lifetime_default() -> PhenotypeLifetimeData {
+    PhenotypeLifetimeData::default()
 }
 
 // ---------------------------------------------------------------------------
@@ -845,5 +972,113 @@ mod tests {
         f3.is_donor_cur = 0;
         assert_eq!(f.is_donor_cur, 1);
         assert_eq!(f3.is_donor_cur, 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // PhenotypeLifetimeData tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn lifetime_default_values() {
+        let d = PhenotypeLifetimeData::default();
+        // Section 2
+        assert_eq!(d.cur_num_errors, 0);
+        assert_eq!(d.cur_num_donates, 0);
+        assert_eq!(d.trial_time_used, 0);
+        assert_eq!(d.trial_cpu_cycles_used, 0);
+        assert!((d.last_child_germline_propensity - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.mating_type, -1); // MATING_TYPE_JUVENILE
+        assert_eq!(d.mate_preference, 0); // MATE_PREFERENCE_RANDOM
+        assert_eq!(d.cur_mating_display_a, 0);
+        assert_eq!(d.cur_mating_display_b, 0);
+        // Section 3
+        assert!((d.last_merit_base - 0.0).abs() < f64::EPSILON);
+        assert!((d.last_bonus - 0.0).abs() < f64::EPSILON);
+        assert!((d.last_energy_bonus - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.last_num_errors, 0);
+        assert_eq!(d.last_num_donates, 0);
+        assert!((d.last_fitness - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.last_cpu_cycles_used, 0);
+        assert!((d.cur_child_germline_propensity - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.last_mating_display_a, 0);
+        assert_eq!(d.last_mating_display_b, 0);
+        // Section 4
+        assert_eq!(d.num_divides_failed, 0);
+        assert_eq!(d.num_divides, 0);
+        assert_eq!(d.generation, 0);
+        assert_eq!(d.cpu_cycles_used, 0);
+        assert_eq!(d.time_used, 0);
+        assert_eq!(d.num_execs, 0);
+        assert_eq!(d.age, 0);
+        assert!((d.neutral_metric - 0.0).abs() < f64::EPSILON);
+        assert!((d.life_fitness - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.exec_time_born, 0);
+        assert!((d.gmu_exec_time_born - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.birth_update, 0);
+        assert_eq!(d.birth_cell_id, 0);
+        assert_eq!(d.av_birth_cell_id, 0);
+        assert_eq!(d.birth_group_id, 0);
+        assert_eq!(d.birth_forager_type, -1);
+        assert_eq!(d.last_task_id, -1);
+        assert_eq!(d.num_new_unique_reactions, 0);
+        assert!((d.res_consumed - 0.0).abs() < f64::EPSILON);
+        assert_eq!(d.is_germ_cell, 0);
+        assert_eq!(d.last_task_time, 0);
+        // Section 7
+        assert!((d.permanent_germline_propensity - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn lifetime_ffi_default_roundtrip() {
+        let d = avd_pheno_lifetime_default();
+        assert_eq!(d.cur_num_errors, 0);
+        assert_eq!(d.mating_type, -1);
+        assert_eq!(d.birth_forager_type, -1);
+        assert_eq!(d.last_task_id, -1);
+        assert!((d.permanent_germline_propensity - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn lifetime_field_mutation() {
+        let d = PhenotypeLifetimeData {
+            num_divides: 5,
+            generation: 12,
+            cpu_cycles_used: 1000,
+            last_fitness: 2.5,
+            is_germ_cell: 1,
+            ..PhenotypeLifetimeData::default()
+        };
+        assert_eq!(d.num_divides, 5);
+        assert_eq!(d.generation, 12);
+        assert_eq!(d.cpu_cycles_used, 1000);
+        assert!((d.last_fitness - 2.5).abs() < f64::EPSILON);
+        assert_eq!(d.is_germ_cell, 1);
+        // Other fields remain default
+        assert_eq!(d.cur_num_errors, 0);
+        assert_eq!(d.mating_type, -1);
+    }
+
+    #[test]
+    fn lifetime_struct_is_repr_c_and_sized() {
+        let size = std::mem::size_of::<PhenotypeLifetimeData>();
+        assert!(size > 0);
+        // 22 c_int fields * 4 = 88 bytes for ints
+        // 12 c_double fields * 8 = 96 bytes for doubles
+        // Total with potential padding: should be reasonable
+        assert!(size <= 512); // sanity bound
+    }
+
+    #[test]
+    fn lifetime_clone_is_independent() {
+        let d = PhenotypeLifetimeData {
+            num_divides: 7,
+            ..PhenotypeLifetimeData::default()
+        };
+        let d2 = d;
+        assert_eq!(d2.num_divides, 7);
+        let mut d3 = d;
+        d3.num_divides = 0;
+        assert_eq!(d.num_divides, 7);
+        assert_eq!(d3.num_divides, 0);
     }
 }

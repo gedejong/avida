@@ -64,10 +64,7 @@ cPhenotype::cPhenotype(cWorld* world, int parent_generation, int num_nops)
 , m_tolerance_offspring_own()
 , m_tolerance_offspring_others()
 , m_intolerances((m_world->GetConfig().TOLERANCE_VARIATIONS.Get() > 0) ? 1 : 3)
-, mating_type(MATING_TYPE_JUVENILE)
-, mate_preference(MATE_PREFERENCE_RANDOM)
-, cur_mating_display_a(0)
-, cur_mating_display_b(0)
+, m_lifetime(avd_pheno_lifetime_default())
 , m_reaction_result(NULL)
 , last_task_count(m_world->GetEnvironment().GetNumTasks())
 , last_para_tasks(m_world->GetEnvironment().GetNumTasks())
@@ -82,23 +79,12 @@ cPhenotype::cPhenotype(cWorld* world, int parent_generation, int num_nops)
 , last_reaction_count(m_world->GetEnvironment().GetReactionLib().GetSize())
 , last_reaction_add_reward(m_world->GetEnvironment().GetReactionLib().GetSize())  
 , last_sense_count(m_world->GetStats().GetSenseSize())
-, last_mating_display_a(0)
-, last_mating_display_b(0)
-, generation(0)
-, birth_cell_id(0)
-, av_birth_cell_id(0)
-, birth_group_id(0)
-, birth_forager_type(-1)
-, last_task_id(-1)
-, num_new_unique_reactions(0)
-, res_consumed(0)
-, is_germ_cell(m_world->GetConfig().DEMES_ORGS_START_IN_GERM.Get())
-, last_task_time(0)
 
-{ 
+{
+  m_lifetime.is_germ_cell = m_world->GetConfig().DEMES_ORGS_START_IN_GERM.Get() ? 1 : 0;
   if (parent_generation >= 0) {
-    generation = parent_generation;
-    if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
+    m_lifetime.generation = parent_generation;
+    if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) m_lifetime.generation++;
   }
   
   double num_resources = m_world->GetEnvironment().GetResourceLib().GetSize();
@@ -132,25 +118,28 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   m_core                   = in_phen.m_core;
   energy_tobe_applied      = in_phen.energy_tobe_applied;
   energy_testament         = in_phen.energy_testament;
-  energy_received_buffer   = in_phen.energy_received_buffer;                   
-  cur_num_errors           = in_phen.cur_num_errors;                         
-  cur_num_donates          = in_phen.cur_num_donates;                       
-  cur_task_count           = in_phen.cur_task_count;  
+  energy_received_buffer   = in_phen.energy_received_buffer;
+
+  // 2+3+4+7. Lifetime data (single struct copy)
+  m_lifetime               = in_phen.m_lifetime;
+  fault_desc               = in_phen.fault_desc;
+
+  cur_task_count           = in_phen.cur_task_count;
   cur_para_tasks           = in_phen.cur_para_tasks;
   cur_host_tasks           = in_phen.cur_host_tasks;
   eff_task_count           = in_phen.eff_task_count;
   cur_internal_task_count  = in_phen.cur_internal_task_count;
-  cur_task_quality         = in_phen.cur_task_quality;    
-  cur_internal_task_quality= in_phen.cur_internal_task_quality;       
-  cur_task_value           = in_phen.cur_task_value;			
+  cur_task_quality         = in_phen.cur_task_quality;
+  cur_internal_task_quality= in_phen.cur_internal_task_quality;
+  cur_task_value           = in_phen.cur_task_value;
   cur_rbins_total          = in_phen.cur_rbins_total;
   cur_rbins_avail          = in_phen.cur_rbins_avail;
   cur_collect_spec_counts  = in_phen.cur_collect_spec_counts;
-  cur_reaction_count       = in_phen.cur_reaction_count;            
-  first_reaction_cycles    = in_phen.first_reaction_cycles;            
-  first_reaction_execs     = in_phen.first_reaction_execs;            
-  cur_reaction_add_reward  = in_phen.cur_reaction_add_reward;     
-  cur_inst_count           = in_phen.cur_inst_count;                 
+  cur_reaction_count       = in_phen.cur_reaction_count;
+  first_reaction_cycles    = in_phen.first_reaction_cycles;
+  first_reaction_execs     = in_phen.first_reaction_execs;
+  cur_reaction_add_reward  = in_phen.cur_reaction_add_reward;
+  cur_inst_count           = in_phen.cur_inst_count;
   cur_from_sensor_count    = in_phen.cur_from_sensor_count;
   cur_group_attack_count    = in_phen.cur_group_attack_count;
   cur_top_pred_group_attack_count    = in_phen.cur_top_pred_group_attack_count;
@@ -158,21 +147,14 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   cur_attacks              = in_phen.cur_attacks;
   cur_kills                 = in_phen.cur_kills;
   cur_sense_count          = in_phen.cur_sense_count;
-  sensed_resources         = in_phen.sensed_resources;            
+  sensed_resources         = in_phen.sensed_resources;
   cur_task_time            = in_phen.cur_task_time;
   m_tolerance_immigrants          = in_phen.m_tolerance_immigrants;
   m_tolerance_offspring_own       = in_phen.m_tolerance_offspring_own;
   m_tolerance_offspring_others    = in_phen.m_tolerance_offspring_others;
   m_intolerances                  = in_phen.m_intolerances;
-  cur_child_germline_propensity = in_phen.cur_child_germline_propensity;
-  cur_stolen_reaction_count       = in_phen.cur_stolen_reaction_count;  
-  mating_type = in_phen.mating_type; //@CHC
-  mate_preference = in_phen.mate_preference; //@CHC
-  cur_mating_display_a = in_phen.cur_mating_display_a;
-  cur_mating_display_b = in_phen.cur_mating_display_b;
-  last_mating_display_a = in_phen.last_mating_display_a;
-  last_mating_display_b = in_phen.last_mating_display_b;  
-  
+  cur_stolen_reaction_count       = in_phen.cur_stolen_reaction_count;
+
   cur_from_message_count    = in_phen.cur_from_message_count;
 
   // Dynamically allocated m_task_states requires special handling
@@ -180,13 +162,8 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
     cTaskState* new_ts = new cTaskState(**((*it.Get()).Value2()));
     m_task_states.Set((*it.Get()).Value1(), new_ts);
   }
-  
-  // 3. These mark the status of "in progess" variables at the last divide.
-  last_merit_base          = in_phen.last_merit_base;       
-  last_bonus               = in_phen.last_bonus;
-  last_energy_bonus        = in_phen.last_energy_bonus; 
-  last_num_errors          = in_phen.last_num_errors; 
-  last_num_donates         = in_phen.last_num_donates;
+
+  // 3. Dynamic arrays from "last divide"
   last_task_count          = in_phen.last_task_count;
   last_host_tasks          = in_phen.last_host_tasks;
   last_para_tasks          = in_phen.last_para_tasks;
@@ -198,8 +175,8 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   last_rbins_avail         = in_phen.last_rbins_avail;
   last_collect_spec_counts = in_phen.last_collect_spec_counts;
   last_reaction_count      = in_phen.last_reaction_count;
-  last_reaction_add_reward = in_phen.last_reaction_add_reward; 
-  last_inst_count          = in_phen.last_inst_count;	  
+  last_reaction_add_reward = in_phen.last_reaction_add_reward;
+  last_inst_count          = in_phen.last_inst_count;
   last_from_sensor_count   = in_phen.last_from_sensor_count;
   last_group_attack_count   = in_phen.last_group_attack_count;
   last_top_pred_group_attack_count   = in_phen.last_top_pred_group_attack_count;
@@ -207,33 +184,12 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   last_attacks             = in_phen.last_attacks;
   last_kills                = in_phen.last_kills;
   last_sense_count         = in_phen.last_sense_count;
-  last_fitness             = in_phen.last_fitness;            
-  last_child_germline_propensity = in_phen.last_child_germline_propensity;
   total_energy_donated     = in_phen.total_energy_donated;
   total_energy_received    = in_phen.total_energy_received;
   total_energy_applied     = in_phen.total_energy_applied;
-  
+
   last_from_message_count   = in_phen.last_from_message_count;
 
-  // 4. Records from this organisms life...
-  num_divides              = in_phen.num_divides;   
-  num_divides_failed       = in_phen.num_divides_failed;
-  generation               = in_phen.generation;        
-  cpu_cycles_used          = in_phen.cpu_cycles_used;   
-  time_used                = in_phen.time_used; 
-  num_execs                = in_phen.num_execs;
-  age                      = in_phen.age;               
-  fault_desc               = in_phen.fault_desc;    
-  neutral_metric           = in_phen.neutral_metric; 
-  life_fitness             = in_phen.life_fitness; 	
-  exec_time_born           = in_phen.exec_time_born;
-  birth_update             = in_phen.birth_update;
-  num_new_unique_reactions = in_phen.num_new_unique_reactions;
-  last_task_id             = in_phen.last_task_id;
-  last_task_time           = in_phen.last_task_time;
-  res_consumed             = in_phen.res_consumed; 
-  is_germ_cell             = in_phen.is_germ_cell;
-  
   // 5+6. Status flags + child info (single struct copy)
   m_flags                 = in_phen.m_flags;
   is_donor_locus          = in_phen.is_donor_locus;
@@ -242,9 +198,6 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   total_energy_donated    = in_phen.total_energy_donated;
   total_energy_received   = in_phen.total_energy_received;
   total_energy_applied    = in_phen.total_energy_applied;
-  
-  // 7. Permanent information...
-  permanent_germline_propensity = in_phen.permanent_germline_propensity;
   
   return *this;
 }
@@ -278,7 +231,7 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
 
   m_core.gestation_time  = parent_phenotype.m_core.gestation_time;
   m_core.gestation_start = 0;
-  cpu_cycles_used = 0;
+  m_lifetime.cpu_cycles_used = 0;
   m_core.fitness         = parent_phenotype.m_core.fitness;
   m_core.div_type        = parent_phenotype.m_core.div_type;
 
@@ -290,8 +243,8 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   // Initialize current values, as neeeded.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
   m_core.cur_energy_bonus = 0.0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_internal_task_count.SetAll(0);
   eff_task_count.SetAll(0);
@@ -336,27 +289,27 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   cur_trial_fitnesses.Resize(0); 
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
-  trial_time_used = 0;
-  trial_cpu_cycles_used = 0;
+  m_lifetime.trial_time_used = 0;
+  m_lifetime.trial_cpu_cycles_used = 0;
   m_tolerance_immigrants.Clear();        
   m_tolerance_offspring_own.Clear();     
   m_tolerance_offspring_others.Clear();  
   m_intolerances.SetAll(make_pair(-1, -1));  
-  cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
-  mating_type = MATING_TYPE_JUVENILE; //@CHC
-  mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
+  m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.mating_type = MATING_TYPE_JUVENILE; //@CHC
+  m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
   
-  cur_mating_display_a = 0;
-  cur_mating_display_b = 0;
-  last_mating_display_a = 0;
-  last_mating_display_b = 0;
+  m_lifetime.cur_mating_display_a = 0;
+  m_lifetime.cur_mating_display_b = 0;
+  m_lifetime.last_mating_display_a = 0;
+  m_lifetime.last_mating_display_b = 0;
   
   // Copy last values from parent
-  last_merit_base           = parent_phenotype.last_merit_base;
-  last_bonus                = parent_phenotype.last_bonus;
-  last_cpu_cycles_used      = parent_phenotype.last_cpu_cycles_used;
-  last_num_errors           = parent_phenotype.last_num_errors;
-  last_num_donates          = parent_phenotype.last_num_donates;
+  m_lifetime.last_merit_base          = parent_phenotype.m_lifetime.last_merit_base;
+  m_lifetime.last_bonus               = parent_phenotype.m_lifetime.last_bonus;
+  m_lifetime.last_cpu_cycles_used      = parent_phenotype.m_lifetime.last_cpu_cycles_used;
+  m_lifetime.last_num_errors           = parent_phenotype.m_lifetime.last_num_errors;
+  m_lifetime.last_num_donates          = parent_phenotype.m_lifetime.last_num_donates;
   last_task_count           = parent_phenotype.last_task_count;
   last_host_tasks           = parent_phenotype.last_host_tasks;
   last_para_tasks           = parent_phenotype.last_para_tasks;
@@ -377,30 +330,30 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   last_attacks              = parent_phenotype.last_attacks;
   last_kills                = parent_phenotype.last_kills;
   last_sense_count          = parent_phenotype.last_sense_count;
-  last_fitness              = CalcFitness(last_merit_base, last_bonus, m_core.gestation_time, last_cpu_cycles_used);
-  last_child_germline_propensity = parent_phenotype.last_child_germline_propensity;   // chance of child being a germline cell; @JEB
+  m_lifetime.last_fitness              = CalcFitness(m_lifetime.last_merit_base, m_lifetime.last_bonus, m_core.gestation_time, m_lifetime.last_cpu_cycles_used);
+  m_lifetime.last_child_germline_propensity = parent_phenotype.m_lifetime.last_child_germline_propensity;   // chance of child being a germline cell; @JEB
 
   last_from_message_count    = parent_phenotype.last_from_message_count;
 
   // Setup other miscellaneous values...
-  num_divides     = 0;
-  num_divides_failed = 0;
-  generation      = parent_phenotype.generation;
-  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
-  cpu_cycles_used = 0;
-  time_used       = 0;
-  num_execs       = 0;
-  age             = 0;
+  m_lifetime.num_divides     = 0;
+  m_lifetime.num_divides_failed = 0;
+  m_lifetime.generation      = parent_phenotype.m_lifetime.generation;
+  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) m_lifetime.generation++;
+  m_lifetime.cpu_cycles_used = 0;
+  m_lifetime.time_used       = 0;
+  m_lifetime.num_execs       = 0;
+  m_lifetime.age             = 0;
   fault_desc      = "";
-  neutral_metric  = parent_phenotype.neutral_metric + m_world->GetRandom().GetRandNormal();
-  life_fitness    = m_core.fitness;
-  exec_time_born  = parent_phenotype.exec_time_born;  //@MRR treating offspring and parent as siblings; already set in DivideReset
-  birth_update    = parent_phenotype.birth_update;    
-  num_new_unique_reactions = 0;
-  last_task_id             = -1;
-  res_consumed             = 0;
-  is_germ_cell             = parent_phenotype.is_germ_cell;
-  last_task_time           = 0; 
+  m_lifetime.neutral_metric  = parent_phenotype.m_lifetime.neutral_metric + m_world->GetRandom().GetRandNormal();
+  m_lifetime.life_fitness    = m_core.fitness;
+  m_lifetime.exec_time_born  = parent_phenotype.m_lifetime.exec_time_born;  //@MRR treating offspring and parent as siblings; already set in DivideReset
+  m_lifetime.birth_update    = parent_phenotype.m_lifetime.birth_update;    
+  m_lifetime.num_new_unique_reactions = 0;
+  m_lifetime.last_task_id             = -1;
+  m_lifetime.res_consumed             = 0;
+  m_lifetime.is_germ_cell             = parent_phenotype.m_lifetime.is_germ_cell;
+  m_lifetime.last_task_time           = 0; 
   
   m_flags.num_thresh_gb_donations = 0;
   m_flags.num_thresh_gb_donations_last = parent_phenotype.m_flags.num_thresh_gb_donations_last;
@@ -494,7 +447,7 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   m_flags.child_copied_size  = 0;
   
   // permanently set germline propensity of org (since DivideReset is called first, it is now in the "last" slot...)
-  permanent_germline_propensity  = parent_phenotype.last_child_germline_propensity;
+  m_lifetime.permanent_germline_propensity  = parent_phenotype.m_lifetime.last_child_germline_propensity;
   
   initialized = true;
 }
@@ -528,8 +481,8 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   // Initialize current values, as neeeded.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
   m_core.cur_energy_bonus = 0.0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_para_tasks.SetAll(0);
   cur_host_tasks.SetAll(0);
@@ -566,22 +519,22 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   cur_trial_fitnesses.Resize(0);
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
-  trial_time_used = 0;
-  trial_cpu_cycles_used = 0;
+  m_lifetime.trial_time_used = 0;
+  m_lifetime.trial_cpu_cycles_used = 0;
   m_tolerance_immigrants.Clear();        
   m_tolerance_offspring_own.Clear();     
   m_tolerance_offspring_others.Clear();  
   m_intolerances.SetAll(make_pair(-1, -1));  
-  cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
-  mating_type = MATING_TYPE_JUVENILE; // @CHC
-  mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
+  m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.mating_type = MATING_TYPE_JUVENILE; // @CHC
+  m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
   
   // New organism has no parent and so cannot use its last values; initialize as needed
-  last_merit_base = m_core.genome_length;
-  last_bonus      = 1;
-  last_cpu_cycles_used = 0;
-  last_num_errors = 0;
-  last_num_donates = 0;
+  m_lifetime.last_merit_base= m_core.genome_length;
+  m_lifetime.last_bonus     = 1;
+  m_lifetime.last_cpu_cycles_used = 0;
+  m_lifetime.last_num_errors = 0;
+  m_lifetime.last_num_donates = 0;
   last_task_count.SetAll(0);
   last_host_tasks.SetAll(0);
   last_para_tasks.SetAll(0);
@@ -605,21 +558,21 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   last_attacks = 0;
   last_kills = 0;
   last_sense_count.SetAll(0);
-  last_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.last_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   // Setup other miscellaneous values...
-  num_divides     = 0;
-  num_divides_failed = 0;
-  generation      = 0;
-  cpu_cycles_used = 0;
-  time_used       = 0;
-  num_execs       = 0;
-  age             = 0;
+  m_lifetime.num_divides     = 0;
+  m_lifetime.num_divides_failed = 0;
+  m_lifetime.generation      = 0;
+  m_lifetime.cpu_cycles_used = 0;
+  m_lifetime.time_used       = 0;
+  m_lifetime.num_execs       = 0;
+  m_lifetime.age             = 0;
   fault_desc      = "";
-  neutral_metric  = 0;
-  life_fitness    = 0;
-  exec_time_born  = 0;
-  birth_update     = m_world->GetStats().GetUpdate();
+  m_lifetime.neutral_metric  = 0;
+  m_lifetime.life_fitness    = 0;
+  m_lifetime.exec_time_born  = 0;
+  m_lifetime.birth_update     = m_world->GetStats().GetUpdate();
   
   // Reset all flags to defaults, then set inject-specific values.
   m_flags = avd_pheno_flags_default();
@@ -636,7 +589,7 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   total_energy_received = 0.0;
   total_energy_applied = 0.0;
   
-  permanent_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.permanent_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   initialized = true;
 }
@@ -664,7 +617,7 @@ void cPhenotype::ResetMerit()
  **/
 void cPhenotype::DivideReset(const InstructionSequence& _genome)
 {
-  assert(time_used >= 0);
+  assert(m_lifetime.time_used >= 0);
   assert(initialized == true);
   
   // Update these values as needed...
@@ -691,17 +644,17 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   m_core.genome_length   = _genome.GetSize();
   (void) m_core.copied_size;          // Unchanged
   (void) m_core.executed_size;        // Unchanged
-  m_core.gestation_time  = time_used - m_core.gestation_start;
-  m_core.gestation_start = time_used;
-  m_core.fitness = CalcFitness( cur_merit_base, m_core.cur_bonus, m_core.gestation_time, cpu_cycles_used);
+  m_core.gestation_time  = m_lifetime.time_used - m_core.gestation_start;
+  m_core.gestation_start = m_lifetime.time_used;
+  m_core.fitness = CalcFitness( cur_merit_base, m_core.cur_bonus, m_core.gestation_time, m_lifetime.cpu_cycles_used);
 
   // Lock in cur values as last values.
-  last_merit_base           = cur_merit_base;
-  last_bonus                = m_core.cur_bonus;
-  last_cpu_cycles_used      = cpu_cycles_used;
+  m_lifetime.last_merit_base          = cur_merit_base;
+  m_lifetime.last_bonus               = m_core.cur_bonus;
+  m_lifetime.last_cpu_cycles_used      = m_lifetime.cpu_cycles_used;
   //TODO?  last_energy         = m_core.cur_energy_bonus;
-  last_num_errors           = cur_num_errors;
-  last_num_donates          = cur_num_donates;
+  m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
+  m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
   last_task_count           = cur_task_count;
   last_host_tasks           = cur_host_tasks;
   last_para_tasks           = cur_para_tasks;
@@ -723,22 +676,22 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
   last_sense_count          = cur_sense_count;
-  last_child_germline_propensity = cur_child_germline_propensity;
+  m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
   
-  last_mating_display_a = cur_mating_display_a; //@CHC
-  last_mating_display_b = cur_mating_display_b;
+  m_lifetime.last_mating_display_a = m_lifetime.cur_mating_display_a; //@CHC
+  m_lifetime.last_mating_display_b = m_lifetime.cur_mating_display_b;
   
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
-  cpu_cycles_used = 0;
+  m_lifetime.cpu_cycles_used = 0;
   m_core.cur_energy_bonus = 0.0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_host_tasks.SetAll(0);
 
-  cur_mating_display_a = 0; //@CHC
-  cur_mating_display_b = 0;
+  m_lifetime.cur_mating_display_a = 0; //@CHC
+  m_lifetime.cur_mating_display_b = 0;
 
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
@@ -781,23 +734,23 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   cur_kills = 0;
   cur_sense_count.SetAll(0);
   cur_task_time.SetAll(0.0);
-  cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   // Setup other miscellaneous values...
-  num_divides++;
-  (void) generation;
-  (void) time_used;
-  num_execs       = 0;
-  age             = 0;
+  m_lifetime.num_divides++;
+  (void) m_lifetime.generation;
+  (void) m_lifetime.time_used;
+  m_lifetime.num_execs       = 0;
+  m_lifetime.age             = 0;
   fault_desc      = "";
-  (void) neutral_metric;
-  life_fitness = m_core.fitness;
-  exec_time_born += m_core.gestation_time;  //@MRR Treating organism as sibling
-  birth_update = m_world->GetStats().GetUpdate();
-  num_new_unique_reactions = 0;
-  last_task_id             = -1;
-  res_consumed             = 0;
-  last_task_time           = 0;
+  (void) m_lifetime.neutral_metric;
+  m_lifetime.life_fitness = m_core.fitness;
+  m_lifetime.exec_time_born += m_core.gestation_time;  //@MRR Treating organism as sibling
+  m_lifetime.birth_update = m_world->GetStats().GetUpdate();
+  m_lifetime.num_new_unique_reactions = 0;
+  m_lifetime.last_task_id             = -1;
+  m_lifetime.res_consumed             = 0;
+  m_lifetime.last_task_time           = 0;
 
   m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
   m_flags.num_thresh_gb_donations = 0;
@@ -877,9 +830,9 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   // a second child on the divide.
   if (avd_cpop_is_divide_method_split_or_birth(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     m_core.gestation_start = 0;
-    cpu_cycles_used = 0;
-    time_used = 0;
-    neutral_metric += m_world->GetRandom().GetRandNormal();
+    m_lifetime.cpu_cycles_used = 0;
+    m_lifetime.time_used = 0;
+    m_lifetime.neutral_metric += m_world->GetRandom().GetRandNormal();
   }
 
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
@@ -889,7 +842,7 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
     m_intolerances.SetAll(make_pair(-1, -1));
   }
 
-  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
+  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) m_lifetime.generation++;
 
   // Reset Task States
   for (Apto::Map<void*, cTaskState*>::ValueIterator it = m_task_states.Values(); it.Next();) delete *it.Get();
@@ -903,7 +856,7 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
  **/
 void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
 {
-  assert(time_used > 0);
+  assert(m_lifetime.time_used > 0);
   assert(initialized == true);
   
   // Update these values as needed...
@@ -923,17 +876,17 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   m_core.genome_length   = _genome.GetSize();
   (void) m_core.copied_size;                            // Unchanged
   (void) m_core.executed_size;                          // Unchanged
-  m_core.gestation_time  = time_used - m_core.gestation_start;
-  m_core.gestation_start = time_used;
-  m_core.fitness         = CalcFitness(cur_merit_base, m_core.cur_bonus, m_core.gestation_time, cpu_cycles_used);
+  m_core.gestation_time  = m_lifetime.time_used - m_core.gestation_start;
+  m_core.gestation_start = m_lifetime.time_used;
+  m_core.fitness         = CalcFitness(cur_merit_base, m_core.cur_bonus, m_core.gestation_time, m_lifetime.cpu_cycles_used);
   (void) m_core.div_type; 				// Unchanged
 
   // Lock in cur values as last values.
-  last_merit_base           = cur_merit_base;
-  last_bonus                = m_core.cur_bonus;
-  last_cpu_cycles_used      = cpu_cycles_used;
-  last_num_errors           = cur_num_errors;
-  last_num_donates          = cur_num_donates;
+  m_lifetime.last_merit_base          = cur_merit_base;
+  m_lifetime.last_bonus               = m_core.cur_bonus;
+  m_lifetime.last_cpu_cycles_used      = m_lifetime.cpu_cycles_used;
+  m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
+  m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
   last_task_count           = cur_task_count;
   last_host_tasks           = cur_host_tasks;
   last_para_tasks           = cur_para_tasks;
@@ -955,13 +908,13 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
   last_sense_count          = cur_sense_count;
-  last_child_germline_propensity = cur_child_germline_propensity;
+  m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
   
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
-  cpu_cycles_used = 0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cpu_cycles_used = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_host_tasks.SetAll(0);
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
@@ -1003,29 +956,29 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   cur_trial_fitnesses.Resize(0); 
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
-  trial_time_used = 0;
-  trial_cpu_cycles_used = 0;
+  m_lifetime.trial_time_used = 0;
+  m_lifetime.trial_cpu_cycles_used = 0;
   m_tolerance_immigrants.Clear();
   m_tolerance_offspring_own.Clear();
   m_tolerance_offspring_others.Clear();
   m_intolerances.SetAll(make_pair(-1, -1));  
-  cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   // Setup other miscellaneous values...
-  num_divides++;
-  generation++;
-  (void) time_used;
-  (void) num_execs;
-  (void) age;
+  m_lifetime.num_divides++;
+  m_lifetime.generation++;
+  (void) m_lifetime.time_used;
+  (void) m_lifetime.num_execs;
+  (void) m_lifetime.age;
   (void) fault_desc;
-  (void) neutral_metric;
-  life_fitness = m_core.fitness;
-  exec_time_born += m_core.gestation_time;  //@MRR See DivideReset
-  birth_update  = m_world->GetStats().GetUpdate();
-  num_new_unique_reactions = 0;
-  last_task_id             = -1;
-  res_consumed             = 0;
-  last_task_time           = 0;
+  (void) m_lifetime.neutral_metric;
+  m_lifetime.life_fitness = m_core.fitness;
+  m_lifetime.exec_time_born += m_core.gestation_time;  //@MRR See DivideReset
+  m_lifetime.birth_update  = m_world->GetStats().GetUpdate();
+  m_lifetime.num_new_unique_reactions = 0;
+  m_lifetime.last_task_id             = -1;
+  m_lifetime.res_consumed             = 0;
+  m_lifetime.last_task_time           = 0;
 
   
   m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
@@ -1142,9 +1095,9 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
 
   // Initialize current values, as neeeded.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
-  cpu_cycles_used = 0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cpu_cycles_used = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_host_tasks.SetAll(0);
   cur_para_tasks.SetAll(0);
@@ -1176,22 +1129,22 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   cur_trial_fitnesses.Resize(0); 
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
-  trial_time_used = 0;
-  trial_cpu_cycles_used = 0;
+  m_lifetime.trial_time_used = 0;
+  m_lifetime.trial_cpu_cycles_used = 0;
   m_tolerance_immigrants.Clear();        
   m_tolerance_offspring_own.Clear();     
   m_tolerance_offspring_others.Clear();  
   m_intolerances.SetAll(make_pair(-1, -1));  
-  cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
-  mating_type = MATING_TYPE_JUVENILE; // @CHC
-  mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
+  m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
+  m_lifetime.mating_type = MATING_TYPE_JUVENILE; // @CHC
+  m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
   
   // Copy last values from parent
-  last_merit_base          = clone_phenotype.last_merit_base;
-  last_bonus               = clone_phenotype.last_bonus;
-  last_cpu_cycles_used     = clone_phenotype.last_cpu_cycles_used;
-  last_num_errors          = clone_phenotype.last_num_errors;
-  last_num_donates         = clone_phenotype.last_num_donates;
+  m_lifetime.last_merit_base         = clone_phenotype.m_lifetime.last_merit_base;
+  m_lifetime.last_bonus              = clone_phenotype.m_lifetime.last_bonus;
+  m_lifetime.last_cpu_cycles_used     = clone_phenotype.m_lifetime.last_cpu_cycles_used;
+  m_lifetime.last_num_errors          = clone_phenotype.m_lifetime.last_num_errors;
+  m_lifetime.last_num_donates         = clone_phenotype.m_lifetime.last_num_donates;
   last_task_count          = clone_phenotype.last_task_count;
   last_host_tasks          = clone_phenotype.last_host_tasks;
   last_para_tasks          = clone_phenotype.last_para_tasks;
@@ -1210,28 +1163,28 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   last_attacks             = clone_phenotype.last_attacks;
   last_kills                = clone_phenotype.last_kills;
   last_sense_count         = clone_phenotype.last_sense_count;
-  last_fitness             = CalcFitness(last_merit_base, last_bonus, m_core.gestation_time, last_cpu_cycles_used);
-  last_child_germline_propensity = clone_phenotype.last_child_germline_propensity;
+  m_lifetime.last_fitness             = CalcFitness(m_lifetime.last_merit_base, m_lifetime.last_bonus, m_core.gestation_time, m_lifetime.last_cpu_cycles_used);
+  m_lifetime.last_child_germline_propensity = clone_phenotype.m_lifetime.last_child_germline_propensity;
 
   // Setup other miscellaneous values...
-  num_divides     = 0;
-  num_divides_failed = 0;
-  generation      = clone_phenotype.generation;
-  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
-  cpu_cycles_used = 0;
-  time_used       = 0;
-  num_execs       = 0;
-  age             = 0;
+  m_lifetime.num_divides     = 0;
+  m_lifetime.num_divides_failed = 0;
+  m_lifetime.generation      = clone_phenotype.m_lifetime.generation;
+  if (!avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) m_lifetime.generation++;
+  m_lifetime.cpu_cycles_used = 0;
+  m_lifetime.time_used       = 0;
+  m_lifetime.num_execs       = 0;
+  m_lifetime.age             = 0;
   fault_desc      = "";
-  neutral_metric  = clone_phenotype.neutral_metric + m_world->GetRandom().GetRandNormal();
-  life_fitness    = m_core.fitness;
-  exec_time_born  = 0;
-  birth_update    = m_world->GetStats().GetUpdate();
-  num_new_unique_reactions = clone_phenotype.num_new_unique_reactions;
-  last_task_id             = clone_phenotype.last_task_id;
-  res_consumed             = clone_phenotype.res_consumed;
-  is_germ_cell             = clone_phenotype.is_germ_cell;
-  last_task_time           = clone_phenotype.last_task_time;
+  m_lifetime.neutral_metric  = clone_phenotype.m_lifetime.neutral_metric + m_world->GetRandom().GetRandNormal();
+  m_lifetime.life_fitness    = m_core.fitness;
+  m_lifetime.exec_time_born  = 0;
+  m_lifetime.birth_update    = m_world->GetStats().GetUpdate();
+  m_lifetime.num_new_unique_reactions = clone_phenotype.m_lifetime.num_new_unique_reactions;
+  m_lifetime.last_task_id             = clone_phenotype.m_lifetime.last_task_id;
+  m_lifetime.res_consumed             = clone_phenotype.m_lifetime.res_consumed;
+  m_lifetime.is_germ_cell             = clone_phenotype.m_lifetime.is_germ_cell;
+  m_lifetime.last_task_time           = clone_phenotype.m_lifetime.last_task_time;
 
   
   // Copy most flags from clone, then override clone-specific values.
@@ -1268,7 +1221,7 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   m_flags.last_child_fertile = m_flags.is_fertile;
   m_flags.child_fertile      = 1;
   m_flags.child_copied_size  = 0;
-  permanent_germline_propensity = clone_phenotype.permanent_germline_propensity;
+  m_lifetime.permanent_germline_propensity = clone_phenotype.m_lifetime.permanent_germline_propensity;
   
   initialized = true;
 }
@@ -1346,9 +1299,9 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
       }
       if (result.UsedEnvResource() == false) { cur_internal_task_count[i]++; }
       
-      // if we want to generate an age-task histogram
+      // if we want to generate an m_lifetime.age-task histogram
       if (m_world->GetConfig().AGE_POLY_TRACKING.Get()) {
-        m_world->GetStats().AgeTaskEvent(taskctx.GetOrganism()->GetID(), i, time_used);
+        m_world->GetStats().AgeTaskEvent(taskctx.GetOrganism()->GetID(), i, m_lifetime.time_used);
       }
     }
     
@@ -1395,22 +1348,22 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
         case 1: { // "learning" cost
           int n_react = cur_reaction_count[i] -1;
           if (n_react < m_world->GetConfig().LEARNING_COUNT.Get()) {
-            num_new_unique_reactions += ( m_world->GetConfig().LEARNING_COUNT.Get() - n_react);
+            m_lifetime.num_new_unique_reactions += ( m_world->GetConfig().LEARNING_COUNT.Get() - n_react);
           }
           break;
         }
         case 2: { // "retooling" cost
-          if (last_task_id == -1) {
-            last_task_id = i;
-            last_task_time = time_used;
+          if (m_lifetime.last_task_id == -1) {
+            m_lifetime.last_task_id = i;
+            m_lifetime.last_task_time = m_lifetime.time_used;
           }	else {
             // track time used if applicable
-            int cur_time_used = time_used - last_task_time; 
-            last_task_time = time_used;
-            m_world->GetStats().AddTaskSwitchTime(last_task_id, i, cur_time_used);
-            if (last_task_id != i) {
-              num_new_unique_reactions++;
-              last_task_id = i;
+            int cur_time_used = m_lifetime.time_used - m_lifetime.last_task_time; 
+            m_lifetime.last_task_time = m_lifetime.time_used;
+            m_world->GetStats().AddTaskSwitchTime(m_lifetime.last_task_id, i, cur_time_used);
+            if (m_lifetime.last_task_id != i) {
+              m_lifetime.num_new_unique_reactions++;
+              m_lifetime.last_task_id = i;
             } 
 
           }
@@ -1420,9 +1373,9 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
           // task switching cost is calculated based on 
           // the distance between the two tasks.
           
-          int distance = abs(i - last_task_id);
-          num_new_unique_reactions += distance;
-          last_task_id = i;
+          int distance = abs(i - m_lifetime.last_task_id);
+          m_lifetime.num_new_unique_reactions += distance;
+          m_lifetime.last_task_id = i;
           
           break;
         }
@@ -1439,8 +1392,8 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   m_core.cur_bonus += result.GetAddBonus();
   
   // update the germline propensity
-  cur_child_germline_propensity += result.GetAddGermline();
-  cur_child_germline_propensity *= result.GetMultGermline();
+  m_lifetime.cur_child_germline_propensity += result.GetAddGermline();
+  m_lifetime.cur_child_germline_propensity *= result.GetMultGermline();
   
   // Update deme merit (guard against running in the test CPU, where there is
   // no deme object.  Don't touch deme merit if there is no deme frac component.
@@ -1468,7 +1421,7 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   // Denote consumed resources...
   for (int i = 0; i < res_in.GetSize(); i++) {
     res_change[i] = result.GetProduced(i) - result.GetConsumed(i);
-    res_consumed += result.GetConsumed(i);
+    m_lifetime.res_consumed += result.GetConsumed(i);
   }
   
   // Update rbins as necessary
@@ -1524,8 +1477,8 @@ void cPhenotype::PrintStatus(ostream& fp) const
   fp << "  MeritBase:"
   << CalcSizeMerit()
   << " Bonus:" << m_core.cur_bonus
-  << " Errors:" << cur_num_errors
-  << " Donates:" << cur_num_donates
+  << " Errors:" << m_lifetime.cur_num_errors
+  << " Donates:" << m_lifetime.cur_num_donates
   << '\n';
   
   fp << "  Task Count (Quality):";
@@ -1559,7 +1512,7 @@ int cPhenotype::CalcSizeMerit() const
     &m_core,
     m_world->GetConfig().BASE_MERIT_METHOD.Get(),
     m_world->GetConfig().BASE_CONST_MERIT.Get(),
-    cpu_cycles_used,
+    m_lifetime.cpu_cycles_used,
     m_world->GetConfig().FITNESS_VALLEY.Get(),
     m_world->GetConfig().FITNESS_VALLEY_START.Get(),
     m_world->GetConfig().FITNESS_VALLEY_STOP.Get(),
@@ -1743,7 +1696,7 @@ void cPhenotype::DefaultEnergyUsage() {
 }
 
 void cPhenotype::DivideFailed() {
-  num_divides_failed++;
+  m_lifetime.num_divides_failed++;
 }
 
 
@@ -1846,20 +1799,20 @@ void cPhenotype::NewTrial()
 { 
   //Return if a complete trial has not occurred.
   //(This will happen if CompeteOrganisms was called before in the same update
-  if (trial_cpu_cycles_used == 0) return;
+  if (m_lifetime.trial_cpu_cycles_used == 0) return;
   
   //Record the merit of this trial
-  m_core.fitness = CalcFitness( GetCurMeritBase(), GetCurBonus() , trial_time_used, trial_cpu_cycles_used); // This is a per-trial fitness @JEB
+  m_core.fitness = CalcFitness( GetCurMeritBase(), GetCurBonus() , m_lifetime.trial_time_used, m_lifetime.trial_cpu_cycles_used); // This is a per-trial fitness @JEB
   cur_trial_fitnesses.Push(m_core.fitness);
   cur_trial_bonuses.Push(GetCurBonus());
-  cur_trial_times_used.Push(trial_time_used);
+  cur_trial_times_used.Push(m_lifetime.trial_time_used);
 
   //The rest of the function, resets the phenotype like DivideReset(), but without
-  //incrementing the generation or child statistics.
+  //incrementing the m_lifetime.generation or child statistics.
 
   //Most importantly, this does (below):
-  // trial_time_used = 0;
-  // trial_cpu_cycles_used = 0;
+  // m_lifetime.trial_time_used = 0;
+  // m_lifetime.trial_cpu_cycles_used = 0;
   // SetCurBonus(m_world->GetConfig().DEFAULT_BONUS.Get());
 
   // Update these values as needed...
@@ -1886,17 +1839,17 @@ void cPhenotype::NewTrial()
   // m_core.genome_length   = _genome.GetSize();  //No child! @JEB
   (void) m_core.copied_size;          // Unchanged
   (void) m_core.executed_size;        // Unchanged
-  m_core.gestation_time  = time_used - m_core.gestation_start;  //Keep gestation referring to actual replication time! @JEB
-  m_core.gestation_start = time_used;                    //Keep gestation referring to actual replication time! @JEB
+  m_core.gestation_time  = m_lifetime.time_used - m_core.gestation_start;  //Keep gestation referring to actual replication time! @JEB
+  m_core.gestation_start = m_lifetime.time_used;                    //Keep gestation referring to actual replication time! @JEB
   // m_core.fitness         = m_core.merit.value / m_core.gestation_time; //Use fitness measure that is per-trial @JEB
 
   // Lock in cur values as last values.
-  last_merit_base           = cur_merit_base;
-  last_bonus                = m_core.cur_bonus;
-  last_cpu_cycles_used      = cpu_cycles_used;
+  m_lifetime.last_merit_base          = cur_merit_base;
+  m_lifetime.last_bonus               = m_core.cur_bonus;
+  m_lifetime.last_cpu_cycles_used      = m_lifetime.cpu_cycles_used;
   //TODO?  last_energy         = m_core.cur_energy_bonus;
-  last_num_errors           = cur_num_errors;
-  last_num_donates          = cur_num_donates;
+  m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
+  m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
   last_task_count           = cur_task_count;
   last_host_tasks           = cur_host_tasks;
   last_para_tasks           = cur_para_tasks;
@@ -1921,10 +1874,10 @@ void cPhenotype::NewTrial()
   
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
-  cpu_cycles_used = 0;
+  m_lifetime.cpu_cycles_used = 0;
   m_core.cur_energy_bonus = 0.0;
-  cur_num_errors  = 0;
-  cur_num_donates  = 0;
+  m_lifetime.cur_num_errors  = 0;
+  m_lifetime.cur_num_donates  = 0;
   cur_task_count.SetAll(0);
   cur_host_tasks.SetAll(0);
   cur_para_tasks.SetAll(0);
@@ -1953,22 +1906,22 @@ void cPhenotype::NewTrial()
   cur_kills = 0;
   cur_sense_count.SetAll(0);
   //cur_trial_fitnesses.Resize(0); Don't throw out the trial fitnesses! @JEB
-  trial_time_used = 0;
-  trial_cpu_cycles_used = 0;
+  m_lifetime.trial_time_used = 0;
+  m_lifetime.trial_cpu_cycles_used = 0;
   m_tolerance_immigrants.Clear();        
   m_tolerance_offspring_own.Clear();     
   m_tolerance_offspring_others.Clear();  
   m_intolerances.SetAll(make_pair(-1, -1));  
   
   // Setup other miscellaneous values...
-  num_divides++;
-  (void) generation;
-  (void) time_used;
-  num_execs       = 0;
-  age             = 0;
+  m_lifetime.num_divides++;
+  (void) m_lifetime.generation;
+  (void) m_lifetime.time_used;
+  m_lifetime.num_execs       = 0;
+  m_lifetime.age             = 0;
   fault_desc      = "";
-  (void) neutral_metric;
-  life_fitness = m_core.fitness;
+  (void) m_lifetime.neutral_metric;
+  m_lifetime.life_fitness = m_core.fitness;
 
 
   m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
@@ -2063,7 +2016,7 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
   energy_testament = 0.0;
 
   m_core.genome_length   = _genome.GetSize();
-  m_core.gestation_start = time_used;
+  m_core.gestation_start = m_lifetime.time_used;
   cur_trial_fitnesses.Resize(0); 
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
@@ -2081,10 +2034,10 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
   // a second child on the divide.
   if (avd_cpop_is_divide_method_split_or_birth(m_world->GetConfig().DIVIDE_METHOD.Get())) {    
     m_core.gestation_start = 0;
-    cpu_cycles_used = 0;
-    time_used = 0;
-    num_execs = 0;
-    neutral_metric += m_world->GetRandom().GetRandNormal();
+    m_lifetime.cpu_cycles_used = 0;
+    m_lifetime.time_used = 0;
+    m_lifetime.num_execs = 0;
+    m_lifetime.neutral_metric += m_world->GetRandom().GetRandNormal();
   }
   
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
@@ -2094,7 +2047,7 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
     m_intolerances.SetAll(make_pair(-1,-1));  
   }
 
-  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) generation++;
+  if (avd_cpop_is_generation_inc_both(m_world->GetConfig().GENERATION_INC_METHOD.Get())) m_lifetime.generation++;
 }
 
 // Arbitrary (but consistant) ordering.
@@ -2166,8 +2119,8 @@ double cPhenotype::ConvertEnergyToMerit(double energy) const
 
 double cPhenotype::GetResourcesConsumed() 
 {
-	double r = res_consumed; 
-	res_consumed =0; 
+	double r = m_lifetime.res_consumed; 
+	m_lifetime.res_consumed =0; 
 	return r; 
 }
 

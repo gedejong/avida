@@ -95,8 +95,23 @@ private:
   int num_energy_donations;                   // Number of times energy has been donated
   int num_energy_receptions;                  // Number of times organism has received energy donations
   int num_energy_applications;                // Number of times organism has applied donated energy to its energy store
-  int cur_num_errors;                         // Total instructions executed illeagally.
-  int cur_num_donates;                        // Number of donations so far
+  // 2+3+4+7. Lifetime, mating, reproduction, and remaining scalars —
+  // stored in Rust-owned #[repr(C)] struct.
+  // Fields: cur_num_errors, cur_num_donates, trial_time_used, trial_cpu_cycles_used,
+  //   last_child_germline_propensity, mating_type, mate_preference,
+  //   cur_mating_display_a/b, last_merit_base, last_bonus, last_energy_bonus,
+  //   last_num_errors, last_num_donates, last_fitness, last_cpu_cycles_used,
+  //   cur_child_germline_propensity, last_mating_display_a/b,
+  //   num_divides_failed, num_divides, generation, cpu_cycles_used, time_used,
+  //   num_execs, age, neutral_metric, life_fitness, exec_time_born,
+  //   gmu_exec_time_born, birth_update, birth_cell_id, av_birth_cell_id,
+  //   birth_group_id, birth_forager_type, last_task_id, num_new_unique_reactions,
+  //   res_consumed, is_germ_cell, last_task_time, permanent_germline_propensity
+  PhenotypeLifetimeData m_lifetime;
+
+  // C++ types that stay outside the struct:
+  cString fault_desc;    // A description of the most recent error.
+  AvidaArray<int> testCPU_inst_count;	  // Instruction exection counter as calculated by Test CPU
 
   AvidaArray<int> cur_task_count;                 // Total times each task was performed
   AvidaArray<int> cur_para_tasks;                 // Total times each task was performed by the parasite @LZ
@@ -121,7 +136,7 @@ private:
   AvidaArray<int> cur_killed_targets;
   int cur_attacks;
   int cur_kills;
-  
+
   AvidaArray<int> cur_sense_count;                // Total times resource combinations have been sensed; @JEB
   AvidaArray<double> sensed_resources;            // Resources which the organism has sensed; @JEB
   AvidaArray<double> cur_task_time;               // Time at which each task was last performed; WRE 03-18-07
@@ -131,31 +146,14 @@ private:
   AvidaArray<int> cur_trial_times_used;           // Time used in of various trials.; @JEB
   AvidaArray<int> cur_from_message_count;           // Use of inputs that originated from messages were used in execution of this instruction.
 
-  int trial_time_used;                        // like time_used, but reset every trial; @JEB
-  int trial_cpu_cycles_used;                  // like cpu_cycles_used, but reset every trial; @JEB
-  tList<int> m_tolerance_immigrants;           // record of previous updates tolerance has been decreased towards immigrants 
-  tList<int> m_tolerance_offspring_own;        // record of previous updates tolerance has been decreased towards org's own offspring 
-  tList<int> m_tolerance_offspring_others;     // record of previous updates tolerance has been decreased towards other offspring in group 
+  tList<int> m_tolerance_immigrants;           // record of previous updates tolerance has been decreased towards immigrants
+  tList<int> m_tolerance_offspring_own;        // record of previous updates tolerance has been decreased towards org's own offspring
+  tList<int> m_tolerance_offspring_others;     // record of previous updates tolerance has been decreased towards other offspring in group
   AvidaArray<pair<int,int> > m_intolerances;        // caches temporary values of the intolerance and the update
-  double last_child_germline_propensity;   // chance of child being a germline cell; @JEB
-
-  int mating_type;                            // Organism's phenotypic sex @CHC
-  int mate_preference;                        // Organism's mating preference @CHC
-  
-  int cur_mating_display_a;                   // value of organism's current mating display A trait
-  int cur_mating_display_b;                   // value of organism's current mating display B trait
 
   cReactionResult* m_reaction_result;
-  
 
-
-  // 3. These mark the status of "in progress" variables at the last divide.
-  double last_merit_base;         // Either constant or based on genome length.
-  double last_bonus;
-  double last_energy_bonus;
-  int last_num_errors;
-  int last_num_donates;
-
+  // 3. Dynamic arrays from "last divide"
   AvidaArray<int> last_task_count;
   AvidaArray<int> last_para_tasks;
   AvidaArray<int> last_host_tasks;                // Last task counts from hosts only, before last divide @LZ
@@ -179,43 +177,6 @@ private:
 
   AvidaArray<int> last_from_message_count;
 
-  double last_fitness;            // Used to determine sterilization.
-  int last_cpu_cycles_used;
-  double cur_child_germline_propensity;   // chance of child being a germline cell; @JEB
-  
-  int last_mating_display_a;                   // value of organism's last mating display A trait
-  int last_mating_display_b;                   // value of organism's last mating display B trait
-  
-
-  // 4. Records from this organism's life...
-  int num_divides_failed; //Number of failed divide events @LZ
-  int num_divides;       // Total successful divides organism has produced.
-  int generation;        // Number of birth events to original ancestor.
-  int cpu_cycles_used;   // Total CPU cycles consumed. @JEB
-  int time_used;         // Total CPU cycles consumed, including additional time costs of some instructions.
-  int num_execs;         // Total number of instructions executions attempted...accounts for parallel executions in multi-threaded orgs & corrects for cpu-cost 'pauses'
-  int age;               // Number of updates organism has survived for.
-  cString fault_desc;    // A description of the most recent error.
-  double neutral_metric; // Undergoes drift (gausian 0,1) per generation
-  double life_fitness; 	 // Organism fitness during its lifetime, 
-		         // calculated based on merit just before the divide
-  int exec_time_born;    // @MRR number of instructions since seed ancestor start
-  double gmu_exec_time_born; //@MRR mutation-rate and gestation time scaled time of birth
-  int birth_update;      // @MRR update *organism* born
-  int birth_cell_id;
-  int av_birth_cell_id;
-  int birth_group_id;
-  int birth_forager_type;
-  AvidaArray<int> testCPU_inst_count;	  // Instruction exection counter as calculated by Test CPU
-  int last_task_id; // id of the previous task
-  int num_new_unique_reactions; // count the number of new unique reactions this organism has performed.
-  double res_consumed; // amount of resources consumed since the organism last turned them over to the deme.
-  bool is_germ_cell; // records whether or not the organism is part of the germline.
-  int last_task_time; // time at which the previous task was performed
-  
-  
-
-  
   // 5+6. Status flags + child info — stored in Rust-owned #[repr(C)] struct.
   // Bool fields are stored as int (0/1) for FFI safety.
   PhenotypeStatusFlags m_flags;
@@ -223,9 +184,6 @@ private:
   // Dynamic arrays stay outside the flags struct.
   AvidaArray<bool> is_donor_locus; // Did this org target a donation at a specific locus.
   AvidaArray<bool> is_donor_locus_last; // Did this org's parent target a donation at a specific locus.
-
-  // 7. Information that is set once (when organism was born)
-  double permanent_germline_propensity;
   
 
   inline void SetInstSetSize(int inst_set_size);
@@ -278,8 +236,8 @@ public:
     
     //LZ this was int!
     const double merit_base = CalcSizeMerit();
-    const double cur_fitness = merit_base * m_core.cur_bonus / time_used;
-    return cur_fitness / last_fitness;
+    const double cur_fitness = merit_base * m_core.cur_bonus / m_lifetime.time_used;
+    return cur_fitness / m_lifetime.last_fitness;
   }
   int CalcID() const {
     int phen_id = 0;
@@ -313,32 +271,32 @@ public:
   double ConvertEnergyToMerit(double energy) const;
   
   //@MRR Organism-specific birth tracking
-  double GetGMuExecTimeBorn() const {return gmu_exec_time_born;}
-  int GetExecTimeBorn() const {return exec_time_born;}
-  int GetUpdateBorn() const {return birth_update;}
-  
-  int GetBirthCell() const { return birth_cell_id; }
-  int GetAVBirthCell() const { return av_birth_cell_id; }
-  int GetBirthGroupID() const { return birth_group_id; }
-  int GetBirthForagerType() const { return birth_forager_type; }
+  double GetGMuExecTimeBorn() const {return m_lifetime.gmu_exec_time_born;}
+  int GetExecTimeBorn() const {return m_lifetime.exec_time_born;}
+  int GetUpdateBorn() const {return m_lifetime.birth_update;}
+
+  int GetBirthCell() const { return m_lifetime.birth_cell_id; }
+  int GetAVBirthCell() const { return m_lifetime.av_birth_cell_id; }
+  int GetBirthGroupID() const { return m_lifetime.birth_group_id; }
+  int GetBirthForagerType() const { return m_lifetime.birth_forager_type; }
   inline void SetBirthCellID(int birth_cell);
   inline void SetAVBirthCellID(int av_birth_cell);
   inline void SetBirthGroupID(int group_id);
   inline void SetBirthForagerType(int forager_type);
 
-  int GetMatingType() const { return mating_type; } //@CHC
-  int GetMatePreference() const { return mate_preference; } //@CHC
+  int GetMatingType() const { return m_lifetime.mating_type; } //@CHC
+  int GetMatePreference() const { return m_lifetime.mate_preference; } //@CHC
 
-  int GetCurMatingDisplayA() const { return cur_mating_display_a; } //@CHC
-  int GetCurMatingDisplayB() const { return cur_mating_display_b; } //@CHC
-  int GetLastMatingDisplayA() const { return last_mating_display_a; } //@CHC
-  int GetLastMatingDisplayB() const { return last_mating_display_b; } //@CHC
+  int GetCurMatingDisplayA() const { return m_lifetime.cur_mating_display_a; } //@CHC
+  int GetCurMatingDisplayB() const { return m_lifetime.cur_mating_display_b; } //@CHC
+  int GetLastMatingDisplayA() const { return m_lifetime.last_mating_display_a; } //@CHC
+  int GetLastMatingDisplayB() const { return m_lifetime.last_mating_display_b; } //@CHC
 
   bool GetMakeRandomResource() const {assert(initialized == true); return m_flags.make_random_resource != 0;}
   bool GetToDie() const { assert(initialized == true); return m_flags.to_die != 0; }
   bool GetToDelete() const { assert(initialized == true); return m_flags.to_delete != 0; }
-  int GetCurNumErrors() const { assert(initialized == true); return cur_num_errors; }
-  int GetCurNumDonates() const { assert(initialized == true); return cur_num_donates; }
+  int GetCurNumErrors() const { assert(initialized == true); return m_lifetime.cur_num_errors; }
+  int GetCurNumDonates() const { assert(initialized == true); return m_lifetime.cur_num_donates; }
   int GetCurCountForTask(int idx) const { assert(initialized == true); return cur_task_count[idx]; }
   const AvidaArray<int>& GetCurTaskCount() const { assert(initialized == true); return cur_task_count; }
   const AvidaArray<int>& GetCurHostTaskCount() const { assert(initialized == true); return cur_host_tasks; }
@@ -355,9 +313,9 @@ public:
 
   const AvidaArray<int>& GetCurReactionCount() const { assert(initialized == true); return cur_reaction_count;}
   const AvidaArray<int>& GetFirstReactionCycles() const { assert(initialized == true); return first_reaction_cycles;}
-  void SetFirstReactionCycle(int idx) { if (first_reaction_cycles[idx] < 0) first_reaction_cycles[idx] = time_used; }
+  void SetFirstReactionCycle(int idx) { if (first_reaction_cycles[idx] < 0) first_reaction_cycles[idx] = m_lifetime.time_used; }
   const AvidaArray<int>& GetFirstReactionExecs() const { assert(initialized == true); return first_reaction_execs;}
-  void SetFirstReactionExec(int idx) { if (first_reaction_execs[idx] < 0) first_reaction_execs[idx] = num_execs; }
+  void SetFirstReactionExec(int idx) { if (first_reaction_execs[idx] < 0) first_reaction_execs[idx] = m_lifetime.num_execs; }
 
   const AvidaArray<int>& GetStolenReactionCount() const { assert(initialized == true); return cur_stolen_reaction_count;}
   const AvidaArray<double>& GetCurReactionAddReward() const { assert(initialized == true); return cur_reaction_add_reward;}
@@ -383,12 +341,12 @@ public:
   int CalcToleranceOffspringOwn();
   int CalcToleranceOffspringOthers();
 
-  double GetLastMeritBase() const { assert(initialized == true); return last_merit_base; }
-  double GetLastBonus() const { assert(initialized == true); return last_bonus; }
+  double GetLastMeritBase() const { assert(initialized == true); return m_lifetime.last_merit_base; }
+  double GetLastBonus() const { assert(initialized == true); return m_lifetime.last_bonus; }
 
-  double GetLastMerit() const { assert(initialized == true); return last_merit_base*last_bonus; }
-  int GetLastNumErrors() const { assert(initialized == true); return last_num_errors; }
-  int GetLastNumDonates() const { assert(initialized == true); return last_num_donates; }
+  double GetLastMerit() const { assert(initialized == true); return m_lifetime.last_merit_base*m_lifetime.last_bonus; }
+  int GetLastNumErrors() const { assert(initialized == true); return m_lifetime.last_num_errors; }
+  int GetLastNumDonates() const { assert(initialized == true); return m_lifetime.last_num_donates; }
 
   int GetLastCountForTask(int idx) const { assert(initialized == true); return last_task_count[idx]; }
   const AvidaArray<int>& GetLastTaskCount() const { assert(initialized == true); return last_task_count; }
@@ -412,23 +370,23 @@ public:
 
   const AvidaArray<int>& GetLastFromMessageInstCount() const { assert(initialized == true); return last_from_message_count; }
 
-  double GetLastFitness() const { assert(initialized == true); return last_fitness; }
-  double GetPermanentGermlinePropensity() const { assert(initialized == true); return permanent_germline_propensity; }
+  double GetLastFitness() const { assert(initialized == true); return m_lifetime.last_fitness; }
+  double GetPermanentGermlinePropensity() const { assert(initialized == true); return m_lifetime.permanent_germline_propensity; }
   const AvidaArray<int>& GetLastCollectSpecCounts() const { assert(initialized == true); return last_collect_spec_counts; }
   int GetLastCollectSpecCount(int spec_id) const { assert(initialized == true); return last_collect_spec_counts[spec_id]; }
 
-  int GetNumDivides() const { assert(initialized == true); return num_divides;}
-  int GetNumDivideFailed() const { assert(initialized == true); return num_divides_failed;}
+  int GetNumDivides() const { assert(initialized == true); return m_lifetime.num_divides;}
+  int GetNumDivideFailed() const { assert(initialized == true); return m_lifetime.num_divides_failed;}
 
-  int GetGeneration() const { return generation; }
-  int GetCPUCyclesUsed() const { assert(initialized == true); return cpu_cycles_used; }
-  int GetTimeUsed()   const { assert(initialized == true); return time_used; }
-  int GetNumExecs() const { assert(initialized == true); return num_execs; }
-  int GetTrialTimeUsed()   const { assert(initialized == true); return trial_time_used; }
-  int GetAge()        const { assert(initialized == true); return age; }
+  int GetGeneration() const { return m_lifetime.generation; }
+  int GetCPUCyclesUsed() const { assert(initialized == true); return m_lifetime.cpu_cycles_used; }
+  int GetTimeUsed()   const { assert(initialized == true); return m_lifetime.time_used; }
+  int GetNumExecs() const { assert(initialized == true); return m_lifetime.num_execs; }
+  int GetTrialTimeUsed()   const { assert(initialized == true); return m_lifetime.trial_time_used; }
+  int GetAge()        const { assert(initialized == true); return m_lifetime.age; }
   const cString& GetFault() const { assert(initialized == true); return fault_desc; }
-  double GetNeutralMetric() const { assert(initialized == true); return neutral_metric; }
-  double GetLifeFitness() const { assert(initialized == true); return life_fitness; }
+  double GetNeutralMetric() const { assert(initialized == true); return m_lifetime.neutral_metric; }
+  double GetLifeFitness() const { assert(initialized == true); return m_lifetime.life_fitness; }
   int  GetNumThreshGbDonations() const { assert(initialized == true); return m_flags.num_thresh_gb_donations; }
   int  GetNumThreshGbDonationsLast() const { assert(initialized == true); return m_flags.num_thresh_gb_donations_last; }
   int  GetNumQuantaThreshGbDonations() const { assert(initialized == true); return m_flags.num_quanta_thresh_gb_donations; }
@@ -509,13 +467,13 @@ public:
   void ReduceEnergy(const double cost);
   void SetEnergy(const double value);
   void SetGestationTime(int in_time) { m_core.gestation_time = in_time; }
-  void SetTimeUsed(int in_time) { time_used = in_time; }
-  void SetTrialTimeUsed(int in_time) { trial_time_used = in_time; }
-  void SetGeneration(int in_generation) { generation = in_generation; }
-  void SetPermanentGermlinePropensity(double _in) { permanent_germline_propensity = _in; }
+  void SetTimeUsed(int in_time) { m_lifetime.time_used = in_time; }
+  void SetTrialTimeUsed(int in_time) { m_lifetime.trial_time_used = in_time; }
+  void SetGeneration(int in_generation) { m_lifetime.generation = in_generation; }
+  void SetPermanentGermlinePropensity(double _in) { m_lifetime.permanent_germline_propensity = _in; }
   void SetFault(const cString& in_fault) { fault_desc = in_fault; }
-  void SetNeutralMetric(double _in){ neutral_metric = _in; }
-  void SetLifeFitness(double _in){ life_fitness = _in; }
+  void SetNeutralMetric(double _in){ m_lifetime.neutral_metric = _in; }
+  void SetLifeFitness(double _in){ m_lifetime.life_fitness = _in; }
   void SetLinesExecuted(int _exe_size) { m_core.executed_size = _exe_size; }
   void SetLinesCopied(int _copied_size) { m_flags.child_copied_size = _copied_size; }
   void SetDivType(double _div_type) { m_core.div_type = _div_type; }
@@ -557,8 +515,8 @@ public:
   void AddToCurRBinTotal(int index, double val) { cur_rbins_total[index] += val; }
   void SetCurCollectSpecCount(int spec_id, int val) { cur_collect_spec_counts[spec_id] = val; }
 
-  void SetMatingType(int _mating_type) { mating_type = _mating_type; } //@CHC
-  void SetMatePreference(int _mate_preference) { mate_preference = _mate_preference; } //@CHC
+  void SetMatingType(int _mating_type) { m_lifetime.mating_type = _mating_type; } //@CHC
+  void SetMatePreference(int _mate_preference) { m_lifetime.mate_preference = _mate_preference; } //@CHC
 
   void SetIsMultiThread() { m_flags.is_multi_thread = 1; }
   void SetIsDonorCur() { m_flags.is_donor_cur = 1; }
@@ -610,19 +568,19 @@ public:
   void IncNumQuantaThreshGbDonations() { assert(initialized == true); m_flags.num_quanta_thresh_gb_donations++; }
   void IncNumShadedGbDonations() { assert(initialized == true); m_flags.num_shaded_gb_donations++; }
   void IncNumGreenBeardSameLocus() { assert(initialized == true); m_flags.num_donations_locus++; }	
-  void IncAge()      { assert(initialized == true); age++; }
-  void IncCPUCyclesUsed() { assert(initialized == true); cpu_cycles_used++; trial_cpu_cycles_used++; }
-  void DecCPUCyclesUsed() { assert(initialized == true); cpu_cycles_used--; trial_cpu_cycles_used--; }
-  void IncTimeUsed(int i=1) { assert(initialized == true); time_used+=i; trial_time_used+=i; }
-  void IncNumExecs() { assert(initialized == true); num_execs++; }
-  void IncErrors()   { assert(initialized == true); cur_num_errors++; }
-  void IncDonates()   { assert(initialized == true); cur_num_donates++; }
+  void IncAge()      { assert(initialized == true); m_lifetime.age++; }
+  void IncCPUCyclesUsed() { assert(initialized == true); m_lifetime.cpu_cycles_used++; m_lifetime.trial_cpu_cycles_used++; }
+  void DecCPUCyclesUsed() { assert(initialized == true); m_lifetime.cpu_cycles_used--; m_lifetime.trial_cpu_cycles_used--; }
+  void IncTimeUsed(int i=1) { assert(initialized == true); m_lifetime.time_used+=i; m_lifetime.trial_time_used+=i; }
+  void IncNumExecs() { assert(initialized == true); m_lifetime.num_execs++; }
+  void IncErrors()   { assert(initialized == true); m_lifetime.cur_num_errors++; }
+  void IncDonates()   { assert(initialized == true); m_lifetime.cur_num_donates++; }
   void IncSenseCount(const int) { /*assert(initialized == true); cur_sense_count[i]++;*/ }  
   
-  void SetCurMatingDisplayA(int _cur_mating_display_a) { cur_mating_display_a = _cur_mating_display_a; } //@CHC
-  void SetCurMatingDisplayB(int _cur_mating_display_b) { cur_mating_display_b = _cur_mating_display_b; } //@CHC
-  void SetLastMatingDisplayA(int _last_mating_display_a) { last_mating_display_a = _last_mating_display_a; } //@CHC
-  void SetLastMatingDisplayB(int _last_mating_display_b) { last_mating_display_b = _last_mating_display_b; } //@CHC
+  void SetCurMatingDisplayA(int _cur_mating_display_a) { m_lifetime.cur_mating_display_a = _cur_mating_display_a; } //@CHC
+  void SetCurMatingDisplayB(int _cur_mating_display_b) { m_lifetime.cur_mating_display_b = _cur_mating_display_b; } //@CHC
+  void SetLastMatingDisplayA(int _last_mating_display_a) { m_lifetime.last_mating_display_a = _last_mating_display_a; } //@CHC
+  void SetLastMatingDisplayB(int _last_mating_display_b) { m_lifetime.last_mating_display_b = _last_mating_display_b; } //@CHC
   
   int& IsInjected() { assert(initialized == true); return m_flags.is_injected; }
   int& IsClone() { assert(initialized == true); return m_flags.is_clone; }
@@ -645,9 +603,9 @@ public:
   void DefaultEnergyUsage();
 	
   // --- Support for Division of Labor --- //
-  int GetLastTaskID() const { return last_task_id; }
-  int  GetNumNewUniqueReactions() const {assert(initialized == true);  return num_new_unique_reactions; }
-  void  ResetNumNewUniqueReactions()  {num_new_unique_reactions =0; }
+  int GetLastTaskID() const { return m_lifetime.last_task_id; }
+  int  GetNumNewUniqueReactions() const {assert(initialized == true);  return m_lifetime.num_new_unique_reactions; }
+  void  ResetNumNewUniqueReactions()  {m_lifetime.num_new_unique_reactions =0; }
   double GetResourcesConsumed(); 
   AvidaArray<int> GetCumulativeReactionCount();
   void IncCurFromMessageInstCount(int _inst_num)  { assert(initialized == true); cur_from_message_count[_inst_num]++; }
@@ -699,9 +657,9 @@ inline void cPhenotype::SetGroupAttackInstSetSize(int num_group_attack_inst)
   }
 }
 
-inline void cPhenotype::SetBirthCellID(int birth_cell) { birth_cell_id = birth_cell; }
-inline void cPhenotype::SetAVBirthCellID(int av_birth_cell) { av_birth_cell_id = av_birth_cell; }
-inline void cPhenotype::SetBirthGroupID(int group_id) { birth_group_id = group_id; }
-inline void cPhenotype::SetBirthForagerType(int forager_type) { birth_forager_type = forager_type; }
+inline void cPhenotype::SetBirthCellID(int birth_cell) { m_lifetime.birth_cell_id = birth_cell; }
+inline void cPhenotype::SetAVBirthCellID(int av_birth_cell) { m_lifetime.av_birth_cell_id = av_birth_cell; }
+inline void cPhenotype::SetBirthGroupID(int group_id) { m_lifetime.birth_group_id = group_id; }
+inline void cPhenotype::SetBirthForagerType(int forager_type) { m_lifetime.birth_forager_type = forager_type; }
 
 #endif

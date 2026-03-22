@@ -718,11 +718,11 @@ public:
   void DonateResConsumedToDeme(); //! donate consumed resources to the deme.
   int GetNumOfPointMutationsApplied() {return m_num_point_mut; } //! number of point mutations applied to org.
   void IncPointMutations(int n) {m_num_point_mut+=n;} 
-  void JoinGermline() {m_phenotype.is_germ_cell = true;}
-  void ExitGermline() {m_phenotype.is_germ_cell = false;}
+  void JoinGermline() {m_phenotype.m_lifetime.is_germ_cell = 1;}
+  void ExitGermline() {m_phenotype.m_lifetime.is_germ_cell = 0;}
   void RepairPointMutOn() {m_repair = true;}
   void RepairPointMutOff() {m_repair = false;}
-  bool IsGermline() { return m_phenotype.is_germ_cell; }
+  bool IsGermline() { return m_phenotype.m_lifetime.is_germ_cell != 0; }
 private: 
   int m_num_point_mut;
 //  bool m_germline;

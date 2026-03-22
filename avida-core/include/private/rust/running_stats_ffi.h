@@ -678,6 +678,60 @@ typedef struct {
 
 PhenotypeStatusFlags avd_pheno_flags_default(void);
 
+typedef struct {
+  /* Section 2 in-progress extras */
+  int cur_num_errors;
+  int cur_num_donates;
+  int trial_time_used;
+  int trial_cpu_cycles_used;
+  double last_child_germline_propensity;
+  int mating_type;
+  int mate_preference;
+  int cur_mating_display_a;
+  int cur_mating_display_b;
+
+  /* Section 3: last divide scalars */
+  double last_merit_base;
+  double last_bonus;
+  double last_energy_bonus;
+  int last_num_errors;
+  int last_num_donates;
+  double last_fitness;
+  int last_cpu_cycles_used;
+  double cur_child_germline_propensity;
+  int last_mating_display_a;
+  int last_mating_display_b;
+
+  /* Section 4: lifetime records */
+  int num_divides_failed;
+  int num_divides;
+  int generation;
+  int cpu_cycles_used;
+  int time_used;
+  int num_execs;
+  int age;
+  /* fault_desc (cString) stays in C++ */
+  double neutral_metric;
+  double life_fitness;
+  int exec_time_born;
+  double gmu_exec_time_born;
+  int birth_update;
+  int birth_cell_id;
+  int av_birth_cell_id;
+  int birth_group_id;
+  int birth_forager_type;
+  int last_task_id;
+  int num_new_unique_reactions;
+  double res_consumed;
+  int is_germ_cell;
+  int last_task_time;
+
+  /* Section 7: set once */
+  double permanent_germline_propensity;
+} PhenotypeLifetimeData;
+
+PhenotypeLifetimeData avd_pheno_lifetime_default(void);
+
 int avd_script_get_runtime_type(int ltype, int rtype, int allow_str);
 int avd_script_valid_arithmetic_type(int type_val, int allow_matrix);
 int avd_script_valid_bitwise_type(int type_val);
