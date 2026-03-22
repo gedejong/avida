@@ -1278,6 +1278,11 @@ double avd_task_ctx_match_number(const TaskContextSnapshot* ctx);
 double avd_task_ctx_opinion_is(const TaskContextSnapshot* ctx);
 double avd_task_ctx_consume_target(const TaskContextSnapshot* ctx);
 double avd_task_ctx_consume_target_logic(const TaskContextSnapshot* ctx, int task_type);
+double avd_task_ctx_move_up_gradient(const TaskContextSnapshot* ctx);
+double avd_task_ctx_move_neutral_gradient(const TaskContextSnapshot* ctx);
+double avd_task_ctx_move_down_gradient(const TaskContextSnapshot* ctx);
+double avd_task_ctx_move_not_up_gradient(const TaskContextSnapshot* ctx);
+double avd_task_ctx_event_killed(const TaskContextSnapshot* ctx);
 
 #ifdef __cplusplus
 }

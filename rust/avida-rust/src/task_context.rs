@@ -297,6 +297,97 @@ pub unsafe extern "C" fn avd_task_ctx_consume_target_logic(
     task_consume_target_logic(snap, task_type)
 }
 
+// --- Gradient movement tasks ---
+
+/// Task_MoveUpGradient: returns 1.0 if gradient_movement == 1.0.
+fn task_move_up_gradient(snap: &TaskContextSnapshot) -> f64 {
+    if (snap.gradient_movement - 1.0).abs() < f64::EPSILON {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_MoveNeutralGradient: returns 1.0 if gradient_movement == 0.0.
+fn task_move_neutral_gradient(snap: &TaskContextSnapshot) -> f64 {
+    if snap.gradient_movement.abs() < f64::EPSILON {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_MoveDownGradient: returns 1.0 if gradient_movement == -1.0.
+fn task_move_down_gradient(snap: &TaskContextSnapshot) -> f64 {
+    if (snap.gradient_movement + 1.0).abs() < f64::EPSILON {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_MoveNotUpGradient: returns 1.0 if gradient_movement != 1.0.
+fn task_move_not_up_gradient(snap: &TaskContextSnapshot) -> f64 {
+    if (snap.gradient_movement - 1.0).abs() >= f64::EPSILON {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_EventKilled: returns 1.0 if event_killed != 0.
+fn task_event_killed(snap: &TaskContextSnapshot) -> f64 {
+    if snap.event_killed != 0 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+// FFI wrappers
+
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_move_up_gradient(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    task_move_up_gradient(unsafe { &*ctx })
+}
+
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_move_neutral_gradient(
+    ctx: *const TaskContextSnapshot,
+) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    task_move_neutral_gradient(unsafe { &*ctx })
+}
+
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_move_down_gradient(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    task_move_down_gradient(unsafe { &*ctx })
+}
+
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_move_not_up_gradient(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    task_move_not_up_gradient(unsafe { &*ctx })
+}
+
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_event_killed(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    task_event_killed(unsafe { &*ctx })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

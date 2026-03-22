@@ -2441,29 +2441,33 @@ double cTaskLib::Task_CommNot(cTaskContext& ctx) const
 
 double cTaskLib::Task_MoveUpGradient(cTaskContext& ctx) const
 {
-  if (ctx.GetOrganism()->GetGradientMovement() == 1.0) return 1.0;
-  return 0.0;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_move_up_gradient(&snap);
 }
 
 
 double cTaskLib::Task_MoveNeutralGradient(cTaskContext& ctx) const
 {
-  if (ctx.GetOrganism()->GetGradientMovement() == 0.0) return 1.0;
-  return 0.0;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_move_neutral_gradient(&snap);
 }
 
 
 double cTaskLib::Task_MoveDownGradient(cTaskContext& ctx) const
 {
-  if (ctx.GetOrganism()->GetGradientMovement() == -1.0) return 1.0;
-  return 0.0;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_move_down_gradient(&snap);
 }
 
 
 double cTaskLib::Task_MoveNotUpGradient(cTaskContext& ctx) const
 {
-  if (Task_MoveUpGradient(ctx)) return 0.0;
-  return 1.0;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_move_not_up_gradient(&snap);
 }
 
 
@@ -2625,8 +2629,9 @@ double cTaskLib::Task_MoveToEvent(cTaskContext& ctx) const
 
 double cTaskLib::Task_EventKilled(cTaskContext& ctx) const
 {
-  if (ctx.GetOrganism()->GetEventKilled()) return 1.0;
-  return 0.0;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_event_killed(&snap);
 }
 
 
