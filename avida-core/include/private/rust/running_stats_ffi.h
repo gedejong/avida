@@ -107,6 +107,43 @@ typedef struct ConfigSnapshot {
     BirthChamberConfig birth_chamber;
     OrganismConfig organism;
 } ConfigSnapshot;
+
+/* ---------- TaskContextSnapshot (Rust-owned, populated by C++) ---------- */
+
+#define TASK_CTX_BUFFER_CAP   8
+#define TASK_CTX_INT_ARGS_CAP 4
+#define TASK_CTX_DOUBLE_ARGS_CAP 2
+
+typedef struct TaskContextSnapshot {
+    /* From cTaskContext */
+    int    logic_id;
+    int    output_value;
+    int    output_buffer[TASK_CTX_BUFFER_CAP];
+    int    output_count;
+    int    input_buffer[TASK_CTX_BUFFER_CAP];
+    int    input_count;
+
+    /* Task entry arguments (from cArgContainer) */
+    int    task_arg_int[TASK_CTX_INT_ARGS_CAP];
+    double task_arg_double[TASK_CTX_DOUBLE_ARGS_CAP];
+    int    has_task_args;
+
+    /* From cOrganism */
+    int    cell_id;
+    int    av_cell_id;
+    int    forage_target;
+    double gradient_movement;
+    int    has_opinion;
+    int    opinion_value;
+    int    kaboom_executed;
+    int    kaboom_executed2;
+    int    event_killed;
+    int    prev_seen_cell_id;
+
+    /* Neighbor information */
+    int    num_neighbors_with_outputs;
+} TaskContextSnapshot;
+
 typedef struct AvidaRunningAverageHandle AvidaRunningAverageHandle;
 typedef struct AvidaDoubleSumHandle AvidaDoubleSumHandle;
 typedef struct AvidaWeightedIndexHandle AvidaWeightedIndexHandle;
@@ -1231,12 +1268,24 @@ double avd_task_eval_simple_arith(const int* inputs, int num_inputs, int output,
 /* ---------- ConfigSnapshot FFI ---------- */
 ConfigSnapshot avd_config_snapshot_default(void);
 
+/* ---------- TaskContextSnapshot FFI ---------- */
+TaskContextSnapshot avd_task_ctx_default(void);
+double avd_task_ctx_dont_care(const TaskContextSnapshot* ctx);
+double avd_task_ctx_exploded(const TaskContextSnapshot* ctx);
+double avd_task_ctx_exploded2(const TaskContextSnapshot* ctx);
+double avd_task_ctx_all_ones(const TaskContextSnapshot* ctx);
+double avd_task_ctx_match_number(const TaskContextSnapshot* ctx);
+
 #ifdef __cplusplus
 }
 
 // C++-only helper: populate a ConfigSnapshot from cAvidaConfig.
 class cAvidaConfig;
 void avd_populate_config_snapshot(ConfigSnapshot* snap, const cAvidaConfig& cfg);
+
+// C++-only helper: populate a TaskContextSnapshot from cTaskContext.
+class cTaskContext;
+void avd_populate_task_context(TaskContextSnapshot* snap, cTaskContext& ctx);
 #endif
 
 #endif

@@ -50,6 +50,7 @@ pub mod script_helpers;
 pub mod sensor_helpers;
 pub mod spatial_res_count_helpers;
 pub mod stats_helpers;
+pub mod task_context;
 pub mod task_lib_helpers;
 pub mod time_series_recorder;
 pub mod weighted_index;
