@@ -216,85 +216,13 @@ private:
   
 
   
-  // 5. Status Flags...  (updated at each divide)
-  bool to_die;		 // Has organism has triggered something fatal?
-  bool to_delete;        // Should this organism be deleted when finished?
-  bool make_random_resource; // Is the resource the organism just produced to be placed randomly?
-  bool is_injected;      // Was this organism injected into the population?
-  bool is_clone;      // Was this organism created as a clone in the population?
-  bool is_donor_cur;     // Has this organism attempted to donate merit?
-  bool is_donor_last;    // Did this organism's parent attempt to donate merit? 
-  bool is_donor_rand;    // Has this organism attempted a random donation?
-  bool is_donor_rand_last; // Did this org's parent attempt to donate randomly
-  bool is_donor_null;    // Has this organism attempted a null donation?
-  bool is_donor_null_last;// Did this org's parent attempt a null donation?
-  bool is_donor_kin;     // Has this organism kin_donated?
-  bool is_donor_kin_last;// Did this org's parent kin_donate?
-  bool is_donor_edit;    // Has this organism edit_donated?
-  bool is_donor_edit_last; // Did this org's parent edit_donate?
-  bool is_donor_gbg;     //  Has this organism gbg_donated (green beard gene)?
-  bool is_donor_gbg_last;// Did this org's parent gbg_donate?
-  bool is_donor_truegb;  // Has this organism truegb_donated (true green beard)? 
-  bool is_donor_truegb_last;// Did this org's parent truegb_donate? 
-  bool is_donor_threshgb;  // Has this organism threshgb_donated (true green beard)? 
-  bool is_donor_threshgb_last;// Did this org's parent threshgbg_donate? 
-  bool is_donor_quanta_threshgb;  // Has this organism quanta_threshgb_donated (true green beard)? 
-  bool is_donor_quanta_threshgb_last;// Did this org's parent quanta_threshgbg_donate?
-  bool is_donor_shadedgb; // Has this organism shaded_gb_donated (true shaded green beard)? 
-  bool is_donor_shadedgb_last; // Did this org's parent shaded_gb_donate? 
+  // 5+6. Status flags + child info — stored in Rust-owned #[repr(C)] struct.
+  // Bool fields are stored as int (0/1) for FFI safety.
+  PhenotypeStatusFlags m_flags;
+
+  // Dynamic arrays stay outside the flags struct.
   AvidaArray<bool> is_donor_locus; // Did this org target a donation at a specific locus.
   AvidaArray<bool> is_donor_locus_last; // Did this org's parent target a donation at a specific locus.
-  bool is_energy_requestor; // Has this organism requested energy?
-  bool is_energy_donor; // Has this organism donated energy?
-  bool is_energy_receiver;  // Has this organism received an energy donation?
-  bool has_used_donated_energy; // Has the organism actively used an energy donation?
-  bool has_open_energy_request; // Does the organism have an energy request that hasn't been answered?
-  int num_thresh_gb_donations;  // Num times this organism threshgb_donated (thresh green beard)? 
-  int num_thresh_gb_donations_last; // Num times this org's parent thresh_donated? 
-  int num_quanta_thresh_gb_donations;  // Num times this organism threshgb_donated (thresh green beard)? 
-  int num_quanta_thresh_gb_donations_last; // Num times this org's parent thresh_donated? 
-  int num_shaded_gb_donations; // Num times this org shaded_gb_donated? 
-  int num_shaded_gb_donations_last; // Num times this org's parent shaded_gb_donated?
-  int num_donations_locus; // Num times this org targeted a donation to a position.
-  int num_donations_locus_last; // Num times this org's parent targeted a donation to a position.
-  bool is_receiver;      // Has this organism ever received merit donation?
-  bool is_receiver_last;      // Did this organism's parent receive a merit donation?
-  bool is_receiver_rand; // Has this organism ever received random merit donation?
-  bool is_receiver_kin;  // Has this organism ever received kin merit donation?
-  bool is_receiver_kin_last;  // Did this organism's parent receive a kin merit donation?
-  bool is_receiver_edit; // Has this organism ever received edit donation?
-  bool is_receiver_edit_last; // Did this organism's parent receive an edit donation?
-  bool is_receiver_gbg;  // Has this organism ever received gbg donation?
-  bool is_receiver_truegb;// Has this organism ever received truegb donation?
-  bool is_receiver_truegb_last;// Did this organism's parent receive a truegb donation?
-  bool is_receiver_threshgb;// Has this organism ever received a threshgb donation?
-  bool is_receiver_threshgb_last;// Did this organism's parent receive a threshgb donation?
-  bool is_receiver_quanta_threshgb;// Has this organism ever received a quanta_threshgb donation?
-  bool is_receiver_quanta_threshgb_last;// Did this organism's parent receive a quanta_threshgb donation?
-  bool is_receiver_shadedgb; // Has this organism ever received a shaded_gb donation? 
-  bool is_receiver_shadedgb_last; // Did this organism's parent receive a shaded gb donation?
-  bool is_receiver_gb_same_locus; // Has this org ever received a donation for a specific locus.
-  bool is_receiver_gb_same_locus_last; // Did this org's parent ever received a donation for a specific locus.
-  bool is_modifier;      // Has this organism modified another?
-  bool is_modified;      // Has this organism been modified by another?
-  bool is_fertile;       // Do we allow this organisms to produce offspring?
-  bool is_mutated;       // Has this organism been subject to any mutations?
-  bool is_multi_thread;  // Does this organism have 2 or more threads?
-  bool parent_true;      // Is this genome an exact copy of its parent's?
-  bool parent_sex;       // Did the parent divide with sex?
-  int  parent_cross_num; // How many corssovers did the parent do?
-  bool born_parent_group;// Was offspring born into the parent's group?
-  bool kaboom_executed; // Has organism executed an explode instruction?
-  bool kaboom_executed2; // Has organism executed an explode instruction? Testing two instructions
-
-  // 6. Child information...
-  bool copy_true;        // Can this genome produce an exact copy of itself?
-  bool divide_sex;       // Was this child created with a sexual divide?
-  int mate_select_id;    // If divide sex, who to mate with?
-  int  cross_num  ;      // ...how many crossovers should this child do?
-  bool child_fertile;    // Will this organism's next child be fertile?
-  bool last_child_fertile;  // Was the child being born to be fertile?
-  int child_copied_size; // Instruction copied into child.
 
   // 7. Information that is set once (when organism was born)
   double permanent_germline_propensity;
@@ -406,9 +334,9 @@ public:
   int GetLastMatingDisplayA() const { return last_mating_display_a; } //@CHC
   int GetLastMatingDisplayB() const { return last_mating_display_b; } //@CHC
 
-  bool GetMakeRandomResource() const {assert(initialized == true); return make_random_resource;}
-  bool GetToDie() const { assert(initialized == true); return to_die; }
-  bool GetToDelete() const { assert(initialized == true); return to_delete; }
+  bool GetMakeRandomResource() const {assert(initialized == true); return m_flags.make_random_resource != 0;}
+  bool GetToDie() const { assert(initialized == true); return m_flags.to_die != 0; }
+  bool GetToDelete() const { assert(initialized == true); return m_flags.to_delete != 0; }
   int GetCurNumErrors() const { assert(initialized == true); return cur_num_errors; }
   int GetCurNumDonates() const { assert(initialized == true); return cur_num_donates; }
   int GetCurCountForTask(int idx) const { assert(initialized == true); return cur_task_count[idx]; }
@@ -501,77 +429,77 @@ public:
   const cString& GetFault() const { assert(initialized == true); return fault_desc; }
   double GetNeutralMetric() const { assert(initialized == true); return neutral_metric; }
   double GetLifeFitness() const { assert(initialized == true); return life_fitness; }
-  int  GetNumThreshGbDonations() const { assert(initialized == true); return num_thresh_gb_donations; }
-  int  GetNumThreshGbDonationsLast() const { assert(initialized == true); return num_thresh_gb_donations_last; }
-  int  GetNumQuantaThreshGbDonations() const { assert(initialized == true); return num_quanta_thresh_gb_donations; }
-  int  GetNumQuantaThreshGbDonationsLast() const { assert(initialized == true); return num_quanta_thresh_gb_donations_last; }
-  int  GetNumShadedGbDonations() const { assert(initialized == true); return num_shaded_gb_donations; }
-  int  GetNumShadedGbDonationsLast() const { assert(initialized == true); return num_shaded_gb_donations_last; }
-  int GetNumDonationsLocus() const { assert(initialized == true); return num_donations_locus; }
-  int GetNumDonationsLocusLast() const { assert(initialized == true); return num_donations_locus_last; }
+  int  GetNumThreshGbDonations() const { assert(initialized == true); return m_flags.num_thresh_gb_donations; }
+  int  GetNumThreshGbDonationsLast() const { assert(initialized == true); return m_flags.num_thresh_gb_donations_last; }
+  int  GetNumQuantaThreshGbDonations() const { assert(initialized == true); return m_flags.num_quanta_thresh_gb_donations; }
+  int  GetNumQuantaThreshGbDonationsLast() const { assert(initialized == true); return m_flags.num_quanta_thresh_gb_donations_last; }
+  int  GetNumShadedGbDonations() const { assert(initialized == true); return m_flags.num_shaded_gb_donations; }
+  int  GetNumShadedGbDonationsLast() const { assert(initialized == true); return m_flags.num_shaded_gb_donations_last; }
+  int GetNumDonationsLocus() const { assert(initialized == true); return m_flags.num_donations_locus; }
+  int GetNumDonationsLocusLast() const { assert(initialized == true); return m_flags.num_donations_locus_last; }
 
-  bool IsInjected() const { assert(initialized == true); return is_injected; }
-  bool IsClone() const { assert(initialized == true); return is_clone; }
-  bool IsDonorCur() const { assert(initialized == true); return is_donor_cur; }
-  bool IsDonorLast() const { assert(initialized == true); return is_donor_last; }
-  bool IsDonorRand() const { assert(initialized == true); return is_donor_rand; }
-  bool IsDonorRandLast() const { assert(initialized == true); return is_donor_rand_last; }
-  bool IsDonorKin() const { assert(initialized == true); return is_donor_kin; }
-  bool IsDonorKinLast() const { assert(initialized == true); return is_donor_kin_last; }
-  bool IsDonorEdit() const { assert(initialized == true); return is_donor_edit; }
-  bool IsDonorEditLast() const { assert(initialized == true); return is_donor_edit_last; }
-  bool IsDonorGbg() const { assert(initialized == true); return is_donor_gbg; }
-  bool IsDonorGbgLast() const { assert(initialized == true); return is_donor_gbg_last; }
-  bool IsDonorTrueGb() const { assert(initialized == true); return is_donor_truegb; }
-  bool IsDonorTrueGbLast() const { assert(initialized == true); return is_donor_truegb_last; }
-  bool IsDonorThreshGb() const { assert(initialized == true); return is_donor_threshgb; }
-  bool IsDonorThreshGbLast() const { assert(initialized == true); return is_donor_threshgb_last; }
-  bool IsDonorQuantaThreshGb() const { assert(initialized == true); return is_donor_quanta_threshgb; }
-  bool IsDonorQuantaThreshGbLast() const { assert(initialized == true); return is_donor_quanta_threshgb_last; }
-  bool IsDonorShadedGb() const { assert(initialized == true); return is_donor_shadedgb; }
-  bool IsDonorShadedGbLast() const { assert(initialized == true); return is_donor_shadedgb_last; }	
+  bool IsInjected() const { assert(initialized == true); return m_flags.is_injected != 0; }
+  bool IsClone() const { assert(initialized == true); return m_flags.is_clone != 0; }
+  bool IsDonorCur() const { assert(initialized == true); return m_flags.is_donor_cur != 0; }
+  bool IsDonorLast() const { assert(initialized == true); return m_flags.is_donor_last != 0; }
+  bool IsDonorRand() const { assert(initialized == true); return m_flags.is_donor_rand != 0; }
+  bool IsDonorRandLast() const { assert(initialized == true); return m_flags.is_donor_rand_last != 0; }
+  bool IsDonorKin() const { assert(initialized == true); return m_flags.is_donor_kin != 0; }
+  bool IsDonorKinLast() const { assert(initialized == true); return m_flags.is_donor_kin_last != 0; }
+  bool IsDonorEdit() const { assert(initialized == true); return m_flags.is_donor_edit != 0; }
+  bool IsDonorEditLast() const { assert(initialized == true); return m_flags.is_donor_edit_last != 0; }
+  bool IsDonorGbg() const { assert(initialized == true); return m_flags.is_donor_gbg != 0; }
+  bool IsDonorGbgLast() const { assert(initialized == true); return m_flags.is_donor_gbg_last != 0; }
+  bool IsDonorTrueGb() const { assert(initialized == true); return m_flags.is_donor_truegb != 0; }
+  bool IsDonorTrueGbLast() const { assert(initialized == true); return m_flags.is_donor_truegb_last != 0; }
+  bool IsDonorThreshGb() const { assert(initialized == true); return m_flags.is_donor_threshgb != 0; }
+  bool IsDonorThreshGbLast() const { assert(initialized == true); return m_flags.is_donor_threshgb_last != 0; }
+  bool IsDonorQuantaThreshGb() const { assert(initialized == true); return m_flags.is_donor_quanta_threshgb != 0; }
+  bool IsDonorQuantaThreshGbLast() const { assert(initialized == true); return m_flags.is_donor_quanta_threshgb_last != 0; }
+  bool IsDonorShadedGb() const { assert(initialized == true); return m_flags.is_donor_shadedgb != 0; }
+  bool IsDonorShadedGbLast() const { assert(initialized == true); return m_flags.is_donor_shadedgb_last != 0; }
   bool IsDonorPosition(int pos) const {assert(initialized == true); return is_donor_locus.GetSize() > pos ? is_donor_locus[pos] : 0; }
   bool IsDonorPositionLast(int pos) const {assert(initialized == true); return is_donor_locus_last.GetSize() > pos ? is_donor_locus_last[pos] : 0; }
-  
-  bool IsEnergyRequestor() const { assert(initialized == true); return is_energy_requestor; }
-  bool IsEnergyDonor() const { assert(initialized == true); return is_energy_donor; }
-  bool IsEnergyReceiver() const { assert(initialized == true); return is_energy_receiver; }
-  bool HasUsedEnergyDonation() const { assert(initialized == true); return has_used_donated_energy; }
-  bool HasOpenEnergyRequest() const { assert(initialized == true); return has_open_energy_request; }
-  bool IsReceiver() const { assert(initialized == true); return is_receiver; }
-  bool IsReceiverLast() const { assert(initialized == true); return is_receiver_last; }
-  bool IsReceiverRand() const { assert(initialized == true); return is_receiver_rand; }
-  bool IsReceiverKin() const { assert(initialized == true); return is_receiver_kin; }
-  bool IsReceiverKinLast() const { assert(initialized == true); return is_receiver_kin_last; }
-  bool IsReceiverEdit() const { assert(initialized == true); return is_receiver_edit; }
-  bool IsReceiverEditLast() const { assert(initialized == true); return is_receiver_edit_last; }
-  bool IsReceiverGbg() const { assert(initialized == true); return is_receiver_gbg; }
-  bool IsReceiverTrueGb() const { assert(initialized == true); return is_receiver_truegb; }
-  bool IsReceiverTrueGbLast() const { assert(initialized == true); return is_receiver_truegb_last; }
-  bool IsReceiverThreshGb() const { assert(initialized == true); return is_receiver_threshgb; }
-  bool IsReceiverThreshGbLast() const { assert(initialized == true); return is_receiver_threshgb_last; }
-  bool IsReceiverQuantaThreshGb() const { assert(initialized == true); return is_receiver_quanta_threshgb; }
-  bool IsReceiverQuantaThreshGbLast() const { assert(initialized == true); return is_receiver_quanta_threshgb_last; }
-  bool IsReceiverShadedGb() const { assert(initialized == true); return is_receiver_shadedgb; }
-  bool IsReceiverShadedGbLast() const { assert(initialized == true); return is_receiver_shadedgb_last; }
-  bool IsReceiverGBSameLocus() const { assert(initialized == true); return is_receiver_gb_same_locus; }
-  bool IsReceiverGBSameLocusLast() const { assert(initialized == true); return is_receiver_gb_same_locus_last; }
-  bool IsModifier() const { assert(initialized == true); return is_modifier; }
-  bool IsModified() const { assert(initialized == true); return is_modified; }
-  bool IsFertile() const  { assert(initialized == true); return is_fertile; }
-  bool IsMutated() const  { assert(initialized == true); return is_mutated; }
-  bool IsMultiThread() const { assert(initialized == true); return is_multi_thread; }
-  bool ParentTrue() const { assert(initialized == true); return parent_true; }
-  bool ParentSex() const  { assert(initialized == true); return parent_sex; }
-  int  ParentCrossNum() const  { assert(initialized == true); return parent_cross_num; }
-  bool BornParentGroup() const { assert(initialized == true); return born_parent_group; } 
 
-  bool CopyTrue() const   { assert(initialized == true); return copy_true; }
-  bool DivideSex() const  { assert(initialized == true); return divide_sex; }
-  int MateSelectID() const { assert(initialized == true); return mate_select_id; }
-  int CrossNum() const  { assert(initialized == true); return cross_num; }
-  bool ChildFertile() const { assert(initialized == true); return child_fertile;}
-  int GetChildCopiedSize() const { assert(initialized == true); return child_copied_size; }
+  bool IsEnergyRequestor() const { assert(initialized == true); return m_flags.is_energy_requestor != 0; }
+  bool IsEnergyDonor() const { assert(initialized == true); return m_flags.is_energy_donor != 0; }
+  bool IsEnergyReceiver() const { assert(initialized == true); return m_flags.is_energy_receiver != 0; }
+  bool HasUsedEnergyDonation() const { assert(initialized == true); return m_flags.has_used_donated_energy != 0; }
+  bool HasOpenEnergyRequest() const { assert(initialized == true); return m_flags.has_open_energy_request != 0; }
+  bool IsReceiver() const { assert(initialized == true); return m_flags.is_receiver != 0; }
+  bool IsReceiverLast() const { assert(initialized == true); return m_flags.is_receiver_last != 0; }
+  bool IsReceiverRand() const { assert(initialized == true); return m_flags.is_receiver_rand != 0; }
+  bool IsReceiverKin() const { assert(initialized == true); return m_flags.is_receiver_kin != 0; }
+  bool IsReceiverKinLast() const { assert(initialized == true); return m_flags.is_receiver_kin_last != 0; }
+  bool IsReceiverEdit() const { assert(initialized == true); return m_flags.is_receiver_edit != 0; }
+  bool IsReceiverEditLast() const { assert(initialized == true); return m_flags.is_receiver_edit_last != 0; }
+  bool IsReceiverGbg() const { assert(initialized == true); return m_flags.is_receiver_gbg != 0; }
+  bool IsReceiverTrueGb() const { assert(initialized == true); return m_flags.is_receiver_truegb != 0; }
+  bool IsReceiverTrueGbLast() const { assert(initialized == true); return m_flags.is_receiver_truegb_last != 0; }
+  bool IsReceiverThreshGb() const { assert(initialized == true); return m_flags.is_receiver_threshgb != 0; }
+  bool IsReceiverThreshGbLast() const { assert(initialized == true); return m_flags.is_receiver_threshgb_last != 0; }
+  bool IsReceiverQuantaThreshGb() const { assert(initialized == true); return m_flags.is_receiver_quanta_threshgb != 0; }
+  bool IsReceiverQuantaThreshGbLast() const { assert(initialized == true); return m_flags.is_receiver_quanta_threshgb_last != 0; }
+  bool IsReceiverShadedGb() const { assert(initialized == true); return m_flags.is_receiver_shadedgb != 0; }
+  bool IsReceiverShadedGbLast() const { assert(initialized == true); return m_flags.is_receiver_shadedgb_last != 0; }
+  bool IsReceiverGBSameLocus() const { assert(initialized == true); return m_flags.is_receiver_gb_same_locus != 0; }
+  bool IsReceiverGBSameLocusLast() const { assert(initialized == true); return m_flags.is_receiver_gb_same_locus_last != 0; }
+  bool IsModifier() const { assert(initialized == true); return m_flags.is_modifier != 0; }
+  bool IsModified() const { assert(initialized == true); return m_flags.is_modified != 0; }
+  bool IsFertile() const  { assert(initialized == true); return m_flags.is_fertile != 0; }
+  bool IsMutated() const  { assert(initialized == true); return m_flags.is_mutated != 0; }
+  bool IsMultiThread() const { assert(initialized == true); return m_flags.is_multi_thread != 0; }
+  bool ParentTrue() const { assert(initialized == true); return m_flags.parent_true != 0; }
+  bool ParentSex() const  { assert(initialized == true); return m_flags.parent_sex != 0; }
+  int  ParentCrossNum() const  { assert(initialized == true); return m_flags.parent_cross_num; }
+  bool BornParentGroup() const { assert(initialized == true); return m_flags.born_parent_group != 0; }
+
+  bool CopyTrue() const   { assert(initialized == true); return m_flags.copy_true != 0; }
+  bool DivideSex() const  { assert(initialized == true); return m_flags.divide_sex != 0; }
+  int MateSelectID() const { assert(initialized == true); return m_flags.mate_select_id; }
+  int CrossNum() const  { assert(initialized == true); return m_flags.cross_num; }
+  bool ChildFertile() const { assert(initialized == true); return m_flags.child_fertile != 0;}
+  int GetChildCopiedSize() const { assert(initialized == true); return m_flags.child_copied_size; }
   
 
 
@@ -589,13 +517,13 @@ public:
   void SetNeutralMetric(double _in){ neutral_metric = _in; }
   void SetLifeFitness(double _in){ life_fitness = _in; }
   void SetLinesExecuted(int _exe_size) { m_core.executed_size = _exe_size; }
-  void SetLinesCopied(int _copied_size) { child_copied_size = _copied_size; }
+  void SetLinesCopied(int _copied_size) { m_flags.child_copied_size = _copied_size; }
   void SetDivType(double _div_type) { m_core.div_type = _div_type; }
-  void SetDivideSex(bool _divide_sex) { divide_sex = _divide_sex; }  
-  void SetMateSelectID(int _select_id) { mate_select_id = _select_id; }
-  void SetCrossNum(int _cross_num) { cross_num = _cross_num; }
-  void SetToDie() { to_die = true; }
-  void SetToDelete() { to_delete = true; }
+  void SetDivideSex(bool _divide_sex) { m_flags.divide_sex = _divide_sex ? 1 : 0; }
+  void SetMateSelectID(int _select_id) { m_flags.mate_select_id = _select_id; }
+  void SetCrossNum(int _cross_num) { m_flags.cross_num = _cross_num; }
+  void SetToDie() { m_flags.to_die = 1; }
+  void SetToDelete() { m_flags.to_delete = 1; }
   void SetTestCPUInstCount(const AvidaArray<int>& in_counts) { testCPU_inst_count = in_counts; }
   void IncreaseEnergyDonated(double amount) { assert(amount >=0); total_energy_donated += amount; }
   void IncreaseEnergyReceived(double amount) { assert(amount >=0); total_energy_received += amount; }
@@ -614,11 +542,11 @@ public:
   void SetReactionCount(int index, int val) { cur_reaction_count[index] = val; }
   void SetStolenReactionCount(int index, int val) { cur_stolen_reaction_count[index] = val; }
   
-  bool GetKaboomExecuted() {return kaboom_executed;} //@AEJ
-  void SetKaboomExecuted(bool value) {kaboom_executed = value;} //@AEJ
-  bool GetKaboomExecuted2() {return kaboom_executed2;} //@AEJ
-  void SetKaboomExecuted2(bool value) {kaboom_executed2 = value;} //@AEJ
-  void ClearKaboomExecuted() {kaboom_executed = false;} //@AEJ
+  bool GetKaboomExecuted() {return m_flags.kaboom_executed != 0;} //@AEJ
+  void SetKaboomExecuted(bool value) {m_flags.kaboom_executed = value ? 1 : 0;} //@AEJ
+  bool GetKaboomExecuted2() {return m_flags.kaboom_executed2 != 0;} //@AEJ
+  void SetKaboomExecuted2(bool value) {m_flags.kaboom_executed2 = value ? 1 : 0;} //@AEJ
+  void ClearKaboomExecuted() {m_flags.kaboom_executed = 0;} //@AEJ
 
 
   void SetCurRBinsAvail(const AvidaArray<double>& in_avail) { cur_rbins_avail = in_avail; }
@@ -632,36 +560,36 @@ public:
   void SetMatingType(int _mating_type) { mating_type = _mating_type; } //@CHC
   void SetMatePreference(int _mate_preference) { mate_preference = _mate_preference; } //@CHC
 
-  void SetIsMultiThread() { is_multi_thread = true; }
-  void SetIsDonorCur() { is_donor_cur = true; } 
-  void SetIsDonorRand() { SetIsDonorCur(); is_donor_rand = true; }
-  void SetIsDonorKin() { SetIsDonorCur(); is_donor_kin = true; }
-  void SetIsDonorNull() { SetIsDonorCur(); is_donor_null = true; }
-  void SetIsDonorEdit() { SetIsDonorCur(); is_donor_edit = true; }
-  void SetIsDonorGbg() { SetIsDonorCur(); is_donor_gbg = true; }
-  void SetIsDonorTrueGb() { SetIsDonorCur(); is_donor_truegb = true; }
-  void SetIsDonorThreshGb() { SetIsDonorCur(); is_donor_threshgb = true; }
-  void SetIsDonorQuantaThreshGb() { SetIsDonorCur(); is_donor_quanta_threshgb = true; }
-  void SetIsDonorShadedGb() { SetIsDonorCur(); is_donor_shadedgb = true; }
+  void SetIsMultiThread() { m_flags.is_multi_thread = 1; }
+  void SetIsDonorCur() { m_flags.is_donor_cur = 1; }
+  void SetIsDonorRand() { SetIsDonorCur(); m_flags.is_donor_rand = 1; }
+  void SetIsDonorKin() { SetIsDonorCur(); m_flags.is_donor_kin = 1; }
+  void SetIsDonorNull() { SetIsDonorCur(); m_flags.is_donor_null = 1; }
+  void SetIsDonorEdit() { SetIsDonorCur(); m_flags.is_donor_edit = 1; }
+  void SetIsDonorGbg() { SetIsDonorCur(); m_flags.is_donor_gbg = 1; }
+  void SetIsDonorTrueGb() { SetIsDonorCur(); m_flags.is_donor_truegb = 1; }
+  void SetIsDonorThreshGb() { SetIsDonorCur(); m_flags.is_donor_threshgb = 1; }
+  void SetIsDonorQuantaThreshGb() { SetIsDonorCur(); m_flags.is_donor_quanta_threshgb = 1; }
+  void SetIsDonorShadedGb() { SetIsDonorCur(); m_flags.is_donor_shadedgb = 1; }
   void SetIsDonorPosition(int pos) { SetIsDonorCur(); if (is_donor_locus.GetSize() <= pos) is_donor_locus.Resize(pos+1, false); is_donor_locus[pos] = true; }
-  void SetIsReceiver() { is_receiver = true; } 
-  void SetIsReceiverRand() { SetIsReceiver(); is_receiver_rand = true; } 
-  void SetIsReceiverKin() { SetIsReceiver(); is_receiver_kin = true; } 
-  void SetIsReceiverEdit() { SetIsReceiver(); is_receiver_edit = true; } 
-  void SetIsReceiverGbg() { SetIsReceiver(); is_receiver_gbg = true; } 
-  void SetIsReceiverTrueGb() { SetIsReceiver(); is_receiver_truegb = true; } 
-  void SetIsReceiverThreshGb() { SetIsReceiver(); is_receiver_threshgb = true; } 
-  void SetIsReceiverQuantaThreshGb() { SetIsReceiver(); is_receiver_quanta_threshgb = true; } 
-  void SetIsReceiverShadedGb() { SetIsReceiver(); is_receiver_shadedgb = true; }
-  void SetIsReceiverGBSameLocus() { SetIsReceiver(); is_receiver_gb_same_locus = true; }
-  void SetIsEnergyRequestor() { is_energy_requestor = true; }
-  void SetIsEnergyDonor() { is_energy_donor = true; }
-  void SetIsEnergyReceiver() { is_energy_receiver = true; }
-  bool& SetBornParentGroup() { return born_parent_group; } 
-  void SetHasUsedDonatedEnergy() { has_used_donated_energy = true; }
-  void SetHasOpenEnergyRequest() { has_open_energy_request = true; }
-  void ClearHasOpenEnergyRequest() { has_open_energy_request = false; }
-  void ClearIsMultiThread() { is_multi_thread = false; }
+  void SetIsReceiver() { m_flags.is_receiver = 1; }
+  void SetIsReceiverRand() { SetIsReceiver(); m_flags.is_receiver_rand = 1; }
+  void SetIsReceiverKin() { SetIsReceiver(); m_flags.is_receiver_kin = 1; }
+  void SetIsReceiverEdit() { SetIsReceiver(); m_flags.is_receiver_edit = 1; }
+  void SetIsReceiverGbg() { SetIsReceiver(); m_flags.is_receiver_gbg = 1; }
+  void SetIsReceiverTrueGb() { SetIsReceiver(); m_flags.is_receiver_truegb = 1; }
+  void SetIsReceiverThreshGb() { SetIsReceiver(); m_flags.is_receiver_threshgb = 1; }
+  void SetIsReceiverQuantaThreshGb() { SetIsReceiver(); m_flags.is_receiver_quanta_threshgb = 1; }
+  void SetIsReceiverShadedGb() { SetIsReceiver(); m_flags.is_receiver_shadedgb = 1; }
+  void SetIsReceiverGBSameLocus() { SetIsReceiver(); m_flags.is_receiver_gb_same_locus = 1; }
+  void SetIsEnergyRequestor() { m_flags.is_energy_requestor = 1; }
+  void SetIsEnergyDonor() { m_flags.is_energy_donor = 1; }
+  void SetIsEnergyReceiver() { m_flags.is_energy_receiver = 1; }
+  int& SetBornParentGroup() { return m_flags.born_parent_group; }
+  void SetHasUsedDonatedEnergy() { m_flags.has_used_donated_energy = 1; }
+  void SetHasOpenEnergyRequest() { m_flags.has_open_energy_request = 1; }
+  void ClearHasOpenEnergyRequest() { m_flags.has_open_energy_request = 0; }
+  void ClearIsMultiThread() { m_flags.is_multi_thread = 0; }
   
   void SetCurBonus(double _bonus) { m_core.cur_bonus = _bonus; }
   void SetCurBonusInstCount(int _num_bonus_inst) { m_core.bonus_instruction_count = _num_bonus_inst; }
@@ -678,10 +606,10 @@ public:
   int GetLastAttacks() const { return last_attacks; }
   int GetLastKills() const { return last_kills; }
   
-  void IncNumThreshGbDonations() { assert(initialized == true); num_thresh_gb_donations++; }
-  void IncNumQuantaThreshGbDonations() { assert(initialized == true); num_quanta_thresh_gb_donations++; }
-  void IncNumShadedGbDonations() { assert(initialized == true); num_shaded_gb_donations++; }	
-  void IncNumGreenBeardSameLocus() { assert(initialized == true); num_donations_locus++; }	
+  void IncNumThreshGbDonations() { assert(initialized == true); m_flags.num_thresh_gb_donations++; }
+  void IncNumQuantaThreshGbDonations() { assert(initialized == true); m_flags.num_quanta_thresh_gb_donations++; }
+  void IncNumShadedGbDonations() { assert(initialized == true); m_flags.num_shaded_gb_donations++; }
+  void IncNumGreenBeardSameLocus() { assert(initialized == true); m_flags.num_donations_locus++; }	
   void IncAge()      { assert(initialized == true); age++; }
   void IncCPUCyclesUsed() { assert(initialized == true); cpu_cycles_used++; trial_cpu_cycles_used++; }
   void DecCPUCyclesUsed() { assert(initialized == true); cpu_cycles_used--; trial_cpu_cycles_used--; }
@@ -696,21 +624,21 @@ public:
   void SetLastMatingDisplayA(int _last_mating_display_a) { last_mating_display_a = _last_mating_display_a; } //@CHC
   void SetLastMatingDisplayB(int _last_mating_display_b) { last_mating_display_b = _last_mating_display_b; } //@CHC
   
-  bool& IsInjected() { assert(initialized == true); return is_injected; }
-  bool& IsClone() { assert(initialized == true); return is_clone; }
-  bool& IsModifier() { assert(initialized == true); return is_modifier; }
-  bool& IsModified() { assert(initialized == true); return is_modified; }
-  bool& IsFertile()  { assert(initialized == true); return is_fertile; }
-  bool& IsMutated()  { assert(initialized == true); return is_mutated; }
-  bool& ParentTrue() { assert(initialized == true); return parent_true; }
-  bool& ParentSex()  { assert(initialized == true); return parent_sex; }
-  int& ParentCrossNum()  { assert(initialized == true); return parent_cross_num; }
-  bool& CopyTrue()   { assert(initialized == true); return copy_true; }
-  bool& DivideSex()  { assert(initialized == true); return divide_sex; }
-  int& MateSelectID() { assert(initialized == true); return mate_select_id; }
-  int& CrossNum()     { assert(initialized == true); return cross_num; }
-  bool& ChildFertile() { assert(initialized == true); return child_fertile; }
-  bool& IsMultiThread() { assert(initialized == true); return is_multi_thread; }
+  int& IsInjected() { assert(initialized == true); return m_flags.is_injected; }
+  int& IsClone() { assert(initialized == true); return m_flags.is_clone; }
+  int& IsModifier() { assert(initialized == true); return m_flags.is_modifier; }
+  int& IsModified() { assert(initialized == true); return m_flags.is_modified; }
+  int& IsFertile()  { assert(initialized == true); return m_flags.is_fertile; }
+  int& IsMutated()  { assert(initialized == true); return m_flags.is_mutated; }
+  int& ParentTrue() { assert(initialized == true); return m_flags.parent_true; }
+  int& ParentSex()  { assert(initialized == true); return m_flags.parent_sex; }
+  int& ParentCrossNum()  { assert(initialized == true); return m_flags.parent_cross_num; }
+  int& CopyTrue()   { assert(initialized == true); return m_flags.copy_true; }
+  int& DivideSex()  { assert(initialized == true); return m_flags.divide_sex; }
+  int& MateSelectID() { assert(initialized == true); return m_flags.mate_select_id; }
+  int& CrossNum()     { assert(initialized == true); return m_flags.cross_num; }
+  int& ChildFertile() { assert(initialized == true); return m_flags.child_fertile; }
+  int& IsMultiThread() { assert(initialized == true); return m_flags.is_multi_thread; }
   
   void DoubleEnergyUsage();
   void HalveEnergyUsage();

@@ -145,12 +145,120 @@ pub extern "C" fn avd_pheno_calc_size_merit(
 }
 
 // ---------------------------------------------------------------------------
+// PhenotypeStatusFlags — Slice 2 of cPhenotype migration (issue #48)
+// ---------------------------------------------------------------------------
+
+/// Status flags and counters extracted from cPhenotype sections 5 + 6.
+///
+/// All bool fields are represented as `c_int` for FFI safety (C++ `bool` has
+/// platform-dependent size; `int` matches the existing Avida FFI convention).
+/// 0 = false, non-zero = true.
+///
+/// Layout must remain `repr(C)` so C++ can embed it directly.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PhenotypeStatusFlags {
+    // --- Section 5: Status Flags (updated at each divide) ---
+    pub to_die: c_int,
+    pub to_delete: c_int,
+    pub make_random_resource: c_int,
+    pub is_injected: c_int,
+    pub is_clone: c_int,
+
+    // Donor flags
+    pub is_donor_cur: c_int,
+    pub is_donor_last: c_int,
+    pub is_donor_rand: c_int,
+    pub is_donor_rand_last: c_int,
+    pub is_donor_null: c_int,
+    pub is_donor_null_last: c_int,
+    pub is_donor_kin: c_int,
+    pub is_donor_kin_last: c_int,
+    pub is_donor_edit: c_int,
+    pub is_donor_edit_last: c_int,
+    pub is_donor_gbg: c_int,
+    pub is_donor_gbg_last: c_int,
+    pub is_donor_truegb: c_int,
+    pub is_donor_truegb_last: c_int,
+    pub is_donor_threshgb: c_int,
+    pub is_donor_threshgb_last: c_int,
+    pub is_donor_quanta_threshgb: c_int,
+    pub is_donor_quanta_threshgb_last: c_int,
+    pub is_donor_shadedgb: c_int,
+    pub is_donor_shadedgb_last: c_int,
+
+    // Energy flags
+    pub is_energy_requestor: c_int,
+    pub is_energy_donor: c_int,
+    pub is_energy_receiver: c_int,
+    pub has_used_donated_energy: c_int,
+    pub has_open_energy_request: c_int,
+
+    // Donation counters
+    pub num_thresh_gb_donations: c_int,
+    pub num_thresh_gb_donations_last: c_int,
+    pub num_quanta_thresh_gb_donations: c_int,
+    pub num_quanta_thresh_gb_donations_last: c_int,
+    pub num_shaded_gb_donations: c_int,
+    pub num_shaded_gb_donations_last: c_int,
+    pub num_donations_locus: c_int,
+    pub num_donations_locus_last: c_int,
+
+    // Receiver flags
+    pub is_receiver: c_int,
+    pub is_receiver_last: c_int,
+    pub is_receiver_rand: c_int,
+    pub is_receiver_kin: c_int,
+    pub is_receiver_kin_last: c_int,
+    pub is_receiver_edit: c_int,
+    pub is_receiver_edit_last: c_int,
+    pub is_receiver_gbg: c_int,
+    pub is_receiver_truegb: c_int,
+    pub is_receiver_truegb_last: c_int,
+    pub is_receiver_threshgb: c_int,
+    pub is_receiver_threshgb_last: c_int,
+    pub is_receiver_quanta_threshgb: c_int,
+    pub is_receiver_quanta_threshgb_last: c_int,
+    pub is_receiver_shadedgb: c_int,
+    pub is_receiver_shadedgb_last: c_int,
+    pub is_receiver_gb_same_locus: c_int,
+    pub is_receiver_gb_same_locus_last: c_int,
+
+    // General status
+    pub is_modifier: c_int,
+    pub is_modified: c_int,
+    pub is_fertile: c_int,
+    pub is_mutated: c_int,
+    pub is_multi_thread: c_int,
+    pub parent_true: c_int,
+    pub parent_sex: c_int,
+    pub parent_cross_num: c_int,
+    pub born_parent_group: c_int,
+    pub kaboom_executed: c_int,
+    pub kaboom_executed2: c_int,
+
+    // --- Section 6: Child information ---
+    pub copy_true: c_int,
+    pub divide_sex: c_int,
+    pub child_fertile: c_int,
+    pub last_child_fertile: c_int,
+    pub mate_select_id: c_int,
+    pub cross_num: c_int,
+    pub child_copied_size: c_int,
+}
+
+// ---------------------------------------------------------------------------
 // FFI: construction / default
 // ---------------------------------------------------------------------------
 
 #[no_mangle]
 pub extern "C" fn avd_pheno_core_default() -> PhenotypeCoreMetrics {
     PhenotypeCoreMetrics::default()
+}
+
+#[no_mangle]
+pub extern "C" fn avd_pheno_flags_default() -> PhenotypeStatusFlags {
+    PhenotypeStatusFlags::default()
 }
 
 // ---------------------------------------------------------------------------
@@ -646,5 +754,96 @@ mod tests {
         // Exact size depends on alignment; just verify it is non-zero and reasonable.
         assert!(size > 0);
         assert!(size <= 256); // sanity bound
+    }
+
+    // -----------------------------------------------------------------------
+    // PhenotypeStatusFlags tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn flags_default_all_zero() {
+        let f = PhenotypeStatusFlags::default();
+        assert_eq!(f.to_die, 0);
+        assert_eq!(f.to_delete, 0);
+        assert_eq!(f.make_random_resource, 0);
+        assert_eq!(f.is_injected, 0);
+        assert_eq!(f.is_clone, 0);
+        assert_eq!(f.is_donor_cur, 0);
+        assert_eq!(f.is_donor_last, 0);
+        assert_eq!(f.is_energy_requestor, 0);
+        assert_eq!(f.is_receiver, 0);
+        assert_eq!(f.is_modifier, 0);
+        assert_eq!(f.is_modified, 0);
+        assert_eq!(f.is_fertile, 0);
+        assert_eq!(f.is_mutated, 0);
+        assert_eq!(f.is_multi_thread, 0);
+        assert_eq!(f.parent_true, 0);
+        assert_eq!(f.parent_sex, 0);
+        assert_eq!(f.parent_cross_num, 0);
+        assert_eq!(f.born_parent_group, 0);
+        assert_eq!(f.kaboom_executed, 0);
+        assert_eq!(f.kaboom_executed2, 0);
+        assert_eq!(f.copy_true, 0);
+        assert_eq!(f.divide_sex, 0);
+        assert_eq!(f.child_fertile, 0);
+        assert_eq!(f.last_child_fertile, 0);
+        assert_eq!(f.mate_select_id, 0);
+        assert_eq!(f.cross_num, 0);
+        assert_eq!(f.child_copied_size, 0);
+        assert_eq!(f.num_thresh_gb_donations, 0);
+        assert_eq!(f.num_quanta_thresh_gb_donations, 0);
+        assert_eq!(f.num_shaded_gb_donations, 0);
+        assert_eq!(f.num_donations_locus, 0);
+    }
+
+    #[test]
+    fn flags_ffi_default_roundtrip() {
+        let f = avd_pheno_flags_default();
+        assert_eq!(f.to_die, 0);
+        assert_eq!(f.is_fertile, 0);
+        assert_eq!(f.child_copied_size, 0);
+    }
+
+    #[test]
+    fn flags_field_mutation() {
+        let f = PhenotypeStatusFlags {
+            is_donor_cur: 1,
+            is_fertile: 1,
+            num_thresh_gb_donations: 5,
+            mate_select_id: -1,
+            child_copied_size: 100,
+            ..PhenotypeStatusFlags::default()
+        };
+
+        assert_eq!(f.is_donor_cur, 1);
+        assert_eq!(f.is_fertile, 1);
+        assert_eq!(f.num_thresh_gb_donations, 5);
+        assert_eq!(f.mate_select_id, -1);
+        assert_eq!(f.child_copied_size, 100);
+        // Other fields remain zero
+        assert_eq!(f.is_donor_last, 0);
+        assert_eq!(f.to_die, 0);
+    }
+
+    #[test]
+    fn flags_struct_is_repr_c_and_sized() {
+        let size = std::mem::size_of::<PhenotypeStatusFlags>();
+        // 74 c_int fields * 4 bytes = 296 bytes (no padding needed, all same type)
+        assert_eq!(size, 74 * 4);
+    }
+
+    #[test]
+    fn flags_clone_is_independent() {
+        let f = PhenotypeStatusFlags {
+            is_donor_cur: 1,
+            ..PhenotypeStatusFlags::default()
+        };
+        let f2 = f;
+        assert_eq!(f2.is_donor_cur, 1);
+        // Mutating original does not affect copy (Copy semantics)
+        let mut f3 = f;
+        f3.is_donor_cur = 0;
+        assert_eq!(f.is_donor_cur, 1);
+        assert_eq!(f3.is_donor_cur, 0);
     }
 }

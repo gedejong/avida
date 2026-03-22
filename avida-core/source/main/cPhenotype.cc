@@ -234,88 +234,14 @@ cPhenotype& cPhenotype::operator=(const cPhenotype& in_phen)
   res_consumed             = in_phen.res_consumed; 
   is_germ_cell             = in_phen.is_germ_cell;
   
-  // 5. Status Flags...  (updated at each divide)
-  make_random_resource      = in_phen.make_random_resource;
-  to_die                  = in_phen.to_die;		 
-  to_delete               = in_phen.to_delete;        
-  is_injected             = in_phen.is_injected;
-  is_clone                = in_phen.is_clone;
-  is_donor_cur            = in_phen.is_donor_cur;     
-  is_donor_last           = in_phen.is_donor_last;     
-  is_donor_rand           = in_phen.is_donor_rand;    
-  is_donor_rand_last      = in_phen.is_donor_rand_last;
-  is_donor_null           = in_phen.is_donor_null;    
-  is_donor_null_last      = in_phen.is_donor_null_last;
-  is_donor_kin            = in_phen.is_donor_kin;    
-  is_donor_kin_last       = in_phen.is_donor_kin_last;
-  is_donor_edit           = in_phen.is_donor_edit;   
-  is_donor_edit_last      = in_phen.is_donor_edit_last; 
-  is_donor_gbg            = in_phen.is_donor_gbg;     
-  is_donor_gbg_last       = in_phen.is_donor_gbg_last;
-  is_donor_truegb         = in_phen.is_donor_truegb; 
-  is_donor_truegb_last    = in_phen.is_donor_truegb_last;
-  is_donor_threshgb       = in_phen.is_donor_threshgb;  
-  is_donor_threshgb_last  = in_phen.is_donor_threshgb_last;
-  is_donor_quanta_threshgb        = in_phen.is_donor_quanta_threshgb;  
-  is_donor_quanta_threshgb_last   = in_phen.is_donor_quanta_threshgb_last;
-  is_donor_shadedgb       = in_phen.is_donor_shadedgb;  
-  is_donor_shadedgb_last  = in_phen.is_donor_shadedgb_last;	
+  // 5+6. Status flags + child info (single struct copy)
+  m_flags                 = in_phen.m_flags;
   is_donor_locus          = in_phen.is_donor_locus;
   is_donor_locus_last     = in_phen.is_donor_locus_last;
-  num_thresh_gb_donations         = in_phen.num_thresh_gb_donations;  
-  num_thresh_gb_donations_last    = in_phen.num_thresh_gb_donations_last;  
-  num_quanta_thresh_gb_donations = in_phen.num_quanta_thresh_gb_donations;
-  num_quanta_thresh_gb_donations_last = in_phen.num_quanta_thresh_gb_donations_last;
-  num_shaded_gb_donations         = in_phen.num_shaded_gb_donations;  
-  num_shaded_gb_donations_last    = in_phen.num_shaded_gb_donations_last; 
-  num_donations_locus     = in_phen.num_donations_locus;
-  num_donations_locus_last = in_phen.num_donations_locus_last;
-  is_receiver             = in_phen.is_receiver;   
-  is_receiver_last        = in_phen.is_receiver_last;      
-  is_receiver_rand        = in_phen.is_receiver_rand;
-  is_receiver_kin         = in_phen.is_receiver_kin; 
-  is_receiver_kin_last    = in_phen.is_receiver_kin_last; 
-  is_receiver_edit        = in_phen.is_receiver_edit; 
-  is_receiver_edit_last   = in_phen.is_receiver_edit_last; 
-  is_receiver_gbg         = in_phen.is_receiver_gbg; 
-  is_receiver_truegb      = in_phen.is_receiver_truegb;
-  is_receiver_truegb_last = in_phen.is_receiver_truegb_last;
-  is_receiver_threshgb    = in_phen.is_receiver_threshgb;
-  is_receiver_threshgb_last    = in_phen.is_receiver_threshgb_last;
-  is_receiver_quanta_threshgb  = in_phen.is_receiver_quanta_threshgb;
-  is_receiver_quanta_threshgb_last = in_phen.is_receiver_quanta_threshgb_last;
-  is_receiver_shadedgb    = in_phen.is_receiver_shadedgb;
-  is_receiver_shadedgb_last    = in_phen.is_receiver_shadedgb_last;	
-  is_receiver_gb_same_locus = in_phen.is_receiver_gb_same_locus;
-  is_receiver_gb_same_locus_last = in_phen.is_receiver_gb_same_locus_last;
-  is_modifier             = in_phen.is_modifier;      
-  is_modified             = in_phen.is_modified;      
-  is_fertile              = in_phen.is_fertile;      
-  is_mutated              = in_phen.is_mutated;       
-  is_multi_thread         = in_phen.is_multi_thread; 
-  parent_true             = in_phen.parent_true;     
-  parent_sex              = in_phen.parent_sex;      
-  parent_cross_num        = in_phen.parent_cross_num; 
-  
-  is_energy_requestor     = in_phen.is_energy_requestor;
-  is_energy_donor         = in_phen.is_energy_donor;
-  is_energy_receiver      = in_phen.is_energy_receiver;
-  has_used_donated_energy = in_phen.has_used_donated_energy;
-  has_open_energy_request = in_phen.has_open_energy_request;
+
   total_energy_donated    = in_phen.total_energy_donated;
   total_energy_received   = in_phen.total_energy_received;
   total_energy_applied    = in_phen.total_energy_applied;
-  kaboom_executed         = in_phen.kaboom_executed;
-  kaboom_executed2         = in_phen.kaboom_executed2;
-  
-  // 6. Child information...
-  copy_true               = in_phen.copy_true;       
-  divide_sex              = in_phen.divide_sex;       
-  mate_select_id          = in_phen.mate_select_id;    
-  cross_num               = in_phen.cross_num;     
-  child_fertile           = in_phen.child_fertile;  
-  last_child_fertile      = in_phen.last_child_fertile; 
-  child_copied_size       = in_phen.child_copied_size;
   
   // 7. Permanent information...
   permanent_germline_propensity = in_phen.permanent_germline_propensity;
@@ -347,7 +273,7 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   energy_testament = 0.0;
   energy_received_buffer = 0.0;
   m_core.genome_length   = _genome.GetSize();
-  m_core.copied_size     = parent_phenotype.child_copied_size;
+  m_core.copied_size     = parent_phenotype.m_flags.child_copied_size;
   m_core.executed_size   = parent_phenotype.m_core.executed_size;
 
   m_core.gestation_time  = parent_phenotype.m_core.gestation_time;
@@ -476,97 +402,96 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   is_germ_cell             = parent_phenotype.is_germ_cell;
   last_task_time           = 0; 
   
-  num_thresh_gb_donations = 0;
-  num_thresh_gb_donations_last = parent_phenotype.num_thresh_gb_donations_last;
-  num_quanta_thresh_gb_donations = 0;
-  num_quanta_thresh_gb_donations_last = parent_phenotype.num_thresh_gb_donations_last;
-  num_shaded_gb_donations = 0;
-  num_shaded_gb_donations_last = parent_phenotype.num_shaded_gb_donations_last;
-  num_donations_locus = 0;
-  num_donations_locus_last = parent_phenotype.num_donations_locus_last;
-  
-	
+  m_flags.num_thresh_gb_donations = 0;
+  m_flags.num_thresh_gb_donations_last = parent_phenotype.m_flags.num_thresh_gb_donations_last;
+  m_flags.num_quanta_thresh_gb_donations = 0;
+  m_flags.num_quanta_thresh_gb_donations_last = parent_phenotype.m_flags.num_thresh_gb_donations_last;
+  m_flags.num_shaded_gb_donations = 0;
+  m_flags.num_shaded_gb_donations_last = parent_phenotype.m_flags.num_shaded_gb_donations_last;
+  m_flags.num_donations_locus = 0;
+  m_flags.num_donations_locus_last = parent_phenotype.m_flags.num_donations_locus_last;
+
   // Setup flags...
-  is_injected   = false;
-  is_clone   = false;
-  is_donor_cur  = false;
-  is_donor_last = parent_phenotype.is_donor_last;
-  is_donor_rand = false;
-  is_donor_rand_last = parent_phenotype.is_donor_rand_last;
-  is_donor_null = false;
-  is_donor_null_last = parent_phenotype.is_donor_null_last;
-  is_donor_kin  = false;
-  is_donor_kin_last = parent_phenotype.is_donor_kin_last;
-  is_donor_edit  = false;
-  is_donor_edit_last = parent_phenotype.is_donor_edit_last;
-  is_donor_gbg  = false;
-  is_donor_gbg_last = parent_phenotype.is_donor_gbg_last;
-  is_donor_truegb  = false;
-  is_donor_truegb_last = parent_phenotype.is_donor_truegb_last;
-  is_donor_threshgb  = false;
-  is_donor_threshgb_last = parent_phenotype.is_donor_threshgb_last;
-  is_donor_quanta_threshgb  = false;
-  is_donor_quanta_threshgb_last = parent_phenotype.is_donor_quanta_threshgb_last;
-  is_donor_shadedgb  = false;
-  is_donor_shadedgb_last = parent_phenotype.is_donor_shadedgb_last;	
+  m_flags.is_injected   = 0;
+  m_flags.is_clone   = 0;
+  m_flags.is_donor_cur  = 0;
+  m_flags.is_donor_last = parent_phenotype.m_flags.is_donor_last;
+  m_flags.is_donor_rand = 0;
+  m_flags.is_donor_rand_last = parent_phenotype.m_flags.is_donor_rand_last;
+  m_flags.is_donor_null = 0;
+  m_flags.is_donor_null_last = parent_phenotype.m_flags.is_donor_null_last;
+  m_flags.is_donor_kin  = 0;
+  m_flags.is_donor_kin_last = parent_phenotype.m_flags.is_donor_kin_last;
+  m_flags.is_donor_edit  = 0;
+  m_flags.is_donor_edit_last = parent_phenotype.m_flags.is_donor_edit_last;
+  m_flags.is_donor_gbg  = 0;
+  m_flags.is_donor_gbg_last = parent_phenotype.m_flags.is_donor_gbg_last;
+  m_flags.is_donor_truegb  = 0;
+  m_flags.is_donor_truegb_last = parent_phenotype.m_flags.is_donor_truegb_last;
+  m_flags.is_donor_threshgb  = 0;
+  m_flags.is_donor_threshgb_last = parent_phenotype.m_flags.is_donor_threshgb_last;
+  m_flags.is_donor_quanta_threshgb  = 0;
+  m_flags.is_donor_quanta_threshgb_last = parent_phenotype.m_flags.is_donor_quanta_threshgb_last;
+  m_flags.is_donor_shadedgb  = 0;
+  m_flags.is_donor_shadedgb_last = parent_phenotype.m_flags.is_donor_shadedgb_last;
   is_donor_locus.SetAll(false);
   is_donor_locus_last = parent_phenotype.is_donor_locus_last;
-  
-  is_receiver   = false;  
-  is_receiver_last = parent_phenotype.is_receiver_last;
-  is_receiver_rand   = false;
-  is_receiver_kin    = false;
-  is_receiver_kin_last    = parent_phenotype.is_receiver_kin_last;
-  is_receiver_edit   = false;
-  is_receiver_edit_last    = parent_phenotype.is_receiver_edit_last;
-  is_receiver_gbg    = false;
-  is_receiver_truegb = false;
-  is_receiver_truegb_last = parent_phenotype.is_receiver_truegb_last;
-  is_receiver_threshgb = false;
-  is_receiver_threshgb_last = parent_phenotype.is_receiver_threshgb_last;
-  is_receiver_quanta_threshgb = false;
-  is_receiver_quanta_threshgb_last = parent_phenotype.is_receiver_quanta_threshgb_last;
-  is_receiver_shadedgb = false;
-  is_receiver_shadedgb_last = parent_phenotype.is_receiver_shadedgb_last;	
-  is_receiver_gb_same_locus = false;
-  is_receiver_gb_same_locus_last = parent_phenotype.is_receiver_gb_same_locus;
-  
-  is_modifier   = false;
-  is_modified   = false;
-  is_fertile    = parent_phenotype.last_child_fertile;
-  is_mutated    = false;
-  kaboom_executed = false;
-  kaboom_executed2 = false;
+
+  m_flags.is_receiver   = 0;
+  m_flags.is_receiver_last = parent_phenotype.m_flags.is_receiver_last;
+  m_flags.is_receiver_rand   = 0;
+  m_flags.is_receiver_kin    = 0;
+  m_flags.is_receiver_kin_last    = parent_phenotype.m_flags.is_receiver_kin_last;
+  m_flags.is_receiver_edit   = 0;
+  m_flags.is_receiver_edit_last    = parent_phenotype.m_flags.is_receiver_edit_last;
+  m_flags.is_receiver_gbg    = 0;
+  m_flags.is_receiver_truegb = 0;
+  m_flags.is_receiver_truegb_last = parent_phenotype.m_flags.is_receiver_truegb_last;
+  m_flags.is_receiver_threshgb = 0;
+  m_flags.is_receiver_threshgb_last = parent_phenotype.m_flags.is_receiver_threshgb_last;
+  m_flags.is_receiver_quanta_threshgb = 0;
+  m_flags.is_receiver_quanta_threshgb_last = parent_phenotype.m_flags.is_receiver_quanta_threshgb_last;
+  m_flags.is_receiver_shadedgb = 0;
+  m_flags.is_receiver_shadedgb_last = parent_phenotype.m_flags.is_receiver_shadedgb_last;
+  m_flags.is_receiver_gb_same_locus = 0;
+  m_flags.is_receiver_gb_same_locus_last = parent_phenotype.m_flags.is_receiver_gb_same_locus;
+
+  m_flags.is_modifier   = 0;
+  m_flags.is_modified   = 0;
+  m_flags.is_fertile    = parent_phenotype.m_flags.last_child_fertile;
+  m_flags.is_mutated    = 0;
+  m_flags.kaboom_executed = 0;
+  m_flags.kaboom_executed2 = 0;
   if (m_world->GetConfig().INHERIT_MULTITHREAD.Get()) {
-    is_multi_thread = parent_phenotype.is_multi_thread;
+    m_flags.is_multi_thread = parent_phenotype.m_flags.is_multi_thread;
   } else {
-    is_multi_thread = false;
+    m_flags.is_multi_thread = 0;
   }
-  
-  parent_true   = parent_phenotype.copy_true;
-  parent_sex    = parent_phenotype.divide_sex;
-  parent_cross_num    = parent_phenotype.cross_num;
-  make_random_resource = false;
-  to_die = false;
-  to_delete = false;
-  
-  is_energy_requestor = false;
-  is_energy_donor = false;
-  is_energy_receiver = false;
-  has_used_donated_energy = false;
-  has_open_energy_request = false;
+
+  m_flags.parent_true   = parent_phenotype.m_flags.copy_true;
+  m_flags.parent_sex    = parent_phenotype.m_flags.divide_sex;
+  m_flags.parent_cross_num    = parent_phenotype.m_flags.cross_num;
+  m_flags.make_random_resource = 0;
+  m_flags.to_die = 0;
+  m_flags.to_delete = 0;
+
+  m_flags.is_energy_requestor = 0;
+  m_flags.is_energy_donor = 0;
+  m_flags.is_energy_receiver = 0;
+  m_flags.has_used_donated_energy = 0;
+  m_flags.has_open_energy_request = 0;
   total_energy_donated = 0.0;
-  total_energy_received = 0.0; 
+  total_energy_received = 0.0;
   total_energy_applied = 0.0;
-  
+
   // Setup child info...
-  copy_true          = false;
-  divide_sex         = false;
-  mate_select_id     = -1;
-  cross_num          = 0;
-  last_child_fertile = is_fertile;
-  child_fertile      = true;
-  child_copied_size  = 0;
+  m_flags.copy_true          = 0;
+  m_flags.divide_sex         = 0;
+  m_flags.mate_select_id     = -1;
+  m_flags.cross_num          = 0;
+  m_flags.last_child_fertile = m_flags.is_fertile;
+  m_flags.child_fertile      = 1;
+  m_flags.child_copied_size  = 0;
   
   // permanently set germline propensity of org (since DivideReset is called first, it is now in the "last" slot...)
   permanent_germline_propensity  = parent_phenotype.last_child_germline_propensity;
@@ -696,91 +621,20 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   exec_time_born  = 0;
   birth_update     = m_world->GetStats().GetUpdate();
   
-  num_thresh_gb_donations = 0;
-  num_thresh_gb_donations_last = 0;
-  num_quanta_thresh_gb_donations = 0;
-  num_quanta_thresh_gb_donations_last = 0;
-  num_shaded_gb_donations = 0;
-  num_shaded_gb_donations_last = 0;	
-  num_donations_locus = 0;
-  num_donations_locus_last = 0;
-	
-  // Setup flags...
-  is_injected   = true;
-  is_clone   = false;
-  is_donor_last = false;
-  is_donor_cur  = false;
-  is_donor_rand = false;
-  is_donor_rand_last = false;
-  is_donor_null = false;
-  is_donor_null_last = false;
-  is_donor_kin = false;
-  is_donor_kin_last = false;
-  is_donor_edit = false;
-  is_donor_edit_last = false;
-  is_donor_gbg = false;
-  is_donor_gbg_last = false;
-  is_donor_truegb = false;
-  is_donor_truegb_last = false;
-  is_donor_threshgb = false;
-  is_donor_threshgb_last = false;
-  is_donor_quanta_threshgb = false;
-  is_donor_quanta_threshgb_last = false;
-  is_donor_shadedgb = false;
-  is_donor_shadedgb_last = false;
+  // Reset all flags to defaults, then set inject-specific values.
+  m_flags = avd_pheno_flags_default();
+  m_flags.is_injected   = 1;
+  m_flags.is_fertile    = 1;
+  m_flags.parent_true   = 1;
+  m_flags.child_fertile = 1;
+  m_flags.last_child_fertile = 1;
+  m_flags.mate_select_id = -1;
   is_donor_locus.SetAll(false);
   is_donor_locus_last.SetAll(false);
-  
-  is_receiver   = false;
-  is_receiver_last   = false;
-  is_receiver_rand   = false;
-  is_receiver_kin   = false;
-  is_receiver_kin_last   = false;
-  is_receiver_edit   = false;
-  is_receiver_edit_last   = false;
-  is_receiver_gbg   = false;
-  is_receiver_truegb   = false;
-  is_receiver_truegb_last   = false;
-  is_receiver_threshgb   = false;
-  is_receiver_threshgb_last   = false;
-  is_receiver_quanta_threshgb   = false;
-  is_receiver_quanta_threshgb_last   = false;
-  is_receiver_shadedgb   = false;
-  is_receiver_shadedgb_last   = false;	
-  is_receiver_gb_same_locus = false;
-  is_receiver_gb_same_locus_last = false;
-  
-  is_modifier   = false;
-  is_modified   = false;
-  is_fertile    = true;
-  is_mutated    = false;
-  is_multi_thread = false;
-  parent_true   = true;
-  parent_sex    = false;
-  parent_cross_num    = 0;
-  make_random_resource = false;
-  to_die = false;
-  to_delete = false;
-  kaboom_executed = false;
-  kaboom_executed2 = false;
-  
-  is_energy_requestor = false;
-  is_energy_donor = false;
-  is_energy_receiver = false;
-  has_used_donated_energy = false;
-  has_open_energy_request = false;
+
   total_energy_donated = 0.0;
   total_energy_received = 0.0;
   total_energy_applied = 0.0;
-  
-  // Setup child info...
-  copy_true         = false;
-  divide_sex        = false;
-  mate_select_id    = -1;
-  cross_num         = 0;
-  child_fertile     = true;
-  last_child_fertile = true;
-  child_copied_size = 0;
   
   permanent_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
@@ -945,79 +799,79 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   res_consumed             = 0;
   last_task_time           = 0;
 
-  num_thresh_gb_donations_last = num_thresh_gb_donations;
-  num_thresh_gb_donations = 0;
-  num_quanta_thresh_gb_donations_last = num_quanta_thresh_gb_donations;
-  num_quanta_thresh_gb_donations = 0;
-  num_shaded_gb_donations_last = num_shaded_gb_donations;
-  num_shaded_gb_donations = 0;
-  num_donations_locus_last = num_donations_locus;
-  num_donations_locus = 0;
-	
+  m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
+  m_flags.num_thresh_gb_donations = 0;
+  m_flags.num_quanta_thresh_gb_donations_last = m_flags.num_quanta_thresh_gb_donations;
+  m_flags.num_quanta_thresh_gb_donations = 0;
+  m_flags.num_shaded_gb_donations_last = m_flags.num_shaded_gb_donations;
+  m_flags.num_shaded_gb_donations = 0;
+  m_flags.num_donations_locus_last = m_flags.num_donations_locus;
+  m_flags.num_donations_locus = 0;
+
   // Leave flags alone...
-  (void) is_injected;
-  is_clone = false; // has legitimately reproduced
-  is_donor_last = is_donor_cur;
-  is_donor_cur = false;
-  is_donor_rand_last = is_donor_rand;
-  is_donor_rand = false;
-  is_donor_null_last = is_donor_null;
-  is_donor_null = false;
-  is_donor_kin_last = is_donor_kin;
-  is_donor_kin = false;
-  is_donor_edit_last = is_donor_edit;
-  is_donor_edit = false;
-  is_donor_gbg_last = is_donor_gbg;
-  is_donor_gbg = false;
-  is_donor_truegb_last = is_donor_truegb;
-  is_donor_truegb = false;
-  is_donor_threshgb_last = is_donor_threshgb;
-  is_donor_threshgb = false;
-  is_donor_quanta_threshgb_last = is_donor_quanta_threshgb;
-  is_donor_quanta_threshgb = false;
-  is_donor_shadedgb_last = is_donor_shadedgb;
-  is_donor_shadedgb = false;	
+  (void) m_flags.is_injected;
+  m_flags.is_clone = 0; // has legitimately reproduced
+  m_flags.is_donor_last = m_flags.is_donor_cur;
+  m_flags.is_donor_cur = 0;
+  m_flags.is_donor_rand_last = m_flags.is_donor_rand;
+  m_flags.is_donor_rand = 0;
+  m_flags.is_donor_null_last = m_flags.is_donor_null;
+  m_flags.is_donor_null = 0;
+  m_flags.is_donor_kin_last = m_flags.is_donor_kin;
+  m_flags.is_donor_kin = 0;
+  m_flags.is_donor_edit_last = m_flags.is_donor_edit;
+  m_flags.is_donor_edit = 0;
+  m_flags.is_donor_gbg_last = m_flags.is_donor_gbg;
+  m_flags.is_donor_gbg = 0;
+  m_flags.is_donor_truegb_last = m_flags.is_donor_truegb;
+  m_flags.is_donor_truegb = 0;
+  m_flags.is_donor_threshgb_last = m_flags.is_donor_threshgb;
+  m_flags.is_donor_threshgb = 0;
+  m_flags.is_donor_quanta_threshgb_last = m_flags.is_donor_quanta_threshgb;
+  m_flags.is_donor_quanta_threshgb = 0;
+  m_flags.is_donor_shadedgb_last = m_flags.is_donor_shadedgb;
+  m_flags.is_donor_shadedgb = 0;
   is_donor_locus_last = is_donor_locus;
   is_donor_locus.SetAll(false);
-  
-  is_receiver_last = is_receiver;
-  is_receiver = false;
-  is_receiver_rand = false;
-  is_receiver_kin_last = is_receiver_kin;
-  is_receiver_kin = false;
-  is_receiver_edit_last = is_receiver_edit;
-  is_receiver_edit = false;
-  is_receiver_gbg = false;
-  is_receiver_truegb_last = is_receiver_truegb;
-  is_receiver_truegb = false;
-  is_receiver_threshgb_last = is_receiver_threshgb;
-  is_receiver_threshgb = false;
-  is_receiver_quanta_threshgb_last = is_receiver_quanta_threshgb;
-  is_receiver_quanta_threshgb = false;
-  is_receiver_shadedgb_last = is_receiver_shadedgb;
-  is_receiver_shadedgb = false;	
-  is_receiver_gb_same_locus_last = is_receiver_gb_same_locus;
-  is_receiver_gb_same_locus = false;
-  
-  (void) is_modifier;
-  (void) is_modified;
-  (void) is_fertile;
-  (void) is_mutated;
-  (void) is_multi_thread;
-  (void) parent_true;
-  (void) parent_sex;
-  (void) parent_cross_num;
-  (void) kaboom_executed;
-  (void) kaboom_executed2;
-  
+
+  m_flags.is_receiver_last = m_flags.is_receiver;
+  m_flags.is_receiver = 0;
+  m_flags.is_receiver_rand = 0;
+  m_flags.is_receiver_kin_last = m_flags.is_receiver_kin;
+  m_flags.is_receiver_kin = 0;
+  m_flags.is_receiver_edit_last = m_flags.is_receiver_edit;
+  m_flags.is_receiver_edit = 0;
+  m_flags.is_receiver_gbg = 0;
+  m_flags.is_receiver_truegb_last = m_flags.is_receiver_truegb;
+  m_flags.is_receiver_truegb = 0;
+  m_flags.is_receiver_threshgb_last = m_flags.is_receiver_threshgb;
+  m_flags.is_receiver_threshgb = 0;
+  m_flags.is_receiver_quanta_threshgb_last = m_flags.is_receiver_quanta_threshgb;
+  m_flags.is_receiver_quanta_threshgb = 0;
+  m_flags.is_receiver_shadedgb_last = m_flags.is_receiver_shadedgb;
+  m_flags.is_receiver_shadedgb = 0;
+  m_flags.is_receiver_gb_same_locus_last = m_flags.is_receiver_gb_same_locus;
+  m_flags.is_receiver_gb_same_locus = 0;
+
+  (void) m_flags.is_modifier;
+  (void) m_flags.is_modified;
+  (void) m_flags.is_fertile;
+  (void) m_flags.is_mutated;
+  (void) m_flags.is_multi_thread;
+  (void) m_flags.parent_true;
+  (void) m_flags.parent_sex;
+  (void) m_flags.parent_cross_num;
+  (void) m_flags.kaboom_executed;
+  (void) m_flags.kaboom_executed2;
+
   // Reset child info...
-  (void) copy_true;
-  (void) divide_sex;
-  (void) mate_select_id;
-  (void) cross_num;
-  last_child_fertile = child_fertile;
-  child_fertile     = true;
-  (void) child_copied_size;
+  (void) m_flags.copy_true;
+  (void) m_flags.divide_sex;
+  (void) m_flags.mate_select_id;
+  (void) m_flags.cross_num;
+  m_flags.last_child_fertile = m_flags.child_fertile;
+  m_flags.child_fertile     = 1;
+  (void) m_flags.child_copied_size;
   
   // A few final changes if the parent was supposed to be be considered
   // a second child on the divide.
@@ -1174,79 +1028,79 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   last_task_time           = 0;
 
   
-  num_thresh_gb_donations_last = num_thresh_gb_donations;
-  num_thresh_gb_donations = 0;
-  num_quanta_thresh_gb_donations_last = num_quanta_thresh_gb_donations;
-  num_quanta_thresh_gb_donations = 0;
-  num_shaded_gb_donations_last = num_shaded_gb_donations;
-  num_shaded_gb_donations = 0;
-  num_donations_locus_last = num_donations_locus;
-  num_donations_locus = 0;
-	
+  m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
+  m_flags.num_thresh_gb_donations = 0;
+  m_flags.num_quanta_thresh_gb_donations_last = m_flags.num_quanta_thresh_gb_donations;
+  m_flags.num_quanta_thresh_gb_donations = 0;
+  m_flags.num_shaded_gb_donations_last = m_flags.num_shaded_gb_donations;
+  m_flags.num_shaded_gb_donations = 0;
+  m_flags.num_donations_locus_last = m_flags.num_donations_locus;
+  m_flags.num_donations_locus = 0;
+
   // Leave flags alone...
-  (void) is_injected;
-  is_clone = false; // has legitimately reproduced
-  is_donor_last = is_donor_cur;
-  is_donor_cur = false;
-  is_donor_rand_last = is_donor_rand;
-  is_donor_rand = false;
-  is_donor_null_last = is_donor_null;
-  is_donor_null = false;
-  is_donor_kin_last = is_donor_kin;
-  is_donor_kin = false;
-  is_donor_edit_last = is_donor_edit;
-  is_donor_edit = false;
-  is_donor_gbg_last = is_donor_gbg;
-  is_donor_gbg = false;
-  is_donor_truegb_last = is_donor_truegb;
-  is_donor_truegb = false;
-  is_donor_threshgb_last = is_donor_threshgb;
-  is_donor_threshgb = false;
-  is_donor_quanta_threshgb_last = is_donor_quanta_threshgb;
-  is_donor_quanta_threshgb = false;
-  is_donor_shadedgb_last = is_donor_shadedgb;
-  is_donor_shadedgb = false;
+  (void) m_flags.is_injected;
+  m_flags.is_clone = 0; // has legitimately reproduced
+  m_flags.is_donor_last = m_flags.is_donor_cur;
+  m_flags.is_donor_cur = 0;
+  m_flags.is_donor_rand_last = m_flags.is_donor_rand;
+  m_flags.is_donor_rand = 0;
+  m_flags.is_donor_null_last = m_flags.is_donor_null;
+  m_flags.is_donor_null = 0;
+  m_flags.is_donor_kin_last = m_flags.is_donor_kin;
+  m_flags.is_donor_kin = 0;
+  m_flags.is_donor_edit_last = m_flags.is_donor_edit;
+  m_flags.is_donor_edit = 0;
+  m_flags.is_donor_gbg_last = m_flags.is_donor_gbg;
+  m_flags.is_donor_gbg = 0;
+  m_flags.is_donor_truegb_last = m_flags.is_donor_truegb;
+  m_flags.is_donor_truegb = 0;
+  m_flags.is_donor_threshgb_last = m_flags.is_donor_threshgb;
+  m_flags.is_donor_threshgb = 0;
+  m_flags.is_donor_quanta_threshgb_last = m_flags.is_donor_quanta_threshgb;
+  m_flags.is_donor_quanta_threshgb = 0;
+  m_flags.is_donor_shadedgb_last = m_flags.is_donor_shadedgb;
+  m_flags.is_donor_shadedgb = 0;
   is_donor_locus_last = is_donor_locus;
   is_donor_locus.SetAll(false);
-  
-  is_receiver_last = is_receiver;
-  is_receiver = false;
-  is_receiver_rand = false;
-  is_receiver_kin_last = is_receiver_kin;
-  is_receiver_kin = false;
-  is_receiver_edit_last = is_receiver_edit;
-  is_receiver_edit = false;
-  is_receiver_gbg = false;
-  is_receiver_truegb_last = is_receiver_truegb;
-  is_receiver_truegb = false;
-  is_receiver_threshgb_last = is_receiver_threshgb;
-  is_receiver_threshgb = false;
-  is_receiver_quanta_threshgb_last = is_receiver_quanta_threshgb;
-  is_receiver_quanta_threshgb = false;
-  is_receiver_shadedgb_last = is_receiver_shadedgb;
-  is_receiver_shadedgb = false;	
-  is_receiver_gb_same_locus_last = is_receiver_gb_same_locus;
-  is_receiver_gb_same_locus = false;
-  
-  (void) is_modifier;
-  (void) is_modified;
-  (void) is_fertile;
-  (void) is_mutated;
-  (void) is_multi_thread;
-  (void) parent_true;
-  (void) parent_sex;
-  (void) parent_cross_num;
-  (void) kaboom_executed;
-  (void) kaboom_executed2;
-  
+
+  m_flags.is_receiver_last = m_flags.is_receiver;
+  m_flags.is_receiver = 0;
+  m_flags.is_receiver_rand = 0;
+  m_flags.is_receiver_kin_last = m_flags.is_receiver_kin;
+  m_flags.is_receiver_kin = 0;
+  m_flags.is_receiver_edit_last = m_flags.is_receiver_edit;
+  m_flags.is_receiver_edit = 0;
+  m_flags.is_receiver_gbg = 0;
+  m_flags.is_receiver_truegb_last = m_flags.is_receiver_truegb;
+  m_flags.is_receiver_truegb = 0;
+  m_flags.is_receiver_threshgb_last = m_flags.is_receiver_threshgb;
+  m_flags.is_receiver_threshgb = 0;
+  m_flags.is_receiver_quanta_threshgb_last = m_flags.is_receiver_quanta_threshgb;
+  m_flags.is_receiver_quanta_threshgb = 0;
+  m_flags.is_receiver_shadedgb_last = m_flags.is_receiver_shadedgb;
+  m_flags.is_receiver_shadedgb = 0;
+  m_flags.is_receiver_gb_same_locus_last = m_flags.is_receiver_gb_same_locus;
+  m_flags.is_receiver_gb_same_locus = 0;
+
+  (void) m_flags.is_modifier;
+  (void) m_flags.is_modified;
+  (void) m_flags.is_fertile;
+  (void) m_flags.is_mutated;
+  (void) m_flags.is_multi_thread;
+  (void) m_flags.parent_true;
+  (void) m_flags.parent_sex;
+  (void) m_flags.parent_cross_num;
+  (void) m_flags.kaboom_executed;
+  (void) m_flags.kaboom_executed2;
+
   // Reset child info...
-  (void) copy_true;
-  (void) divide_sex;
-  (void) mate_select_id;
-  (void) cross_num;
-  (void) child_fertile;
-  (void) last_child_fertile;
-  (void) child_copied_size;
+  (void) m_flags.copy_true;
+  (void) m_flags.divide_sex;
+  (void) m_flags.mate_select_id;
+  (void) m_flags.cross_num;
+  (void) m_flags.child_fertile;
+  (void) m_flags.last_child_fertile;
+  (void) m_flags.child_copied_size;
 }
 
 
@@ -1380,87 +1234,40 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   last_task_time           = clone_phenotype.last_task_time;
 
   
-  num_thresh_gb_donations_last = clone_phenotype.num_thresh_gb_donations_last;
-  num_thresh_gb_donations  = clone_phenotype.num_thresh_gb_donations;
-  num_quanta_thresh_gb_donations_last = clone_phenotype.num_quanta_thresh_gb_donations_last;
-  num_quanta_thresh_gb_donations  = clone_phenotype.num_quanta_thresh_gb_donations;
-  num_shaded_gb_donations_last = clone_phenotype.num_shaded_gb_donations_last;
-  num_shaded_gb_donations  = clone_phenotype.num_shaded_gb_donations;
-  num_donations_locus = clone_phenotype.num_donations_locus;
-  num_donations_locus_last = clone_phenotype.num_donations_locus_last;
-	
-  // Setup flags...
-  is_injected   = false;
-  is_clone   = true;
-  is_donor_last = clone_phenotype.is_donor_last;
-  is_donor_cur  = clone_phenotype.is_donor_cur;
-  is_receiver = false;
-  is_donor_rand_last = clone_phenotype.is_donor_rand_last;
-  is_donor_rand  = clone_phenotype.is_donor_rand;
-  is_donor_null_last = clone_phenotype.is_donor_null_last;
-  is_donor_null  = clone_phenotype.is_donor_null;
-  is_donor_kin_last = clone_phenotype.is_donor_kin_last;
-  is_donor_kin  = clone_phenotype.is_donor_kin;
-  is_donor_edit_last = clone_phenotype.is_donor_edit_last;
-  is_donor_edit  = clone_phenotype.is_donor_edit;
-  is_donor_gbg_last = clone_phenotype.is_donor_gbg_last;
-  is_donor_gbg  = clone_phenotype.is_donor_gbg;
-  is_donor_truegb_last = clone_phenotype.is_donor_truegb_last;
-  is_donor_truegb  = clone_phenotype.is_donor_truegb;
-  is_donor_threshgb_last = clone_phenotype.is_donor_threshgb_last;
-  is_donor_threshgb  = clone_phenotype.is_donor_threshgb;
-  is_donor_quanta_threshgb_last = clone_phenotype.is_donor_quanta_threshgb_last;
-  is_donor_quanta_threshgb  = clone_phenotype.is_donor_quanta_threshgb;
-  is_donor_shadedgb_last = clone_phenotype.is_donor_shadedgb_last;
-  is_donor_shadedgb  = clone_phenotype.is_donor_shadedgb;
+  // Copy most flags from clone, then override clone-specific values.
+  m_flags = clone_phenotype.m_flags;
   is_donor_locus_last = clone_phenotype.is_donor_locus_last;
   is_donor_locus = clone_phenotype.is_donor_locus;
-  
-  is_receiver = clone_phenotype.is_receiver;
-  is_receiver_last = clone_phenotype.is_receiver_last;
-  is_receiver_rand = clone_phenotype.is_receiver_rand;
-  is_receiver_kin = clone_phenotype.is_receiver_kin;
-  is_receiver_kin_last = clone_phenotype.is_receiver_kin_last;
-  is_receiver_edit = clone_phenotype.is_receiver_edit;
-  is_receiver_edit_last = clone_phenotype.is_receiver_edit_last;
-  is_receiver_gbg = clone_phenotype.is_receiver_gbg;
-  is_receiver_truegb = clone_phenotype.is_receiver_truegb;
-  is_receiver_truegb_last = clone_phenotype.is_receiver_truegb_last;
-  is_receiver_threshgb = clone_phenotype.is_receiver_threshgb;
-  is_receiver_threshgb_last = clone_phenotype.is_receiver_threshgb_last;
-  is_receiver_quanta_threshgb = clone_phenotype.is_receiver_quanta_threshgb;
-  is_receiver_quanta_threshgb_last = clone_phenotype.is_receiver_quanta_threshgb_last;
-  is_receiver_shadedgb = clone_phenotype.is_receiver_shadedgb;
-  is_receiver_shadedgb_last = clone_phenotype.is_receiver_shadedgb_last;
-  is_receiver_gb_same_locus = clone_phenotype.is_receiver_gb_same_locus;
-  
-  is_modifier   = false;
-  is_modified   = false;
-  is_fertile    = clone_phenotype.last_child_fertile;
-  is_mutated    = false;
-  is_multi_thread = clone_phenotype.is_multi_thread;
-  parent_true   = clone_phenotype.copy_true;
-  parent_sex    = clone_phenotype.divide_sex;
-  parent_cross_num    = clone_phenotype.cross_num;
-  make_random_resource = false;
-  to_die = false;
-  to_delete = false;
-  is_energy_requestor = false;
-  is_energy_donor = false;
-  is_energy_receiver = false;
-  has_used_donated_energy = false;
-  has_open_energy_request = false;
-  kaboom_executed = false;
-  kaboom_executed2 = false;
-  
+
+  // Override clone-specific flags
+  m_flags.is_injected   = 0;
+  m_flags.is_clone   = 1;
+  m_flags.is_modifier   = 0;
+  m_flags.is_modified   = 0;
+  m_flags.is_fertile    = clone_phenotype.m_flags.last_child_fertile;
+  m_flags.is_mutated    = 0;
+  m_flags.parent_true   = clone_phenotype.m_flags.copy_true;
+  m_flags.parent_sex    = clone_phenotype.m_flags.divide_sex;
+  m_flags.parent_cross_num    = clone_phenotype.m_flags.cross_num;
+  m_flags.make_random_resource = 0;
+  m_flags.to_die = 0;
+  m_flags.to_delete = 0;
+  m_flags.is_energy_requestor = 0;
+  m_flags.is_energy_donor = 0;
+  m_flags.is_energy_receiver = 0;
+  m_flags.has_used_donated_energy = 0;
+  m_flags.has_open_energy_request = 0;
+  m_flags.kaboom_executed = 0;
+  m_flags.kaboom_executed2 = 0;
+
   // Setup child info...
-  copy_true          = false;
-  divide_sex         = false;
-  mate_select_id     = 0;
-  cross_num          = 0;
-  last_child_fertile = is_fertile;
-  child_fertile      = true;
-  child_copied_size  = 0;
+  m_flags.copy_true          = 0;
+  m_flags.divide_sex         = 0;
+  m_flags.mate_select_id     = 0;
+  m_flags.cross_num          = 0;
+  m_flags.last_child_fertile = m_flags.is_fertile;
+  m_flags.child_fertile      = 1;
+  m_flags.child_copied_size  = 0;
   permanent_germline_propensity = clone_phenotype.permanent_germline_propensity;
   
   initialized = true;
@@ -1687,18 +1494,18 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   //Note if the resource should be placed in a random cell instead of this cell
   if (result.GetIsRandomResource())
   {
-    make_random_resource = true;
+    m_flags.make_random_resource = 1;
   }
-  
+
   //Kill any cells that did lethal reactions
   if (result.GetLethal())
   {
-    to_die = true;
+    m_flags.to_die = 1;
   }
-  
+
   // Sterilize organisms that have performed a sterilizing task.
   if (result.GetSterilize()) {
-    is_fertile = false;
+    m_flags.is_fertile = 0;
   }
   
   result.Invalidate();
@@ -1708,7 +1515,7 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
 
 void cPhenotype::Sterilize()
 {
-  is_fertile = false;
+  m_flags.is_fertile = 0;
 }
 
 
@@ -2164,73 +1971,73 @@ void cPhenotype::NewTrial()
   life_fitness = m_core.fitness;
 
 
-  num_thresh_gb_donations_last = num_thresh_gb_donations;
-  num_thresh_gb_donations = 0;
-  num_quanta_thresh_gb_donations_last = num_quanta_thresh_gb_donations;
-  num_quanta_thresh_gb_donations = 0;
-  num_shaded_gb_donations_last = num_shaded_gb_donations;
-  num_shaded_gb_donations = 0;
-  num_donations_locus_last = num_donations_locus;
-  num_donations_locus = 0;
-	
+  m_flags.num_thresh_gb_donations_last = m_flags.num_thresh_gb_donations;
+  m_flags.num_thresh_gb_donations = 0;
+  m_flags.num_quanta_thresh_gb_donations_last = m_flags.num_quanta_thresh_gb_donations;
+  m_flags.num_quanta_thresh_gb_donations = 0;
+  m_flags.num_shaded_gb_donations_last = m_flags.num_shaded_gb_donations;
+  m_flags.num_shaded_gb_donations = 0;
+  m_flags.num_donations_locus_last = m_flags.num_donations_locus;
+  m_flags.num_donations_locus = 0;
+
   // Leave flags alone...
-  (void) is_injected;
-  (void) is_clone;
-  is_donor_last = is_donor_cur;
-  is_donor_cur = false;
-  is_donor_rand_last = is_donor_rand;
-  is_donor_rand = false;
-  is_donor_null_last = is_donor_null;
-  is_donor_null = false;
-  is_donor_kin_last = is_donor_kin;
-  is_donor_kin = false;
-  is_donor_edit_last = is_donor_edit;
-  is_donor_edit = false;
-  is_donor_gbg_last = is_donor_gbg;
-  is_donor_gbg = false;
-  is_donor_truegb_last = is_donor_truegb;
-  is_donor_truegb = false;
-  is_donor_threshgb_last = is_donor_threshgb;
-  is_donor_threshgb = false;
-  is_donor_quanta_threshgb_last = is_donor_quanta_threshgb;
-  is_donor_quanta_threshgb = false;
-  is_donor_shadedgb_last = is_donor_shadedgb;
-  is_donor_shadedgb = false;
+  (void) m_flags.is_injected;
+  (void) m_flags.is_clone;
+  m_flags.is_donor_last = m_flags.is_donor_cur;
+  m_flags.is_donor_cur = 0;
+  m_flags.is_donor_rand_last = m_flags.is_donor_rand;
+  m_flags.is_donor_rand = 0;
+  m_flags.is_donor_null_last = m_flags.is_donor_null;
+  m_flags.is_donor_null = 0;
+  m_flags.is_donor_kin_last = m_flags.is_donor_kin;
+  m_flags.is_donor_kin = 0;
+  m_flags.is_donor_edit_last = m_flags.is_donor_edit;
+  m_flags.is_donor_edit = 0;
+  m_flags.is_donor_gbg_last = m_flags.is_donor_gbg;
+  m_flags.is_donor_gbg = 0;
+  m_flags.is_donor_truegb_last = m_flags.is_donor_truegb;
+  m_flags.is_donor_truegb = 0;
+  m_flags.is_donor_threshgb_last = m_flags.is_donor_threshgb;
+  m_flags.is_donor_threshgb = 0;
+  m_flags.is_donor_quanta_threshgb_last = m_flags.is_donor_quanta_threshgb;
+  m_flags.is_donor_quanta_threshgb = 0;
+  m_flags.is_donor_shadedgb_last = m_flags.is_donor_shadedgb;
+  m_flags.is_donor_shadedgb = 0;
   is_donor_locus_last = is_donor_locus;
   is_donor_locus.SetAll(false);
-  
-  is_receiver_last = is_receiver;
-  is_receiver = false;
-  is_receiver_rand = false;
-  is_receiver_kin_last = is_receiver_kin;
-  is_receiver_kin = false;
-  is_receiver_edit_last = is_receiver_edit;
-  is_receiver_edit = false;
-  is_receiver_gbg = false;
-  is_receiver_truegb_last = is_receiver_truegb;
-  is_receiver_truegb = false;
-  is_receiver_threshgb_last = is_receiver_threshgb;
-  is_receiver_threshgb = false;
-  is_receiver_quanta_threshgb_last = is_receiver_quanta_threshgb;
-  is_receiver_quanta_threshgb = false;
-  is_receiver_shadedgb_last = is_receiver_shadedgb;
-  is_receiver_shadedgb = false;
-  is_receiver_gb_same_locus_last = is_receiver_gb_same_locus;
-  is_receiver_gb_same_locus = false;
-  
-  is_energy_requestor = false;
-  is_energy_donor = false;
-  is_energy_receiver = false;
-  (void) is_modifier;
-  (void) is_modified;
-  (void) is_fertile;
-  (void) is_mutated;
-  (void) is_multi_thread;
-  (void) parent_true;
-  (void) parent_sex;
-  (void) parent_cross_num;
-  (void) kaboom_executed;
-  (void) kaboom_executed2;
+
+  m_flags.is_receiver_last = m_flags.is_receiver;
+  m_flags.is_receiver = 0;
+  m_flags.is_receiver_rand = 0;
+  m_flags.is_receiver_kin_last = m_flags.is_receiver_kin;
+  m_flags.is_receiver_kin = 0;
+  m_flags.is_receiver_edit_last = m_flags.is_receiver_edit;
+  m_flags.is_receiver_edit = 0;
+  m_flags.is_receiver_gbg = 0;
+  m_flags.is_receiver_truegb_last = m_flags.is_receiver_truegb;
+  m_flags.is_receiver_truegb = 0;
+  m_flags.is_receiver_threshgb_last = m_flags.is_receiver_threshgb;
+  m_flags.is_receiver_threshgb = 0;
+  m_flags.is_receiver_quanta_threshgb_last = m_flags.is_receiver_quanta_threshgb;
+  m_flags.is_receiver_quanta_threshgb = 0;
+  m_flags.is_receiver_shadedgb_last = m_flags.is_receiver_shadedgb;
+  m_flags.is_receiver_shadedgb = 0;
+  m_flags.is_receiver_gb_same_locus_last = m_flags.is_receiver_gb_same_locus;
+  m_flags.is_receiver_gb_same_locus = 0;
+
+  m_flags.is_energy_requestor = 0;
+  m_flags.is_energy_donor = 0;
+  m_flags.is_energy_receiver = 0;
+  (void) m_flags.is_modifier;
+  (void) m_flags.is_modified;
+  (void) m_flags.is_fertile;
+  (void) m_flags.is_mutated;
+  (void) m_flags.is_multi_thread;
+  (void) m_flags.parent_true;
+  (void) m_flags.parent_sex;
+  (void) m_flags.parent_cross_num;
+  (void) m_flags.kaboom_executed;
+  (void) m_flags.kaboom_executed2;
 }
 
 /**
@@ -2262,13 +2069,13 @@ void cPhenotype::TrialDivideReset(const InstructionSequence& _genome)
   cur_trial_times_used.Resize(0); 
   
   // Reset child info...
-  (void) copy_true;
-  (void) divide_sex;
-  (void) mate_select_id;
-  (void) cross_num;
-  last_child_fertile = child_fertile;
-  child_fertile     = true;
-  (void) child_copied_size;
+  (void) m_flags.copy_true;
+  (void) m_flags.divide_sex;
+  (void) m_flags.mate_select_id;
+  (void) m_flags.cross_num;
+  m_flags.last_child_fertile = m_flags.child_fertile;
+  m_flags.child_fertile     = 1;
+  (void) m_flags.child_copied_size;
   
   // A few final changes if the parent was supposed to be be considered
   // a second child on the divide.

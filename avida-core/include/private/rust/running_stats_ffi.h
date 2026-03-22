@@ -591,6 +591,93 @@ void avd_pheno_set_cur_bonus(PhenotypeCoreMetrics* p, double v);
 void avd_pheno_set_cur_energy_bonus(PhenotypeCoreMetrics* p, double v);
 int avd_pheno_calc_size_merit(const PhenotypeCoreMetrics* metrics, int base_merit_method, int base_const_merit, int cpu_cycles_used, int fitness_valley, int fitness_valley_start, int fitness_valley_stop, int merit_bonus_effect);
 
+typedef struct {
+  /* Section 5: Status Flags */
+  int to_die;
+  int to_delete;
+  int make_random_resource;
+  int is_injected;
+  int is_clone;
+
+  int is_donor_cur;
+  int is_donor_last;
+  int is_donor_rand;
+  int is_donor_rand_last;
+  int is_donor_null;
+  int is_donor_null_last;
+  int is_donor_kin;
+  int is_donor_kin_last;
+  int is_donor_edit;
+  int is_donor_edit_last;
+  int is_donor_gbg;
+  int is_donor_gbg_last;
+  int is_donor_truegb;
+  int is_donor_truegb_last;
+  int is_donor_threshgb;
+  int is_donor_threshgb_last;
+  int is_donor_quanta_threshgb;
+  int is_donor_quanta_threshgb_last;
+  int is_donor_shadedgb;
+  int is_donor_shadedgb_last;
+
+  int is_energy_requestor;
+  int is_energy_donor;
+  int is_energy_receiver;
+  int has_used_donated_energy;
+  int has_open_energy_request;
+
+  int num_thresh_gb_donations;
+  int num_thresh_gb_donations_last;
+  int num_quanta_thresh_gb_donations;
+  int num_quanta_thresh_gb_donations_last;
+  int num_shaded_gb_donations;
+  int num_shaded_gb_donations_last;
+  int num_donations_locus;
+  int num_donations_locus_last;
+
+  int is_receiver;
+  int is_receiver_last;
+  int is_receiver_rand;
+  int is_receiver_kin;
+  int is_receiver_kin_last;
+  int is_receiver_edit;
+  int is_receiver_edit_last;
+  int is_receiver_gbg;
+  int is_receiver_truegb;
+  int is_receiver_truegb_last;
+  int is_receiver_threshgb;
+  int is_receiver_threshgb_last;
+  int is_receiver_quanta_threshgb;
+  int is_receiver_quanta_threshgb_last;
+  int is_receiver_shadedgb;
+  int is_receiver_shadedgb_last;
+  int is_receiver_gb_same_locus;
+  int is_receiver_gb_same_locus_last;
+
+  int is_modifier;
+  int is_modified;
+  int is_fertile;
+  int is_mutated;
+  int is_multi_thread;
+  int parent_true;
+  int parent_sex;
+  int parent_cross_num;
+  int born_parent_group;
+  int kaboom_executed;
+  int kaboom_executed2;
+
+  /* Section 6: Child information */
+  int copy_true;
+  int divide_sex;
+  int child_fertile;
+  int last_child_fertile;
+  int mate_select_id;
+  int cross_num;
+  int child_copied_size;
+} PhenotypeStatusFlags;
+
+PhenotypeStatusFlags avd_pheno_flags_default(void);
+
 int avd_script_get_runtime_type(int ltype, int rtype, int allow_str);
 int avd_script_valid_arithmetic_type(int type_val, int allow_matrix);
 int avd_script_valid_bitwise_type(int type_val);
