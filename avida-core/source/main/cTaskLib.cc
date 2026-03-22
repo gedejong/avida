@@ -56,6 +56,17 @@
 
 static const double dCastPrecision = 100000.0;
 
+// Boolean logic task type constants (must match Rust avd_task_eval_logic)
+static const int AVD_TASK_NOT    = 0;
+static const int AVD_TASK_NAND   = 1;
+static const int AVD_TASK_AND    = 2;
+static const int AVD_TASK_ORNOT  = 3;
+static const int AVD_TASK_OR     = 4;
+static const int AVD_TASK_ANDNOT = 5;
+static const int AVD_TASK_NOR    = 6;
+static const int AVD_TASK_XOR    = 7;
+static const int AVD_TASK_EQU    = 8;
+
 
 cTaskLib::~cTaskLib()
 {
@@ -379,7 +390,6 @@ void cTaskLib::NewTask(const cString& name, const cString& desc, tTaskTest task_
 void cTaskLib::SetupTests(cTaskContext& ctx) const
 {
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  // Collect the inputs in a useful form.
   const int num_inputs = input_buffer.GetNumStored();
   int test_inputs[3];
   for (int i = 0; i < 3; i++) {
@@ -388,87 +398,25 @@ void cTaskLib::SetupTests(cTaskContext& ctx) const
 
   int test_output = 0;
   if (ctx.GetOutputBuffer().GetNumStored()) test_output = ctx.GetOutputBuffer()[0];
-  
-  
-  // Setup logic_out to test the output for each logical combination...
-  // Assuming each bit in logic out to be based on the inputs:
-  //
-  //  Logic ID Bit: 7 6 5 4 3 2 1 0
-  //       Input C: 1 1 1 1 0 0 0 0
-  //       Input B: 1 1 0 0 1 1 0 0
-  //       Input A: 1 0 1 0 1 0 1 0
-  
-  int logic_out[8];
-  for (int i = 0; i < 8; i++) logic_out[i] = -1;
-  
-  // Test all input combos!
-  bool func_OK = true;  // Have all outputs been consistant?
-  for (int test_pos = 0; test_pos < 32; test_pos++) {
-    int logic_pos = 0;
-    for (int i = 0; i < 3; i++)  logic_pos += (test_inputs[i] & 1) << i;
-    
-    if ( logic_out[logic_pos] != -1 &&
-        logic_out[logic_pos] != (test_output & 1) ) {
-      func_OK = false;
-      break;
-    }
-    else {
-      logic_out[logic_pos] = test_output & 1;
-    }
-    
-    test_output >>= 1;
-    for (int i = 0; i < 3; i++) test_inputs[i] >>= 1;
-  }
-  
-  // If there were any inconsistancies, deal with them.
-  if (func_OK == false) {
-    ctx.SetLogicId(-1);
-    return;
-  }
-  
-  // Determine the logic ID number of this task.
-  if (num_inputs < 1) {  // 000 -> 001
-    logic_out[1] = logic_out[0];
-  }
-  if (num_inputs < 2) { // 000 -> 010; 001 -> 011
-    logic_out[2] = logic_out[0];
-    logic_out[3] = logic_out[1];
-  }
-  if (num_inputs < 3) { // 000->100;  001->101;  010->110;  011->111
-    logic_out[4] = logic_out[0];
-    logic_out[5] = logic_out[1];
-    logic_out[6] = logic_out[2];
-    logic_out[7] = logic_out[3];
-  }
-  
-  // Lets just make sure we've gotten this correct...
-  assert(logic_out[0] >= 0 && logic_out[0] <= 1);
-  assert(logic_out[1] >= 0 && logic_out[1] <= 1);
-  assert(logic_out[2] >= 0 && logic_out[2] <= 1);
-  assert(logic_out[3] >= 0 && logic_out[3] <= 1);
-  assert(logic_out[4] >= 0 && logic_out[4] <= 1);
-  assert(logic_out[5] >= 0 && logic_out[5] <= 1);
-  assert(logic_out[6] >= 0 && logic_out[6] <= 1);
-  assert(logic_out[7] >= 0 && logic_out[7] <= 1);
-  
-  int logicid = 0;
-  for (int i = 0; i < 8; i++) logicid += logic_out[i] << i;
-  
-  ctx.SetLogicId(logicid);
+
+  ctx.SetLogicId(avd_task_compute_logic_id(test_inputs[0], test_inputs[1], test_inputs[2], num_inputs, test_output));
 }
 
 
 double cTaskLib::Task_Echo(cTaskContext& ctx) const
 {
   const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
+  const int num_inputs = input_buffer.GetNumStored();
   const int test_output = ctx.GetOutputBuffer()[0];
-  for (int i = 0; i < input_buffer.GetNumStored(); i++) {
-    if (input_buffer[i] == test_output) {
-      assert(ctx.GetLogicId() == 170 || ctx.GetLogicId() == 204 || ctx.GetLogicId() == 240);
-      return 1.0;
-    }
+  // tBuffer is a circular buffer; extract into contiguous array for Rust.
+  int inputs[16]; // Avida buffers are typically 3; 16 covers all practical cases.
+  const int n = (num_inputs < 16) ? num_inputs : 16;
+  for (int i = 0; i < n; i++) inputs[i] = input_buffer[i];
+  double result = avd_task_eval_echo(inputs, n, test_output);
+  if (result > 0.0) {
+    assert(ctx.GetLogicId() == 170 || ctx.GetLogicId() == 204 || ctx.GetLogicId() == 240);
   }
-  return 0.0;
+  return result;
 }
 
 
@@ -520,69 +468,47 @@ double cTaskLib::Task_DontCare(cTaskContext&) const
 
 double cTaskLib::Task_Not(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 15 || logic_id == 51 || logic_id == 85) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_NOT, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_Nand(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 63 || logic_id == 95 || logic_id == 119) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_NAND, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_And(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 136 || logic_id == 160 || logic_id == 192) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_AND, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_OrNot(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 175 || logic_id == 187 || logic_id == 207 ||
-      logic_id == 221 || logic_id == 243 || logic_id == 245) return 1.0;
-  
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_ORNOT, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_Or(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 238 || logic_id == 250 || logic_id == 252) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_OR, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_AndNot(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 10 || logic_id == 12 || logic_id == 34 ||
-      logic_id == 48 || logic_id == 68 || logic_id == 80) return 1.0;
-  
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_ANDNOT, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_Nor(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 3 || logic_id == 5 || logic_id == 17) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_NOR, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_Xor(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 60 || logic_id == 90 || logic_id == 102) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_XOR, ctx.GetLogicId());
 }
 
 double cTaskLib::Task_Equ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 153 || logic_id == 165 || logic_id == 195) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic(AVD_TASK_EQU, ctx.GetLogicId());
 }
 
 

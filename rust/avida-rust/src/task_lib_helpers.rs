@@ -258,6 +258,150 @@ pub extern "C" fn avd_tasklib_is_altruism_name(task_name: *const c_char) -> c_in
     })
 }
 
+// --- Logic ID computation and Boolean logic task evaluation ---
+
+/// Compute the logic ID from 3 input values and 1 output value.
+///
+/// This is a pure-function port of cTaskLib::SetupTests.
+/// Returns the logic ID (0..255), or -1 if the output is inconsistent.
+#[no_mangle]
+pub extern "C" fn avd_task_compute_logic_id(
+    input0: c_int,
+    input1: c_int,
+    input2: c_int,
+    num_inputs: c_int,
+    output: c_int,
+) -> c_int {
+    let mut test_inputs: [c_int; 3] = [input0, input1, input2];
+    let mut test_output = output;
+
+    // logic_out[i] == -1 means "not yet set"
+    let mut logic_out: [c_int; 8] = [-1; 8];
+
+    // Test all 32 bit positions for consistency
+    let mut func_ok = true;
+    for _ in 0..32 {
+        let logic_pos = ((test_inputs[0] & 1)
+            | ((test_inputs[1] & 1) << 1)
+            | ((test_inputs[2] & 1) << 2)) as usize;
+
+        let out_bit = test_output & 1;
+        if logic_out[logic_pos] != -1 && logic_out[logic_pos] != out_bit {
+            func_ok = false;
+            break;
+        }
+        logic_out[logic_pos] = out_bit;
+
+        test_output >>= 1;
+        for inp in &mut test_inputs {
+            *inp >>= 1;
+        }
+    }
+
+    if !func_ok {
+        return -1;
+    }
+
+    // Mirror bits for fewer than 3 inputs
+    if num_inputs < 1 {
+        // 000 -> 001
+        logic_out[1] = logic_out[0];
+    }
+    if num_inputs < 2 {
+        // 000 -> 010; 001 -> 011
+        logic_out[2] = logic_out[0];
+        logic_out[3] = logic_out[1];
+    }
+    if num_inputs < 3 {
+        // 000->100; 001->101; 010->110; 011->111
+        logic_out[4] = logic_out[0];
+        logic_out[5] = logic_out[1];
+        logic_out[6] = logic_out[2];
+        logic_out[7] = logic_out[3];
+    }
+
+    // All bits must be 0 or 1 at this point (matches C++ assert in SetupTests).
+    // With valid inputs and consistent output, all 8 positions will be filled.
+    debug_assert!(logic_out.iter().all(|&v| v == 0 || v == 1));
+
+    let mut logicid: c_int = 0;
+    for (i, &val) in logic_out.iter().enumerate() {
+        logicid += val << i;
+    }
+    logicid
+}
+
+/// Boolean logic task type constants for avd_task_eval_logic.
+const TASK_NOT: c_int = 0;
+const TASK_NAND: c_int = 1;
+const TASK_AND: c_int = 2;
+const TASK_ORNOT: c_int = 3;
+const TASK_OR: c_int = 4;
+const TASK_ANDNOT: c_int = 5;
+const TASK_NOR: c_int = 6;
+const TASK_XOR: c_int = 7;
+const TASK_EQU: c_int = 8;
+
+/// Evaluate a Boolean logic task given its type and logic_id.
+/// Returns 1.0 if the logic_id matches any of the task's expected values, 0.0 otherwise.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_logic(task_type: c_int, logic_id: c_int) -> f64 {
+    let matches = match task_type {
+        TASK_NOT => logic_id == 15 || logic_id == 51 || logic_id == 85,
+        TASK_NAND => logic_id == 63 || logic_id == 95 || logic_id == 119,
+        TASK_AND => logic_id == 136 || logic_id == 160 || logic_id == 192,
+        TASK_ORNOT => {
+            logic_id == 175
+                || logic_id == 187
+                || logic_id == 207
+                || logic_id == 221
+                || logic_id == 243
+                || logic_id == 245
+        }
+        TASK_OR => logic_id == 238 || logic_id == 250 || logic_id == 252,
+        TASK_ANDNOT => {
+            logic_id == 10
+                || logic_id == 12
+                || logic_id == 34
+                || logic_id == 48
+                || logic_id == 68
+                || logic_id == 80
+        }
+        TASK_NOR => logic_id == 3 || logic_id == 5 || logic_id == 17,
+        TASK_XOR => logic_id == 60 || logic_id == 90 || logic_id == 102,
+        TASK_EQU => logic_id == 153 || logic_id == 165 || logic_id == 195,
+        _ => false,
+    };
+    if matches {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Check if any of the inputs matches the output (Task_Echo).
+/// Returns 1.0 if output matches any input, 0.0 otherwise.
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_task_eval_echo(
+    inputs: *const c_int,
+    num_inputs: c_int,
+    output: c_int,
+) -> f64 {
+    if inputs.is_null() || num_inputs <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees `inputs` points to at least `num_inputs` valid c_int values.
+    // Null/zero checks above guard against invalid pointers.
+    let slice = unsafe { std::slice::from_raw_parts(inputs, num_inputs as usize) };
+    for &inp in slice {
+        if inp == output {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -540,5 +684,168 @@ mod tests {
             avd_tasklib_diff_scan_update(avd_tasklib_diff_scan_init(), i64::MAX),
             avd_tasklib_diff_scan_init()
         );
+    }
+
+    // --- Logic ID computation tests ---
+
+    #[test]
+    fn logic_id_not_task_known_inputs() {
+        // Use canonical inputs that cover all 8 logic positions:
+        // input0 = 0x55555555 (bit0 alternates every 1 bit)
+        // input1 = 0x33333333 (bit0 alternates every 2 bits)
+        // input2 = 0x0F0F0F0F (bit0 alternates every 4 bits)
+        // This ensures all 8 combinations of (A,B,C) low bits appear in the 32 positions.
+        let input0 = 0x55555555_u32 as c_int;
+        let input1 = 0x33333333_u32 as c_int;
+        let input2 = 0x0F0F0F0F_i32;
+        let output = !input0; // bitwise NOT of A
+                              // NOT-A truth table: out[pos] = !A where A = pos & 1
+                              // pos: 0→1, 1→0, 2→1, 3→0, 4→1, 5→0, 6→1, 7→0 = 0b01010101 = 85
+        let logic_id = avd_task_compute_logic_id(input0, input1, input2, 3, output);
+        assert_eq!(logic_id, 85, "NOT-A should produce logic_id 85");
+        assert_eq!(avd_task_eval_logic(TASK_NOT, logic_id), 1.0);
+    }
+
+    #[test]
+    fn logic_id_inconsistent_returns_minus_one() {
+        // Construct inputs that produce an inconsistent output
+        // If inputs cycle through all 8 logic positions but output bits disagree, we get -1
+        // Simple case: input0=0, input1=0, input2=0 → logic_pos always 0
+        // But output has different bits → still consistent since it always maps to pos 0.
+        // We need to actually get an inconsistency. Use inputs where same logic_pos gets
+        // different output bits.
+        // input0=1 (bit0=1, bit1=0) → pos changes, but we need same pos different out.
+        // Actually the simplest approach: all inputs 0 → logic_pos always 0,
+        // but output alternates → bit 0 of output = 0, bit 1 = 1 → inconsistent at pos 0.
+        let logic_id = avd_task_compute_logic_id(0, 0, 0, 3, 0b10); // bit0=0, bit1=1 at pos 0
+        assert_eq!(logic_id, -1);
+    }
+
+    #[test]
+    fn logic_id_echo_a() {
+        // Echo of input A: output = input0
+        // Truth table for A: [0,1,0,1,0,1,0,1] → 0b10101010 = 170
+        let input0: c_int = 0x55555555_u32 as c_int; // alternating bits
+        let output = input0;
+        let logic_id =
+            avd_task_compute_logic_id(input0, 0x33333333_u32 as c_int, 0x0F0F0F0F, 3, output);
+        assert_eq!(logic_id, 170);
+    }
+
+    #[test]
+    fn logic_id_all_256_exhaustive_task_coverage() {
+        // For each of the 256 possible logic IDs, verify that each task returns
+        // the correct result by checking against the known magic numbers.
+        let not_ids: &[c_int] = &[15, 51, 85];
+        let nand_ids: &[c_int] = &[63, 95, 119];
+        let and_ids: &[c_int] = &[136, 160, 192];
+        let ornot_ids: &[c_int] = &[175, 187, 207, 221, 243, 245];
+        let or_ids: &[c_int] = &[238, 250, 252];
+        let andnot_ids: &[c_int] = &[10, 12, 34, 48, 68, 80];
+        let nor_ids: &[c_int] = &[3, 5, 17];
+        let xor_ids: &[c_int] = &[60, 90, 102];
+        let equ_ids: &[c_int] = &[153, 165, 195];
+
+        for id in 0..256 {
+            let id = id as c_int;
+            assert_eq!(
+                avd_task_eval_logic(TASK_NOT, id),
+                if not_ids.contains(&id) { 1.0 } else { 0.0 },
+                "NOT mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_NAND, id),
+                if nand_ids.contains(&id) { 1.0 } else { 0.0 },
+                "NAND mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_AND, id),
+                if and_ids.contains(&id) { 1.0 } else { 0.0 },
+                "AND mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_ORNOT, id),
+                if ornot_ids.contains(&id) { 1.0 } else { 0.0 },
+                "ORNOT mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_OR, id),
+                if or_ids.contains(&id) { 1.0 } else { 0.0 },
+                "OR mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_ANDNOT, id),
+                if andnot_ids.contains(&id) { 1.0 } else { 0.0 },
+                "ANDNOT mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_NOR, id),
+                if nor_ids.contains(&id) { 1.0 } else { 0.0 },
+                "NOR mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_XOR, id),
+                if xor_ids.contains(&id) { 1.0 } else { 0.0 },
+                "XOR mismatch at logic_id={id}"
+            );
+            assert_eq!(
+                avd_task_eval_logic(TASK_EQU, id),
+                if equ_ids.contains(&id) { 1.0 } else { 0.0 },
+                "EQU mismatch at logic_id={id}"
+            );
+        }
+    }
+
+    #[test]
+    fn logic_id_invalid_task_type_returns_zero() {
+        assert_eq!(avd_task_eval_logic(-1, 15), 0.0);
+        assert_eq!(avd_task_eval_logic(9, 15), 0.0);
+        assert_eq!(avd_task_eval_logic(100, 0), 0.0);
+    }
+
+    #[test]
+    fn task_echo_basic() {
+        let inputs: [c_int; 3] = [42, 77, 99];
+        assert_eq!(avd_task_eval_echo(inputs.as_ptr(), 3, 42), 1.0);
+        assert_eq!(avd_task_eval_echo(inputs.as_ptr(), 3, 77), 1.0);
+        assert_eq!(avd_task_eval_echo(inputs.as_ptr(), 3, 99), 1.0);
+        assert_eq!(avd_task_eval_echo(inputs.as_ptr(), 3, 100), 0.0);
+    }
+
+    #[test]
+    fn task_echo_null_inputs() {
+        assert_eq!(avd_task_eval_echo(std::ptr::null(), 0, 42), 0.0);
+        assert_eq!(avd_task_eval_echo(std::ptr::null(), 3, 42), 0.0);
+    }
+
+    #[test]
+    fn logic_id_fewer_inputs_mirroring() {
+        // With 0 inputs: all inputs are 0, so logic_pos is always 0.
+        // Output = 0xFFFFFFFF → bit0 = 1 consistently at pos 0.
+        // Then mirror: logic_out[1]=logic_out[0]=1, [2]=[0]=1, [3]=[1]=1, [4..7]=[0..3]=1
+        // All 1s → logic_id = 255
+        let logic_id = avd_task_compute_logic_id(0, 0, 0, 0, -1); // -1 = 0xFFFFFFFF
+        assert_eq!(logic_id, 255);
+
+        // With 0 inputs and output = 0: all bits 0 → logic_id = 0
+        let logic_id = avd_task_compute_logic_id(0, 0, 0, 0, 0);
+        assert_eq!(logic_id, 0);
+    }
+
+    #[test]
+    fn logic_id_two_inputs_mirroring() {
+        // With 2 inputs: input2=0, so bits 4-7 mirror bits 0-3
+        // Use input0 = 0x55555555 (alternating), input1 = 0x33333333
+        // This should produce a valid logic_id with bit 4..7 mirrored from 0..3
+        let input0 = 0x55555555_u32 as c_int;
+        let input1 = 0x33333333_u32 as c_int;
+        let output = input0 & input1; // AND
+        let logic_id = avd_task_compute_logic_id(input0, input1, 0, 2, output);
+        assert!(
+            (0..=255).contains(&logic_id),
+            "expected valid logic_id, got {logic_id}"
+        );
+        // With 2-input mirroring, bits 4-7 = bits 0-3
+        assert_eq!(logic_id & 0xF0, (logic_id & 0x0F) << 4);
     }
 }
