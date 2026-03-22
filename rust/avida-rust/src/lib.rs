@@ -38,6 +38,7 @@ pub mod population_action_helpers;
 pub mod population_helpers;
 pub mod print_action_helpers;
 pub mod provider_helpers;
+pub mod registry_types;
 pub mod resource_count_helpers;
 pub mod resource_history_helpers;
 pub mod running_average;
