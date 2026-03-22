@@ -946,6 +946,144 @@ pub extern "C" fn avd_pheno_receive_donated_energy(
 }
 
 // ---------------------------------------------------------------------------
+// Array bulk-operations — Slice 5 Phase 1: task-count array helpers
+// ---------------------------------------------------------------------------
+// These operate on raw C slices (pointer + length) so that C++ callers can
+// delegate bulk array work to Rust without moving ownership of the
+// AvidaArray storage.
+
+/// Reset every element of an `int` array to 0.
+///
+/// # Safety
+/// `data` must point to at least `len` contiguous `c_int` values.
+/// `len` must be >= 0.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_reset_int_array(data: *mut c_int, len: c_int) {
+    if data.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees `data` points to `len` valid `c_int` values.
+    let slice = unsafe { std::slice::from_raw_parts_mut(data, len as usize) };
+    slice.fill(0);
+}
+
+/// Copy `len` elements from `src` to `dst` (`int` arrays).
+///
+/// # Safety
+/// Both `dst` and `src` must point to at least `len` contiguous `c_int`
+/// values. They must not overlap.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_copy_int_array(dst: *mut c_int, src: *const c_int, len: c_int) {
+    if dst.is_null() || src.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees non-overlapping, valid slices of `len` items.
+    let dst_slice = unsafe { std::slice::from_raw_parts_mut(dst, len as usize) };
+    // SAFETY: Caller guarantees `src` points to `len` valid `c_int` values.
+    let src_slice = unsafe { std::slice::from_raw_parts(src, len as usize) };
+    dst_slice.copy_from_slice(src_slice);
+}
+
+/// Reset every element of a `double` array to 0.0.
+///
+/// # Safety
+/// `data` must point to at least `len` contiguous `c_double` values.
+/// `len` must be >= 0.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_reset_double_array(data: *mut c_double, len: c_int) {
+    if data.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees `data` points to `len` valid `c_double` values.
+    let slice = unsafe { std::slice::from_raw_parts_mut(data, len as usize) };
+    slice.fill(0.0);
+}
+
+/// Copy `len` elements from `src` to `dst` (`double` arrays).
+///
+/// # Safety
+/// Both `dst` and `src` must point to at least `len` contiguous `c_double`
+/// values. They must not overlap.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_copy_double_array(
+    dst: *mut c_double,
+    src: *const c_double,
+    len: c_int,
+) {
+    if dst.is_null() || src.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees non-overlapping, valid slices of `len` items.
+    let dst_slice = unsafe { std::slice::from_raw_parts_mut(dst, len as usize) };
+    // SAFETY: Caller guarantees `src` points to `len` valid `c_double` values.
+    let src_slice = unsafe { std::slice::from_raw_parts(src, len as usize) };
+    dst_slice.copy_from_slice(src_slice);
+}
+
+/// Bulk snapshot: copy cur task arrays to their last counterparts.
+///
+/// Handles the 6 task-count array pairs migrated in Slice 5 Phase 1:
+///   1. `task_count`          (int)
+///   2. `host_tasks`          (int)
+///   3. `internal_task_count` (int)
+///   4. `task_quality`        (double)
+///   5. `task_value`          (double)
+///   6. `internal_task_quality` (double)
+///
+/// For each pair the function copies cur to last.
+///
+/// # Safety
+/// All pointer/length pairs must be valid and non-overlapping between
+/// src and dst of the same pair.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_divide_snapshot_tasks(
+    // task_count (int)
+    last_task_count: *mut c_int,
+    cur_task_count: *const c_int,
+    task_count_len: c_int,
+    // host_tasks (int)
+    last_host_tasks: *mut c_int,
+    cur_host_tasks: *const c_int,
+    host_tasks_len: c_int,
+    // internal_task_count (int)
+    last_internal_task_count: *mut c_int,
+    cur_internal_task_count: *const c_int,
+    internal_task_count_len: c_int,
+    // task_quality (double)
+    last_task_quality: *mut c_double,
+    cur_task_quality: *const c_double,
+    task_quality_len: c_int,
+    // task_value (double)
+    last_task_value: *mut c_double,
+    cur_task_value: *const c_double,
+    task_value_len: c_int,
+    // internal_task_quality (double)
+    last_internal_task_quality: *mut c_double,
+    cur_internal_task_quality: *const c_double,
+    internal_task_quality_len: c_int,
+) {
+    avd_pheno_copy_int_array(last_task_count, cur_task_count, task_count_len);
+    avd_pheno_copy_int_array(last_host_tasks, cur_host_tasks, host_tasks_len);
+    avd_pheno_copy_int_array(
+        last_internal_task_count,
+        cur_internal_task_count,
+        internal_task_count_len,
+    );
+    avd_pheno_copy_double_array(last_task_quality, cur_task_quality, task_quality_len);
+    avd_pheno_copy_double_array(last_task_value, cur_task_value, task_value_len);
+    avd_pheno_copy_double_array(
+        last_internal_task_quality,
+        cur_internal_task_quality,
+        internal_task_quality_len,
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -1645,5 +1783,119 @@ mod tests {
         assert!((total_received - 30.0).abs() < f64::EPSILON);
         assert_eq!(num_receptions, 3);
         assert_eq!(flags.is_energy_receiver, 1);
+    }
+
+    // -----------------------------------------------------------------------
+    // Array bulk-operation tests (Slice 5 Phase 1)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn reset_int_array_basic() {
+        let mut data: [c_int; 5] = [1, 2, 3, 4, 5];
+        avd_pheno_reset_int_array(data.as_mut_ptr(), 5);
+        assert_eq!(data, [0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn reset_int_array_null_is_noop() {
+        avd_pheno_reset_int_array(std::ptr::null_mut(), 5);
+    }
+
+    #[test]
+    fn reset_int_array_zero_len_is_noop() {
+        let mut data: [c_int; 3] = [1, 2, 3];
+        avd_pheno_reset_int_array(data.as_mut_ptr(), 0);
+        assert_eq!(data, [1, 2, 3]);
+    }
+
+    #[test]
+    fn copy_int_array_basic() {
+        let src: [c_int; 4] = [10, 20, 30, 40];
+        let mut dst: [c_int; 4] = [0; 4];
+        avd_pheno_copy_int_array(dst.as_mut_ptr(), src.as_ptr(), 4);
+        assert_eq!(dst, [10, 20, 30, 40]);
+    }
+
+    #[test]
+    fn copy_int_array_null_is_noop() {
+        let src: [c_int; 2] = [1, 2];
+        avd_pheno_copy_int_array(std::ptr::null_mut(), src.as_ptr(), 2);
+    }
+
+    #[test]
+    fn reset_double_array_basic() {
+        let mut data: [c_double; 4] = [1.5, 2.5, 3.5, 4.5];
+        avd_pheno_reset_double_array(data.as_mut_ptr(), 4);
+        for &v in &data {
+            assert!((v - 0.0).abs() < f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn reset_double_array_null_is_noop() {
+        avd_pheno_reset_double_array(std::ptr::null_mut(), 3);
+    }
+
+    #[test]
+    fn copy_double_array_basic() {
+        let src: [c_double; 3] = [1.1, 2.2, 3.3];
+        let mut dst: [c_double; 3] = [0.0; 3];
+        avd_pheno_copy_double_array(dst.as_mut_ptr(), src.as_ptr(), 3);
+        for i in 0..3 {
+            assert!((dst[i] - src[i]).abs() < f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn divide_snapshot_tasks_basic() {
+        let cur_tc: [c_int; 3] = [1, 2, 3];
+        let mut last_tc: [c_int; 3] = [0; 3];
+        let cur_ht: [c_int; 3] = [4, 5, 6];
+        let mut last_ht: [c_int; 3] = [0; 3];
+        let cur_itc: [c_int; 3] = [7, 8, 9];
+        let mut last_itc: [c_int; 3] = [0; 3];
+        let cur_tq: [c_double; 3] = [0.1, 0.2, 0.3];
+        let mut last_tq: [c_double; 3] = [0.0; 3];
+        let cur_tv: [c_double; 3] = [0.4, 0.5, 0.6];
+        let mut last_tv: [c_double; 3] = [0.0; 3];
+        let cur_itq: [c_double; 3] = [0.7, 0.8, 0.9];
+        let mut last_itq: [c_double; 3] = [0.0; 3];
+
+        avd_pheno_divide_snapshot_tasks(
+            last_tc.as_mut_ptr(),
+            cur_tc.as_ptr(),
+            3,
+            last_ht.as_mut_ptr(),
+            cur_ht.as_ptr(),
+            3,
+            last_itc.as_mut_ptr(),
+            cur_itc.as_ptr(),
+            3,
+            last_tq.as_mut_ptr(),
+            cur_tq.as_ptr(),
+            3,
+            last_tv.as_mut_ptr(),
+            cur_tv.as_ptr(),
+            3,
+            last_itq.as_mut_ptr(),
+            cur_itq.as_ptr(),
+            3,
+        );
+
+        assert_eq!(last_tc, [1, 2, 3]);
+        assert_eq!(last_ht, [4, 5, 6]);
+        assert_eq!(last_itc, [7, 8, 9]);
+        for i in 0..3 {
+            assert!((last_tq[i] - cur_tq[i]).abs() < f64::EPSILON);
+            assert!((last_tv[i] - cur_tv[i]).abs() < f64::EPSILON);
+            assert!((last_itq[i] - cur_itq[i]).abs() < f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn reset_negative_len_is_noop() {
+        let mut data: [c_int; 3] = [1, 2, 3];
+        avd_pheno_reset_int_array(data.as_mut_ptr(), -1);
+        assert_eq!(data, [1, 2, 3]);
     }
 }

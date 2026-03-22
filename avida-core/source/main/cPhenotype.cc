@@ -245,14 +245,14 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   m_core.cur_energy_bonus = 0.0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_host_tasks.SetAll(0);
-  cur_para_tasks.SetAll(0);
-  cur_task_quality.SetAll(0);
-  cur_task_value.SetAll(0);
-  cur_internal_task_quality.SetAll(0);
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
+  avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
   cur_rbins_total.SetAll(0);  // total resources collected in lifetime
   // parent's resources have already been halved or reset in DivideReset;
   // offspring gets that value (half or 0) too.
@@ -310,13 +310,13 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   m_lifetime.last_cpu_cycles_used      = parent_phenotype.m_lifetime.last_cpu_cycles_used;
   m_lifetime.last_num_errors           = parent_phenotype.m_lifetime.last_num_errors;
   m_lifetime.last_num_donates          = parent_phenotype.m_lifetime.last_num_donates;
-  last_task_count           = parent_phenotype.last_task_count;
-  last_host_tasks           = parent_phenotype.last_host_tasks;
-  last_para_tasks           = parent_phenotype.last_para_tasks;
-  last_internal_task_count  = parent_phenotype.last_internal_task_count;
-  last_task_quality         = parent_phenotype.last_task_quality;
-  last_task_value           = parent_phenotype.last_task_value;
-  last_internal_task_quality= parent_phenotype.last_internal_task_quality;
+  avd_pheno_copy_int_array(last_task_count.GetData(), parent_phenotype.last_task_count.GetData(), last_task_count.GetSize());
+  avd_pheno_copy_int_array(last_host_tasks.GetData(), parent_phenotype.last_host_tasks.GetData(), last_host_tasks.GetSize());
+  avd_pheno_copy_int_array(last_para_tasks.GetData(), parent_phenotype.last_para_tasks.GetData(), last_para_tasks.GetSize());
+  avd_pheno_copy_int_array(last_internal_task_count.GetData(), parent_phenotype.last_internal_task_count.GetData(), last_internal_task_count.GetSize());
+  avd_pheno_copy_double_array(last_task_quality.GetData(), parent_phenotype.last_task_quality.GetData(), last_task_quality.GetSize());
+  avd_pheno_copy_double_array(last_task_value.GetData(), parent_phenotype.last_task_value.GetData(), last_task_value.GetSize());
+  avd_pheno_copy_double_array(last_internal_task_quality.GetData(), parent_phenotype.last_internal_task_quality.GetData(), last_internal_task_quality.GetSize());
   last_rbins_total          = parent_phenotype.last_rbins_total;
   last_rbins_avail          = parent_phenotype.last_rbins_avail;
   last_collect_spec_counts  = parent_phenotype.last_collect_spec_counts;
@@ -655,13 +655,16 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   //TODO?  last_energy         = m_core.cur_energy_bonus;
   m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
   m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
-  last_task_count           = cur_task_count;
-  last_host_tasks           = cur_host_tasks;
+  // Bulk snapshot: copy cur task arrays → last (Rust FFI)
+  avd_pheno_divide_snapshot_tasks(
+    last_task_count.GetData(), cur_task_count.GetData(), cur_task_count.GetSize(),
+    last_host_tasks.GetData(), cur_host_tasks.GetData(), cur_host_tasks.GetSize(),
+    last_internal_task_count.GetData(), cur_internal_task_count.GetData(), cur_internal_task_count.GetSize(),
+    last_task_quality.GetData(), cur_task_quality.GetData(), cur_task_quality.GetSize(),
+    last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
+    last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
+  );
   last_para_tasks           = cur_para_tasks;
-  last_internal_task_count  = cur_internal_task_count;
-  last_task_quality         = cur_task_quality;
-  last_task_value           = cur_task_value;
-  last_internal_task_quality= cur_internal_task_quality;
   last_rbins_total          = cur_rbins_total;
   last_rbins_avail          = cur_rbins_avail;
   last_collect_spec_counts  = cur_collect_spec_counts;
@@ -677,18 +680,18 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
   last_sense_count          = cur_sense_count;
   m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
-  
+
   m_lifetime.last_mating_display_a = m_lifetime.cur_mating_display_a; //@CHC
   m_lifetime.last_mating_display_b = m_lifetime.cur_mating_display_b;
-  
+
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
   m_lifetime.cpu_cycles_used = 0;
   m_core.cur_energy_bonus = 0.0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_host_tasks.SetAll(0);
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
 
   m_lifetime.cur_mating_display_a = 0; //@CHC
   m_lifetime.cur_mating_display_b = 0;
@@ -697,13 +700,13 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   //      resonable assumptions
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     last_para_tasks = cur_para_tasks;
-    cur_para_tasks.SetAll(0);
+    avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
   }
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_task_quality.SetAll(0);
-  cur_task_value.SetAll(0);
-  cur_internal_task_quality.SetAll(0);
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
+  avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
   if (m_world->GetConfig().SPLIT_ON_DIVIDE.Get()) {
     // resources available are split in half -- the offspring gets the other half
     for (int i = 0; i < cur_rbins_avail.GetSize(); i++) {cur_rbins_avail[i] /= 2.0;}
@@ -887,13 +890,16 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   m_lifetime.last_cpu_cycles_used      = m_lifetime.cpu_cycles_used;
   m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
   m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
-  last_task_count           = cur_task_count;
-  last_host_tasks           = cur_host_tasks;
+  // Bulk snapshot: copy cur task arrays → last (Rust FFI)
+  avd_pheno_divide_snapshot_tasks(
+    last_task_count.GetData(), cur_task_count.GetData(), cur_task_count.GetSize(),
+    last_host_tasks.GetData(), cur_host_tasks.GetData(), cur_host_tasks.GetSize(),
+    last_internal_task_count.GetData(), cur_internal_task_count.GetData(), cur_internal_task_count.GetSize(),
+    last_task_quality.GetData(), cur_task_quality.GetData(), cur_task_quality.GetSize(),
+    last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
+    last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
+  );
   last_para_tasks           = cur_para_tasks;
-  last_internal_task_count  = cur_internal_task_count;
-  last_task_quality         = cur_task_quality;
-  last_task_value			= cur_task_value;
-  last_internal_task_quality= cur_internal_task_quality;
   last_rbins_total          = cur_rbins_total;
   last_rbins_avail          = cur_rbins_avail;
   last_collect_spec_counts  = cur_collect_spec_counts;
@@ -909,25 +915,25 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
   last_sense_count          = cur_sense_count;
   m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
-  
+
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
   m_lifetime.cpu_cycles_used = 0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_host_tasks.SetAll(0);
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
     last_para_tasks = cur_para_tasks;
-    cur_para_tasks.SetAll(0);
+    avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
   }
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_task_quality.SetAll(0);
-  cur_task_value.SetAll(0);
-  cur_internal_task_quality.SetAll(0);
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
+  avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
   cur_rbins_total.SetAll(0);  // total resources collected in lifetime
   if (m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get() > 0.0) {   
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
@@ -1837,13 +1843,16 @@ void cPhenotype::NewTrial()
   //TODO?  last_energy         = m_core.cur_energy_bonus;
   m_lifetime.last_num_errors           = m_lifetime.cur_num_errors;
   m_lifetime.last_num_donates          = m_lifetime.cur_num_donates;
-  last_task_count           = cur_task_count;
-  last_host_tasks           = cur_host_tasks;
+  // Bulk snapshot: copy cur task arrays → last (Rust FFI)
+  avd_pheno_divide_snapshot_tasks(
+    last_task_count.GetData(), cur_task_count.GetData(), cur_task_count.GetSize(),
+    last_host_tasks.GetData(), cur_host_tasks.GetData(), cur_host_tasks.GetSize(),
+    last_internal_task_count.GetData(), cur_internal_task_count.GetData(), cur_internal_task_count.GetSize(),
+    last_task_quality.GetData(), cur_task_quality.GetData(), cur_task_quality.GetSize(),
+    last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
+    last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
+  );
   last_para_tasks           = cur_para_tasks;
-  last_internal_task_count  = cur_internal_task_count;
-  last_task_quality         = cur_task_quality;
-  last_internal_task_quality= cur_internal_task_quality;
-  last_task_value			      = cur_task_value;
   last_rbins_total          = cur_rbins_total;
   last_rbins_avail          = cur_rbins_avail;
   last_collect_spec_counts  = cur_collect_spec_counts;
@@ -1858,21 +1867,21 @@ void cPhenotype::NewTrial()
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
   last_sense_count          = cur_sense_count;
-  
+
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
   m_lifetime.cpu_cycles_used = 0;
   m_core.cur_energy_bonus = 0.0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_host_tasks.SetAll(0);
-  cur_para_tasks.SetAll(0);
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_task_quality.SetAll(0);
-  cur_internal_task_quality.SetAll(0);
-  cur_task_value.SetAll(0);
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
   cur_rbins_total.SetAll(0);
   cur_rbins_avail.SetAll(0);
   cur_collect_spec_counts.SetAll(0);

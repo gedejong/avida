@@ -968,6 +968,20 @@ int avd_env_parse_bool_string(const char* value_str);
 int avd_event_parse_trigger(const char* token);
 int avd_event_parse_timing(const char* timing, double* out_start, double* out_interval, double* out_stop);
 
+/* Slice 5 Phase 1: task-count array bulk operations */
+void avd_pheno_reset_int_array(int* data, int len);
+void avd_pheno_copy_int_array(int* dst, const int* src, int len);
+void avd_pheno_reset_double_array(double* data, int len);
+void avd_pheno_copy_double_array(double* dst, const double* src, int len);
+void avd_pheno_divide_snapshot_tasks(
+    int* last_task_count, const int* cur_task_count, int task_count_len,
+    int* last_host_tasks, const int* cur_host_tasks, int host_tasks_len,
+    int* last_internal_task_count, const int* cur_internal_task_count, int internal_task_count_len,
+    double* last_task_quality, const double* cur_task_quality, int task_quality_len,
+    double* last_task_value, const double* cur_task_value, int task_value_len,
+    double* last_internal_task_quality, const double* cur_internal_task_quality, int internal_task_quality_len
+);
+
 #ifdef __cplusplus
 }
 #endif
