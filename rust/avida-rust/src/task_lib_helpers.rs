@@ -402,6 +402,17 @@ pub extern "C" fn avd_task_eval_echo(
     0.0
 }
 
+/// Evaluate a Logic3in task: returns 1.0 if logic_id matches the target, 0.0 otherwise.
+/// This handles single-target Logic3in_XX task variants with a single function.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_logic3in(logic_id: c_int, target: c_int) -> f64 {
+    if logic_id == target {
+        1.0
+    } else {
+        0.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

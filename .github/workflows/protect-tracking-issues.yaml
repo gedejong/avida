@@ -1,0 +1,54 @@
+name: Protect tracking issues
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  reopen-if-tracking:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Check for tracking label and reopen
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+
+            if (!labels.includes('tracking')) {
+              console.log(`Issue #${issue.number} is not a tracking issue — allowing close.`);
+              return;
+            }
+
+            // Reopen the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'open',
+            });
+
+            // Add a comment explaining why
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: [
+                '## Automatically reopened',
+                '',
+                'This issue has the `tracking` label, which means it represents a long-running',
+                'milestone that should only be closed manually by a maintainer after verifying',
+                'all work is complete.',
+                '',
+                `Closed by: ${context.payload.sender.login}`,
+                `Close event: ${context.payload.action}`,
+                '',
+                'If this issue is truly complete, a maintainer should:',
+                '1. Remove the `tracking` label',
+                '2. Close the issue again',
+              ].join('\n'),
+            });
+
+            console.log(`Reopened tracking issue #${issue.number}`);

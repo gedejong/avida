@@ -56,6 +56,12 @@ If the slice changes long-range prioritization, complexity assumptions, or works
 - Stage intended files explicitly; avoid unrelated submodule pointer changes.
 - Use concise commit messages focused on *why* the slice was done.
 
+### 7. GitHub issue discipline
+- **NEVER close issues.** Issues with the `tracking` label are protected by a CI workflow that auto-reopens them. Only a human maintainer may close tracking issues (by removing the label first).
+- **NEVER use `Fixes #N` or `Closes #N`** in commit messages or PR descriptions for tracking issues. These keywords auto-close the referenced issue when merged. Use **`Relates to #N`** or **`Part of #N`** instead.
+- When a slice completes work toward a tracking issue, **add a progress comment** to the issue describing what was done, not close it.
+- Only use `Fixes #N` for small, self-contained bug-fix issues that are fully resolved by a single PR.
+
 ---
 
 ## Rust Migration Program Docs

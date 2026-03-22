@@ -1118,6 +1118,8 @@ void avd_cpu_reg_order(CpuRegisters* regs, int r1, int r2);
 void avd_cpu_reg_setbit(CpuRegisters* regs, int to_set, int bit_reg);
 void avd_cpu_reg_clearbit(CpuRegisters* regs, int to_clear, int bit_reg);
 
+double avd_task_eval_logic3in(int logic_id, int target);
+
 #ifdef __cplusplus
 }
 #endif
