@@ -732,6 +732,19 @@ typedef struct {
 
 PhenotypeLifetimeData avd_pheno_lifetime_default(void);
 
+/* Energy System — Slice 3 */
+void avd_pheno_set_energy(PhenotypeCoreMetrics* core, double value, double energy_cap);
+void avd_pheno_reduce_energy(PhenotypeCoreMetrics* core, double cost, double energy_cap);
+int avd_pheno_get_discrete_energy_level(double energy_store, double max_energy, double high_pct, double low_pct);
+double avd_pheno_convert_energy_to_merit(double energy, double fix_metabolic_rate, int num_cycles_exc_before_0_energy);
+void avd_pheno_double_energy_usage(PhenotypeCoreMetrics* core);
+void avd_pheno_halve_energy_usage(PhenotypeCoreMetrics* core);
+void avd_pheno_default_energy_usage(PhenotypeCoreMetrics* core);
+int avd_pheno_refresh_energy(PhenotypeCoreMetrics* core, double* energy_tobe_applied, int apply_energy_method, double energy_cap);
+void avd_pheno_apply_to_energy_store(PhenotypeCoreMetrics* core, double* energy_tobe_applied, double* energy_testament, double energy_cap);
+void avd_pheno_apply_donated_energy(PhenotypeCoreMetrics* core, PhenotypeStatusFlags* flags, double* energy_received_buffer, double* total_energy_applied, int* num_energy_applications, double energy_cap);
+void avd_pheno_receive_donated_energy(PhenotypeStatusFlags* flags, double* energy_received_buffer, double* total_energy_received, int* num_energy_receptions, double donation);
+
 int avd_script_get_runtime_type(int ltype, int rtype, int allow_str);
 int avd_script_valid_arithmetic_type(int type_val, int allow_matrix);
 int avd_script_valid_bitwise_type(int type_val);

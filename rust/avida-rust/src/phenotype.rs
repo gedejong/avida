@@ -657,6 +657,295 @@ pub extern "C" fn avd_pheno_set_cur_energy_bonus(p: *mut PhenotypeCoreMetrics, v
 }
 
 // ---------------------------------------------------------------------------
+// FFI: Energy System — Slice 3 of cPhenotype migration (issue #48)
+// ---------------------------------------------------------------------------
+
+/// Energy level classification constants (mirrors C++ cPhenotype::energy_levels).
+const ENERGY_LEVEL_LOW: c_int = 0;
+const ENERGY_LEVEL_MEDIUM: c_int = 1;
+const ENERGY_LEVEL_HIGH: c_int = 2;
+
+/// Set energy_store to max(0, min(value, energy_cap)).
+///
+/// Mirrors `cPhenotype::SetEnergy`.
+///
+/// # Safety
+/// `core` must point to a valid `PhenotypeCoreMetrics`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_set_energy(
+    core: *mut PhenotypeCoreMetrics,
+    value: c_double,
+    energy_cap: c_double,
+) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    c.energy_store = value.max(0.0).min(energy_cap);
+}
+
+/// Subtract `cost` from energy_store, clamped to [0, energy_cap].
+///
+/// Mirrors `cPhenotype::ReduceEnergy`.
+///
+/// # Safety
+/// `core` must point to a valid `PhenotypeCoreMetrics`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_reduce_energy(
+    core: *mut PhenotypeCoreMetrics,
+    cost: c_double,
+    energy_cap: c_double,
+) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    let new_val = c.energy_store - cost;
+    c.energy_store = new_val.max(0.0).min(energy_cap);
+}
+
+/// Classify energy level as LOW(0), MEDIUM(1), HIGH(2), or error(-1).
+///
+/// Mirrors `cPhenotype::GetDiscreteEnergyLevel`.
+#[no_mangle]
+pub extern "C" fn avd_pheno_get_discrete_energy_level(
+    energy_store: c_double,
+    max_energy: c_double,
+    high_pct: c_double,
+    low_pct: c_double,
+) -> c_int {
+    let low_thresh = low_pct * max_energy;
+    let high_thresh = high_pct * max_energy;
+
+    if energy_store < low_thresh {
+        ENERGY_LEVEL_LOW
+    } else if energy_store >= low_thresh && energy_store <= high_thresh {
+        ENERGY_LEVEL_MEDIUM
+    } else if energy_store > high_thresh {
+        ENERGY_LEVEL_HIGH
+    } else {
+        -1
+    }
+}
+
+/// Convert energy to merit value.
+///
+/// Mirrors `cPhenotype::ConvertEnergyToMerit`.
+#[no_mangle]
+pub extern "C" fn avd_pheno_convert_energy_to_merit(
+    energy: c_double,
+    fix_metabolic_rate: c_double,
+    num_cycles_exc_before_0_energy: c_int,
+) -> c_double {
+    if fix_metabolic_rate > 0.0 {
+        100.0 * fix_metabolic_rate
+    } else {
+        100.0 * energy / f64::from(num_cycles_exc_before_0_energy)
+    }
+}
+
+/// Double execution_ratio.
+///
+/// Mirrors `cPhenotype::DoubleEnergyUsage`.
+///
+/// # Safety
+/// `core` must point to a valid `PhenotypeCoreMetrics`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_double_energy_usage(core: *mut PhenotypeCoreMetrics) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    c.execution_ratio *= 2.0;
+}
+
+/// Halve execution_ratio.
+///
+/// Mirrors `cPhenotype::HalveEnergyUsage`.
+///
+/// # Safety
+/// `core` must point to a valid `PhenotypeCoreMetrics`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_halve_energy_usage(core: *mut PhenotypeCoreMetrics) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    c.execution_ratio *= 0.5;
+}
+
+/// Reset execution_ratio to 1.0.
+///
+/// Mirrors `cPhenotype::DefaultEnergyUsage`.
+///
+/// # Safety
+/// `core` must point to a valid `PhenotypeCoreMetrics`.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_default_energy_usage(core: *mut PhenotypeCoreMetrics) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    c.execution_ratio = 1.0;
+}
+
+/// Apply energy bonus to energy_tobe_applied or energy_store depending on
+/// apply_energy_method config.
+///
+/// Mirrors `cPhenotype::RefreshEnergy`.
+///
+/// Returns:
+///   0 = no bonus to apply (cur_energy_bonus <= 0)
+///   1 = bonus deferred to energy_tobe_applied (method 0 or 2)
+///   2 = bonus applied directly to energy_store (method 1)
+///  -1 = unknown apply_energy_method (caller should abort)
+///
+/// When returning 1, `*out_energy_tobe_applied` is updated.
+/// When returning 2, the energy_store in `core` is updated (clamped to cap).
+/// In both cases, `core.cur_energy_bonus` is zeroed.
+///
+/// # Safety
+/// All pointers must be valid.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_refresh_energy(
+    core: *mut PhenotypeCoreMetrics,
+    energy_tobe_applied: *mut c_double,
+    apply_energy_method: c_int,
+    energy_cap: c_double,
+) -> c_int {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    if c.cur_energy_bonus <= 0.0 {
+        return 0;
+    }
+    let bonus = c.cur_energy_bonus;
+    c.cur_energy_bonus = 0.0;
+
+    match apply_energy_method {
+        0 | 2 => {
+            // SAFETY: Caller guarantees `energy_tobe_applied` is a valid pointer.
+            unsafe {
+                *energy_tobe_applied += bonus;
+            }
+            1
+        }
+        1 => {
+            // on task completion: apply immediately
+            let new_val = c.energy_store + bonus;
+            c.energy_store = new_val.max(0.0).min(energy_cap);
+            2
+        }
+        _ => -1,
+    }
+}
+
+/// Apply energy_tobe_applied to energy_store.
+///
+/// Mirrors `cPhenotype::ApplyToEnergyStore`.
+///
+/// # Safety
+/// All pointers must be valid.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_apply_to_energy_store(
+    core: *mut PhenotypeCoreMetrics,
+    energy_tobe_applied: *mut c_double,
+    energy_testament: *mut c_double,
+    energy_cap: c_double,
+) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    // SAFETY: Caller guarantees `energy_tobe_applied` is a valid pointer.
+    let tobe = unsafe { *energy_tobe_applied };
+    let new_val = c.energy_store + tobe;
+    c.energy_store = new_val.max(0.0).min(energy_cap);
+    // SAFETY: Caller guarantees both pointers are valid. Zero them after applying.
+    unsafe {
+        *energy_tobe_applied = 0.0;
+        *energy_testament = 0.0;
+    }
+}
+
+/// Apply donated energy from energy_received_buffer to energy_store.
+///
+/// Mirrors `cPhenotype::ApplyDonatedEnergy`.
+///
+/// Writes applied amount to `*out_energy_applied`.
+/// Sets `has_used_donated_energy` flag and increments application counter.
+///
+/// # Safety
+/// All pointers must be valid.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_apply_donated_energy(
+    core: *mut PhenotypeCoreMetrics,
+    flags: *mut PhenotypeStatusFlags,
+    energy_received_buffer: *mut c_double,
+    total_energy_applied: *mut c_double,
+    num_energy_applications: *mut c_int,
+    energy_cap: c_double,
+) {
+    // SAFETY: Caller guarantees `core` is a valid pointer to `PhenotypeCoreMetrics`.
+    let c = unsafe { &mut *core };
+    // SAFETY: Caller guarantees `energy_received_buffer` is a valid pointer.
+    let buf = unsafe { *energy_received_buffer };
+    // SAFETY: Caller guarantees `flags` is a valid pointer to `PhenotypeStatusFlags`.
+    let fl = unsafe { &mut *flags };
+
+    if (c.energy_store + buf) >= energy_cap {
+        // Cap case: only apply what fits
+        let applied = energy_cap - c.energy_store;
+        // SAFETY: Caller guarantees `total_energy_applied` is a valid pointer.
+        unsafe {
+            *total_energy_applied += applied;
+        }
+        // SetEnergy with capped value -- the expression mirrors original C++
+        let new_val = c.energy_store + (energy_cap - buf);
+        c.energy_store = new_val.max(0.0).min(energy_cap);
+    } else {
+        // SAFETY: Caller guarantees `total_energy_applied` is a valid pointer.
+        unsafe {
+            *total_energy_applied += buf;
+        }
+        let new_val = c.energy_store + buf;
+        c.energy_store = new_val.max(0.0).min(energy_cap);
+    }
+
+    // SAFETY: Caller guarantees `num_energy_applications` is a valid pointer.
+    unsafe {
+        *num_energy_applications += 1;
+    }
+    fl.has_used_donated_energy = 1;
+
+    // SAFETY: Caller guarantees `energy_received_buffer` is a valid pointer.
+    unsafe {
+        *energy_received_buffer = 0.0;
+    }
+}
+
+/// Receive donated energy into buffer and update counters/flags.
+///
+/// Mirrors `cPhenotype::ReceiveDonatedEnergy`.
+///
+/// # Safety
+/// All pointers must be valid.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_receive_donated_energy(
+    flags: *mut PhenotypeStatusFlags,
+    energy_received_buffer: *mut c_double,
+    total_energy_received: *mut c_double,
+    num_energy_receptions: *mut c_int,
+    donation: c_double,
+) {
+    // SAFETY: Caller guarantees all pointers are valid.
+    unsafe {
+        *energy_received_buffer += donation;
+        *total_energy_received += donation;
+        *num_energy_receptions += 1;
+    }
+    // SAFETY: Caller guarantees `flags` is a valid pointer to `PhenotypeStatusFlags`.
+    let fl = unsafe { &mut *flags };
+    fl.is_energy_receiver = 1;
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -1080,5 +1369,281 @@ mod tests {
         d3.num_divides = 0;
         assert_eq!(d.num_divides, 7);
         assert_eq!(d3.num_divides, 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // Energy System tests (Slice 3)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn set_energy_clamps_to_cap() {
+        let mut core = PhenotypeCoreMetrics::default();
+        avd_pheno_set_energy(&mut core, 150.0, 100.0);
+        assert!((core.energy_store - 100.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn set_energy_clamps_to_zero() {
+        let mut core = PhenotypeCoreMetrics::default();
+        avd_pheno_set_energy(&mut core, -5.0, 100.0);
+        assert!((core.energy_store - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn set_energy_normal_value() {
+        let mut core = PhenotypeCoreMetrics::default();
+        avd_pheno_set_energy(&mut core, 50.0, 100.0);
+        assert!((core.energy_store - 50.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn reduce_energy_subtracts_cost() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 80.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        avd_pheno_reduce_energy(&mut core, 30.0, 100.0);
+        assert!((core.energy_store - 50.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn reduce_energy_clamps_to_zero() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 10.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        avd_pheno_reduce_energy(&mut core, 20.0, 100.0);
+        assert!((core.energy_store - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn discrete_energy_level_low() {
+        let result = avd_pheno_get_discrete_energy_level(5.0, 100.0, 0.8, 0.2);
+        assert_eq!(result, ENERGY_LEVEL_LOW);
+    }
+
+    #[test]
+    fn discrete_energy_level_medium() {
+        let result = avd_pheno_get_discrete_energy_level(50.0, 100.0, 0.8, 0.2);
+        assert_eq!(result, ENERGY_LEVEL_MEDIUM);
+    }
+
+    #[test]
+    fn discrete_energy_level_high() {
+        let result = avd_pheno_get_discrete_energy_level(90.0, 100.0, 0.8, 0.2);
+        assert_eq!(result, ENERGY_LEVEL_HIGH);
+    }
+
+    #[test]
+    fn discrete_energy_level_at_low_boundary() {
+        // At exactly low_pct * max_energy, should be MEDIUM (>= low_thresh)
+        let result = avd_pheno_get_discrete_energy_level(20.0, 100.0, 0.8, 0.2);
+        assert_eq!(result, ENERGY_LEVEL_MEDIUM);
+    }
+
+    #[test]
+    fn discrete_energy_level_at_high_boundary() {
+        // At exactly high_pct * max_energy, should be MEDIUM (<= high_thresh)
+        let result = avd_pheno_get_discrete_energy_level(80.0, 100.0, 0.8, 0.2);
+        assert_eq!(result, ENERGY_LEVEL_MEDIUM);
+    }
+
+    #[test]
+    fn convert_energy_to_merit_fixed_rate() {
+        let result = avd_pheno_convert_energy_to_merit(50.0, 2.0, 100);
+        assert!((result - 200.0).abs() < f64::EPSILON); // 100 * 2.0
+    }
+
+    #[test]
+    fn convert_energy_to_merit_variable_rate() {
+        let result = avd_pheno_convert_energy_to_merit(50.0, 0.0, 200);
+        assert!((result - 25.0).abs() < f64::EPSILON); // 100 * 50.0 / 200
+    }
+
+    #[test]
+    fn convert_energy_to_merit_negative_fixed_rate_uses_variable() {
+        let result = avd_pheno_convert_energy_to_merit(80.0, -1.0, 100);
+        assert!((result - 80.0).abs() < f64::EPSILON); // 100 * 80.0 / 100
+    }
+
+    #[test]
+    fn double_energy_usage() {
+        let mut core = PhenotypeCoreMetrics::default();
+        assert!((core.execution_ratio - 1.0).abs() < f64::EPSILON);
+        avd_pheno_double_energy_usage(&mut core);
+        assert!((core.execution_ratio - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn halve_energy_usage() {
+        let mut core = PhenotypeCoreMetrics::default();
+        avd_pheno_halve_energy_usage(&mut core);
+        assert!((core.execution_ratio - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn default_energy_usage_resets() {
+        let mut core = PhenotypeCoreMetrics {
+            execution_ratio: 4.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        avd_pheno_default_energy_usage(&mut core);
+        assert!((core.execution_ratio - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn refresh_energy_no_bonus() {
+        let mut core = PhenotypeCoreMetrics::default();
+        let mut tobe = 0.0;
+        let result = avd_pheno_refresh_energy(&mut core, &mut tobe, 0, 100.0);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn refresh_energy_deferred_method_0() {
+        let mut core = PhenotypeCoreMetrics {
+            cur_energy_bonus: 10.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 5.0;
+        let result = avd_pheno_refresh_energy(&mut core, &mut tobe, 0, 100.0);
+        assert_eq!(result, 1);
+        assert!((tobe - 15.0).abs() < f64::EPSILON);
+        assert!((core.cur_energy_bonus - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn refresh_energy_deferred_method_2() {
+        let mut core = PhenotypeCoreMetrics {
+            cur_energy_bonus: 10.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 0.0;
+        let result = avd_pheno_refresh_energy(&mut core, &mut tobe, 2, 100.0);
+        assert_eq!(result, 1);
+        assert!((tobe - 10.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn refresh_energy_immediate_method_1() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 40.0,
+            cur_energy_bonus: 20.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 0.0;
+        let result = avd_pheno_refresh_energy(&mut core, &mut tobe, 1, 100.0);
+        assert_eq!(result, 2);
+        assert!((core.energy_store - 60.0).abs() < f64::EPSILON);
+        assert!((core.cur_energy_bonus - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn refresh_energy_unknown_method() {
+        let mut core = PhenotypeCoreMetrics {
+            cur_energy_bonus: 10.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 0.0;
+        let result = avd_pheno_refresh_energy(&mut core, &mut tobe, 99, 100.0);
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn apply_to_energy_store_basic() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 30.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 20.0;
+        let mut testament = 5.0;
+        avd_pheno_apply_to_energy_store(&mut core, &mut tobe, &mut testament, 100.0);
+        assert!((core.energy_store - 50.0).abs() < f64::EPSILON);
+        assert!((tobe - 0.0).abs() < f64::EPSILON);
+        assert!((testament - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn apply_to_energy_store_capped() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 90.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut tobe = 20.0;
+        let mut testament = 0.0;
+        avd_pheno_apply_to_energy_store(&mut core, &mut tobe, &mut testament, 100.0);
+        assert!((core.energy_store - 100.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn apply_donated_energy_under_cap() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 30.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut flags = PhenotypeStatusFlags::default();
+        let mut buf = 20.0;
+        let mut total_applied = 0.0;
+        let mut num_apps = 0;
+        avd_pheno_apply_donated_energy(
+            &mut core,
+            &mut flags,
+            &mut buf,
+            &mut total_applied,
+            &mut num_apps,
+            100.0,
+        );
+        assert!((core.energy_store - 50.0).abs() < f64::EPSILON);
+        assert!((total_applied - 20.0).abs() < f64::EPSILON);
+        assert_eq!(num_apps, 1);
+        assert_eq!(flags.has_used_donated_energy, 1);
+        assert!((buf - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn apply_donated_energy_over_cap() {
+        let mut core = PhenotypeCoreMetrics {
+            energy_store: 80.0,
+            ..PhenotypeCoreMetrics::default()
+        };
+        let mut flags = PhenotypeStatusFlags::default();
+        let mut buf = 30.0;
+        let mut total_applied = 0.0;
+        let mut num_apps = 0;
+        avd_pheno_apply_donated_energy(
+            &mut core,
+            &mut flags,
+            &mut buf,
+            &mut total_applied,
+            &mut num_apps,
+            100.0,
+        );
+        // energy_store + buf (110) >= cap (100)
+        // applied = cap - energy_store = 20
+        assert!((total_applied - 20.0).abs() < f64::EPSILON);
+        // energy clamped to cap
+        assert!((core.energy_store - 100.0).abs() < f64::EPSILON);
+        assert_eq!(num_apps, 1);
+        assert_eq!(flags.has_used_donated_energy, 1);
+        assert!((buf - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn receive_donated_energy_basic() {
+        let mut flags = PhenotypeStatusFlags::default();
+        let mut buf = 10.0;
+        let mut total_received = 5.0;
+        let mut num_receptions = 2;
+        avd_pheno_receive_donated_energy(
+            &mut flags,
+            &mut buf,
+            &mut total_received,
+            &mut num_receptions,
+            25.0,
+        );
+        assert!((buf - 35.0).abs() < f64::EPSILON);
+        assert!((total_received - 30.0).abs() < f64::EPSILON);
+        assert_eq!(num_receptions, 3);
+        assert_eq!(flags.is_energy_receiver, 1);
     }
 }

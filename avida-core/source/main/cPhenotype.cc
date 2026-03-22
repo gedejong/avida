@@ -1676,23 +1676,23 @@ void cPhenotype::IncAttackedPreyFTData(int target_ft) {
 }
 
 void cPhenotype::ReduceEnergy(const double cost) {
-  SetEnergy(m_core.energy_store - cost);
+  avd_pheno_reduce_energy(&m_core, cost, (double)m_world->GetConfig().ENERGY_CAP.Get());
 }
 
 void cPhenotype::SetEnergy(const double value) {
-  m_core.energy_store = max(0.0, min(value, (double)m_world->GetConfig().ENERGY_CAP.Get()));
+  avd_pheno_set_energy(&m_core, value, (double)m_world->GetConfig().ENERGY_CAP.Get());
 }
 
 void cPhenotype::DoubleEnergyUsage() {
-  m_core.execution_ratio *= 2.0;
+  avd_pheno_double_energy_usage(&m_core);
 }
 
 void cPhenotype::HalveEnergyUsage() {
-  m_core.execution_ratio *= 0.5;
+  avd_pheno_halve_energy_usage(&m_core);
 }
 
 void cPhenotype::DefaultEnergyUsage() {
-  m_core.execution_ratio = 1.0;
+  avd_pheno_default_energy_usage(&m_core);
 }
 
 void cPhenotype::DivideFailed() {
@@ -1704,28 +1704,26 @@ void cPhenotype::DivideFailed() {
  Credit organism with energy reward, but only update energy store if APPLY_ENERGY_METHOD = "on task completion" (1)
  */
 void cPhenotype::RefreshEnergy() {
-  if(m_core.cur_energy_bonus > 0) {
-    if(m_world->GetConfig().APPLY_ENERGY_METHOD.Get() == 0 || // on divide
-       m_world->GetConfig().APPLY_ENERGY_METHOD.Get() == 2) {  // on sleep
-      energy_tobe_applied += m_core.cur_energy_bonus;
-    } else if(m_world->GetConfig().APPLY_ENERGY_METHOD.Get() == 1) {
-      SetEnergy(m_core.energy_store + m_core.cur_energy_bonus);
-      m_world->GetStats().SumEnergyTestamentAcceptedByOrganisms().Add(energy_testament);
-      energy_testament = 0.0;
-    } else {
-      cerr<< "Unknown APPLY_ENERGY_METHOD value " << m_world->GetConfig().APPLY_ENERGY_METHOD.Get();
-      exit(-1);
-    }
-    m_core.cur_energy_bonus = 0;
+  int result = avd_pheno_refresh_energy(
+    &m_core, &energy_tobe_applied,
+    m_world->GetConfig().APPLY_ENERGY_METHOD.Get(),
+    (double)m_world->GetConfig().ENERGY_CAP.Get());
+  if (result == 2) {
+    // method 1: applied immediately — update stats
+    m_world->GetStats().SumEnergyTestamentAcceptedByOrganisms().Add(energy_testament);
+    energy_testament = 0.0;
+  } else if (result == -1) {
+    cerr << "Unknown APPLY_ENERGY_METHOD value " << m_world->GetConfig().APPLY_ENERGY_METHOD.Get();
+    exit(-1);
   }
 }
 
 void cPhenotype::ApplyToEnergyStore() {
-  SetEnergy(m_core.energy_store + energy_tobe_applied);
-  m_world->GetStats().SumEnergyTestamentAcceptedByOrganisms().Add(energy_testament);
-  energy_testament = 0.0;
-  energy_tobe_applied = 0.0;
-  energy_testament = 0.0;
+  double saved_testament = energy_testament;
+  avd_pheno_apply_to_energy_store(
+    &m_core, &energy_tobe_applied, &energy_testament,
+    (double)m_world->GetConfig().ENERGY_CAP.Get());
+  m_world->GetStats().SumEnergyTestamentAcceptedByOrganisms().Add(saved_testament);
 }
 
 void cPhenotype::EnergyTestament(const double value) {
@@ -1736,30 +1734,19 @@ void cPhenotype::EnergyTestament(const double value) {
 
 
 void cPhenotype::ApplyDonatedEnergy() {
-  double energy_cap = m_world->GetConfig().ENERGY_CAP.Get();
-  
-  if((m_core.energy_store + energy_received_buffer) >= energy_cap) {
-    IncreaseEnergyApplied(energy_cap - m_core.energy_store);
-    SetEnergy(m_core.energy_store + (energy_cap - energy_received_buffer));
-  } else {
-    IncreaseEnergyApplied(energy_received_buffer);
-    SetEnergy(m_core.energy_store + energy_received_buffer);
-  }
-  
-  IncreaseNumEnergyApplications();
-  SetHasUsedDonatedEnergy();
-  
-  energy_received_buffer = 0.0;
-  
+  avd_pheno_apply_donated_energy(
+    &m_core, &m_flags, &energy_received_buffer,
+    &total_energy_applied, &num_energy_applications,
+    (double)m_world->GetConfig().ENERGY_CAP.Get());
 } //End AppplyDonatedEnergy()
 
 
 void cPhenotype::ReceiveDonatedEnergy(const double donation) {
-  assert(donation >= 0.0);  
-  energy_received_buffer += donation;
-  IncreaseEnergyReceived(donation);
-  SetIsEnergyReceiver();
-  IncreaseNumEnergyReceptions();
+  assert(donation >= 0.0);
+  avd_pheno_receive_donated_energy(
+    &m_flags, &energy_received_buffer,
+    &total_energy_received, &num_energy_receptions,
+    donation);
 } //End ReceiveDonatedEnergy()
 
 
@@ -2084,35 +2071,26 @@ int cPhenotype::GetDiscreteEnergyLevel() const {
   double max_energy = m_world->GetConfig().ENERGY_CAP.Get();
   double high_pct = m_world->GetConfig().ENERGY_THRESH_HIGH.Get();
   double low_pct = m_world->GetConfig().ENERGY_THRESH_LOW.Get();
-	
+
   assert(max_energy >= 0);
   assert(high_pct <= 1);
   assert(high_pct >= 0);
   assert(low_pct <= 1);
   assert(low_pct >= 0);
   assert(low_pct <= high_pct);
-	
-  if (m_core.energy_store < (low_pct * max_energy)) {
-    return ENERGY_LEVEL_LOW;
-  } else if ( (m_core.energy_store >= (low_pct * max_energy)) && (m_core.energy_store <= (high_pct * max_energy)) ) {
-    return ENERGY_LEVEL_MEDIUM;
-  } else if (m_core.energy_store > (high_pct * max_energy)) {
-    return ENERGY_LEVEL_HIGH;
-  } else {
-    return -1;
-  }			 
-	
+
+  return avd_pheno_get_discrete_energy_level(m_core.energy_store, max_energy, high_pct, low_pct);
 } //End GetDiscreteEnergyLevel()
 
 
 double cPhenotype::ConvertEnergyToMerit(double energy) const
 {
   assert(m_world->GetConfig().ENERGY_ENABLED.Get() == 1);
-  
-	double FIX_METABOLIC_RATE = m_world->GetConfig().FIX_METABOLIC_RATE.Get();
-	if (FIX_METABOLIC_RATE > 0.0) return 100 * FIX_METABOLIC_RATE;
-  
-  return 100 * energy / m_world->GetConfig().NUM_CYCLES_EXC_BEFORE_0_ENERGY.Get();
+
+  return avd_pheno_convert_energy_to_merit(
+    energy,
+    m_world->GetConfig().FIX_METABOLIC_RATE.Get(),
+    m_world->GetConfig().NUM_CYCLES_EXC_BEFORE_0_ENERGY.Get());
 }
 
 
