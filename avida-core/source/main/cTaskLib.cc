@@ -3187,26 +3187,18 @@ double cTaskLib::Task_MoveFT(cTaskContext& ctx) const
 
 double cTaskLib::Task_Exploded(cTaskContext& ctx) const
 {
-  bool exploded = ctx.GetOrganism()->GetPhenotype().GetKaboomExecuted();
-  double reward = 0.0;
-  // If the organism has executed an explode instruction
-  if (exploded) {
-    reward = 1;
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_exploded(&snap);
 }
 
 /* Reward organisms for executing the explode command. Second reaction included in order to make two differently valued explode reactions*/
 
 double cTaskLib::Task_Exploded2(cTaskContext& ctx) const
 {
-  bool exploded = ctx.GetOrganism()->GetPhenotype().GetKaboomExecuted2();
-  double reward = 0.0;
-  // If the organism has executed an explode instruction
-  if (exploded) {
-    reward = 1;
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  return avd_task_ctx_exploded2(&snap);
 }
 
 /*Charges organism for setting the autoinducer flag.*/
@@ -3472,13 +3464,8 @@ void cTaskLib::Load_OpinionIs(const cString& name, const cString& argstr, cEnvRe
 //! This task is complete if this organism's current opinion is set to a configured value.
 double cTaskLib::Task_OpinionIs(cTaskContext& ctx) const
 {
-  cOrganism* org = ctx.GetOrganism();
-  const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
-  int opinion = args.GetInt(0);
-  
-  if (org->HasOpinion()) {
-    return org->GetOpinion().first == opinion;
-  } else {
-    return 0.0;
-  }
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_opinion_is(&snap);
 }

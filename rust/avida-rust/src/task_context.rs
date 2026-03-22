@@ -233,6 +233,26 @@ pub unsafe extern "C" fn avd_task_ctx_match_number(ctx: *const TaskContextSnapsh
     task_match_number(snap)
 }
 
+/// Evaluate Task_OpinionIs: returns 1.0 if organism has opinion matching task_arg_int[0].
+fn task_opinion_is(snap: &TaskContextSnapshot) -> f64 {
+    if snap.has_opinion != 0 && snap.opinion_value == snap.task_arg_int[0] {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// FFI wrapper for Task_OpinionIs.
+///
+/// # Safety
+/// `ctx` must point to a valid, initialized `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_opinion_is(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees `ctx` is a valid pointer to an initialized snapshot.
+    let snap = unsafe { &*ctx };
+    task_opinion_is(snap)
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
