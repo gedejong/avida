@@ -1024,6 +1024,38 @@ pub extern "C" fn avd_pheno_copy_double_array(
     dst_slice.copy_from_slice(src_slice);
 }
 
+/// Fill every element of an `int` array with `value`.
+///
+/// # Safety
+/// `data` must point to at least `len` contiguous `c_int` values.
+/// `len` must be >= 0.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_fill_int_array(data: *mut c_int, len: c_int, value: c_int) {
+    if data.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees `data` points to `len` valid `c_int` values.
+    let slice = unsafe { std::slice::from_raw_parts_mut(data, len as usize) };
+    slice.fill(value);
+}
+
+/// Fill every element of a `double` array with `value`.
+///
+/// # Safety
+/// `data` must point to at least `len` contiguous `c_double` values.
+/// `len` must be >= 0.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[no_mangle]
+pub extern "C" fn avd_pheno_fill_double_array(data: *mut c_double, len: c_int, value: c_double) {
+    if data.is_null() || len <= 0 {
+        return;
+    }
+    // SAFETY: Caller guarantees `data` points to `len` valid `c_double` values.
+    let slice = unsafe { std::slice::from_raw_parts_mut(data, len as usize) };
+    slice.fill(value);
+}
+
 /// Bulk snapshot: copy cur task arrays to their last counterparts.
 ///
 /// Handles the 6 task-count array pairs migrated in Slice 5 Phase 1:
@@ -1897,5 +1929,58 @@ mod tests {
         let mut data: [c_int; 3] = [1, 2, 3];
         avd_pheno_reset_int_array(data.as_mut_ptr(), -1);
         assert_eq!(data, [1, 2, 3]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Fill-array tests (Slice 5 continuation)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn fill_int_array_basic() {
+        let mut data: [c_int; 4] = [0, 0, 0, 0];
+        avd_pheno_fill_int_array(data.as_mut_ptr(), 4, -1);
+        assert_eq!(data, [-1, -1, -1, -1]);
+    }
+
+    #[test]
+    fn fill_int_array_positive_value() {
+        let mut data: [c_int; 3] = [0, 0, 0];
+        avd_pheno_fill_int_array(data.as_mut_ptr(), 3, 42);
+        assert_eq!(data, [42, 42, 42]);
+    }
+
+    #[test]
+    fn fill_int_array_null_is_noop() {
+        avd_pheno_fill_int_array(std::ptr::null_mut(), 5, -1);
+    }
+
+    #[test]
+    fn fill_int_array_zero_len_is_noop() {
+        let mut data: [c_int; 3] = [1, 2, 3];
+        avd_pheno_fill_int_array(data.as_mut_ptr(), 0, -1);
+        assert_eq!(data, [1, 2, 3]);
+    }
+
+    #[test]
+    fn fill_double_array_basic() {
+        let mut data: [c_double; 3] = [0.0, 0.0, 0.0];
+        avd_pheno_fill_double_array(data.as_mut_ptr(), 3, -1.0);
+        for &v in &data {
+            assert!((v - (-1.0)).abs() < f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn fill_double_array_null_is_noop() {
+        avd_pheno_fill_double_array(std::ptr::null_mut(), 3, -1.0);
+    }
+
+    #[test]
+    fn fill_double_array_zero_len_is_noop() {
+        let mut data: [c_double; 3] = [1.0, 2.0, 3.0];
+        avd_pheno_fill_double_array(data.as_mut_ptr(), 0, -1.0);
+        for (i, &v) in data.iter().enumerate() {
+            assert!((v - (i as f64 + 1.0)).abs() < f64::EPSILON);
+        }
     }
 }

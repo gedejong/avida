@@ -253,57 +253,55 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
   avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
   avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
-  cur_rbins_total.SetAll(0);  // total resources collected in lifetime
+  avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());  // total resources collected in lifetime
   // parent's resources have already been halved or reset in DivideReset;
   // offspring gets that value (half or 0) too.
-  cur_rbins_avail.SetAll(0);
+  avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
   if (m_world->GetConfig().SPLIT_ON_DIVIDE.Get()) {
-    for (int i = 0; i < cur_rbins_avail.GetSize(); i++) cur_rbins_avail[i] = parent_phenotype.cur_rbins_avail[i];
+    avd_pheno_copy_double_array(cur_rbins_avail.GetData(), parent_phenotype.cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
   }
   if (m_world->GetConfig().RESOURCE_GIVEN_AT_BIRTH.Get() > 0.0) {
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
     cur_rbins_avail[resource] += m_world->GetConfig().RESOURCE_GIVEN_AT_BIRTH.Get();
   }
-  
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  cur_sense_count.SetAll(0);
-  cur_task_time.SetAll(0.0);  // Added for time tracking; WRE 03-18-07
-  for (int j = 0; j < sensed_resources.GetSize(); j++) {
-    sensed_resources[j] =  parent_phenotype.sensed_resources[j];
-  }
-  cur_trial_fitnesses.Resize(0); 
-  cur_trial_bonuses.Resize(0); 
-  cur_trial_times_used.Resize(0); 
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_time.GetData(), cur_task_time.GetSize());  // Added for time tracking; WRE 03-18-07
+  avd_pheno_copy_double_array(sensed_resources.GetData(), parent_phenotype.sensed_resources.GetData(), sensed_resources.GetSize());
+  cur_trial_fitnesses.Resize(0);
+  cur_trial_bonuses.Resize(0);
+  cur_trial_times_used.Resize(0);
   m_lifetime.trial_time_used = 0;
   m_lifetime.trial_cpu_cycles_used = 0;
-  m_tolerance_immigrants.Clear();        
-  m_tolerance_offspring_own.Clear();     
-  m_tolerance_offspring_others.Clear();  
-  m_intolerances.SetAll(make_pair(-1, -1));  
+  m_tolerance_immigrants.Clear();
+  m_tolerance_offspring_own.Clear();
+  m_tolerance_offspring_others.Clear();
+  m_intolerances.SetAll(make_pair(-1, -1));
   m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   m_lifetime.mating_type = MATING_TYPE_JUVENILE; //@CHC
   m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
-  
+
   m_lifetime.cur_mating_display_a = 0;
   m_lifetime.cur_mating_display_b = 0;
   m_lifetime.last_mating_display_a = 0;
   m_lifetime.last_mating_display_b = 0;
-  
+
   // Copy last values from parent
   m_lifetime.last_merit_base          = parent_phenotype.m_lifetime.last_merit_base;
   m_lifetime.last_bonus               = parent_phenotype.m_lifetime.last_bonus;
@@ -317,23 +315,23 @@ void cPhenotype::SetupOffspring(const cPhenotype& parent_phenotype, const Instru
   avd_pheno_copy_double_array(last_task_quality.GetData(), parent_phenotype.last_task_quality.GetData(), last_task_quality.GetSize());
   avd_pheno_copy_double_array(last_task_value.GetData(), parent_phenotype.last_task_value.GetData(), last_task_value.GetSize());
   avd_pheno_copy_double_array(last_internal_task_quality.GetData(), parent_phenotype.last_internal_task_quality.GetData(), last_internal_task_quality.GetSize());
-  last_rbins_total          = parent_phenotype.last_rbins_total;
-  last_rbins_avail          = parent_phenotype.last_rbins_avail;
-  last_collect_spec_counts  = parent_phenotype.last_collect_spec_counts;
-  last_reaction_count       = parent_phenotype.last_reaction_count;
-  last_reaction_add_reward  = parent_phenotype.last_reaction_add_reward;
-  last_inst_count           = parent_phenotype.last_inst_count;
-  last_from_sensor_count    = parent_phenotype.last_from_sensor_count;
+  avd_pheno_copy_double_array(last_rbins_total.GetData(), parent_phenotype.last_rbins_total.GetData(), last_rbins_total.GetSize());
+  avd_pheno_copy_double_array(last_rbins_avail.GetData(), parent_phenotype.last_rbins_avail.GetData(), last_rbins_avail.GetSize());
+  avd_pheno_copy_int_array(last_collect_spec_counts.GetData(), parent_phenotype.last_collect_spec_counts.GetData(), last_collect_spec_counts.GetSize());
+  avd_pheno_copy_int_array(last_reaction_count.GetData(), parent_phenotype.last_reaction_count.GetData(), last_reaction_count.GetSize());
+  avd_pheno_copy_double_array(last_reaction_add_reward.GetData(), parent_phenotype.last_reaction_add_reward.GetData(), last_reaction_add_reward.GetSize());
+  avd_pheno_copy_int_array(last_inst_count.GetData(), parent_phenotype.last_inst_count.GetData(), last_inst_count.GetSize());
+  avd_pheno_copy_int_array(last_from_sensor_count.GetData(), parent_phenotype.last_from_sensor_count.GetData(), last_from_sensor_count.GetSize());
   last_group_attack_count    = parent_phenotype.last_group_attack_count;
   last_top_pred_group_attack_count    = parent_phenotype.last_top_pred_group_attack_count;
-  last_killed_targets       = parent_phenotype.last_killed_targets;
+  avd_pheno_copy_int_array(last_killed_targets.GetData(), parent_phenotype.last_killed_targets.GetData(), last_killed_targets.GetSize());
   last_attacks              = parent_phenotype.last_attacks;
   last_kills                = parent_phenotype.last_kills;
-  last_sense_count          = parent_phenotype.last_sense_count;
+  avd_pheno_copy_int_array(last_sense_count.GetData(), parent_phenotype.last_sense_count.GetData(), last_sense_count.GetSize());
   m_lifetime.last_fitness              = CalcFitness(m_lifetime.last_merit_base, m_lifetime.last_bonus, m_core.gestation_time, m_lifetime.last_cpu_cycles_used);
   m_lifetime.last_child_germline_propensity = parent_phenotype.m_lifetime.last_child_germline_propensity;   // chance of child being a germline cell; @JEB
 
-  last_from_message_count    = parent_phenotype.last_from_message_count;
+  avd_pheno_copy_int_array(last_from_message_count.GetData(), parent_phenotype.last_from_message_count.GetData(), last_from_message_count.GetSize());
 
   // Setup other miscellaneous values...
   m_lifetime.num_divides     = 0;
@@ -483,81 +481,81 @@ void cPhenotype::SetupInject(const InstructionSequence& _genome)
   m_core.cur_energy_bonus = 0.0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_para_tasks.SetAll(0);
-  cur_host_tasks.SetAll(0);
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_task_quality.SetAll(0);
-  cur_task_value.SetAll(0);
-  cur_internal_task_quality.SetAll(0);
-  cur_rbins_total.SetAll(0);
-  if (m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get() > 0.0) {   
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
+  avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
+  avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  if (m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get() > 0.0) {
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
     cur_rbins_avail[resource] = m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get();
   }
-  else cur_rbins_avail.SetAll(0);
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+  else avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  sensed_resources.SetAll(0);
-  cur_sense_count.SetAll(0);
-  cur_task_time.SetAll(0.0);
+  avd_pheno_reset_double_array(sensed_resources.GetData(), sensed_resources.GetSize());
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_time.GetData(), cur_task_time.GetSize());
   cur_trial_fitnesses.Resize(0);
-  cur_trial_bonuses.Resize(0); 
-  cur_trial_times_used.Resize(0); 
+  cur_trial_bonuses.Resize(0);
+  cur_trial_times_used.Resize(0);
   m_lifetime.trial_time_used = 0;
   m_lifetime.trial_cpu_cycles_used = 0;
-  m_tolerance_immigrants.Clear();        
-  m_tolerance_offspring_own.Clear();     
-  m_tolerance_offspring_others.Clear();  
-  m_intolerances.SetAll(make_pair(-1, -1));  
+  m_tolerance_immigrants.Clear();
+  m_tolerance_offspring_own.Clear();
+  m_tolerance_offspring_others.Clear();
+  m_intolerances.SetAll(make_pair(-1, -1));
   m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   m_lifetime.mating_type = MATING_TYPE_JUVENILE; // @CHC
   m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
-  
+
   // New organism has no parent and so cannot use its last values; initialize as needed
   m_lifetime.last_merit_base= m_core.genome_length;
   m_lifetime.last_bonus     = 1;
   m_lifetime.last_cpu_cycles_used = 0;
   m_lifetime.last_num_errors = 0;
   m_lifetime.last_num_donates = 0;
-  last_task_count.SetAll(0);
-  last_host_tasks.SetAll(0);
-  last_para_tasks.SetAll(0);
-  last_internal_task_count.SetAll(0);
-  last_task_quality.SetAll(0);
-  last_task_value.SetAll(0);
-  last_internal_task_quality.SetAll(0);
-  last_rbins_total.SetAll(0);
-  last_rbins_avail.SetAll(0);
-  last_collect_spec_counts.SetAll(0);
-  last_reaction_count.SetAll(0);
-  last_reaction_add_reward.SetAll(0);
-  last_inst_count.SetAll(0);
-  last_from_sensor_count.SetAll(0);
-  last_from_message_count.SetAll(0);
+  avd_pheno_reset_int_array(last_task_count.GetData(), last_task_count.GetSize());
+  avd_pheno_reset_int_array(last_host_tasks.GetData(), last_host_tasks.GetSize());
+  avd_pheno_reset_int_array(last_para_tasks.GetData(), last_para_tasks.GetSize());
+  avd_pheno_reset_int_array(last_internal_task_count.GetData(), last_internal_task_count.GetSize());
+  avd_pheno_reset_double_array(last_task_quality.GetData(), last_task_quality.GetSize());
+  avd_pheno_reset_double_array(last_task_value.GetData(), last_task_value.GetSize());
+  avd_pheno_reset_double_array(last_internal_task_quality.GetData(), last_internal_task_quality.GetSize());
+  avd_pheno_reset_double_array(last_rbins_total.GetData(), last_rbins_total.GetSize());
+  avd_pheno_reset_double_array(last_rbins_avail.GetData(), last_rbins_avail.GetSize());
+  avd_pheno_reset_int_array(last_collect_spec_counts.GetData(), last_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(last_reaction_count.GetData(), last_reaction_count.GetSize());
+  avd_pheno_reset_double_array(last_reaction_add_reward.GetData(), last_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(last_inst_count.GetData(), last_inst_count.GetSize());
+  avd_pheno_reset_int_array(last_from_sensor_count.GetData(), last_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(last_from_message_count.GetData(), last_from_message_count.GetSize());
   for (int r = 0; r < last_group_attack_count.GetSize(); r++) {
     last_group_attack_count[r].SetAll(0);
     last_top_pred_group_attack_count[r].SetAll(0);
   }
-  last_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(last_killed_targets.GetData(), last_killed_targets.GetSize());
   last_attacks = 0;
   last_kills = 0;
-  last_sense_count.SetAll(0);
+  avd_pheno_reset_int_array(last_sense_count.GetData(), last_sense_count.GetSize());
   m_lifetime.last_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   // Setup other miscellaneous values...
@@ -664,21 +662,21 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
     last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
     last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
   );
-  last_para_tasks           = cur_para_tasks;
-  last_rbins_total          = cur_rbins_total;
-  last_rbins_avail          = cur_rbins_avail;
-  last_collect_spec_counts  = cur_collect_spec_counts;
-  last_reaction_count       = cur_reaction_count;
-  last_reaction_add_reward  = cur_reaction_add_reward;
-  last_inst_count           = cur_inst_count;
-  last_from_sensor_count    = cur_from_sensor_count;
-  last_from_message_count    = cur_from_message_count;
+  avd_pheno_copy_int_array(last_para_tasks.GetData(), cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_copy_double_array(last_rbins_total.GetData(), cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  avd_pheno_copy_double_array(last_rbins_avail.GetData(), cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_copy_int_array(last_collect_spec_counts.GetData(), cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_copy_int_array(last_reaction_count.GetData(), cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_copy_double_array(last_reaction_add_reward.GetData(), cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_copy_int_array(last_inst_count.GetData(), cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_copy_int_array(last_from_sensor_count.GetData(), cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_copy_int_array(last_from_message_count.GetData(), cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   last_group_attack_count   = cur_group_attack_count;
-  last_killed_targets       = cur_killed_targets;
+  avd_pheno_copy_int_array(last_killed_targets.GetData(), cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   last_attacks              = cur_attacks;
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
-  last_sense_count          = cur_sense_count;
+  avd_pheno_copy_int_array(last_sense_count.GetData(), cur_sense_count.GetData(), cur_sense_count.GetSize());
   m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
 
   m_lifetime.last_mating_display_a = m_lifetime.cur_mating_display_a; //@CHC
@@ -699,7 +697,7 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
-    last_para_tasks = cur_para_tasks;
+    avd_pheno_copy_int_array(last_para_tasks.GetData(), cur_para_tasks.GetData(), cur_para_tasks.GetSize());
     avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
   }
   avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
@@ -711,32 +709,32 @@ void cPhenotype::DivideReset(const InstructionSequence& _genome)
     // resources available are split in half -- the offspring gets the other half
     for (int i = 0; i < cur_rbins_avail.GetSize(); i++) {cur_rbins_avail[i] /= 2.0;}
   } else if (m_world->GetConfig().DIVIDE_METHOD.Get() != 0) {
-    cur_rbins_avail.SetAll(0);
-    cur_rbins_total.SetAll(0);  // total resources collected in lifetime
-    
+    avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+    avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());  // total resources collected in lifetime
+
     if (m_world->GetConfig().RESOURCE_GIVEN_AT_BIRTH.Get() > 0.0) {
       const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
       cur_rbins_avail[resource] += m_world->GetConfig().RESOURCE_GIVEN_AT_BIRTH.Get();
     }
   }
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  cur_sense_count.SetAll(0);
-  cur_task_time.SetAll(0.0);
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_time.GetData(), cur_task_time.GetSize());
   m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   
   // Setup other miscellaneous values...
@@ -899,21 +897,21 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
     last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
     last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
   );
-  last_para_tasks           = cur_para_tasks;
-  last_rbins_total          = cur_rbins_total;
-  last_rbins_avail          = cur_rbins_avail;
-  last_collect_spec_counts  = cur_collect_spec_counts;
-  last_reaction_count       = cur_reaction_count;
-  last_reaction_add_reward  = cur_reaction_add_reward;
-  last_inst_count           = cur_inst_count;
-  last_from_sensor_count    = cur_from_sensor_count;
-  last_from_message_count    = cur_from_message_count;
+  avd_pheno_copy_int_array(last_para_tasks.GetData(), cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_copy_double_array(last_rbins_total.GetData(), cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  avd_pheno_copy_double_array(last_rbins_avail.GetData(), cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_copy_int_array(last_collect_spec_counts.GetData(), cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_copy_int_array(last_reaction_count.GetData(), cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_copy_double_array(last_reaction_add_reward.GetData(), cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_copy_int_array(last_inst_count.GetData(), cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_copy_int_array(last_from_sensor_count.GetData(), cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_copy_int_array(last_from_message_count.GetData(), cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   last_group_attack_count   = cur_group_attack_count;
-  last_killed_targets       = cur_killed_targets;
+  avd_pheno_copy_int_array(last_killed_targets.GetData(), cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   last_attacks              = cur_attacks;
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
-  last_sense_count          = cur_sense_count;
+  avd_pheno_copy_int_array(last_sense_count.GetData(), cur_sense_count.GetData(), cur_sense_count.GetSize());
   m_lifetime.last_child_germline_propensity = m_lifetime.cur_child_germline_propensity;
 
   // Reset cur values.
@@ -926,7 +924,7 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   // @LZ: figure out when and where to reset cur_para_tasks, depending on the divide method, and
   //      resonable assumptions
   if (avd_cpop_is_divide_method_split(m_world->GetConfig().DIVIDE_METHOD.Get())) {
-    last_para_tasks = cur_para_tasks;
+    avd_pheno_copy_int_array(last_para_tasks.GetData(), cur_para_tasks.GetData(), cur_para_tasks.GetSize());
     avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
   }
   avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
@@ -934,31 +932,31 @@ void cPhenotype::TestDivideReset(const InstructionSequence& _genome)
   avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
   avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
   avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
-  cur_rbins_total.SetAll(0);  // total resources collected in lifetime
-  if (m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get() > 0.0) {   
+  avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());  // total resources collected in lifetime
+  if (m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get() > 0.0) {
     const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
     cur_rbins_avail[resource] = m_world->GetConfig().RESOURCE_GIVEN_ON_INJECT.Get();
   }
-  else cur_rbins_avail.SetAll(0);
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+  else avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  cur_sense_count.SetAll(0);
-  cur_task_time.SetAll(0.0);
-  sensed_resources.SetAll(-1.0);
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_time.GetData(), cur_task_time.GetSize());
+  avd_pheno_fill_double_array(sensed_resources.GetData(), sensed_resources.GetSize(), -1.0);
   cur_trial_fitnesses.Resize(0); 
   cur_trial_bonuses.Resize(0); 
   cur_trial_times_used.Resize(0); 
@@ -1104,71 +1102,69 @@ void cPhenotype::SetupClone(const cPhenotype& clone_phenotype)
   m_lifetime.cpu_cycles_used = 0;
   m_lifetime.cur_num_errors  = 0;
   m_lifetime.cur_num_donates  = 0;
-  cur_task_count.SetAll(0);
-  cur_host_tasks.SetAll(0);
-  cur_para_tasks.SetAll(0);
-  cur_internal_task_count.SetAll(0);
-  eff_task_count.SetAll(0);
-  cur_rbins_total.SetAll(0);
-  cur_rbins_avail.SetAll(0);
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+  avd_pheno_reset_int_array(cur_task_count.GetData(), cur_task_count.GetSize());
+  avd_pheno_reset_int_array(cur_host_tasks.GetData(), cur_host_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_reset_int_array(cur_internal_task_count.GetData(), cur_internal_task_count.GetSize());
+  avd_pheno_reset_int_array(eff_task_count.GetData(), eff_task_count.GetSize());
+  avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  cur_sense_count.SetAll(0);
-  cur_task_time.SetAll(0.0);
-  for (int j = 0; j < sensed_resources.GetSize(); j++) {
-    sensed_resources[j] = clone_phenotype.sensed_resources[j];
-  }
-  cur_trial_fitnesses.Resize(0); 
-  cur_trial_bonuses.Resize(0); 
-  cur_trial_times_used.Resize(0); 
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
+  avd_pheno_reset_double_array(cur_task_time.GetData(), cur_task_time.GetSize());
+  avd_pheno_copy_double_array(sensed_resources.GetData(), clone_phenotype.sensed_resources.GetData(), sensed_resources.GetSize());
+  cur_trial_fitnesses.Resize(0);
+  cur_trial_bonuses.Resize(0);
+  cur_trial_times_used.Resize(0);
   m_lifetime.trial_time_used = 0;
   m_lifetime.trial_cpu_cycles_used = 0;
-  m_tolerance_immigrants.Clear();        
-  m_tolerance_offspring_own.Clear();     
-  m_tolerance_offspring_others.Clear();  
-  m_intolerances.SetAll(make_pair(-1, -1));  
+  m_tolerance_immigrants.Clear();
+  m_tolerance_offspring_own.Clear();
+  m_tolerance_offspring_others.Clear();
+  m_intolerances.SetAll(make_pair(-1, -1));
   m_lifetime.cur_child_germline_propensity = m_world->GetConfig().DEMES_DEFAULT_GERMLINE_PROPENSITY.Get();
   m_lifetime.mating_type = MATING_TYPE_JUVENILE; // @CHC
   m_lifetime.mate_preference = MATE_PREFERENCE_RANDOM; //@CHC
-  
+
   // Copy last values from parent
   m_lifetime.last_merit_base         = clone_phenotype.m_lifetime.last_merit_base;
   m_lifetime.last_bonus              = clone_phenotype.m_lifetime.last_bonus;
   m_lifetime.last_cpu_cycles_used     = clone_phenotype.m_lifetime.last_cpu_cycles_used;
   m_lifetime.last_num_errors          = clone_phenotype.m_lifetime.last_num_errors;
   m_lifetime.last_num_donates         = clone_phenotype.m_lifetime.last_num_donates;
-  last_task_count          = clone_phenotype.last_task_count;
-  last_host_tasks          = clone_phenotype.last_host_tasks;
-  last_para_tasks          = clone_phenotype.last_para_tasks;
-  last_internal_task_count = clone_phenotype.last_internal_task_count;
-  last_rbins_total         = clone_phenotype.last_rbins_total;
-  last_rbins_avail         = clone_phenotype.last_rbins_avail;
-  last_collect_spec_counts = clone_phenotype.last_collect_spec_counts;
-  last_reaction_count      = clone_phenotype.last_reaction_count;
-  last_reaction_add_reward = clone_phenotype.last_reaction_add_reward;
-  last_inst_count          = clone_phenotype.last_inst_count;
-  last_from_sensor_count   = clone_phenotype.last_from_sensor_count;
-  last_from_message_count   = clone_phenotype.last_from_message_count;
+  avd_pheno_copy_int_array(last_task_count.GetData(), clone_phenotype.last_task_count.GetData(), last_task_count.GetSize());
+  avd_pheno_copy_int_array(last_host_tasks.GetData(), clone_phenotype.last_host_tasks.GetData(), last_host_tasks.GetSize());
+  avd_pheno_copy_int_array(last_para_tasks.GetData(), clone_phenotype.last_para_tasks.GetData(), last_para_tasks.GetSize());
+  avd_pheno_copy_int_array(last_internal_task_count.GetData(), clone_phenotype.last_internal_task_count.GetData(), last_internal_task_count.GetSize());
+  avd_pheno_copy_double_array(last_rbins_total.GetData(), clone_phenotype.last_rbins_total.GetData(), last_rbins_total.GetSize());
+  avd_pheno_copy_double_array(last_rbins_avail.GetData(), clone_phenotype.last_rbins_avail.GetData(), last_rbins_avail.GetSize());
+  avd_pheno_copy_int_array(last_collect_spec_counts.GetData(), clone_phenotype.last_collect_spec_counts.GetData(), last_collect_spec_counts.GetSize());
+  avd_pheno_copy_int_array(last_reaction_count.GetData(), clone_phenotype.last_reaction_count.GetData(), last_reaction_count.GetSize());
+  avd_pheno_copy_double_array(last_reaction_add_reward.GetData(), clone_phenotype.last_reaction_add_reward.GetData(), last_reaction_add_reward.GetSize());
+  avd_pheno_copy_int_array(last_inst_count.GetData(), clone_phenotype.last_inst_count.GetData(), last_inst_count.GetSize());
+  avd_pheno_copy_int_array(last_from_sensor_count.GetData(), clone_phenotype.last_from_sensor_count.GetData(), last_from_sensor_count.GetSize());
+  avd_pheno_copy_int_array(last_from_message_count.GetData(), clone_phenotype.last_from_message_count.GetData(), last_from_message_count.GetSize());
   last_group_attack_count   = clone_phenotype.last_group_attack_count;
   last_top_pred_group_attack_count   = clone_phenotype.last_top_pred_group_attack_count;
-  last_killed_targets      = clone_phenotype.last_killed_targets;
+  avd_pheno_copy_int_array(last_killed_targets.GetData(), clone_phenotype.last_killed_targets.GetData(), last_killed_targets.GetSize());
   last_attacks             = clone_phenotype.last_attacks;
   last_kills                = clone_phenotype.last_kills;
-  last_sense_count         = clone_phenotype.last_sense_count;
+  avd_pheno_copy_int_array(last_sense_count.GetData(), clone_phenotype.last_sense_count.GetData(), last_sense_count.GetSize());
   m_lifetime.last_fitness             = CalcFitness(m_lifetime.last_merit_base, m_lifetime.last_bonus, m_core.gestation_time, m_lifetime.last_cpu_cycles_used);
   m_lifetime.last_child_germline_propensity = clone_phenotype.m_lifetime.last_child_germline_propensity;
 
@@ -1270,7 +1266,7 @@ bool cPhenotype::TestOutput(cAvidaContext& ctx, cTaskContext& taskctx,
   // If nothing was found, stop here.
   if (found == false) {
     result.Invalidate();
-    res_change.SetAll(0.0);
+    avd_pheno_reset_double_array(res_change.GetData(), res_change.GetSize());
     return false;  // Nothing happened.
   }
   
@@ -1666,7 +1662,7 @@ void cPhenotype::IncAttackedPreyFTData(int target_ft) {
   AvidaArray<int> target_list = m_world->GetEnvironment().GetAttackPreyFTList();
   if (!cur_killed_targets.GetSize()) {
     cur_killed_targets.Resize(target_list.GetSize());
-    cur_killed_targets.SetAll(0);
+    avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   }
   if (target_ft < -3) target_ft = -3;
   int this_index = target_ft;
@@ -1852,21 +1848,21 @@ void cPhenotype::NewTrial()
     last_task_value.GetData(), cur_task_value.GetData(), cur_task_value.GetSize(),
     last_internal_task_quality.GetData(), cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize()
   );
-  last_para_tasks           = cur_para_tasks;
-  last_rbins_total          = cur_rbins_total;
-  last_rbins_avail          = cur_rbins_avail;
-  last_collect_spec_counts  = cur_collect_spec_counts;
-  last_reaction_count       = cur_reaction_count;
-  last_reaction_add_reward  = cur_reaction_add_reward;
-  last_inst_count           = cur_inst_count;
-  last_from_sensor_count    = cur_from_sensor_count;
-  last_from_message_count    = cur_from_message_count;
+  avd_pheno_copy_int_array(last_para_tasks.GetData(), cur_para_tasks.GetData(), cur_para_tasks.GetSize());
+  avd_pheno_copy_double_array(last_rbins_total.GetData(), cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  avd_pheno_copy_double_array(last_rbins_avail.GetData(), cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_copy_int_array(last_collect_spec_counts.GetData(), cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_copy_int_array(last_reaction_count.GetData(), cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_copy_double_array(last_reaction_add_reward.GetData(), cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_copy_int_array(last_inst_count.GetData(), cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_copy_int_array(last_from_sensor_count.GetData(), cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_copy_int_array(last_from_message_count.GetData(), cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   last_group_attack_count   = cur_group_attack_count;
-  last_killed_targets       = cur_killed_targets;
+  avd_pheno_copy_int_array(last_killed_targets.GetData(), cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   last_attacks              = cur_attacks;
   last_kills                = cur_kills;
   last_top_pred_group_attack_count    = cur_top_pred_group_attack_count;
-  last_sense_count          = cur_sense_count;
+  avd_pheno_copy_int_array(last_sense_count.GetData(), cur_sense_count.GetData(), cur_sense_count.GetSize());
 
   // Reset cur values.
   m_core.cur_bonus       = m_world->GetConfig().DEFAULT_BONUS.Get();
@@ -1882,25 +1878,25 @@ void cPhenotype::NewTrial()
   avd_pheno_reset_double_array(cur_task_quality.GetData(), cur_task_quality.GetSize());
   avd_pheno_reset_double_array(cur_internal_task_quality.GetData(), cur_internal_task_quality.GetSize());
   avd_pheno_reset_double_array(cur_task_value.GetData(), cur_task_value.GetSize());
-  cur_rbins_total.SetAll(0);
-  cur_rbins_avail.SetAll(0);
-  cur_collect_spec_counts.SetAll(0);
-  cur_reaction_count.SetAll(0);
-  first_reaction_cycles.SetAll(-1);
-  first_reaction_execs.SetAll(-1);
-  cur_stolen_reaction_count.SetAll(0);
-  cur_reaction_add_reward.SetAll(0);
-  cur_inst_count.SetAll(0);
-  cur_from_sensor_count.SetAll(0);
-  cur_from_message_count.SetAll(0);
+  avd_pheno_reset_double_array(cur_rbins_total.GetData(), cur_rbins_total.GetSize());
+  avd_pheno_reset_double_array(cur_rbins_avail.GetData(), cur_rbins_avail.GetSize());
+  avd_pheno_reset_int_array(cur_collect_spec_counts.GetData(), cur_collect_spec_counts.GetSize());
+  avd_pheno_reset_int_array(cur_reaction_count.GetData(), cur_reaction_count.GetSize());
+  avd_pheno_fill_int_array(first_reaction_cycles.GetData(), first_reaction_cycles.GetSize(), -1);
+  avd_pheno_fill_int_array(first_reaction_execs.GetData(), first_reaction_execs.GetSize(), -1);
+  avd_pheno_reset_int_array(cur_stolen_reaction_count.GetData(), cur_stolen_reaction_count.GetSize());
+  avd_pheno_reset_double_array(cur_reaction_add_reward.GetData(), cur_reaction_add_reward.GetSize());
+  avd_pheno_reset_int_array(cur_inst_count.GetData(), cur_inst_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_sensor_count.GetData(), cur_from_sensor_count.GetSize());
+  avd_pheno_reset_int_array(cur_from_message_count.GetData(), cur_from_message_count.GetSize());
   for (int r = 0; r < cur_group_attack_count.GetSize(); r++) {
     cur_group_attack_count[r].SetAll(0);
     cur_top_pred_group_attack_count[r].SetAll(0);
   }
-  cur_killed_targets.SetAll(0);
+  avd_pheno_reset_int_array(cur_killed_targets.GetData(), cur_killed_targets.GetSize());
   cur_attacks = 0;
   cur_kills = 0;
-  cur_sense_count.SetAll(0);
+  avd_pheno_reset_int_array(cur_sense_count.GetData(), cur_sense_count.GetSize());
   //cur_trial_fitnesses.Resize(0); Don't throw out the trial fitnesses! @JEB
   m_lifetime.trial_time_used = 0;
   m_lifetime.trial_cpu_cycles_used = 0;

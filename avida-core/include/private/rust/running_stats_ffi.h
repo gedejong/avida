@@ -973,6 +973,8 @@ void avd_pheno_reset_int_array(int* data, int len);
 void avd_pheno_copy_int_array(int* dst, const int* src, int len);
 void avd_pheno_reset_double_array(double* data, int len);
 void avd_pheno_copy_double_array(double* dst, const double* src, int len);
+void avd_pheno_fill_int_array(int* data, int len, int value);
+void avd_pheno_fill_double_array(double* data, int len, double value);
 void avd_pheno_divide_snapshot_tasks(
     int* last_task_count, const int* cur_task_count, int task_count_len,
     int* last_host_tasks, const int* cur_host_tasks, int host_tasks_len,
