@@ -232,6 +232,7 @@ SET(MAIN_DIR ${PROJECT_SOURCE_DIR}/source/main)
 SET(MAIN_SOURCES
   ${MAIN_DIR}/cAvidaConfig.cc
   ${MAIN_DIR}/cBirthChamber.cc
+  ${MAIN_DIR}/cConfigSnapshot.cc
   ${MAIN_DIR}/cBirthDemeHandler.cc
   ${MAIN_DIR}/cBirthEntry.cc
   ${MAIN_DIR}/cBirthGenomeSizeHandler.cc

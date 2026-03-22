@@ -6,6 +6,107 @@ extern "C" {
 #endif
 
 typedef struct AvidaRunningStatsHandle AvidaRunningStatsHandle;
+
+/* ---------- ConfigSnapshot (Rust-owned, populated by C++) ---------- */
+
+typedef struct TaskLibConfig {
+    int world_x;
+    int world_y;
+    int use_avatars;
+    int match_already_produced;
+} TaskLibConfig;
+
+typedef struct PhenotypeConfig {
+    int base_merit_method;
+    int base_const_merit;
+    double default_bonus;
+    int divide_method;
+    int generation_inc_method;
+    int merit_bonus_effect;
+    int merit_default_bonus;
+    int fitness_method;
+    int fitness_valley;
+    int fitness_valley_start;
+    int fitness_valley_stop;
+    int energy_enabled;
+    double energy_cap;
+    int apply_energy_method;
+    double fix_metabolic_rate;
+    int inherit_exe_rate;
+    int inherit_merit;
+    int inherit_multithread;
+    double energy_given_at_birth;
+    double resource_given_at_birth;
+    double resource_given_on_inject;
+    double frac_energy_decay_at_org_birth;
+    double frac_parent_energy_given_to_org_at_birth;
+    double energy_thresh_low;
+    double energy_thresh_high;
+    double demes_default_germline_propensity;
+    int demes_orgs_start_in_germ;
+    int tolerance_variations;
+    int tolerance_window;
+    int max_tolerance;
+    int use_resource_bins;
+    int collect_specific_resource;
+    int split_on_divide;
+    double task_refractory_period;
+    int task_switch_penalty_type;
+    int learning_count;
+    int age_poly_tracking;
+} PhenotypeConfig;
+
+typedef struct BirthChamberConfig {
+    int birth_method;
+    int module_num;
+    double recombination_prob;
+    int cont_rec_regs;
+    int corespond_rec_regs;
+    int same_length_sex;
+    int two_fold_cost_sex;
+    int max_birth_wait_time;
+    int allow_mate_selection;
+    int mating_types;
+    int legacy_grid_local_selection;
+    int default_group;
+    int num_demes;
+} BirthChamberConfig;
+
+typedef struct OrganismConfig {
+    int death_method;
+    int age_limit;
+    int age_deviation;
+    int max_unique_task_count;
+    int require_single_reaction;
+    int required_task;
+    int required_reaction;
+    double required_bonus;
+    int required_resource;
+    double required_resource_level;
+    int use_form_groups;
+    int pred_prey_switch;
+    double sterilize_fatal;
+    double sterilize_detrimental;
+    double sterilize_neutral;
+    double sterilize_beneficial;
+    double sterilize_taskloss;
+    int sterilize_unstable;
+    double revert_fatal;
+    double revert_detrimental;
+    double revert_neutral;
+    double revert_beneficial;
+    double revert_equals;
+    double revert_taskloss;
+    int save_received;
+    int merit_inc_apply_immediate;
+} OrganismConfig;
+
+typedef struct ConfigSnapshot {
+    TaskLibConfig task_lib;
+    PhenotypeConfig phenotype;
+    BirthChamberConfig birth_chamber;
+    OrganismConfig organism;
+} ConfigSnapshot;
 typedef struct AvidaRunningAverageHandle AvidaRunningAverageHandle;
 typedef struct AvidaDoubleSumHandle AvidaDoubleSumHandle;
 typedef struct AvidaWeightedIndexHandle AvidaWeightedIndexHandle;
@@ -1127,8 +1228,15 @@ double avd_task_eval_math2in(const int* inputs, int num_inputs, int output, int 
 double avd_task_eval_math3in(const int* inputs, int num_inputs, int output, int op);
 double avd_task_eval_simple_arith(const int* inputs, int num_inputs, int output, int op);
 
+/* ---------- ConfigSnapshot FFI ---------- */
+ConfigSnapshot avd_config_snapshot_default(void);
+
 #ifdef __cplusplus
 }
+
+// C++-only helper: populate a ConfigSnapshot from cAvidaConfig.
+class cAvidaConfig;
+void avd_populate_config_snapshot(ConfigSnapshot* snap, const cAvidaConfig& cfg);
 #endif
 
 #endif

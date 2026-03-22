@@ -18,6 +18,7 @@ pub mod birth;
 pub mod bit_array;
 pub mod code_label;
 pub mod common;
+pub mod config_snapshot;
 pub mod cpu_helpers;
 pub mod cpu_registers;
 pub mod cpu_stack;
