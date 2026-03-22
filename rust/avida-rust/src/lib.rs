@@ -19,6 +19,7 @@ pub mod bit_array;
 pub mod code_label;
 pub mod common;
 pub mod cpu_helpers;
+pub mod cpu_registers;
 pub mod cpu_stack;
 pub mod deme_helpers;
 pub mod double_sum;

@@ -1075,6 +1075,46 @@ typedef struct {
 
 GradientState avd_gradient_state_default(void);
 
+/* ---- CpuRegisters ---- */
+
+typedef struct {
+  int reg[3];
+} CpuRegisters;
+
+CpuRegisters avd_cpu_reg_default(void);
+int  avd_cpu_reg_get(const CpuRegisters* regs, int idx);
+void avd_cpu_reg_set(CpuRegisters* regs, int idx, int val);
+void avd_cpu_reg_reset(CpuRegisters* regs);
+
+/* unary */
+void avd_cpu_reg_inc(CpuRegisters* regs, int dst);
+void avd_cpu_reg_dec(CpuRegisters* regs, int dst);
+void avd_cpu_reg_zero(CpuRegisters* regs, int dst);
+void avd_cpu_reg_one(CpuRegisters* regs, int dst);
+void avd_cpu_reg_all1s(CpuRegisters* regs, int dst);
+void avd_cpu_reg_neg(CpuRegisters* regs, int dst);
+void avd_cpu_reg_square(CpuRegisters* regs, int dst);
+void avd_cpu_reg_not(CpuRegisters* regs, int dst);
+void avd_cpu_reg_shift_r(CpuRegisters* regs, int dst);
+void avd_cpu_reg_shift_l(CpuRegisters* regs, int dst);
+void avd_cpu_reg_bit1(CpuRegisters* regs, int dst);
+
+/* binary */
+void avd_cpu_reg_add(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_sub(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_mult(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_nand(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_and(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_xor(CpuRegisters* regs, int dst, int op1, int op2);
+void avd_cpu_reg_or(CpuRegisters* regs, int dst, int op1, int op2);
+
+/* register ops */
+void avd_cpu_reg_swap(CpuRegisters* regs, int r1, int r2);
+void avd_cpu_reg_copy(CpuRegisters* regs, int dst, int src);
+void avd_cpu_reg_order(CpuRegisters* regs, int r1, int r2);
+void avd_cpu_reg_setbit(CpuRegisters* regs, int to_set, int bit_reg);
+void avd_cpu_reg_clearbit(CpuRegisters* regs, int to_clear, int bit_reg);
+
 #ifdef __cplusplus
 }
 #endif

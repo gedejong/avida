@@ -2751,54 +2751,54 @@ bool cHardwareCPU::Inst_Swap(cAvidaContext&)
 {
   const int op1 = FindModifiedRegister(REG_BX);
   const int op2 = FindNextRegister(op1);
-  Swap(GetRegister(op1), GetRegister(op2));
+  avd_cpu_reg_swap(m_threads[m_cur_thread].regs_rust(), op1, op2);
   return true;
 }
 
-bool cHardwareCPU::Inst_SwapAB(cAvidaContext&)\
+bool cHardwareCPU::Inst_SwapAB(cAvidaContext&)
 {
-  Swap(GetRegister(REG_AX), GetRegister(REG_BX)); return true;
+  avd_cpu_reg_swap(m_threads[m_cur_thread].regs_rust(), REG_AX, REG_BX); return true;
 }
 bool cHardwareCPU::Inst_SwapBC(cAvidaContext&)
 {
-  Swap(GetRegister(REG_BX), GetRegister(REG_CX)); return true;
+  avd_cpu_reg_swap(m_threads[m_cur_thread].regs_rust(), REG_BX, REG_CX); return true;
 }
 bool cHardwareCPU::Inst_SwapAC(cAvidaContext&)
 {
-  Swap(GetRegister(REG_AX), GetRegister(REG_CX)); return true;
+  avd_cpu_reg_swap(m_threads[m_cur_thread].regs_rust(), REG_AX, REG_CX); return true;
 }
 
 bool cHardwareCPU::Inst_CopyReg(cAvidaContext&)
 {
   const int src = FindModifiedRegister(REG_BX);
   const int dst = FindNextRegister(src);
-  GetRegister(dst) = GetRegister(src);
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), dst, src);
   return true;
 }
 
 bool cHardwareCPU::Inst_CopyRegAB(cAvidaContext&)
 {
-  GetRegister(REG_AX) = GetRegister(REG_BX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_AX, REG_BX); return true;
 }
 bool cHardwareCPU::Inst_CopyRegAC(cAvidaContext&)
 {
-  GetRegister(REG_AX) = GetRegister(REG_CX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_AX, REG_CX); return true;
 }
 bool cHardwareCPU::Inst_CopyRegBA(cAvidaContext&)
 {
-  GetRegister(REG_BX) = GetRegister(REG_AX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_BX, REG_AX); return true;
 }
 bool cHardwareCPU::Inst_CopyRegBC(cAvidaContext&)
 {
-  GetRegister(REG_BX) = GetRegister(REG_CX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_BX, REG_CX); return true;
 }
 bool cHardwareCPU::Inst_CopyRegCA(cAvidaContext&)
 {
-  GetRegister(REG_CX) = GetRegister(REG_AX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_CX, REG_AX); return true;
 }
 bool cHardwareCPU::Inst_CopyRegCB(cAvidaContext&)
 {
-  GetRegister(REG_CX) = GetRegister(REG_BX);   return true;
+  avd_cpu_reg_copy(m_threads[m_cur_thread].regs_rust(), REG_CX, REG_BX); return true;
 }
 
 bool cHardwareCPU::Inst_Reset(cAvidaContext&)
@@ -2814,21 +2814,21 @@ bool cHardwareCPU::Inst_Reset(cAvidaContext&)
 bool cHardwareCPU::Inst_ShiftR(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) >>= 1;
+  avd_cpu_reg_shift_r(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_ShiftL(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) <<= 1;
+  avd_cpu_reg_shift_l(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Bit1(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) |=  1;
+  avd_cpu_reg_bit1(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -2872,56 +2872,49 @@ bool cHardwareCPU::Inst_ValPolyC(cAvidaContext&) {
 bool cHardwareCPU::Inst_Inc(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) += 1;
+  avd_cpu_reg_inc(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Dec(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) -= 1;
+  avd_cpu_reg_dec(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Zero(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) = 0;
+  avd_cpu_reg_zero(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_One(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) = 1;
+  avd_cpu_reg_one(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_All1s(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) = 0;
-  
-  for (int i=0; i< ((int) sizeof(int) * 8); i++) {
-    GetRegister(reg_used) |= 1 << i;
-  }
-  
+  avd_cpu_reg_all1s(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Neg(cAvidaContext&)
 {
-  const int src = FindModifiedRegister(REG_BX);
-  const int dst = src;
-  GetRegister(dst) = -GetRegister(src);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_reg_neg(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Square(cAvidaContext&)
 {
-  const int src = FindModifiedRegister(REG_BX);
-  const int dst = src;
-  GetRegister(dst) = GetRegister(src) * GetRegister(src);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_reg_square(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -2976,27 +2969,21 @@ bool cHardwareCPU::Inst_Log10(cAvidaContext&)
 bool cHardwareCPU::Inst_Add(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = GetRegister(op1) + GetRegister(op2);
+  avd_cpu_reg_add(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
 bool cHardwareCPU::Inst_Sub(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = GetRegister(op1) - GetRegister(op2);
+  avd_cpu_reg_sub(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
 bool cHardwareCPU::Inst_Mult(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = GetRegister(op1) * GetRegister(op2);
+  avd_cpu_reg_mult(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
@@ -3040,9 +3027,7 @@ bool cHardwareCPU::Inst_Mod(cAvidaContext&)
 bool cHardwareCPU::Inst_Nand(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = ~(GetRegister(op1) & GetRegister(op2));
+  avd_cpu_reg_nand(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
@@ -3071,45 +3056,34 @@ bool cHardwareCPU::Inst_Nor(cAvidaContext&)
 bool cHardwareCPU::Inst_Or(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = (GetRegister(op1) | GetRegister(op2));
+  avd_cpu_reg_or(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
 bool cHardwareCPU::Inst_And(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = (GetRegister(op1) & GetRegister(op2));
+  avd_cpu_reg_and(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
 bool cHardwareCPU::Inst_Not(cAvidaContext&)
 {
-  const int src = FindModifiedRegister(REG_BX);
-  const int dst = src;
-  GetRegister(dst) = ~(GetRegister(src));
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_reg_not(m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_Order(cAvidaContext&)
 {
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  if (GetRegister(op1) > GetRegister(op2)) {
-    Swap(GetRegister(op1), GetRegister(op2));
-  }
+  avd_cpu_reg_order(m_threads[m_cur_thread].regs_rust(), REG_BX, REG_CX);
   return true;
 }
 
 bool cHardwareCPU::Inst_Xor(cAvidaContext&)
 {
   const int dst = FindModifiedRegister(REG_BX);
-  const int op1 = REG_BX;
-  const int op2 = REG_CX;
-  GetRegister(dst) = GetRegister(op1) ^ GetRegister(op2);
+  avd_cpu_reg_xor(m_threads[m_cur_thread].regs_rust(), dst, REG_BX, REG_CX);
   return true;
 }
 
@@ -3118,11 +3092,7 @@ bool cHardwareCPU::Inst_Setbit(cAvidaContext&)
 {
   const int to_set = FindModifiedRegister(REG_BX);
   const int bit_reg = FindNextRegister(to_set);
-  
-  const int bit_to_set = max(0, GetRegister(bit_reg)) % (sizeof(int) * 8);
-  
-  GetRegister(to_set) |= 1 << bit_to_set;
-  
+  avd_cpu_reg_setbit(m_threads[m_cur_thread].regs_rust(), to_set, bit_reg);
   return true;
 }
 
@@ -3131,11 +3101,7 @@ bool cHardwareCPU::Inst_Clearbit(cAvidaContext&)
 {
   const int to_clear = FindModifiedRegister(REG_BX);
   const int bit_reg = FindNextRegister(to_clear);
-  
-  const int bit_to_clear = max(0, GetRegister(bit_reg)) % (sizeof(int) * 8);
-  
-  GetRegister(to_clear) &= ~(1 << bit_to_clear);
-  
+  avd_cpu_reg_clearbit(m_threads[m_cur_thread].regs_rust(), to_clear, bit_reg);
   return true;
 }
 

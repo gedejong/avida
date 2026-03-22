@@ -35,6 +35,7 @@
 #include "tInstLib.h"
 
 #include "nHardware.h"
+#include "rust/running_stats_ffi.h"
 
 #include <iomanip>
 #include <vector>
@@ -94,6 +95,7 @@ protected:
     void ResetPromoterInstExecuted() { m_promoter_inst_executed = 0; }
     void setMessageTriggerType(int value) { m_messageTriggerType = value; }
     int getMessageTriggerType() { return m_messageTriggerType; }
+    CpuRegisters* regs_rust() { return reinterpret_cast<CpuRegisters*>(&reg[0]); }
   };
 
 
