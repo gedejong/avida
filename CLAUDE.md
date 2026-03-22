@@ -88,33 +88,24 @@ When working at program scale, always read and maintain these documents:
 
 ---
 
-## Current Migration State (as of 2026-03-19, post cStats depth extraction)
+## Current Migration State (as of 2026-03-22)
 
-**416 unique `avd_*` FFI exports, ~264 C++ call-sites across 18 actively-routed files. 287 Rust tests.**
-**4 `#[repr(C)]` type replacements**: Merit, CpuStack, CodeLabel, MutationRates.
+**525+ unique `avd_*` FFI exports. 449 Rust tests. 15,072 LOC Rust across 39 modules.**
+**9 `#[repr(C)]` type replacements**: Merit, CpuStack, CodeLabel, MutationRates, PhenotypeCoreMetrics, PhenotypeStatusFlags, PhenotypeLifetimeData, BirthEntryScalars, CpuRegisters. Plus GradientConfig, GradientState.
 
-| File | avd_ calls | Status |
-|---|---:|---|
-| `PopulationActions.cc` | 45 | Near saturation |
-| `cResourceCount.cc` | 41 | Complete |
-| `cTaskLib.cc` | 39 | Near saturation |
-| `cAnalyze.cc` | 26 | Near saturation |
-| `cPopulation.cc` | 21 | Active — depth extraction ongoing |
-| `PrintActions.cc` | 18 | Near saturation |
-| `cHardwareCPU.cc` | 16 | Active — depth extraction ongoing |
-| `cStats.cc` | 12 | Covered |
-| `cHardwareExperimental.cc` | 9 | Covered |
-| `cHardwareBCR.cc` | 7 | Covered |
-| `cHardwareGP8.cc` | 7 | Covered |
-| `cGradientCount.cc` | 7 | Covered |
-| `cEnvironment.cc` | 6 | Covered |
-| `cOrgSensor.cc` | 4 | Covered |
-| `cResource.cc` | 3 | Covered |
-| `cHardwareTransSMT.cc` | 1 | Pilot |
+### Completed milestones:
+- **Issue #69**: Apto::Array → AvidaArray (std::vector) — 99% complete (1,100→14 occurrences)
+- **Issue #70**: FFI ownership bridge — FfiVec<T>, FfiString, AvidaRNG (bit-exact port), generic handle utilities
+- **Issue #43**: Rust type system infrastructure
+- **Issue #48**: cPhenotype — 121 scalar fields in Rust, 11 energy methods, array bulk ops via FFI
+- **Issue #49**: cBirthEntry — 8 scalar fields in Rust
+- **Issues #50-52**: Wave 12 — newtype IDs, foundations established
+- **Issues #53-56**: Wave 13 — cResourceCount (41 FFI, 1,278 LOC Rust), cGradientCount (66 fields in Rust), cStats/cDeme foundations
+- **Issue #71**: CPU register operations — 32 instruction handlers ported to Rust
 
-- **Waves 1–5**: Complete.
-- **Waves 6–8**: Executing in parallel by seam-readiness.
-- **ABI baseline**: Refreshed to 416 symbols (2026-03-19).
-- **Remaining untouched files**: `cPopulationInterface.cc` (2.4K), `cOrganism.cc` (1.7K), `cDeme.cc` (1.7K), `cLandscape.cc` (1K).
-
-**Next candidates**: Deeper `cHardwareCPU.cc` / `cPopulation.cc` extraction, or `cPopulationInterface.cc` as a fresh target.
+### Key infrastructure:
+- AvidaArray<T> shim with operator+/+=, RemoveAt, iterator support
+- FfiVec<T> for Rust-owned containers
+- AvidaRNG bit-exact Knuth subtractive generator in Rust
+- Newtype IDs: ReactionId, ResourceId, TaskId, CellId, OrganismId, DemeId
+- 3 latent C++ bugs fixed (cDeme::Reset init, cResourceCount spatial cache, cBirthEntry Rule of Three)
