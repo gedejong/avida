@@ -1284,6 +1284,35 @@ double avd_task_ctx_move_down_gradient(const TaskContextSnapshot* ctx);
 double avd_task_ctx_move_not_up_gradient(const TaskContextSnapshot* ctx);
 double avd_task_ctx_event_killed(const TaskContextSnapshot* ctx);
 
+// ---- Organism/Cell/Population read-only FFI ----
+// Opaque pointers — C++ retains ownership, Rust reads through these.
+typedef struct cOrganism cOrganism;
+typedef struct cPopulationCell cPopulationCell;
+typedef struct cPopulation cPopulation;
+typedef struct cWorld cWorld;
+
+double avd_org_get_fitness(cOrganism* org);
+double avd_org_get_merit(cOrganism* org);
+int avd_org_get_gestation_time(cOrganism* org);
+int avd_org_get_genome_length(cOrganism* org);
+int avd_org_get_forage_target(cOrganism* org);
+int avd_org_get_cell_id(cOrganism* org);
+double avd_org_get_cur_bonus(cOrganism* org);
+int avd_org_get_generation(cOrganism* org);
+int avd_org_get_time_used(cOrganism* org);
+
+int avd_cell_is_occupied(cPopulationCell* cell);
+cOrganism* avd_cell_get_organism(cPopulationCell* cell);
+int avd_cell_get_id(cPopulationCell* cell);
+int avd_cell_get_deme_id(cPopulationCell* cell);
+
+cPopulationCell* avd_pop_get_cell(cPopulation* pop, int cell_id);
+int avd_pop_get_size(cPopulation* pop);
+int avd_pop_get_num_organisms(cPopulation* pop);
+
+cPopulation* avd_world_get_population(cWorld* world);
+int avd_world_get_update(cWorld* world);
+
 #ifdef __cplusplus
 }
 
