@@ -635,394 +635,272 @@ double cTaskLib::Task_Logic3in_AN(cTaskContext& ctx) const
 
 double cTaskLib::Task_Logic3in_AO(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 2 || logic_id == 4 || logic_id == 16) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 2, 4, 16);
 }
 
 double cTaskLib::Task_Logic3in_AP(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 6 || logic_id == 18 || logic_id == 20) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 6, 18, 20);
 }
 
 double cTaskLib::Task_Logic3in_AQ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 7 || logic_id == 19 || logic_id == 21) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 7, 19, 21);
 }
 
 double cTaskLib::Task_Logic3in_AR(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 8 || logic_id == 32 || logic_id == 64) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 8, 32, 64);
 }
 
 double cTaskLib::Task_Logic3in_AS(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 9 || logic_id == 33 || logic_id == 65) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 9, 33, 65);
 }
 
 double cTaskLib::Task_Logic3in_AT(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 14 || logic_id == 50 || logic_id == 84) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 14, 50, 84);
 }
 
 double cTaskLib::Task_Logic3in_AU(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 24 || logic_id == 36 || logic_id == 66) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 24, 36, 66);
 }
 
 double cTaskLib::Task_Logic3in_AV(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 25 || logic_id == 37 || logic_id == 67) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 25, 37, 67);
 }
 
 double cTaskLib::Task_Logic3in_AW(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 30 || logic_id == 54 || logic_id == 86) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 30, 54, 86);
 }
 
 double cTaskLib::Task_Logic3in_AX(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 31 || logic_id == 55 || logic_id == 87) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 31, 55, 87);
 }
 
 double cTaskLib::Task_Logic3in_AY(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 40 || logic_id == 72 || logic_id == 96) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 40, 72, 96);
 }
 
 double cTaskLib::Task_Logic3in_AZ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 41 || logic_id == 73 || logic_id == 97) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 41, 73, 97);
 }
 
 double cTaskLib::Task_Logic3in_BA(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 42 || logic_id == 76 || logic_id == 112) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 42, 76, 112);
 }
 
 double cTaskLib::Task_Logic3in_BB(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 43 || logic_id == 77 || logic_id == 113) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 43, 77, 113);
 }
 
 double cTaskLib::Task_Logic3in_BC(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 61 || logic_id == 91 || logic_id == 103) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 61, 91, 103);
 }
 
 double cTaskLib::Task_Logic3in_BD(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 62 || logic_id == 94 || logic_id == 118) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 62, 94, 118);
 }
 
 double cTaskLib::Task_Logic3in_BE(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 106 || logic_id == 108 || logic_id == 120) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 106, 108, 120);
 }
 
 double cTaskLib::Task_Logic3in_BF(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 107 || logic_id == 109 || logic_id == 121) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 107, 109, 121);
 }
 
 double cTaskLib::Task_Logic3in_BG(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 110 || logic_id == 122 || logic_id == 124) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 110, 122, 124);
 }
 
 double cTaskLib::Task_Logic3in_BH(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 111 || logic_id == 123 || logic_id == 125) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 111, 123, 125);
 }
 
 double cTaskLib::Task_Logic3in_BI(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 130 || logic_id == 132 || logic_id == 144) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 130, 132, 144);
 }
 
 double cTaskLib::Task_Logic3in_BJ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 131 || logic_id == 133 || logic_id == 145) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 131, 133, 145);
 }
 
 double cTaskLib::Task_Logic3in_BK(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 134 || logic_id == 146 || logic_id == 148) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 134, 146, 148);
 }
 
 double cTaskLib::Task_Logic3in_BL(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 135 || logic_id == 147 || logic_id == 149) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 135, 147, 149);
 }
 
 double cTaskLib::Task_Logic3in_BM(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 137 || logic_id == 161 || logic_id == 193) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 137, 161, 193);
 }
 
 double cTaskLib::Task_Logic3in_BN(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 142 || logic_id == 178 || logic_id == 212) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 142, 178, 212);
 }
 
 double cTaskLib::Task_Logic3in_BO(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 143 || logic_id == 179 || logic_id == 213) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 143, 179, 213);
 }
 
 double cTaskLib::Task_Logic3in_BP(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 152 || logic_id == 164 || logic_id == 194) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 152, 164, 194);
 }
 
 double cTaskLib::Task_Logic3in_BQ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 158 || logic_id == 182 || logic_id == 214) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 158, 182, 214);
 }
 
 double cTaskLib::Task_Logic3in_BR(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 159 || logic_id == 183 || logic_id == 215) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 159, 183, 215);
 }
 
 double cTaskLib::Task_Logic3in_BS(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 168 || logic_id == 200 || logic_id == 224) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 168, 200, 224);
 }
 
 double cTaskLib::Task_Logic3in_BT(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 169 || logic_id == 201 || logic_id == 225) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 169, 201, 225);
 }
 
 double cTaskLib::Task_Logic3in_BU(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 171 || logic_id == 205 || logic_id == 241) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 171, 205, 241);
 }
 
 double cTaskLib::Task_Logic3in_BV(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 188 || logic_id == 218 || logic_id == 230) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 188, 218, 230);
 }
 
 double cTaskLib::Task_Logic3in_BW(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 189 || logic_id == 219 || logic_id == 231) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 189, 219, 231);
 }
 
 double cTaskLib::Task_Logic3in_BX(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 190 || logic_id == 222 || logic_id == 246) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 190, 222, 246);
 }
 
 double cTaskLib::Task_Logic3in_BY(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 191 || logic_id == 223 || logic_id == 247) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 191, 223, 247);
 }
 
 double cTaskLib::Task_Logic3in_BZ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 234 || logic_id == 236 || logic_id == 248) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 234, 236, 248);
 }
 
 double cTaskLib::Task_Logic3in_CA(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 235 || logic_id == 237 || logic_id == 249) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 235, 237, 249);
 }
 
 double cTaskLib::Task_Logic3in_CB(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 239 || logic_id == 251 || logic_id == 253) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_3(ctx.GetLogicId(), 239, 251, 253);
 }
 
 double cTaskLib::Task_Logic3in_CC(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 11 || logic_id == 13 || logic_id == 35 ||
-      logic_id == 49 || logic_id == 69 || logic_id == 81) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 11, 13, 35, 49, 69, 81);
 }
 
 double cTaskLib::Task_Logic3in_CD(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 26 || logic_id == 28 || logic_id == 38 ||
-      logic_id == 52 || logic_id == 70 || logic_id == 82) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 26, 28, 38, 52, 70, 82);
 }
 
 double cTaskLib::Task_Logic3in_CE(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 27 || logic_id == 29 || logic_id == 39 ||
-      logic_id == 53 || logic_id == 71 || logic_id == 83) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 27, 29, 39, 53, 71, 83);
 }
 
 double cTaskLib::Task_Logic3in_CF(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 44 || logic_id == 56 || logic_id == 74 ||
-      logic_id == 88 || logic_id == 98 || logic_id == 100) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 44, 56, 74, 88, 98, 100);
 }
 
 double cTaskLib::Task_Logic3in_CG(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 45 || logic_id == 57 || logic_id == 75 ||
-      logic_id == 89 || logic_id == 99 || logic_id == 101) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 45, 57, 75, 89, 99, 101);
 }
 
 double cTaskLib::Task_Logic3in_CH(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 46 || logic_id == 58 || logic_id == 78 ||
-      logic_id == 92 || logic_id == 114 || logic_id == 116) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 46, 58, 78, 92, 114, 116);
 }
 
 double cTaskLib::Task_Logic3in_CI(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 47 || logic_id == 59 || logic_id == 79 ||
-      logic_id == 93 || logic_id == 115 || logic_id == 117) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 47, 59, 79, 93, 115, 117);
 }
 
 double cTaskLib::Task_Logic3in_CJ(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 138 || logic_id == 140 || logic_id == 162 ||
-      logic_id == 176 || logic_id == 196 || logic_id == 208) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 138, 140, 162, 176, 196, 208);
 }
 
 double cTaskLib::Task_Logic3in_CK(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 139 || logic_id == 141 || logic_id == 163 ||
-      logic_id == 177 || logic_id == 197 || logic_id == 209) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 139, 141, 163, 177, 197, 209);
 }
 
 double cTaskLib::Task_Logic3in_CL(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 154 || logic_id == 156 || logic_id == 166 ||
-      logic_id == 180 || logic_id == 198 || logic_id == 210) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 154, 156, 166, 180, 198, 210);
 }
 
 double cTaskLib::Task_Logic3in_CM(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 155 || logic_id == 157 || logic_id == 167 ||
-      logic_id == 181 || logic_id == 199 || logic_id == 211) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 155, 157, 167, 181, 199, 211);
 }
 
 double cTaskLib::Task_Logic3in_CN(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 172 || logic_id == 184 || logic_id == 202 ||
-      logic_id == 216 || logic_id == 226 || logic_id == 228) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 172, 184, 202, 216, 226, 228);
 }
 
 double cTaskLib::Task_Logic3in_CO(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 173 || logic_id == 185 || logic_id == 203 ||
-      logic_id == 217 || logic_id == 227 || logic_id == 229) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 173, 185, 203, 217, 227, 229);
 }
 
 double cTaskLib::Task_Logic3in_CP(cTaskContext& ctx) const
 {
-  const int logic_id = ctx.GetLogicId();
-  if (logic_id == 174 || logic_id == 186 || logic_id == 206 ||
-      logic_id == 220 || logic_id == 242 || logic_id == 244) return 1.0;
-  return 0.0;
+  return avd_task_eval_logic3in_6(ctx.GetLogicId(), 174, 186, 206, 220, 242, 244);
 }
 
 double cTaskLib::Task_Math1in_AA(cTaskContext& ctx) const //(2X)

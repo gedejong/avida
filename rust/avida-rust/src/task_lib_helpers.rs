@@ -413,6 +413,63 @@ pub extern "C" fn avd_task_eval_logic3in(logic_id: c_int, target: c_int) -> f64 
     }
 }
 
+/// Evaluate a Logic3in task with 3 target values (OR condition).
+/// Returns 1.0 if logic_id matches any of t1, t2, or t3.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_logic3in_3(
+    logic_id: c_int,
+    t1: c_int,
+    t2: c_int,
+    t3: c_int,
+) -> f64 {
+    if logic_id == t1 || logic_id == t2 || logic_id == t3 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Evaluate a Logic3in task with 4 target values (OR condition).
+/// Returns 1.0 if logic_id matches any of t1, t2, t3, or t4.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_logic3in_4(
+    logic_id: c_int,
+    t1: c_int,
+    t2: c_int,
+    t3: c_int,
+    t4: c_int,
+) -> f64 {
+    if logic_id == t1 || logic_id == t2 || logic_id == t3 || logic_id == t4 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Evaluate a Logic3in task with 6 target values (OR condition).
+#[no_mangle]
+pub extern "C" fn avd_task_eval_logic3in_6(
+    logic_id: c_int,
+    t1: c_int,
+    t2: c_int,
+    t3: c_int,
+    t4: c_int,
+    t5: c_int,
+    t6: c_int,
+) -> f64 {
+    if logic_id == t1
+        || logic_id == t2
+        || logic_id == t3
+        || logic_id == t4
+        || logic_id == t5
+        || logic_id == t6
+    {
+        1.0
+    } else {
+        0.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
