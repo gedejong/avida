@@ -470,6 +470,260 @@ pub extern "C" fn avd_task_eval_logic3in_6(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Math1in operation codes (17 tasks)
+// ---------------------------------------------------------------------------
+const MATH1IN_AA: c_int = 0; // 2*x
+const MATH1IN_AB: c_int = 1; // 2*x/3
+const MATH1IN_AC: c_int = 2; // 5*x/4
+const MATH1IN_AD: c_int = 3; // x*x
+const MATH1IN_AE: c_int = 4; // x*x*x
+const MATH1IN_AF: c_int = 5; // sqrt(abs(x))
+const MATH1IN_AG: c_int = 6; // log(x) (x > 0)
+const MATH1IN_AH: c_int = 7; // x^2 + x^3
+const MATH1IN_AI: c_int = 8; // x^2 + sqrt(abs(x))
+const MATH1IN_AJ: c_int = 9; // abs(x)
+const MATH1IN_AK: c_int = 10; // x - 5
+const MATH1IN_AL: c_int = 11; // -x (0 - x)
+const MATH1IN_AM: c_int = 12; // 5*x
+const MATH1IN_AN: c_int = 13; // x/4
+const MATH1IN_AO: c_int = 14; // x - 6
+const MATH1IN_AP: c_int = 15; // x - 7
+const MATH1IN_AS: c_int = 16; // x * 3
+
+/// Evaluate a single-input math expression.
+///
+/// Returns 1.0 if `output` matches the expression applied to any element of
+/// `inputs[0..num_inputs]`, otherwise 0.0.  Mirrors the C++ `Task_Math1in_*`
+/// family exactly, including integer truncation semantics.
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_task_eval_math1in(
+    inputs: *const c_int,
+    num_inputs: c_int,
+    output: c_int,
+    op: c_int,
+) -> f64 {
+    if inputs.is_null() || num_inputs <= 0 {
+        return 0.0;
+    }
+    let n = num_inputs as usize;
+    for idx in 0..n {
+        // SAFETY: inputs is non-null (checked above) and idx < num_inputs,
+        // so the pointer arithmetic stays within the caller-provided buffer.
+        let x = unsafe { *inputs.add(idx) };
+        let matches = match op {
+            MATH1IN_AA => output == x.wrapping_mul(2),
+            MATH1IN_AB => output == x.wrapping_mul(2) / 3,
+            MATH1IN_AC => output == x.wrapping_mul(5) / 4,
+            MATH1IN_AD => output == x.wrapping_mul(x),
+            MATH1IN_AE => output == x.wrapping_mul(x).wrapping_mul(x),
+            MATH1IN_AF => output == ((x.abs() as f64).sqrt() as i32),
+            MATH1IN_AG => {
+                if x <= 0 {
+                    false
+                } else {
+                    output == (x as f64).ln() as i32
+                }
+            }
+            MATH1IN_AH => {
+                output
+                    == x.wrapping_mul(x)
+                        .wrapping_add(x.wrapping_mul(x).wrapping_mul(x))
+            }
+            MATH1IN_AI => {
+                output
+                    == x.wrapping_mul(x)
+                        .wrapping_add((x.abs() as f64).sqrt() as i32)
+            }
+            MATH1IN_AJ => output == x.abs(),
+            MATH1IN_AK => output == x.wrapping_sub(5),
+            MATH1IN_AL => output == 0i32.wrapping_sub(x),
+            MATH1IN_AM => output == x.wrapping_mul(5),
+            MATH1IN_AN => output == x / 4,
+            MATH1IN_AO => output == x.wrapping_sub(6),
+            MATH1IN_AP => output == x.wrapping_sub(7),
+            MATH1IN_AS => output == x.wrapping_mul(3),
+            _ => return 0.0,
+        };
+        if matches {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
+// ---------------------------------------------------------------------------
+// Math2in operation codes (26 tasks)
+// ---------------------------------------------------------------------------
+const MATH2IN_AA: c_int = 0; // sqrt(abs(x+y))
+const MATH2IN_AB: c_int = 1; // (x+y)^2
+const MATH2IN_AC: c_int = 2; // x%y
+const MATH2IN_AD: c_int = 3; // 3x/2 + 5y/4
+const MATH2IN_AE: c_int = 4; // abs(x-5) + abs(y-6)
+const MATH2IN_AF: c_int = 5; // x*y - x/y
+const MATH2IN_AG: c_int = 6; // (x-y)^2
+const MATH2IN_AH: c_int = 7; // x^2 + y^2
+const MATH2IN_AI: c_int = 8; // x^2 + y^3
+const MATH2IN_AJ: c_int = 9; // (sqrt(abs(x)) + y) / (x - 7)
+const MATH2IN_AK: c_int = 10; // log(abs(x/y))
+const MATH2IN_AL: c_int = 11; // log(abs(x)) / y
+const MATH2IN_AM: c_int = 12; // x / log(abs(y))
+const MATH2IN_AN: c_int = 13; // x + y
+const MATH2IN_AO: c_int = 14; // x - y
+const MATH2IN_AP: c_int = 15; // x / y
+const MATH2IN_AQ: c_int = 16; // x * y
+const MATH2IN_AR: c_int = 17; // sqrt(abs(x)) + sqrt(abs(y))
+const MATH2IN_AS: c_int = 18; // x + 2y
+const MATH2IN_AT: c_int = 19; // x + 3y
+const MATH2IN_AU: c_int = 20; // 2x + 3y
+const MATH2IN_AV: c_int = 21; // x * y^2
+const MATH2IN_AX: c_int = 22; // x + 3y (duplicate of AT in C++)
+const MATH2IN_AY: c_int = 23; // 2x + y
+const MATH2IN_AZ: c_int = 24; // 4x + 6y
+const MATH2IN_AAA: c_int = 25; // 3x - 2y
+
+/// Evaluate a two-input math expression applied to all distinct input pairs.
+///
+/// Returns `true` if `output` matches the op applied to `(x, y)`.
+/// Mirrors the C++ guard checks for division-by-zero, overflow, and log domain.
+fn math2in_check(x: c_int, y: c_int, output: c_int, op: c_int) -> Option<bool> {
+    let result = match op {
+        MATH2IN_AA => output == ((x.wrapping_add(y)).abs() as f64).sqrt() as i32,
+        MATH2IN_AB => {
+            let s = x.wrapping_add(y);
+            output == s.wrapping_mul(s)
+        }
+        MATH2IN_AC => {
+            if y == 0 {
+                return None;
+            }
+            output == x.wrapping_rem(y)
+        }
+        MATH2IN_AD => output == x.wrapping_mul(3) / 2 + y.wrapping_mul(5) / 4,
+        MATH2IN_AE => {
+            output
+                == (x.wrapping_sub(5))
+                    .abs()
+                    .wrapping_add((y.wrapping_sub(6)).abs())
+        }
+        MATH2IN_AF => {
+            if y == 0 {
+                return None;
+            }
+            // C++: if (0-INT_MAX > input_buffer[i] && input_buffer[j] == -1) continue;
+            if (0i32.wrapping_sub(i32::MAX)) > x && y == -1 {
+                return None;
+            }
+            output == x.wrapping_mul(y).wrapping_sub(x / y)
+        }
+        MATH2IN_AG => {
+            let d = x.wrapping_sub(y);
+            output == d.wrapping_mul(d)
+        }
+        MATH2IN_AH => output == x.wrapping_mul(x).wrapping_add(y.wrapping_mul(y)),
+        MATH2IN_AI => {
+            output
+                == x.wrapping_mul(x)
+                    .wrapping_add(y.wrapping_mul(y).wrapping_mul(y))
+        }
+        MATH2IN_AJ => {
+            if x.wrapping_sub(7) == 0 {
+                return None;
+            }
+            output == ((x.abs() as f64).sqrt() as i32).wrapping_add(y) / (x.wrapping_sub(7))
+        }
+        MATH2IN_AK => {
+            if y == 0 {
+                return None;
+            }
+            if (0i32.wrapping_sub(i32::MAX)) > x && y == -1 {
+                return None;
+            }
+            let quot = x / y;
+            if quot == 0 {
+                return None;
+            }
+            output == (quot.abs() as f64).ln() as i32
+        }
+        MATH2IN_AL => {
+            if y == 0 {
+                return None;
+            }
+            output == (x.abs() as f64).ln() as i32 / y
+        }
+        MATH2IN_AM => {
+            let log_abs_y = (y.abs() as f64).ln();
+            if log_abs_y == 0.0 {
+                return None;
+            }
+            // C++: if (0-INT_MAX > input_buffer[i] && log(...) == -1) continue;
+            if (0i32.wrapping_sub(i32::MAX)) > x && log_abs_y == -1.0 {
+                return None;
+            }
+            output == x / (log_abs_y as i32)
+        }
+        MATH2IN_AN => output == x.wrapping_add(y),
+        MATH2IN_AO => output == x.wrapping_sub(y),
+        MATH2IN_AP => {
+            if y == 0 {
+                return None;
+            }
+            if (0i32.wrapping_sub(i32::MAX)) > x && y == -1 {
+                return None;
+            }
+            output == x / y
+        }
+        MATH2IN_AQ => output == x.wrapping_mul(y),
+        MATH2IN_AR => {
+            output == ((x.abs() as f64).sqrt() as i32).wrapping_add((y.abs() as f64).sqrt() as i32)
+        }
+        MATH2IN_AS => output == x.wrapping_add(y.wrapping_mul(2)),
+        MATH2IN_AT => output == x.wrapping_add(y.wrapping_mul(3)),
+        MATH2IN_AU => output == x.wrapping_mul(2).wrapping_add(y.wrapping_mul(3)),
+        MATH2IN_AV => output == x.wrapping_mul(y).wrapping_mul(y),
+        MATH2IN_AX => output == x.wrapping_add(y.wrapping_mul(3)),
+        MATH2IN_AY => output == x.wrapping_mul(2).wrapping_add(y),
+        MATH2IN_AZ => output == x.wrapping_mul(4).wrapping_add(y.wrapping_mul(6)),
+        MATH2IN_AAA => output == x.wrapping_mul(3).wrapping_sub(y.wrapping_mul(2)),
+        _ => return Some(false),
+    };
+    Some(result)
+}
+
+/// Evaluate a two-input math expression.
+///
+/// Returns 1.0 if `output` matches the expression applied to any distinct
+/// pair `(inputs[i], inputs[j])` where `i != j`, otherwise 0.0.
+/// Mirrors the C++ `Task_Math2in_*` family exactly.
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_task_eval_math2in(
+    inputs: *const c_int,
+    num_inputs: c_int,
+    output: c_int,
+    op: c_int,
+) -> f64 {
+    if inputs.is_null() || num_inputs <= 0 {
+        return 0.0;
+    }
+    let n = num_inputs as usize;
+    for i in 0..n {
+        for j in 0..n {
+            if i == j {
+                continue;
+            }
+            // SAFETY: inputs is non-null (checked above) and i,j < num_inputs,
+            // so the pointer arithmetic stays within the caller-provided buffer.
+            let (x, y) = unsafe { (*inputs.add(i), *inputs.add(j)) };
+            if math2in_check(x, y, output, op) == Some(true) {
+                return 1.0;
+            }
+        }
+    }
+    0.0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -915,5 +1169,498 @@ mod tests {
         );
         // With 2-input mirroring, bits 4-7 = bits 0-3
         assert_eq!(logic_id & 0xF0, (logic_id & 0x0F) << 4);
+    }
+
+    // --- Math1in tests ---
+
+    #[test]
+    fn math1in_aa_2x() {
+        let inputs: [c_int; 2] = [5, 10];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 2, 10, MATH1IN_AA),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 2, 20, MATH1IN_AA),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 2, 11, MATH1IN_AA),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math1in_ab_2x_div3() {
+        let inputs: [c_int; 1] = [9];
+        // 2*9/3 = 6 (integer division)
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 6, MATH1IN_AB),
+            1.0
+        );
+        let inputs2: [c_int; 1] = [10];
+        // 2*10/3 = 20/3 = 6
+        assert_eq!(
+            avd_task_eval_math1in(inputs2.as_ptr(), 1, 6, MATH1IN_AB),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ac_5x_div4() {
+        let inputs: [c_int; 1] = [8];
+        // 5*8/4 = 10
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 10, MATH1IN_AC),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ad_x_squared() {
+        let inputs: [c_int; 1] = [7];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 49, MATH1IN_AD),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ae_x_cubed() {
+        let inputs: [c_int; 1] = [3];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 27, MATH1IN_AE),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_af_sqrt_abs() {
+        let inputs: [c_int; 1] = [16];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 4, MATH1IN_AF),
+            1.0
+        );
+        let neg: [c_int; 1] = [-25];
+        assert_eq!(avd_task_eval_math1in(neg.as_ptr(), 1, 5, MATH1IN_AF), 1.0);
+    }
+
+    #[test]
+    fn math1in_ag_log() {
+        let inputs: [c_int; 1] = [100];
+        // ln(100) ~ 4.605 => 4
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 4, MATH1IN_AG),
+            1.0
+        );
+        // x <= 0 is skipped
+        let neg: [c_int; 1] = [-5];
+        assert_eq!(avd_task_eval_math1in(neg.as_ptr(), 1, 0, MATH1IN_AG), 0.0);
+        let zero: [c_int; 1] = [0];
+        assert_eq!(avd_task_eval_math1in(zero.as_ptr(), 1, 0, MATH1IN_AG), 0.0);
+    }
+
+    #[test]
+    fn math1in_ah_x2_plus_x3() {
+        let inputs: [c_int; 1] = [3];
+        // 9 + 27 = 36
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 36, MATH1IN_AH),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ai_x2_plus_sqrt_abs() {
+        let inputs: [c_int; 1] = [16];
+        // 256 + 4 = 260
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 260, MATH1IN_AI),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_aj_abs() {
+        let inputs: [c_int; 1] = [-42];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 42, MATH1IN_AJ),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ak_x_minus_5() {
+        let inputs: [c_int; 1] = [12];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 7, MATH1IN_AK),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_al_negate() {
+        let inputs: [c_int; 1] = [42];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, -42, MATH1IN_AL),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_am_5x() {
+        let inputs: [c_int; 1] = [6];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 30, MATH1IN_AM),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_an_x_div4() {
+        let inputs: [c_int; 1] = [17];
+        // 17/4 = 4
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 4, MATH1IN_AN),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ao_x_minus_6() {
+        let inputs: [c_int; 1] = [10];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 4, MATH1IN_AO),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_ap_x_minus_7() {
+        let inputs: [c_int; 1] = [10];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 3, MATH1IN_AP),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_as_3x() {
+        let inputs: [c_int; 1] = [7];
+        assert_eq!(
+            avd_task_eval_math1in(inputs.as_ptr(), 1, 21, MATH1IN_AS),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math1in_null_inputs_returns_zero() {
+        assert_eq!(
+            avd_task_eval_math1in(std::ptr::null(), 3, 0, MATH1IN_AA),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math1in_invalid_op_returns_zero() {
+        let inputs: [c_int; 1] = [5];
+        assert_eq!(avd_task_eval_math1in(inputs.as_ptr(), 1, 10, 99), 0.0);
+    }
+
+    // --- Math2in tests ---
+
+    #[test]
+    fn math2in_aa_sqrt_sum() {
+        let inputs: [c_int; 2] = [9, 16];
+        // sqrt(abs(9+16)) = sqrt(25) = 5
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 5, MATH2IN_AA),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ab_sum_squared() {
+        let inputs: [c_int; 2] = [3, 4];
+        // (3+4)^2 = 49
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 49, MATH2IN_AB),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ac_modulo() {
+        let inputs: [c_int; 2] = [17, 5];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 2, MATH2IN_AC),
+            1.0
+        );
+        // Division by zero skipped, but (0 % 17) = 0 still matches
+        let inputs2: [c_int; 2] = [17, 0];
+        assert_eq!(
+            avd_task_eval_math2in(inputs2.as_ptr(), 2, 0, MATH2IN_AC),
+            1.0
+        );
+        // No match at all
+        assert_eq!(
+            avd_task_eval_math2in(inputs2.as_ptr(), 2, 3, MATH2IN_AC),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math2in_ad_linear_combo() {
+        let inputs: [c_int; 2] = [10, 8];
+        // 3*10/2 + 5*8/4 = 15 + 10 = 25
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 25, MATH2IN_AD),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ae_abs_offsets() {
+        let inputs: [c_int; 2] = [3, 10];
+        // abs(3-5) + abs(10-6) = 2 + 4 = 6
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 6, MATH2IN_AE),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_af_xy_minus_x_div_y() {
+        let inputs: [c_int; 2] = [10, 3];
+        // 10*3 - 10/3 = 30 - 3 = 27
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 27, MATH2IN_AF),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ag_diff_squared() {
+        let inputs: [c_int; 2] = [10, 3];
+        // (10-3)^2 = 49
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 49, MATH2IN_AG),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ah_sum_of_squares() {
+        let inputs: [c_int; 2] = [3, 4];
+        // 9 + 16 = 25
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 25, MATH2IN_AH),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ai_x2_plus_y3() {
+        let inputs: [c_int; 2] = [3, 2];
+        // 9 + 8 = 17
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 17, MATH2IN_AI),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_aj_sqrt_y_div() {
+        let inputs: [c_int; 2] = [16, 3];
+        // (sqrt(16) + 3) / (16 - 7) = (4 + 3) / 9 = 0
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 0, MATH2IN_AJ),
+            1.0
+        );
+        // x-7 == 0 skipped
+        let inputs2: [c_int; 2] = [7, 3];
+        assert_eq!(
+            avd_task_eval_math2in(inputs2.as_ptr(), 2, 0, MATH2IN_AJ),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math2in_an_sum() {
+        let inputs: [c_int; 2] = [10, 20];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 30, MATH2IN_AN),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ao_diff() {
+        let inputs: [c_int; 2] = [20, 10];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 10, MATH2IN_AO),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ap_div() {
+        let inputs: [c_int; 2] = [20, 4];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 5, MATH2IN_AP),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_aq_product() {
+        let inputs: [c_int; 2] = [6, 7];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 42, MATH2IN_AQ),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ar_sqrt_sum() {
+        let inputs: [c_int; 2] = [16, 25];
+        // sqrt(16) + sqrt(25) = 4 + 5 = 9
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 9, MATH2IN_AR),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_as_x_plus_2y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 5 + 2*3 = 11
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 11, MATH2IN_AS),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_at_x_plus_3y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 5 + 3*3 = 14
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 14, MATH2IN_AT),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_au_2x_plus_3y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 10 + 9 = 19
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 19, MATH2IN_AU),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_av_xy2() {
+        let inputs: [c_int; 2] = [2, 5];
+        // 2 * 5 * 5 = 50
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 50, MATH2IN_AV),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ax_x_plus_3y() {
+        let inputs: [c_int; 2] = [5, 3];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 14, MATH2IN_AX),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_ay_2x_plus_y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 10 + 3 = 13
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 13, MATH2IN_AY),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_az_4x_plus_6y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 20 + 18 = 38
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 38, MATH2IN_AZ),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_aaa_3x_minus_2y() {
+        let inputs: [c_int; 2] = [5, 3];
+        // 15 - 6 = 9
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 9, MATH2IN_AAA),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_null_inputs_returns_zero() {
+        assert_eq!(
+            avd_task_eval_math2in(std::ptr::null(), 3, 0, MATH2IN_AA),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math2in_invalid_op_returns_zero() {
+        let inputs: [c_int; 2] = [5, 3];
+        assert_eq!(avd_task_eval_math2in(inputs.as_ptr(), 2, 0, 99), 0.0);
+    }
+
+    #[test]
+    fn math2in_single_input_always_zero() {
+        // With only 1 input, i always equals j, so all pairs are skipped
+        let inputs: [c_int; 1] = [5];
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 1, 10, MATH2IN_AN),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math2in_ak_log_abs_quot() {
+        let inputs: [c_int; 2] = [100, 2];
+        // log(abs(100/2)) = log(50) ~ 3.91 => 3
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 3, MATH2IN_AK),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_al_log_abs_x_div_y() {
+        let inputs: [c_int; 2] = [100, 2];
+        // log(abs(100)) / 2 = 4.605/2 = 4/2 = 2
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 2, MATH2IN_AL),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math2in_am_x_div_log_abs_y() {
+        let inputs: [c_int; 2] = [20, 100];
+        // 20 / (int)log(100) = 20 / 4 = 5
+        assert_eq!(
+            avd_task_eval_math2in(inputs.as_ptr(), 2, 5, MATH2IN_AM),
+            1.0
+        );
     }
 }

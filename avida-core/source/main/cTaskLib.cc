@@ -67,6 +67,53 @@ static const int AVD_TASK_NOR    = 6;
 static const int AVD_TASK_XOR    = 7;
 static const int AVD_TASK_EQU    = 8;
 
+// Math1in operation codes (must match Rust avd_task_eval_math1in)
+static const int MATH1IN_AA = 0;
+static const int MATH1IN_AB = 1;
+static const int MATH1IN_AC = 2;
+static const int MATH1IN_AD = 3;
+static const int MATH1IN_AE = 4;
+static const int MATH1IN_AF = 5;
+static const int MATH1IN_AG = 6;
+static const int MATH1IN_AH = 7;
+static const int MATH1IN_AI = 8;
+static const int MATH1IN_AJ = 9;
+static const int MATH1IN_AK = 10;
+static const int MATH1IN_AL = 11;
+static const int MATH1IN_AM = 12;
+static const int MATH1IN_AN = 13;
+static const int MATH1IN_AO = 14;
+static const int MATH1IN_AP = 15;
+static const int MATH1IN_AS = 16;
+
+// Math2in operation codes (must match Rust avd_task_eval_math2in)
+static const int MATH2IN_AA  = 0;
+static const int MATH2IN_AB  = 1;
+static const int MATH2IN_AC  = 2;
+static const int MATH2IN_AD  = 3;
+static const int MATH2IN_AE  = 4;
+static const int MATH2IN_AF  = 5;
+static const int MATH2IN_AG  = 6;
+static const int MATH2IN_AH  = 7;
+static const int MATH2IN_AI  = 8;
+static const int MATH2IN_AJ  = 9;
+static const int MATH2IN_AK  = 10;
+static const int MATH2IN_AL  = 11;
+static const int MATH2IN_AM  = 12;
+static const int MATH2IN_AN  = 13;
+static const int MATH2IN_AO  = 14;
+static const int MATH2IN_AP  = 15;
+static const int MATH2IN_AQ  = 16;
+static const int MATH2IN_AR  = 17;
+static const int MATH2IN_AS  = 18;
+static const int MATH2IN_AT  = 19;
+static const int MATH2IN_AU  = 20;
+static const int MATH2IN_AV  = 21;
+static const int MATH2IN_AX  = 22;
+static const int MATH2IN_AY  = 23;
+static const int MATH2IN_AZ  = 24;
+static const int MATH2IN_AAA = 25;
+
 
 cTaskLib::~cTaskLib()
 {
@@ -903,632 +950,270 @@ double cTaskLib::Task_Logic3in_CP(cTaskContext& ctx) const
   return avd_task_eval_logic3in_6(ctx.GetLogicId(), 174, 186, 206, 220, 242, 244);
 }
 
+// Helper: extract contiguous input array from tBuffer for Rust FFI
+static inline int extract_inputs(const tBuffer<int>& buf, int* out, int max_n) {
+  int n = buf.GetNumStored();
+  if (n > max_n) n = max_n;
+  for (int i = 0; i < n; i++) out[i] = buf[i];
+  return n;
+}
+
 double cTaskLib::Task_Math1in_AA(cTaskContext& ctx) const //(2X)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    if (test_output == 2 * input_buffer[i]) return 1.0;
-  }
-  return 0.0; 
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AA);
 }
 
 double cTaskLib::Task_Math1in_AB(cTaskContext& ctx) const //(2X/3)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == 2 * input_buffer[i] / 3) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AB);
 }
 
 double cTaskLib::Task_Math1in_AC(cTaskContext& ctx) const //(5X/4)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == 5 * input_buffer[i] / 4) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AC);
 }
 
 double cTaskLib::Task_Math1in_AD(cTaskContext& ctx) const //(X^2)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] * input_buffer[i]) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AD);
 }
 
 double cTaskLib::Task_Math1in_AE(cTaskContext& ctx) const //(X^3)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] * input_buffer[i] * input_buffer[i])
-      return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AE);
 }
 
 double cTaskLib::Task_Math1in_AF(cTaskContext& ctx) const //(sqrt(X)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == (int) sqrt((double) abs(input_buffer[i]))) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AF);
 }
 
 double cTaskLib::Task_Math1in_AG(cTaskContext& ctx) const //(log(X))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (input_buffer[i] <= 0) continue;
-    if (test_output == (int) log((double) input_buffer[i])) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AG);
 }
 
 double cTaskLib::Task_Math1in_AH(cTaskContext& ctx) const //(X^2+X^3)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] * input_buffer[i] + input_buffer[i] * input_buffer[i] * input_buffer[i])
-      return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AH);
 }
 
 double cTaskLib::Task_Math1in_AI(cTaskContext& ctx) const // (X^2 + sqrt(X))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] * input_buffer[i] + (int) sqrt((double) abs(input_buffer[i]))) 
-      return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AI);
 }
 
 double cTaskLib::Task_Math1in_AJ(cTaskContext& ctx) const // abs(X)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == abs(input_buffer[i])) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AJ);
 }
 
 double cTaskLib::Task_Math1in_AK(cTaskContext& ctx) const //(X-5)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] - 5) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AK);
 }
 
 double cTaskLib::Task_Math1in_AL(cTaskContext& ctx) const //(-X)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == 0 - input_buffer[i]) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AL);
 }
 
 double cTaskLib::Task_Math1in_AM(cTaskContext& ctx) const //(5X)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == 5 * input_buffer[i]) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AM);
 }
 
 double cTaskLib::Task_Math1in_AN(cTaskContext& ctx) const //(X/4)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] / 4) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AN);
 }
 
 double cTaskLib::Task_Math1in_AO(cTaskContext& ctx) const //(X-6)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] - 6) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AO);
 }
 
 double cTaskLib::Task_Math1in_AP(cTaskContext& ctx) const //(X-7)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] - 7) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AP);
 }
 
 double cTaskLib::Task_Math1in_AS(cTaskContext& ctx) const //3Y
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i ++) {
-    if (test_output == input_buffer[i] * 3) return 1.0;
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math1in(inputs, n, ctx.GetOutputBuffer()[0], MATH1IN_AS);
 }
 
 double cTaskLib::Task_Math2in_AA(cTaskContext& ctx) const //(sqrt(X+Y))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == (int) sqrt((double) abs(input_buffer[i] + input_buffer[j])))
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AA);
 }
 
 double cTaskLib::Task_Math2in_AB(cTaskContext& ctx) const  //((X+Y)^2)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == (input_buffer[i] + input_buffer[j]) * 
-          (input_buffer[i] + input_buffer[j])) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AB);
 }
 
 double cTaskLib::Task_Math2in_AC(cTaskContext& ctx) const //(X%Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (input_buffer[j] == 0) continue; // mod by zero
-      if (test_output == input_buffer[i] % input_buffer[j]) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AC);
 }
 
 double cTaskLib::Task_Math2in_AD(cTaskContext& ctx) const //(3X/2+5Y/4)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == 3 * input_buffer[i] / 2 + 5 * input_buffer[j] / 4)
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AD);
 }
 
 double cTaskLib::Task_Math2in_AE(cTaskContext& ctx) const //(abs(X-5)+abs(Y-6))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == abs(input_buffer[i] - 5) + abs(input_buffer[j] - 6))
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AE);
 }
 
 double cTaskLib::Task_Math2in_AF(cTaskContext& ctx) const //(XY-X/Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (input_buffer[j] == 0) continue;
-      if (0-INT_MAX > input_buffer[i] && input_buffer[j] == -1) continue;
-      if (test_output == input_buffer[i] * input_buffer[j] - 
-          input_buffer[i] / input_buffer[j]) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AF);
 }
 
 double cTaskLib::Task_Math2in_AG(cTaskContext& ctx) const //((X-Y)^2)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == (input_buffer[i] - input_buffer[j]) *
-          (input_buffer[i] - input_buffer[j])) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AG);
 }
 
 double cTaskLib::Task_Math2in_AH(cTaskContext& ctx) const //(X^2+Y^2)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] * input_buffer[i] +
-          input_buffer[j] * input_buffer[j]) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AH);
 }
 
 double cTaskLib::Task_Math2in_AI(cTaskContext& ctx) const //(X^2+Y^3)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] * input_buffer[i] + input_buffer[j] * input_buffer[j] * input_buffer[j]) 
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AI);
 }
 
 double cTaskLib::Task_Math2in_AJ(cTaskContext& ctx) const //((sqrt(X)+Y)/(X-7))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (input_buffer[i] - 7 == 0) continue;
-      if (test_output == ((int) sqrt((double) abs(input_buffer[i])) + input_buffer[j]) / (input_buffer[i] - 7)) return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AJ);
 }
 
 double cTaskLib::Task_Math2in_AK(cTaskContext& ctx) const //(log(|X/Y|))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j || input_buffer[j] == 0 ) continue;
-      if (0-INT_MAX > input_buffer[i] && input_buffer[j] == -1) continue;
-      if (input_buffer[i] / input_buffer[j] == 0) continue;
-      if (test_output == (int) log((double) abs(input_buffer[i] / input_buffer[j])))
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AK);
 }
 
 double cTaskLib::Task_Math2in_AL(cTaskContext& ctx) const //(log(|X|)/Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j || input_buffer[j] == 0) continue;
-      if (test_output == (int) log((double) abs(input_buffer[i])) / input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AL);
 }
 
 double cTaskLib::Task_Math2in_AM(cTaskContext& ctx) const //(X/log(|Y|))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j || log((double) abs(input_buffer[j])) == 0) continue;
-      if (0-INT_MAX > input_buffer[i] && log((double) abs(input_buffer[j])) == -1) continue;
-      if (test_output == input_buffer[i] / (int) log((double) abs(input_buffer[j])))
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AM);
 }
 
 double cTaskLib::Task_Math2in_AN(cTaskContext& ctx) const //(X+Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] + input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AN);
 }
 
 double cTaskLib::Task_Math2in_AO(cTaskContext& ctx) const //(X-Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] - input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AO);
 }
 
 double cTaskLib::Task_Math2in_AP(cTaskContext& ctx) const //(X/Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j || input_buffer[j] == 0) continue;
-      if (0 - INT_MAX > input_buffer[i] && input_buffer[j] == -1) continue;
-      if (test_output == input_buffer[i] / input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AP);
 }
 
 double cTaskLib::Task_Math2in_AQ(cTaskContext& ctx) const //(XY)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] * input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AQ);
 }
 
 double cTaskLib::Task_Math2in_AR(cTaskContext& ctx) const //(sqrt(X)+sqrt(Y))
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == (int) sqrt((double) abs(input_buffer[i])) + (int) sqrt((double) abs(input_buffer[j])))
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AR);
 }
 
 double cTaskLib::Task_Math2in_AS(cTaskContext& ctx) const //(X+2Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] + 2 * input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AS);
 }
 
 double cTaskLib::Task_Math2in_AT(cTaskContext& ctx) const //(X+3Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] + 3 * input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AT);
 }
 
 double cTaskLib::Task_Math2in_AU(cTaskContext& ctx) const //(2X+3Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == 2 * input_buffer[i] + 3 * input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AU);
 }
 
 double cTaskLib::Task_Math2in_AV(cTaskContext& ctx) const //(XY^2)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] * input_buffer[j] * input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AV);
 }
 
 double cTaskLib::Task_Math2in_AX(cTaskContext& ctx) const //(X+3Y)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == input_buffer[i] + 3*input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
-
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AX);
 }
 
 double cTaskLib::Task_Math2in_AY(cTaskContext& ctx) const //(2A+B)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == 2*input_buffer[i] + input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AY);
 }
 
 double cTaskLib::Task_Math2in_AZ(cTaskContext& ctx) const //(4A+6B)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == 4*input_buffer[i] + 6*input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AZ);
 }
+
 double cTaskLib::Task_Math2in_AAA(cTaskContext& ctx) const //(3A-2B)
 {
-  const tBuffer<int>& input_buffer = ctx.GetInputBuffer();
-  const int test_output = ctx.GetOutputBuffer()[0];
-  const int input_size = input_buffer.GetNumStored();
-
-  for (int i = 0; i < input_size; i++) {
-    for (int j = 0; j < input_size; j++) {
-      if (i == j) continue;
-      if (test_output == 3*input_buffer[i] - 2*input_buffer[j])
-        return 1.0;
-    }
-  }
-  return 0.0;
+  int inputs[3]; int n = extract_inputs(ctx.GetInputBuffer(), inputs, 3);
+  return avd_task_eval_math2in(inputs, n, ctx.GetOutputBuffer()[0], MATH2IN_AAA);
 }
 
 double cTaskLib::Task_Math3in_AA(cTaskContext& ctx) const //(X^2+Y^2+Z^2)
