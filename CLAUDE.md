@@ -94,9 +94,9 @@ When working at program scale, always read and maintain these documents:
 
 ---
 
-## Current Migration State (as of 2026-03-22)
+## Current Migration State (as of 2026-03-22, end of session 2)
 
-**525+ unique `avd_*` FFI exports. 449 Rust tests. 15,072 LOC Rust across 39 modules.**
+**550+ FFI exports. 553 Rust tests. ~18,000 LOC Rust across 41 modules.**
 **9 `#[repr(C)]` type replacements**: Merit, CpuStack, CodeLabel, MutationRates, PhenotypeCoreMetrics, PhenotypeStatusFlags, PhenotypeLifetimeData, BirthEntryScalars, CpuRegisters. Plus GradientConfig, GradientState.
 
 ### Completed milestones:
@@ -105,7 +105,8 @@ When working at program scale, always read and maintain these documents:
 - **Issue #43**: Rust type system infrastructure
 - **Issue #48**: cPhenotype — 121 scalar fields in Rust, 11 energy methods, array bulk ops via FFI
 - **Issue #49**: cBirthEntry — 8 scalar fields in Rust
-- **Issues #50-52**: Wave 12 — newtype IDs, foundations established
+- **Issue #50**: cTaskLib — 178/204 task eval functions (87%) in Rust; 26 remaining blocked on organism/deme/resource FFI
+- **Issues #51-52**: Wave 12 — newtype IDs, foundations established
 - **Issues #53-56**: Wave 13 — cResourceCount (41 FFI, 1,278 LOC Rust), cGradientCount (66 fields in Rust), cStats/cDeme foundations
 - **Issue #71**: CPU register operations — 32 instruction handlers ported to Rust
 
@@ -115,3 +116,12 @@ When working at program scale, always read and maintain these documents:
 - AvidaRNG bit-exact Knuth subtractive generator in Rust
 - Newtype IDs: ReactionId, ResourceId, TaskId, CellId, OrganismId, DemeId
 - 3 latent C++ bugs fixed (cDeme::Reset init, cResourceCount spatial cache, cBirthEntry Rule of Three)
+
+### PO priorities (updated 2026-03-22, after session 2):
+1. **DONE: Config access strategy (Option B)** — ConfigSnapshot (80 fields) + TaskContextSnapshot (26 fields) implemented. **Fix needed**: currently created per-task-call; must be hoisted to once-per-update in the simulation loop.
+2. **Task porting paused at 87%** (#50) — 178/204 done. Remaining 26 blocked on organism/deme/resource FFI. Will resume when those surfaces exist.
+3. **Next sprint: CPU instruction handlers** (#57) — 32 done, ~480 remaining. Highest ROI now that tasks are paused. Same `CpuRegisters` pattern.
+4. **Fix ConfigSnapshot hoisting** — move snapshot creation from per-task-call to once-per-update. Performance matters here since tasks are the hot path.
+5. **Viewer is an independent track** (#73-#81) — can proceed in parallel using Strategy A (thin C FFI around existing C++ viewer core). Do not block on migration progress.
+6. **Do NOT start Wave 14 yet** — cHardware/cOrganism/cPopulation/cWorld are 50K+ LOC of deeply coupled C++. Wait until Wave 12-13 are more complete.
+7. **Remaining 14 Apto::Array occurrences** — defer. Architectural decisions not blocking anything.
