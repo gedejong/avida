@@ -984,6 +984,20 @@ void avd_pheno_divide_snapshot_tasks(
     double* last_internal_task_quality, const double* cur_internal_task_quality, int internal_task_quality_len
 );
 
+/* cBirthEntry scalar fields — Slice 1 of issue #49 */
+typedef struct {
+  int mating_type;
+  int mating_display_a;
+  int mating_display_b;
+  int mate_preference;
+  int group_id;
+  double energy4_offspring;
+  AvidaMerit merit;
+  int timestamp;
+} BirthEntryScalars;
+
+BirthEntryScalars avd_birth_scalars_default(void);
+
 #ifdef __cplusplus
 }
 #endif

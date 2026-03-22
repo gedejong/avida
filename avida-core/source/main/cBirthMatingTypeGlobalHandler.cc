@@ -200,7 +200,7 @@ void cBirthMatingTypeGlobalHandler::storeOffspring(cAvidaContext&, const Genome&
     if (m_bc->ValidateBirthEntry(m_entries[i])) {
       //Current entry is valid, so let's just keep track of the oldest one
       if (oldest_index == -1) oldest_index = i;
-      else oldest_index = (m_entries[i].timestamp < m_entries[oldest_index].timestamp ? i : oldest_index);
+      else oldest_index = (m_entries[i].m_scalars.timestamp < m_entries[oldest_index].m_scalars.timestamp ? i : oldest_index);
     } else {
       //Current entry is empty, so let's use this one
       m_bc->ClearEntry(m_entries[i]);
@@ -258,8 +258,8 @@ bool cBirthMatingTypeGlobalHandler::compareBirthEntries(cAvidaContext& ctx, int 
       break;
       
     case MATE_PREFERENCE_HIGHEST_MERIT:
-      value1 = (double) entry1.merit.GetDouble();
-      value2 = (double) entry2.merit.GetDouble();
+      value1 = (double) avd_merit_get_double(&entry1.m_scalars.merit);
+      value2 = (double) avd_merit_get_double(&entry2.m_scalars.merit);
       if (m_world->GetConfig().NOISY_MATE_ASSESSMENT.Get()) {
         value1 += ctx.GetRandom().GetRandNormal(0, value1*cv);
         value2 += ctx.GetRandom().GetRandNormal(0, value2*cv);
@@ -287,8 +287,8 @@ bool cBirthMatingTypeGlobalHandler::compareBirthEntries(cAvidaContext& ctx, int 
       break;
       
     case MATE_PREFERENCE_LOWEST_MERIT:
-      value1 = (double) entry1.merit.GetDouble();
-      value2 = (double) entry2.merit.GetDouble();
+      value1 = (double) avd_merit_get_double(&entry1.m_scalars.merit);
+      value2 = (double) avd_merit_get_double(&entry2.m_scalars.merit);
       if (m_world->GetConfig().NOISY_MATE_ASSESSMENT.Get()) {
         value1 += ctx.GetRandom().GetRandNormal(0, value1*cv);
         value2 += ctx.GetRandom().GetRandNormal(0, value2*cv);

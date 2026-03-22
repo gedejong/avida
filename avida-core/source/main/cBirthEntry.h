@@ -29,6 +29,8 @@
 #include "cMerit.h"
 #include "cString.h"
 
+#include "rust/running_stats_ffi.h"
+
 class cBioGroup;
 class cOrganism;
 
@@ -37,47 +39,40 @@ using namespace Avida;
 class cBirthEntry
 {
 private:
-  int m_mating_type;
-  int m_mating_display_a;
-  int m_mating_display_b;
-  int m_mate_preference;
-  int m_group_id;
   AvidaArray<int> m_parent_task_count;
 public:
+  BirthEntryScalars m_scalars;
   Genome genome;
-  double energy4Offspring;
-  cMerit merit;
-  int timestamp; // -1 if empty
   Systematics::GroupMembershipPtr groups;
-  
+
   cBirthEntry();
   cBirthEntry(const cBirthEntry& _birth_entry);
   cBirthEntry(const Genome& _offspring, cOrganism* _parent, int _timestamp);
   ~cBirthEntry();
-  
+
   //Accessor functions
-  int GetMatingType() { return m_mating_type; }
+  int GetMatingType() const { return m_scalars.mating_type; }
   int GetParentTaskCount(int which_task) { return m_parent_task_count[which_task]; }
   const AvidaArray<int>& GetParentTaskCount() const { return m_parent_task_count; }
-  int GetMatingDisplayA() const { return m_mating_display_a; } 
-  int GetMatingDisplayB() const { return m_mating_display_b; } 
-  int GetMatePreference() const { return m_mate_preference; }
-  int GetGroupID() const { return m_group_id; }
-  
-  void SetMatingType(int _mating_type) { m_mating_type = _mating_type; } //@CHC
+  int GetMatingDisplayA() const { return m_scalars.mating_display_a; }
+  int GetMatingDisplayB() const { return m_scalars.mating_display_b; }
+  int GetMatePreference() const { return m_scalars.mate_preference; }
+  int GetGroupID() const { return m_scalars.group_id; }
+
+  void SetMatingType(int _mating_type) { m_scalars.mating_type = _mating_type; } //@CHC
   void SetParentTaskCount(AvidaArray<int> _parent_task_count) { m_parent_task_count = _parent_task_count; } //@CHC
-  void SetMatingDisplayA(int _mating_display_a) { m_mating_display_a = _mating_display_a; } //@CHC
-  void SetMatingDisplayB(int _mating_display_b) { m_mating_display_b = _mating_display_b; } //@CHC
-  void SetMatePreference(int _mate_preference) { m_mate_preference = _mate_preference; }
-  void SetGroupID(int _group_id) { m_group_id = _group_id; }
-  
+  void SetMatingDisplayA(int _mating_display_a) { m_scalars.mating_display_a = _mating_display_a; } //@CHC
+  void SetMatingDisplayB(int _mating_display_b) { m_scalars.mating_display_b = _mating_display_b; } //@CHC
+  void SetMatePreference(int _mate_preference) { m_scalars.mate_preference = _mate_preference; }
+  void SetGroupID(int _group_id) { m_scalars.group_id = _group_id; }
+
   //Other functions
   cString GetPhenotypeString();
   static cString GetPhenotypeStringFormat();
-  
+
   //Operators
   cBirthEntry& operator=(const cBirthEntry& _birth_entry);
-  
+
 };
 
 #endif

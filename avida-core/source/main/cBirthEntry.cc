@@ -26,12 +26,7 @@
 #include "cPhenotype.h"
 
 cBirthEntry::cBirthEntry()
-: m_mating_type(MATING_TYPE_JUVENILE)
-, m_mating_display_a(0)
-, m_mating_display_b(0)
-, m_mate_preference(MATE_PREFERENCE_RANDOM)
-, m_group_id(-1)
-, timestamp(-1)
+: m_scalars(avd_birth_scalars_default())
 {
 }
 
@@ -39,16 +34,9 @@ cBirthEntry::cBirthEntry()
 // about to divide sexually, just for record-keeping purposes; the birth entry should then be
 // immediately destroyed
 cBirthEntry::cBirthEntry(const cBirthEntry& _birth_entry)
-: m_mating_type(_birth_entry.m_mating_type)
-, m_mating_display_a(_birth_entry.m_mating_display_a)
-, m_mating_display_b(_birth_entry.m_mating_display_b)
-, m_mate_preference(_birth_entry.m_mate_preference)
-, m_group_id(_birth_entry.m_group_id)
-, m_parent_task_count(_birth_entry.m_parent_task_count)
+: m_parent_task_count(_birth_entry.m_parent_task_count)
+, m_scalars(_birth_entry.m_scalars)
 , genome(_birth_entry.genome)
-, energy4Offspring(_birth_entry.energy4Offspring)
-, merit(_birth_entry.merit)
-, timestamp(_birth_entry.timestamp)
 , groups(_birth_entry.groups)
 {
   if (groups) {
@@ -59,15 +47,21 @@ cBirthEntry::cBirthEntry(const cBirthEntry& _birth_entry)
 }
 
 cBirthEntry::cBirthEntry(const Genome& _offspring, cOrganism* _parent, int _timestamp)
-: m_mating_type(_parent->GetPhenotype().GetMatingType())
-, m_mating_display_a(_parent->GetPhenotype().GetLastMatingDisplayA())
-, m_mating_display_b(_parent->GetPhenotype().GetLastMatingDisplayB())
-, m_mate_preference(_parent->GetPhenotype().GetMatePreference())
-, m_group_id(-1)
+: m_scalars(avd_birth_scalars_default())
 , genome(_offspring)
-, merit(_parent->GetPhenotype().GetMerit())
-, timestamp(_timestamp)
 {
+  m_scalars.mating_type = _parent->GetPhenotype().GetMatingType();
+  m_scalars.mating_display_a = _parent->GetPhenotype().GetLastMatingDisplayA();
+  m_scalars.mating_display_b = _parent->GetPhenotype().GetLastMatingDisplayB();
+  m_scalars.mate_preference = _parent->GetPhenotype().GetMatePreference();
+  m_scalars.group_id = -1;
+
+  // Copy parent merit into the embedded AvidaMerit via memcpy (layout-compatible)
+  cMerit parent_merit = _parent->GetPhenotype().GetMerit();
+  memcpy(&m_scalars.merit, &parent_merit, sizeof(AvidaMerit));
+
+  m_scalars.timestamp = _timestamp;
+
   // Note: Not checking for energy because we don't want to clear out the parent's energy
   // for a temporary birth entry, otherwise things may get screwed up when the REAL offspring
   // is created
@@ -75,7 +69,7 @@ cBirthEntry::cBirthEntry(const Genome& _offspring, cOrganism* _parent, int _time
   // Similarly, I'm not setting the biogroups here because I don't want to add references to them,
   // since this birth entry is going to be destroyed anyway
   if (_parent->HasOpinion()) {
-    m_group_id = _parent->GetOpinion().first;
+    m_scalars.group_id = _parent->GetOpinion().first;
   }
 }
 
@@ -102,16 +96,16 @@ cString cBirthEntry::GetPhenotypeString()
   //mating_display_b
   //group
   cString result;
-  
+
   result = genome.Representation()->AsString();
-  result += " "; result += cStringUtil::Convert(timestamp);
-  result += " "; result += cStringUtil::Convert(merit.GetDouble());
-  result += " "; result += cStringUtil::Convert(m_mating_type);
-  result += " "; result += cStringUtil::Convert(m_mate_preference);
-  result += " "; result += cStringUtil::Convert(m_mating_display_a);
-  result += " "; result += cStringUtil::Convert(m_mating_display_b);
-  result += " "; result += cStringUtil::Convert(m_group_id);
-  
+  result += " "; result += cStringUtil::Convert(m_scalars.timestamp);
+  result += " "; result += cStringUtil::Convert(avd_merit_get_double(&m_scalars.merit));
+  result += " "; result += cStringUtil::Convert(m_scalars.mating_type);
+  result += " "; result += cStringUtil::Convert(m_scalars.mate_preference);
+  result += " "; result += cStringUtil::Convert(m_scalars.mating_display_a);
+  result += " "; result += cStringUtil::Convert(m_scalars.mating_display_b);
+  result += " "; result += cStringUtil::Convert(m_scalars.group_id);
+
   return result;
 }
 
@@ -123,25 +117,18 @@ cString cBirthEntry::GetPhenotypeStringFormat()
 
 cBirthEntry& cBirthEntry::operator=(const cBirthEntry& _birth_entry)
 {
-  m_mating_type = _birth_entry.m_mating_type;
-  m_mating_display_a = _birth_entry.m_mating_display_a;
-  m_mating_display_b = _birth_entry.m_mating_display_b;
+  m_scalars = _birth_entry.m_scalars;
   m_parent_task_count = _birth_entry.m_parent_task_count;
-  m_mate_preference = _birth_entry.m_mate_preference;
-  m_group_id = _birth_entry.m_group_id;
-  
+
   genome = _birth_entry.genome;
-  energy4Offspring = _birth_entry.energy4Offspring;
-  merit = _birth_entry.merit;
-  timestamp = _birth_entry.timestamp;
   groups = _birth_entry.groups;
-  
+
   // Creating a copy of this birth entry, make sure to add active references to group membership
   if (groups) {
     for (int i = 0; i < groups->GetSize(); i++) {
       (*groups)[i]->AddActiveReference();
     }
   }
-  
+
   return *this;
 }

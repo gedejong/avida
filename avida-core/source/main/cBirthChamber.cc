@@ -22,6 +22,8 @@
 
 #include "cBirthChamber.h"
 
+#include <cstring>
+
 #include "cAvidaContext.h"
 #include "cBirthDemeHandler.h"
 #include "cBirthGenomeSizeHandler.h"
@@ -89,7 +91,7 @@ cBirthSelectionHandler* cBirthChamber::getSelectionHandler(int hw_type)
 bool cBirthChamber::ValidBirthEntry(const cBirthEntry& entry) const
 {
   // If there is no organism in the entry, return false.
-  if (entry.timestamp == -1) return false;
+  if (entry.m_scalars.timestamp == -1) return false;
 
   // If there is an organism, determine if it is still alive.
   const int max_wait_time = m_world->GetConfig().MAX_BIRTH_WAIT_TIME.Get();
@@ -99,7 +101,7 @@ bool cBirthChamber::ValidBirthEntry(const cBirthEntry& entry) const
 
   // Otherwise, check if few enough updates have gone by...
   const int cur_update = m_world->GetStats().GetUpdate();
-  const int max_update = entry.timestamp + max_wait_time;
+  const int max_update = entry.m_scalars.timestamp + max_wait_time;
 
   if (cur_update > max_update) return false; // Too many updates...
 
@@ -109,7 +111,7 @@ bool cBirthChamber::ValidBirthEntry(const cBirthEntry& entry) const
 bool cBirthChamber::ValidateBirthEntry(cBirthEntry& entry) 
 {
   // If there is no organism in the entry, return false.
-  if (entry.timestamp == -1) return false;
+  if (entry.m_scalars.timestamp == -1) return false;
 
   // If there is an organism, determine if it is still alive.
   const int max_wait_time = m_world->GetConfig().MAX_BIRTH_WAIT_TIME.Get();
@@ -119,7 +121,7 @@ bool cBirthChamber::ValidateBirthEntry(cBirthEntry& entry)
 
   // Otherwise, check if few enough updates have gone by...
   const int cur_update = m_world->GetStats().GetUpdate();
-  const int max_update = entry.timestamp + max_wait_time;
+  const int max_update = entry.m_scalars.timestamp + max_wait_time;
 
   if (cur_update > max_update) {   // Too many updates...
     //The birth entry has died, so we need to "Clear" it, to ensure that 
@@ -136,12 +138,13 @@ void cBirthChamber::StoreAsEntry(const Genome& offspring, cOrganism* parent, cBi
 {
   entry.genome = offspring;
   if (m_world->GetConfig().ENERGY_ENABLED.Get() == 1) {
-    entry.energy4Offspring = parent->GetPhenotype().ExtractParentEnergy();
-    entry.merit = parent->GetPhenotype().ConvertEnergyToMerit(entry.energy4Offspring);
+    entry.m_scalars.energy4_offspring = parent->GetPhenotype().ExtractParentEnergy();
+    entry.m_scalars.merit = avd_merit_new(parent->GetPhenotype().ConvertEnergyToMerit(entry.m_scalars.energy4_offspring));
   } else {
-    entry.merit = parent->GetPhenotype().GetMerit();
+    cMerit parent_merit = parent->GetPhenotype().GetMerit();
+    memcpy(&entry.m_scalars.merit, &parent_merit, sizeof(AvidaMerit));
   }
-  entry.timestamp = m_world->GetStats().GetUpdate();
+  entry.m_scalars.timestamp = m_world->GetStats().GetUpdate();
   entry.groups = Systematics::GroupMembershipPtr(new Systematics::GroupMembership);
   *entry.groups = *parent->SystematicsGroupMembership();
   
@@ -164,7 +167,7 @@ void cBirthChamber::StoreAsEntry(const Genome& offspring, cOrganism* parent, cBi
 
 void cBirthChamber::ClearEntry(cBirthEntry& entry)
 {
-  entry.timestamp = -1;
+  entry.m_scalars.timestamp = -1;
 
   if (entry.groups) {
     for (int i = 0; i < entry.groups->GetSize(); i++) {
@@ -271,7 +274,7 @@ bool cBirthChamber::DoPairAsexBirth(cAvidaContext& ctx, const cBirthEntry& old_e
 
   // Setup the merits for both children...
   merit_array.Resize(2);
-  merit_array[0] = old_entry.merit;
+  memcpy(&merit_array[0], &old_entry.m_scalars.merit, sizeof(AvidaMerit));
   merit_array[1] = parent.GetPhenotype().GetMerit();
 
   // Setup the genotypes for both children...
@@ -480,10 +483,10 @@ bool cBirthChamber::SubmitOffspring(cAvidaContext& ctx, const Genome& offspring,
   double meritOrEnergy1;
 
   if(m_world->GetConfig().ENERGY_ENABLED.Get() == 1) {
-    meritOrEnergy0 = old_entry->energy4Offspring;
+    meritOrEnergy0 = old_entry->m_scalars.energy4_offspring;
     meritOrEnergy1 = parent_phenotype.ExtractParentEnergy();
   } else {
-    meritOrEnergy0 = old_entry->merit.GetDouble();
+    meritOrEnergy0 = avd_merit_get_double(&old_entry->m_scalars.merit);
     meritOrEnergy1 = parent_phenotype.GetMerit().GetDouble();
   }
 

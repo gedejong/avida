@@ -14,6 +14,7 @@
 #![cfg_attr(test, allow(clippy::expect_used, clippy::panic, clippy::unwrap_used))]
 
 pub mod analyze_helpers;
+pub mod birth;
 pub mod bit_array;
 pub mod code_label;
 pub mod common;
