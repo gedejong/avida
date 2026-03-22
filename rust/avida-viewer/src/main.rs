@@ -4,6 +4,8 @@
 //! It will eventually display population maps, stats dashboards, organism
 //! inspectors, and configuration panels.
 
+mod sim_bridge;
+
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
@@ -63,16 +65,25 @@ pub struct SharedState {
 /// Main application state.
 struct AvidaViewerApp {
     shared: Arc<Mutex<SharedState>>,
+    _bridge: Option<sim_bridge::SimulationBridge>,
 }
 
 impl AvidaViewerApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        let shared = Arc::new(Mutex::new(SharedState {
+            current: SimSnapshot::default(),
+            history: SimHistory::new(1000),
+            running: false,
+        }));
+
+        // Try to connect to a simulation if a config dir is provided via CLI
+        let bridge = std::env::args().nth(1).map(|config_dir| {
+            sim_bridge::SimulationBridge::new(config_dir, Arc::clone(&shared))
+        });
+
         AvidaViewerApp {
-            shared: Arc::new(Mutex::new(SharedState {
-                current: SimSnapshot::default(),
-                history: SimHistory::new(1000),
-                running: false,
-            })),
+            shared,
+            _bridge: bridge,
         }
     }
 }
@@ -108,8 +119,17 @@ impl eframe::App for AvidaViewerApp {
             ui.separator();
 
             ui.heading("Status");
-            ui.label("Simulation not connected — scaffold mode");
-            ui.label("Connect to a running Avida instance to see live data.");
+            let running = match self.shared.lock() {
+                Ok(s) => s.running,
+                Err(_) => false,
+            };
+            if running {
+                ui.label("Simulation running — receiving live data");
+            } else if self._bridge.is_some() {
+                ui.label("Simulation bridge created — waiting for data...");
+            } else {
+                ui.label("No simulation connected. Run with: avida-viewer-egui <config-dir>");
+            }
         });
 
         // Request repaint for live updates
