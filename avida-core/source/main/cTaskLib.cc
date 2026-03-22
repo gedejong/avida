@@ -3020,16 +3020,10 @@ void cTaskLib::Load_MoveFT(const cString& name, const cString& argstr, cEnvReqs&
 
 double cTaskLib::Task_ConsumeTarget(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = 1;
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target(&snap);
 }
 
 double cTaskLib::Task_ConsumeTargetEcho(cTaskContext& ctx) const
@@ -3048,114 +3042,66 @@ double cTaskLib::Task_ConsumeTargetEcho(cTaskContext& ctx) const
 
 double cTaskLib::Task_ConsumeTargetNand(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Nand(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_NAND);
 }
 
 double cTaskLib::Task_ConsumeTargetAnd(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_And(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_AND);
 }
 
 double cTaskLib::Task_ConsumeTargetOrn(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_OrNot(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_ORNOT);
 }
 
 double cTaskLib::Task_ConsumeTargetOr(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Or(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_OR);
 }
 
 double cTaskLib::Task_ConsumeTargetAndn(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_AndNot(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_ANDNOT);
 }
 
 double cTaskLib::Task_ConsumeTargetNor(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Nor(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_NOR);
 }
 
 double cTaskLib::Task_ConsumeTargetXor(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Xor(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_XOR);
 }
 
 double cTaskLib::Task_ConsumeTargetEqu(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Equ(ctx);
-  }
-  return reward;
+  TaskContextSnapshot snap;
+  avd_populate_task_context(&snap, ctx);
+  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_EQU);
 }
 
 double cTaskLib::Task_MoveFT(cTaskContext& ctx) const

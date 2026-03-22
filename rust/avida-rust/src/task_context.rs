@@ -253,6 +253,50 @@ pub unsafe extern "C" fn avd_task_ctx_opinion_is(ctx: *const TaskContextSnapshot
     task_opinion_is(snap)
 }
 
+/// Evaluate Task_ConsumeTarget: returns 1.0 if forage_target matches task_arg_int[0].
+fn task_consume_target(snap: &TaskContextSnapshot) -> f64 {
+    if snap.forage_target == snap.task_arg_int[0] {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Evaluate Task_ConsumeTarget + logic task combo.
+/// Returns 1.0 if forage_target matches AND logic task passes.
+fn task_consume_target_logic(snap: &TaskContextSnapshot, task_type: c_int) -> f64 {
+    if snap.forage_target != snap.task_arg_int[0] {
+        return 0.0;
+    }
+    crate::task_lib_helpers::avd_task_eval_logic(task_type, snap.logic_id)
+}
+
+/// FFI: ConsumeTarget (forage target check only)
+///
+/// # Safety
+/// `ctx` must point to a valid, initialized `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_consume_target(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    let snap = unsafe { &*ctx };
+    task_consume_target(snap)
+}
+
+/// FFI: ConsumeTarget + logic task combo.
+/// task_type uses the TASK_* constants from task_lib_helpers.
+///
+/// # Safety
+/// `ctx` must point to a valid, initialized `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_consume_target_logic(
+    ctx: *const TaskContextSnapshot,
+    task_type: c_int,
+) -> f64 {
+    // SAFETY: caller guarantees valid pointer
+    let snap = unsafe { &*ctx };
+    task_consume_target_logic(snap, task_type)
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

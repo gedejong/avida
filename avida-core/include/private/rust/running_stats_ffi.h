@@ -1276,6 +1276,8 @@ double avd_task_ctx_exploded2(const TaskContextSnapshot* ctx);
 double avd_task_ctx_all_ones(const TaskContextSnapshot* ctx);
 double avd_task_ctx_match_number(const TaskContextSnapshot* ctx);
 double avd_task_ctx_opinion_is(const TaskContextSnapshot* ctx);
+double avd_task_ctx_consume_target(const TaskContextSnapshot* ctx);
+double avd_task_ctx_consume_target_logic(const TaskContextSnapshot* ctx, int task_type);
 
 #ifdef __cplusplus
 }
