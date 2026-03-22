@@ -76,3 +76,11 @@ void avd_populate_task_context(TaskContextSnapshot* snap, cTaskContext& ctx)
   const tList<tBuffer<int> >& neighbor_inputs = ctx.GetNeighborhoodInputBuffers();
   snap->num_neighbors_with_outputs = neighbor_inputs.GetSize();
 }
+
+void cTaskContext::EnsureSnapshot()
+{
+  if (!m_snapshot_valid) {
+    avd_populate_task_context(&m_snapshot, *this);
+    m_snapshot_valid = true;
+  }
+}

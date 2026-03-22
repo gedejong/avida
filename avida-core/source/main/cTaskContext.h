@@ -23,6 +23,7 @@
 #define cTaskContext_h
 
 #include "cOrgInterface.h"
+#include "rust/running_stats_ffi.h"
 #include "tBuffer.h"
 #include "tList.h"
 
@@ -49,6 +50,9 @@ private:
 
   cTaskEntry* m_task_entry;
   Apto::Map<void*, cTaskState*>* m_task_states;
+
+  TaskContextSnapshot m_snapshot;
+  bool m_snapshot_valid;
   
   
 public:
@@ -67,6 +71,8 @@ public:
     , m_on_divide(in_on_divide)
     , m_task_entry(NULL)
     , m_task_states(NULL)
+    , m_snapshot(avd_task_ctx_default())
+    , m_snapshot_valid(false)
   {
 	  m_task_value = 0;
   }
@@ -84,10 +90,17 @@ public:
   inline void SetTaskValue(double v) { m_task_value = v; }
   inline double GetTaskValue() { return m_task_value; }
   
-  inline void SetTaskEntry(cTaskEntry* in_entry) { m_task_entry = in_entry; }
+  inline void SetTaskEntry(cTaskEntry* in_entry) { m_task_entry = in_entry; InvalidateSnapshot(); }
   inline cTaskEntry* GetTaskEntry() { return m_task_entry; }
     
   inline void SetTaskStates(Apto::Map<void*, cTaskState*>* states) { m_task_states = states; }
+
+  // Lazily-populated snapshot for Rust FFI task evaluators.
+  // Call EnsureSnapshot() before first use; invalidated by SetTaskEntry().
+  inline void InvalidateSnapshot() { m_snapshot_valid = false; }
+  void EnsureSnapshot();
+  inline const TaskContextSnapshot& GetSnapshot() const { return m_snapshot; }
+  inline TaskContextSnapshot& GetSnapshotMut() { return m_snapshot; }
   
   inline cTaskState* GetTaskState()
   {

@@ -2441,33 +2441,29 @@ double cTaskLib::Task_CommNot(cTaskContext& ctx) const
 
 double cTaskLib::Task_MoveUpGradient(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_move_up_gradient(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_move_up_gradient(&ctx.GetSnapshot());
 }
 
 
 double cTaskLib::Task_MoveNeutralGradient(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_move_neutral_gradient(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_move_neutral_gradient(&ctx.GetSnapshot());
 }
 
 
 double cTaskLib::Task_MoveDownGradient(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_move_down_gradient(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_move_down_gradient(&ctx.GetSnapshot());
 }
 
 
 double cTaskLib::Task_MoveNotUpGradient(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_move_not_up_gradient(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_move_not_up_gradient(&ctx.GetSnapshot());
 }
 
 
@@ -2629,9 +2625,8 @@ double cTaskLib::Task_MoveToEvent(cTaskContext& ctx) const
 
 double cTaskLib::Task_EventKilled(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_event_killed(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_event_killed(&ctx.GetSnapshot());
 }
 
 
@@ -3025,10 +3020,9 @@ void cTaskLib::Load_MoveFT(const cString& name, const cString& argstr, cEnvReqs&
 
 double cTaskLib::Task_ConsumeTarget(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target(&snap);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target(&ctx.GetSnapshot());
 }
 
 double cTaskLib::Task_ConsumeTargetEcho(cTaskContext& ctx) const
@@ -3047,66 +3041,58 @@ double cTaskLib::Task_ConsumeTargetEcho(cTaskContext& ctx) const
 
 double cTaskLib::Task_ConsumeTargetNand(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_NAND);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_NAND);
 }
 
 double cTaskLib::Task_ConsumeTargetAnd(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_AND);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_AND);
 }
 
 double cTaskLib::Task_ConsumeTargetOrn(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_ORNOT);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_ORNOT);
 }
 
 double cTaskLib::Task_ConsumeTargetOr(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_OR);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_OR);
 }
 
 double cTaskLib::Task_ConsumeTargetAndn(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_ANDNOT);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_ANDNOT);
 }
 
 double cTaskLib::Task_ConsumeTargetNor(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_NOR);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_NOR);
 }
 
 double cTaskLib::Task_ConsumeTargetXor(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_XOR);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_XOR);
 }
 
 double cTaskLib::Task_ConsumeTargetEqu(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_consume_target_logic(&snap, AVD_TASK_EQU);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_logic(&ctx.GetSnapshot(), AVD_TASK_EQU);
 }
 
 double cTaskLib::Task_MoveFT(cTaskContext& ctx) const
@@ -3138,18 +3124,16 @@ double cTaskLib::Task_MoveFT(cTaskContext& ctx) const
 
 double cTaskLib::Task_Exploded(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_exploded(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_exploded(&ctx.GetSnapshot());
 }
 
 /* Reward organisms for executing the explode command. Second reaction included in order to make two differently valued explode reactions*/
 
 double cTaskLib::Task_Exploded2(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  return avd_task_ctx_exploded2(&snap);
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_exploded2(&ctx.GetSnapshot());
 }
 
 /*Charges organism for setting the autoinducer flag.*/
@@ -3415,8 +3399,7 @@ void cTaskLib::Load_OpinionIs(const cString& name, const cString& argstr, cEnvRe
 //! This task is complete if this organism's current opinion is set to a configured value.
 double cTaskLib::Task_OpinionIs(cTaskContext& ctx) const
 {
-  TaskContextSnapshot snap;
-  avd_populate_task_context(&snap, ctx);
-  snap.task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  return avd_task_ctx_opinion_is(&snap);
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_opinion_is(&ctx.GetSnapshot());
 }
