@@ -1124,6 +1124,8 @@ double avd_task_eval_logic3in_4(int logic_id, int t1, int t2, int t3, int t4);
 double avd_task_eval_logic3in_6(int logic_id, int t1, int t2, int t3, int t4, int t5, int t6);
 double avd_task_eval_math1in(const int* inputs, int num_inputs, int output, int op);
 double avd_task_eval_math2in(const int* inputs, int num_inputs, int output, int op);
+double avd_task_eval_math3in(const int* inputs, int num_inputs, int output, int op);
+double avd_task_eval_simple_arith(const int* inputs, int num_inputs, int output, int op);
 
 #ifdef __cplusplus
 }

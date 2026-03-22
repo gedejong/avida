@@ -142,6 +142,213 @@ pub extern "C" fn avd_tasklib_binary_pair_input_diff(
     (transformed - test_output).abs()
 }
 
+// ---------------------------------------------------------------------------
+// Math3in operation codes (13 tasks)
+// ---------------------------------------------------------------------------
+const MATH3IN_AA: c_int = 0; // X^2+Y^2+Z^2
+const MATH3IN_AB: c_int = 1; // sqrt(|X|)+sqrt(|Y|)+sqrt(|Z|)
+const MATH3IN_AC: c_int = 2; // X+2Y+3Z
+const MATH3IN_AD: c_int = 3; // XY^2+Z^3
+const MATH3IN_AE: c_int = 4; // (X%Y)*Z
+const MATH3IN_AF: c_int = 5; // (X+Y)^2+sqrt(|Y+Z|)
+const MATH3IN_AG: c_int = 6; // (XY)%(YZ)
+const MATH3IN_AH: c_int = 7; // X+Y+Z
+const MATH3IN_AI: c_int = 8; // -X-Y-Z
+const MATH3IN_AJ: c_int = 9; // (X-Y)^2+(Y-Z)^2+(Z-X)^2
+const MATH3IN_AK: c_int = 10; // (X+Y)^2+(Y+Z)^2+(Z+X)^2
+const MATH3IN_AL: c_int = 11; // (X-Y)^2+(X-Z)^2
+const MATH3IN_AM: c_int = 12; // (X+Y)^2+(X+Z)^2 (comment says Y+Z but code uses X+Z)
+
+/// Evaluate a three-input math expression for a single (x, y, z) triple.
+///
+/// Returns `Some(true)` if `output` matches, `Some(false)` if not,
+/// or `None` when a guard prevents evaluation (division by zero, etc.).
+fn math3in_check(x: c_int, y: c_int, z: c_int, output: c_int, op: c_int) -> Option<bool> {
+    let result = match op {
+        MATH3IN_AA => {
+            output
+                == x.wrapping_mul(x)
+                    .wrapping_add(y.wrapping_mul(y))
+                    .wrapping_add(z.wrapping_mul(z))
+        }
+        MATH3IN_AB => {
+            output
+                == (x.abs() as f64).sqrt() as i32
+                    + (y.abs() as f64).sqrt() as i32
+                    + (z.abs() as f64).sqrt() as i32
+        }
+        MATH3IN_AC => {
+            output
+                == x.wrapping_add(y.wrapping_mul(2))
+                    .wrapping_add(z.wrapping_mul(3))
+        }
+        MATH3IN_AD => {
+            output
+                == x.wrapping_mul(y)
+                    .wrapping_mul(y)
+                    .wrapping_add(z.wrapping_mul(z).wrapping_mul(z))
+        }
+        MATH3IN_AE => {
+            if y == 0 {
+                return None;
+            }
+            output == x.wrapping_rem(y).wrapping_mul(z)
+        }
+        MATH3IN_AF => {
+            let xy = x.wrapping_add(y);
+            output
+                == xy
+                    .wrapping_mul(xy)
+                    .wrapping_add((y.wrapping_add(z).abs() as f64).sqrt() as i32)
+        }
+        MATH3IN_AG => {
+            let mod_base = y.wrapping_mul(z);
+            if mod_base == 0 {
+                return None;
+            }
+            output == x.wrapping_mul(y).wrapping_rem(mod_base)
+        }
+        MATH3IN_AH => output == x.wrapping_add(y).wrapping_add(z),
+        MATH3IN_AI => output == 0i32.wrapping_sub(x).wrapping_sub(y).wrapping_sub(z),
+        MATH3IN_AJ => {
+            let xy = x.wrapping_sub(y);
+            let yz = y.wrapping_sub(z);
+            let zx = z.wrapping_sub(x);
+            output
+                == xy
+                    .wrapping_mul(xy)
+                    .wrapping_add(yz.wrapping_mul(yz))
+                    .wrapping_add(zx.wrapping_mul(zx))
+        }
+        MATH3IN_AK => {
+            let xy = x.wrapping_add(y);
+            let yz = y.wrapping_add(z);
+            let zx = z.wrapping_add(x);
+            output
+                == xy
+                    .wrapping_mul(xy)
+                    .wrapping_add(yz.wrapping_mul(yz))
+                    .wrapping_add(zx.wrapping_mul(zx))
+        }
+        MATH3IN_AL => {
+            let xy = x.wrapping_sub(y);
+            let xz = x.wrapping_sub(z);
+            output == xy.wrapping_mul(xy).wrapping_add(xz.wrapping_mul(xz))
+        }
+        MATH3IN_AM => {
+            // C++ code: (input_buffer[i]+input_buffer[j])^2 + (input_buffer[i]+input_buffer[k])^2
+            let xy = x.wrapping_add(y);
+            let xz = x.wrapping_add(z);
+            output == xy.wrapping_mul(xy).wrapping_add(xz.wrapping_mul(xz))
+        }
+        _ => return Some(false),
+    };
+    Some(result)
+}
+
+/// Evaluate a three-input math expression.
+///
+/// Returns 1.0 if `output` matches the expression applied to any triple
+/// `(inputs[i], inputs[j], inputs[k])` where `i != j`, `j != k`, `i != k`,
+/// otherwise 0.0.  Mirrors the C++ `Task_Math3in_*` family exactly.
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_task_eval_math3in(
+    inputs: *const c_int,
+    num_inputs: c_int,
+    output: c_int,
+    op: c_int,
+) -> f64 {
+    if inputs.is_null() || num_inputs <= 0 {
+        return 0.0;
+    }
+    let n = num_inputs as usize;
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..n {
+                if i == j || j == k || i == k {
+                    continue;
+                }
+                // SAFETY: inputs is non-null (checked above) and i,j,k < num_inputs.
+                let (x, y, z) = unsafe { (*inputs.add(i), *inputs.add(j), *inputs.add(k)) };
+                if math3in_check(x, y, z, output, op) == Some(true) {
+                    return 1.0;
+                }
+            }
+        }
+    }
+    0.0
+}
+
+// ---------------------------------------------------------------------------
+// Simple arithmetic operation codes (11 tasks)
+// ---------------------------------------------------------------------------
+const ARITH_ADD: c_int = 0; // input[i]+input[j] (j<i)
+const ARITH_ADD3: c_int = 1; // input[i]+input[i+1]+input[i+2]
+const ARITH_SUB: c_int = 2; // input[i]-input[j] (i!=j)
+
+/// Evaluate a simple arithmetic task (Add, Add3, Sub).
+///
+/// These have slightly different iteration patterns from each other, so they
+/// are handled as a single dispatch.
+#[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn avd_task_eval_simple_arith(
+    inputs: *const c_int,
+    num_inputs: c_int,
+    output: c_int,
+    op: c_int,
+) -> f64 {
+    if inputs.is_null() || num_inputs <= 0 {
+        return 0.0;
+    }
+    let n = num_inputs as usize;
+    match op {
+        ARITH_ADD => {
+            // C++: for i in 0..n, for j in 0..i: if output == input[i]+input[j]
+            for i in 0..n {
+                for j in 0..i {
+                    // SAFETY: inputs is non-null (checked above) and i,j < num_inputs.
+                    let (a, b) = unsafe { (*inputs.add(i), *inputs.add(j)) };
+                    if output == a.wrapping_add(b) {
+                        return 1.0;
+                    }
+                }
+            }
+        }
+        ARITH_ADD3 => {
+            // C++: for i in 0..(n-2): if output == input[i]+input[i+1]+input[i+2]
+            if n >= 3 {
+                for i in 0..n - 2 {
+                    // SAFETY: inputs is non-null (checked above) and i+2 < num_inputs.
+                    let (a, b, c) =
+                        unsafe { (*inputs.add(i), *inputs.add(i + 1), *inputs.add(i + 2)) };
+                    if output == a.wrapping_add(b).wrapping_add(c) {
+                        return 1.0;
+                    }
+                }
+            }
+        }
+        ARITH_SUB => {
+            // C++: for i in 0..n, for j in 0..n, i!=j: if output == input[i]-input[j]
+            for i in 0..n {
+                for j in 0..n {
+                    if i == j {
+                        continue;
+                    }
+                    // SAFETY: inputs is non-null (checked above) and i,j < num_inputs.
+                    let (a, b) = unsafe { (*inputs.add(i), *inputs.add(j)) };
+                    if output == a.wrapping_sub(b) {
+                        return 1.0;
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+    0.0
+}
+
 // --- Fibonacci scoring helper ---
 
 const FIBONACCI_VALUES: [c_int; 9] = [0, 1, 2, 3, 5, 8, 13, 21, 34];
@@ -1662,5 +1869,259 @@ mod tests {
             avd_task_eval_math2in(inputs.as_ptr(), 2, 5, MATH2IN_AM),
             1.0
         );
+    }
+
+    // --- Math3in tests ---
+
+    #[test]
+    fn math3in_aa_x2_y2_z2() {
+        let inputs: [c_int; 3] = [2, 3, 4];
+        // 4+9+16 = 29
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 29, MATH3IN_AA),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 30, MATH3IN_AA),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math3in_ab_sqrt_sum() {
+        let inputs: [c_int; 3] = [4, 9, 16];
+        // sqrt(4)+sqrt(9)+sqrt(16) = 2+3+4 = 9
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 9, MATH3IN_AB),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ac_x_2y_3z() {
+        let inputs: [c_int; 3] = [1, 2, 3];
+        // 1+4+9=14, 1+6+6=13, 2+2+9=13, 2+6+3=11, 3+2+6=11, 3+4+3=10
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 14, MATH3IN_AC),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ad_xy2_z3() {
+        let inputs: [c_int; 3] = [2, 3, 1];
+        // 2*3*3+1*1*1 = 18+1 = 19
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 19, MATH3IN_AD),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ae_xmody_times_z() {
+        let inputs: [c_int; 3] = [7, 3, 2];
+        // 7%3*2 = 1*2 = 2
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 2, MATH3IN_AE),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ae_div_by_zero_guard() {
+        let inputs: [c_int; 3] = [7, 0, 2];
+        // y=0 should be skipped; only permutations with non-zero y succeed
+        // Try (7,2,0): 7%2*0 = 1*0 = 0
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 0, MATH3IN_AE),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_af_xpy2_sqrt_ypz() {
+        let inputs: [c_int; 3] = [2, 3, 6];
+        // (2+3)^2 + sqrt(|3+6|) = 25 + 3 = 28
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 28, MATH3IN_AF),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ag_xy_mod_yz() {
+        let inputs: [c_int; 3] = [5, 3, 2];
+        // (5*3) % (3*2) = 15 % 6 = 3
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 3, MATH3IN_AG),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ag_div_by_zero_guard() {
+        let inputs: [c_int; 3] = [5, 0, 2];
+        // y*z = 0 -> skip; permutations with non-zero mod_base:
+        // (0,5,2): 0*5 % 5*2 = 0%10 = 0
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 0, MATH3IN_AG),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ah_sum() {
+        let inputs: [c_int; 3] = [10, 20, 30];
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 60, MATH3IN_AH),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ai_neg_sum() {
+        let inputs: [c_int; 3] = [10, 20, 30];
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, -60, MATH3IN_AI),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_aj_sq_diffs() {
+        let inputs: [c_int; 3] = [1, 2, 4];
+        // (1-2)^2+(2-4)^2+(4-1)^2 = 1+4+9 = 14
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 14, MATH3IN_AJ),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_ak_sq_sums() {
+        let inputs: [c_int; 3] = [1, 2, 3];
+        // (1+2)^2+(2+3)^2+(3+1)^2 = 9+25+16 = 50
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 50, MATH3IN_AK),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_al_sq_diff_xz() {
+        let inputs: [c_int; 3] = [5, 2, 1];
+        // (5-2)^2+(5-1)^2 = 9+16 = 25
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 25, MATH3IN_AL),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_am_sq_sum_xz() {
+        let inputs: [c_int; 3] = [1, 2, 3];
+        // (1+2)^2+(1+3)^2 = 9+16 = 25
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 3, 25, MATH3IN_AM),
+            1.0
+        );
+    }
+
+    #[test]
+    fn math3in_null_inputs_returns_zero() {
+        assert_eq!(
+            avd_task_eval_math3in(std::ptr::null(), 3, 0, MATH3IN_AA),
+            0.0
+        );
+    }
+
+    #[test]
+    fn math3in_invalid_op_returns_zero() {
+        let inputs: [c_int; 3] = [1, 2, 3];
+        assert_eq!(avd_task_eval_math3in(inputs.as_ptr(), 3, 0, 99), 0.0);
+    }
+
+    #[test]
+    fn math3in_needs_3_distinct_indices() {
+        // With only 2 inputs, all triples require i!=j!=k, impossible with 2
+        let inputs: [c_int; 2] = [1, 2];
+        assert_eq!(
+            avd_task_eval_math3in(inputs.as_ptr(), 2, 0, MATH3IN_AH),
+            0.0
+        );
+    }
+
+    // --- Simple arithmetic tests ---
+
+    #[test]
+    fn arith_add_basic() {
+        let inputs: [c_int; 3] = [10, 20, 30];
+        // Add: for j < i, so pairs (1,0)=30, (2,0)=40, (2,1)=50
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 3, 30, ARITH_ADD),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 3, 50, ARITH_ADD),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 3, 99, ARITH_ADD),
+            0.0
+        );
+    }
+
+    #[test]
+    fn arith_add3_basic() {
+        let inputs: [c_int; 4] = [1, 2, 3, 4];
+        // i=0: 1+2+3=6, i=1: 2+3+4=9
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 4, 6, ARITH_ADD3),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 4, 9, ARITH_ADD3),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 4, 10, ARITH_ADD3),
+            0.0
+        );
+    }
+
+    #[test]
+    fn arith_add3_too_few_inputs() {
+        let inputs: [c_int; 2] = [1, 2];
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 2, 3, ARITH_ADD3),
+            0.0
+        );
+    }
+
+    #[test]
+    fn arith_sub_basic() {
+        let inputs: [c_int; 2] = [10, 3];
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 2, 7, ARITH_SUB),
+            1.0
+        );
+        assert_eq!(
+            avd_task_eval_simple_arith(inputs.as_ptr(), 2, -7, ARITH_SUB),
+            1.0
+        );
+    }
+
+    #[test]
+    fn arith_null_inputs() {
+        assert_eq!(
+            avd_task_eval_simple_arith(std::ptr::null(), 3, 0, ARITH_ADD),
+            0.0
+        );
+    }
+
+    #[test]
+    fn arith_invalid_op() {
+        let inputs: [c_int; 2] = [1, 2];
+        assert_eq!(avd_task_eval_simple_arith(inputs.as_ptr(), 2, 3, 99), 0.0);
     }
 }
