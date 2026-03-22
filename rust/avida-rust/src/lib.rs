@@ -27,6 +27,7 @@ pub mod event_list_helpers;
 pub mod ffi_rng;
 pub mod ffi_string;
 pub mod ffi_vec;
+pub mod gradient;
 pub mod histogram;
 pub mod landscape_helpers;
 pub mod merit;

@@ -998,6 +998,83 @@ typedef struct {
 
 BirthEntryScalars avd_birth_scalars_default(void);
 
+typedef struct {
+  int peakx;
+  int peaky;
+  int height;
+  int spread;
+  double plateau;
+  int decay;
+  int max_x;
+  int max_y;
+  int min_x;
+  int min_y;
+  double move_a_scaler;
+  int updatestep;
+  int halo;
+  int halo_inner_radius;
+  int halo_width;
+  int halo_anchor_x;
+  int halo_anchor_y;
+  int move_speed;
+  int move_resistance;
+  double plateau_inflow;
+  double plateau_outflow;
+  double cone_inflow;
+  double cone_outflow;
+  double gradient_inflow;
+  int is_plateau_common;
+  double floor;
+  int habitat;
+  int min_size;
+  int max_size;
+  int config;
+  int count;
+  double initial_plat;
+  double threshold;
+  double damage;
+  int geometry;
+} GradientConfig;
+
+GradientConfig avd_gradient_config_default(void);
+
+typedef struct {
+  int initial;
+  double move_y_scaler;
+  int counter;
+  int move_counter;
+  int topo_counter;
+  int movesignx;
+  int movesigny;
+  int old_peakx;
+  int old_peaky;
+  int halo_dir;
+  int changling;
+  int just_reset;
+  double past_height;
+  double current_height;
+  double ave_plat_cell_loss;
+  double common_plat_height;
+  int skip_moves;
+  int skip_counter;
+  double mean_plat_inflow;
+  double var_plat_inflow;
+  double pred_odds;
+  int predator;
+  double death_odds;
+  int deadly;
+  int path;
+  int hammer;
+  int guarded_juvs_per_adult;
+  int probabilistic;
+  int min_usedx;
+  int min_usedy;
+  int max_usedx;
+  int max_usedy;
+} GradientState;
+
+GradientState avd_gradient_state_default(void);
+
 #ifdef __cplusplus
 }
 #endif
