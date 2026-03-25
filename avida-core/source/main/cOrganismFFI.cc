@@ -593,4 +593,36 @@ int avd_world_get_update(cWorld* world) {
   return world->GetStats().GetUpdate();
 }
 
+// ---- Organism accessors (Phase 2b: neighbor energy + request status) ----
+
+int avd_org_is_energy_requestor(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().IsEnergyRequestor() ? 1 : 0;
+}
+
+int avd_org_has_open_energy_request_read(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().HasOpenEnergyRequest() ? 1 : 0;
+}
+
+void avd_org_set_reputation(cOrganism* org, int rep) {
+  if (!org) return;
+  org->SetReputation(rep);
+}
+
+int avd_org_get_faced_cell_data(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetFacedCellData();
+}
+
+int avd_org_get_faced_cell_data_update(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetFacedCellDataUpdate();
+}
+
+int avd_org_is_donor(cOrganism* org, int neighbor_id) {
+  if (!org) return 0;
+  return org->IsDonor(neighbor_id) ? 1 : 0;
+}
+
 } // extern "C"

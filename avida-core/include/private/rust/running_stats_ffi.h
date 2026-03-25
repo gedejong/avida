@@ -1669,6 +1669,52 @@ double avd_task_eval_sort_inputs(
     const int* output_buf, int output_len,
     const int* input_buf, int input_len,
     int size, int direction, int contiguous, double halflife);
+// Faced energy conditionals
+int avd_cpu_inst_if_faced_energy_low(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_not_low(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_high(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_not_high(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_med(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_less(cHardwareBase* hw, double epsilon);
+int avd_cpu_inst_if_faced_energy_more(cHardwareBase* hw, double epsilon);
+// Faced energy request handlers
+int avd_cpu_inst_if_faced_energy_request_on(cHardwareBase* hw);
+int avd_cpu_inst_if_faced_energy_request_off(cHardwareBase* hw);
+void avd_cpu_inst_get_energy_request_status(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_get_faced_energy_request_status(cHardwareBase* hw, int reg_id);
+// avd_cpu_inst_get_faced_energy_level declared above (returns int)
+// Energy in buffer
+int avd_cpu_inst_if_energy_in_buffer(cHardwareBase* hw);
+// World-reading handlers
+void avd_cpu_inst_get_update(cHardwareBase* hw, int reg_id, int update_val);
+// GetTimeUsed
+void avd_cpu_inst_get_time_used(cHardwareBase* hw, int reg_id);
+// GetCellPosition (x+y into two registers)
+void avd_cpu_inst_get_cell_position(cHardwareBase* hw, int xreg, int yreg);
+// Poison
+void avd_cpu_inst_poison(cHardwareBase* hw, double penalty);
+// Pose (reputation increment)
+void avd_cpu_inst_pose(cHardwareBase* hw);
+// GetNeighborsReputation
+void avd_cpu_inst_get_neighbors_reputation(cHardwareBase* hw, int reg_id);
+// RepairPointMutOff
+void avd_cpu_inst_repair_point_mut_off(cHardwareBase* hw);
+// Flash info handlers
+int avd_cpu_inst_if_recvd_flash(cHardwareBase* hw);
+void avd_cpu_inst_flash_info(cHardwareBase* hw, int bx, int cx);
+void avd_cpu_inst_flash_info_b(cHardwareBase* hw, int bx);
+void avd_cpu_inst_reset_flash_info(cHardwareBase* hw);
+// Fixed-register stack ops
+void avd_cpu_inst_pop_fixed(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_push_fixed(cHardwareBase* hw, int reg_id);
+// IfDonor
+int avd_cpu_inst_if_donor(cHardwareBase* hw);
+// ReadFacedCellData (vitality diff)
+void avd_cpu_inst_read_faced_cell_data(cHardwareBase* hw, int reg_id);
+// ReadFacedCellDataFreshness
+void avd_cpu_inst_read_faced_cell_data_freshness(cHardwareBase* hw, int reg_id, int current_update);
+// GetDistanceFromDiagonal
+void avd_cpu_inst_get_distance_from_diagonal(cHardwareBase* hw, int reg_id, int pos_x, int pos_y);
 
 #ifdef __cplusplus
 }

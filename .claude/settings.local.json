@@ -244,7 +244,8 @@
       "Bash(sed -i '' 's/viewer-text/\"\"viewer-text\"\"/g' module_graph.dot)",
       "Bash(dot -Tsvg module_graph.dot -o module_graph.svg)",
       "Bash(find . -path */gradient_halo_generate* -name *.cfg)",
-      "Bash(patch -p1)"
+      "Bash(patch -p1)",
+      "Bash(sort -t: -k2)"
     ]
   }
 }

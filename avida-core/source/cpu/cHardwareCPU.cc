@@ -2713,16 +2713,16 @@ bool cHardwareCPU::Inst_HeadPush(cAvidaContext&)
 }
 
 
-bool cHardwareCPU::Inst_PopA(cAvidaContext&) { GetRegister(REG_AX) = StackPop(); return true;}
-bool cHardwareCPU::Inst_PopB(cAvidaContext&) { GetRegister(REG_BX) = StackPop(); return true;}
-bool cHardwareCPU::Inst_PopC(cAvidaContext&) { GetRegister(REG_CX) = StackPop(); return true;}
+bool cHardwareCPU::Inst_PopA(cAvidaContext&) { avd_cpu_inst_pop_fixed(this, REG_AX); return true;}
+bool cHardwareCPU::Inst_PopB(cAvidaContext&) { avd_cpu_inst_pop_fixed(this, REG_BX); return true;}
+bool cHardwareCPU::Inst_PopC(cAvidaContext&) { avd_cpu_inst_pop_fixed(this, REG_CX); return true;}
 
-bool cHardwareCPU::Inst_PushA(cAvidaContext&) { StackPush(GetRegister(REG_AX)); return true;}
-bool cHardwareCPU::Inst_PushB(cAvidaContext&) { StackPush(GetRegister(REG_BX)); return true;}
-bool cHardwareCPU::Inst_PushC(cAvidaContext&) { StackPush(GetRegister(REG_CX)); return true;}
+bool cHardwareCPU::Inst_PushA(cAvidaContext&) { avd_cpu_inst_push_fixed(this, REG_AX); return true;}
+bool cHardwareCPU::Inst_PushB(cAvidaContext&) { avd_cpu_inst_push_fixed(this, REG_BX); return true;}
+bool cHardwareCPU::Inst_PushC(cAvidaContext&) { avd_cpu_inst_push_fixed(this, REG_CX); return true;}
 
 bool cHardwareCPU::Inst_SwitchStack(cAvidaContext&) { avd_cpu_inst_switch_stack(this); return true;}
-bool cHardwareCPU::Inst_FlipStack(cAvidaContext&)   { StackFlip(); return true;}
+bool cHardwareCPU::Inst_FlipStack(cAvidaContext&)   { avd_cpu_inst_flip_stack(this); return true;}
 
 bool cHardwareCPU::Inst_Swap(cAvidaContext&)
 {
@@ -3993,8 +3993,7 @@ bool cHardwareCPU::Inst_Prob_Die(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_Poison(cAvidaContext&)
 {
-  double poison_multiplier = 1.0 - m_world->GetConfig().POISON_PENALTY.Get();
-  m_organism->GetPhenotype().SetCurBonus(m_organism->GetPhenotype().GetCurBonus() * poison_multiplier);
+  avd_cpu_inst_poison(this, m_world->GetConfig().POISON_PENALTY.Get());
   return true;
 }
 
@@ -7185,11 +7184,16 @@ bool cHardwareCPU::Inst_IfFacedEnergyLow(cAvidaContext&)
   if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 0)) getIP().Advance();
   return true;
 }
+  if (avd_cpu_inst_if_faced_energy_low(this)) getIP().Advance();
+  return true;
+}
+
 
 bool cHardwareCPU::Inst_IfFacedEnergyNotLow(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
   if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 1)) getIP().Advance();
+  if (avd_cpu_inst_if_faced_energy_not_low(this)) getIP().Advance();
   return true;
 }
 
@@ -7218,11 +7222,16 @@ bool cHardwareCPU::Inst_IfFacedEnergyHigh(cAvidaContext&)
   if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 0)) getIP().Advance();
   return true;
 }
+  if (avd_cpu_inst_if_faced_energy_high(this)) getIP().Advance();
+  return true;
+}
+
 
 bool cHardwareCPU::Inst_IfFacedEnergyNotHigh(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
   if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 1)) getIP().Advance();
+  if (avd_cpu_inst_if_faced_energy_not_high(this)) getIP().Advance();
   return true;
 }
 
@@ -7236,81 +7245,38 @@ bool cHardwareCPU::Inst_IfEnergyMed(cAvidaContext&)
 }
 
 
-/* Execute the next instruction if the faced organism's energy level is medium */
 bool cHardwareCPU::Inst_IfFacedEnergyMed(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
   if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_MEDIUM, 0)) getIP().Advance();
 
+  if (avd_cpu_inst_if_faced_energy_med(this)) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyMed()
+}
 
 
-/* Execute the next instruction if the faced organism has less energy */
 bool cHardwareCPU::Inst_IfFacedEnergyLess(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    const double neighbor_energy = neighbor->GetPhenotype().GetStoredEnergy();
-    const double my_energy = m_organism->GetPhenotype().GetStoredEnergy();
-    const double epsilon = m_world->GetConfig().ENERGY_COMPARISON_EPSILON.Get();
-    
-    if (neighbor_energy >= (my_energy * (1 - epsilon))) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy_less(this, m_world->GetConfig().ENERGY_COMPARISON_EPSILON.Get())) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyLess()
+}
 
 
-/* Execute the next instruction if the faced organism has more energy */
 bool cHardwareCPU::Inst_IfFacedEnergyMore(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    const double neighbor_energy = neighbor->GetPhenotype().GetStoredEnergy();
-    const double my_energy = m_organism->GetPhenotype().GetStoredEnergy();
-    const double epsilon = m_world->GetConfig().ENERGY_COMPARISON_EPSILON.Get();
-    
-    if (neighbor_energy <= (my_energy * (1 + epsilon))) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy_more(this, m_world->GetConfig().ENERGY_COMPARISON_EPSILON.Get())) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyMore()
+}
 
 
-/* Execute the next instruction if the organism has received energy */
 bool cHardwareCPU::Inst_IfEnergyInBuffer(cAvidaContext&)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  if (m_organism->GetPhenotype().GetEnergyInBufferAmount() == 0) {
-    getIP().Advance();
-  }
-  
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_energy_in_buffer(this)) getIP().Advance();
   return true;
-	
-} //End Inst_IfEnergyInBuffer()
+}
 
 
 bool cHardwareCPU::Inst_IfEnergyNotInBuffer(cAvidaContext&)
@@ -7337,94 +7303,58 @@ bool cHardwareCPU::Inst_GetFacedEnergyLevel(cAvidaContext&)
   if (neighbor == NULL || neighbor->IsDead()) return false;
   return avd_cpu_inst_get_faced_energy_level(this, FindModifiedRegister(REG_BX)) != 0;
   
+  // Neighbor check is inside Rust; returns 0 on failure (no neighbor / dead).
+  // FindModifiedRegister must be called AFTER guard but BEFORE Rust call only if
+  // Rust needs it. Here the neighbor guard is also before FindModifiedRegister in
+  // the original, so we let Rust handle the neighbor check and only call
+  // FindModifiedRegister on success path. But since the Rust function needs reg_id,
+  // and the original C++ would not consume nops if neighbor fails, we need to check
+  // the neighbor first in C++ to preserve nop-consumption semantics.
+  cOrganism* neighbor = m_organism->GetNeighbor();
+  if (neighbor == NULL || neighbor->IsDead()) return false;
+  const int reg = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_get_faced_energy_level(this, reg);
   return true;
-	
-} //End Inst_GetFacedEnergyLevel()
+}
 
 
 bool cHardwareCPU::Inst_IfFacedEnergyRequestOn(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor == NULL) || (neighbor->IsDead()) ) {
-    return false;  
-  }
-  
-  if (neighbor->GetPhenotype().IsEnergyRequestor() == false) {
-    getIP().Advance();
-  }
-  
+{
+  if (m_organism->GetCellID() < 0) return false;
+  int result = avd_cpu_inst_if_faced_energy_request_on(this);
+  if (result < 0) return false; // no valid neighbor
+  if (result) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyRequestOn()
+}
 
 bool cHardwareCPU::Inst_IfFacedEnergyRequestOff(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor == NULL) || (neighbor->IsDead()) ) {
-    return false;  
-  }
-  
-  if (neighbor->GetPhenotype().IsEnergyRequestor() == true) {
-    getIP().Advance();
-  }
-  
+{
+  if (m_organism->GetCellID() < 0) return false;
+  int result = avd_cpu_inst_if_faced_energy_request_off(this);
+  if (result < 0) return false;
+  if (result) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyRequestOff()
+}
 
 
 bool cHardwareCPU::Inst_GetEnergyRequestStatus(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  const int reg = FindModifiedRegister(REG_BX);
-  int status = 0;
-  
-  if (m_organism->GetPhenotype().IsEnergyRequestor() == true) {
-    status = 1; 
-  }
-  
-  GetRegister(reg) = status;
-  
+{
+  if (m_organism->GetCellID() < 0) return false;
+  avd_cpu_inst_get_energy_request_status(this, FindModifiedRegister(REG_BX));
   return true;
-  
-} //End Inst_GetEnergyRequestStatus()
+}
 
 
 bool cHardwareCPU::Inst_GetFacedEnergyRequestStatus(cAvidaContext&)
-{  
+{
   if (m_organism->GetCellID() < 0) return false;
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor == NULL) || (neighbor->IsDead()) ) {
-    return false;  
-  }
-  
+  // Neighbor guard is BEFORE FindModifiedRegister in original — keep neighbor check in C++
+  cOrganism* neighbor = m_organism->GetNeighbor();
+  if (neighbor == NULL || neighbor->IsDead()) return false;
   const int reg = FindModifiedRegister(REG_BX);
-  int status = 0;
-  
-  if (neighbor->GetPhenotype().IsEnergyRequestor() == true) {
-    status = 1; 
-  }
-  
-  GetRegister(reg) = status;
-  
+  avd_cpu_inst_get_faced_energy_request_status(this, reg);
   return true;
-  
-} //End Inst_GetFacedEnergyRequestStatus()
+}
 
 
 bool cHardwareCPU::Inst_Sleep(cAvidaContext& ctx)
@@ -7444,9 +7374,7 @@ bool cHardwareCPU::Inst_Sleep(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_GetUpdate(cAvidaContext&)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) = m_world->GetStats().GetUpdate();
-  
+  avd_cpu_inst_get_update(this, FindModifiedRegister(REG_BX), m_world->GetStats().GetUpdate());
   return true;
 }
 
@@ -7460,13 +7388,10 @@ bool cHardwareCPU::Inst_GetCellPosition(cAvidaContext& ctx)
 {
   int x = m_organism->GetOrgInterface().GetCellXPosition();
   int y = m_organism->GetOrgInterface().GetCellYPosition();
-  // Fail if we're running in the test CPU.
   if (x == -1 || y == -1) return false;
-  
   const int xreg = FindModifiedRegister(REG_BX);
   const int yreg = FindNextRegister(xreg);
-  GetRegister(xreg) = x;
-  GetRegister(yreg) = y;
+  avd_cpu_inst_get_cell_position(this, xreg, yreg);
   return true;
 }
 
@@ -7495,19 +7420,10 @@ bool cHardwareCPU::Inst_GetDistanceFromDiagonal(cAvidaContext&)
 {
   int absolute_cell_ID = m_organism->GetOrgInterface().GetCellID();
   int deme_id = m_organism->GetOrgInterface().GetDemeID();
-  // Fail if we're running in the test CPU.
   if ((deme_id < 0) || (absolute_cell_ID < 0)) return false;
-  
-  std::pair<int, int> pos = m_world->GetPopulation().GetDeme(deme_id).GetCellPosition(absolute_cell_ID);  
+  std::pair<int, int> pos = m_world->GetPopulation().GetDeme(deme_id).GetCellPosition(absolute_cell_ID);
   const int reg = FindModifiedRegister(REG_BX);
-  
-  if (pos.first > pos.second) {
-    GetRegister(reg) = (int)ceil((pos.first - pos.second)/2.0);
-  } else {
-    GetRegister(reg) = (int)floor((pos.first - pos.second)/2.0);
-  }
-  //  std::cerr<<"x = "<<pos.first<<"  y = "<<pos.second<<"  ans = "<<GetRegister(reg)<<std::endl;
-  
+  avd_cpu_inst_get_distance_from_diagonal(this, reg, pos.first, pos.second);
   return true;
 }
 
@@ -9175,13 +9091,7 @@ bool cHardwareCPU::Inst_ReadCellData(cAvidaContext&)
 
 bool cHardwareCPU::Inst_ReadFacedCellData(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  const int out_reg = FindModifiedRegister(REG_BX);
-  // return % diff (FacedCellData is already int)
-  int my_vit = (int) (m_organism->GetVitality() + 0.5);
-  int vit_diff = (m_organism->GetFacedCellData() - my_vit)/my_vit * 100;
-  GetRegister(out_reg) = vit_diff;
-  
+  avd_cpu_inst_read_faced_cell_data(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -9193,10 +9103,7 @@ bool cHardwareCPU::Inst_ReadFacedCellDataOrgID(cAvidaContext&)
 
 bool cHardwareCPU::Inst_ReadFacedCellDataFreshness(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  const int out_reg = FindModifiedRegister(REG_BX);
-  GetRegister(out_reg) = m_world->GetStats().GetUpdate() - m_organism->GetFacedCellDataUpdate();
-  
+  avd_cpu_inst_read_faced_cell_data_freshness(this, FindModifiedRegister(REG_BX), m_world->GetStats().GetUpdate());
   return true;
 }
 
@@ -9324,60 +9231,32 @@ bool cHardwareCPU::Inst_Flash(cAvidaContext& ctx)
 }
 
 
-/*! Test if this organism has ever recieved a flash event. */
 bool cHardwareCPU::Inst_IfRecvdFlash(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  if (m_flash_info.first == 0) {
-    getIP().Advance();
-  }
-  
+  if (avd_cpu_inst_if_recvd_flash(this)) getIP().Advance();
   return true;
 }
 
 
-/*! Retrieve if & when this organism has last received a flash. */
 bool cHardwareCPU::Inst_FlashInfo(cAvidaContext&)
 {
-  assert(m_organism != 0);
   const int bx = FindModifiedRegister(REG_BX);
   const int cx = FindNextRegister(bx);
-  
-  if (m_flash_info.first > 0) {
-    assert(m_cycle_counter >= m_flash_info.second);
-    GetRegister(bx) = m_flash_info.first;
-    GetRegister(cx) = m_cycle_counter - m_flash_info.second;
-  } else {
-    GetRegister(bx) = 0;
-    GetRegister(cx) = 0;
-  }
+  avd_cpu_inst_flash_info(this, bx, cx);
   return true;
 }
 
 
-/*! Retrieve if (but not when) this organism has last received a flash. */
 bool cHardwareCPU::Inst_FlashInfoB(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  const int bx = FindModifiedRegister(REG_BX);
-  
-  if (m_flash_info.first > 0) {
-    assert(m_cycle_counter >= m_flash_info.second);
-    GetRegister(bx) = m_flash_info.first;
-  } else {
-    GetRegister(bx) = 0;
-  }
-  
+  avd_cpu_inst_flash_info_b(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
 
 bool cHardwareCPU::Inst_ResetFlashInfo(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  m_flash_info.first = 0;
-  m_flash_info.second = 0;
-  
+  avd_cpu_inst_reset_flash_info(this);
   return true;
 }
 
@@ -9685,13 +9564,9 @@ bool cHardwareCPU::Inst_DonateFacingRawMaterials(cAvidaContext& ctx)
   return true;
 }  
 
-/* An organism artificially increases its reputation without donating. */
 bool cHardwareCPU::Inst_Pose(cAvidaContext&)
 {
-  // update reputation to include this phony donation.
-  // get the current reputation; increment by 1.	
-  m_organism->SetReputation(m_organism->GetReputation() + 1);
-  
+  avd_cpu_inst_pose(this);
   return true;
 }
 
@@ -9705,12 +9580,7 @@ bool cHardwareCPU::Inst_Pose(cAvidaContext&)
  */
 bool cHardwareCPU::Inst_GetNeighborsReputation(cAvidaContext&)
 {
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  if (neighbor != NULL) { 
-    const int raw_mat_reg = FindModifiedRegister(REG_AX);
-    GetRegister(raw_mat_reg) = neighbor->GetReputation();	
-  } 
+  avd_cpu_inst_get_neighbors_reputation(this, FindModifiedRegister(REG_AX));
   return true;
 }
 
@@ -9816,20 +9686,10 @@ bool cHardwareCPU::Inst_RotateToDifferentTag(cAvidaContext& ctx)
 
 
 
-/* Execute the next instruction if the neighbor was a donor. */ 
-bool cHardwareCPU::Inst_IfDonor(cAvidaContext&) 
+bool cHardwareCPU::Inst_IfDonor(cAvidaContext&)
 {
-  bool donor = false;
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  if (neighbor != NULL) {
-    // check if the neighbor was a donor
-    if (m_organism->IsDonor(neighbor->GetID())) {
-      donor = true;
-    }
-  }
-  if (!donor)  getIP().Advance();
-	
-  return true; 
+  if (avd_cpu_inst_if_donor(this)) getIP().Advance();
+  return true;
 }
 
 
@@ -10450,7 +10310,7 @@ bool cHardwareCPU::Inst_NetworkSelect(cAvidaContext&)
 
 bool cHardwareCPU::Inst_GetTimeUsed(cAvidaContext&)
 {
-  GetRegister(FindModifiedRegister(REG_BX)) = m_organism->GetPhenotype().GetTimeUsed();
+  avd_cpu_inst_get_time_used(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -10565,7 +10425,7 @@ bool cHardwareCPU::Inst_RepairPointMutOn(cAvidaContext& ctx){
 }
 
 bool cHardwareCPU::Inst_RepairPointMutOff(cAvidaContext& ctx){
-  m_organism->RepairPointMutOff();
+  avd_cpu_inst_repair_point_mut_off(this);
   return true;
 }
 
