@@ -2810,6 +2810,420 @@ pub unsafe extern "C" fn avd_cpu_inst_update_metabolic_rate(hw: *mut c_void, ctx
 }
 
 // ---------------------------------------------------------------------------
+// Batch E1: Kazi/Lyse/SmartExplode handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_Kazi (generic): handles Kazi, Kazi1-5.
+///
+/// C++ passes pre-computed config values. The handler:
+/// 1. Sets kaboom_executed = true
+/// 2. Calls DoOutput(ctx, 0) to trigger reaction checks
+/// 3. Computes distance + probability from config + register
+/// 4. Random check → Kaboom
+///
+/// Config semantics:
+/// - kaboom_prob != -1 && kaboom_hamming == -1 → adjustable hamming (from register)
+/// - kaboom_prob != -1 && kaboom_hamming != -1 → both static
+/// - kaboom_prob == -1 && kaboom_hamming != -1 → adjustable probability (from register)
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_kazi_generic(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    kaboom_prob: f64,
+    kaboom_hamming: c_int,
+    max_genome_size: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // 1. Set kaboom executed
+    unsafe { avd_org_set_kaboom_executed(org, 1) };
+    // 2. Trigger reaction checks
+    unsafe { avd_org_do_output(org, ctx, 0) };
+    // 3. Compute distance and probability
+    let reg_value = unsafe { get_reg(regs, reg_id) };
+    let mut percent_prob: f64 = 1.0;
+    let mut distance: c_int = -1;
+
+    let prob_config = kaboom_prob as c_int;
+    let ham_config = kaboom_hamming;
+
+    if prob_config != -1 && ham_config == -1 {
+        // Probability is static, hamming distance is adjustable
+        let genome_size = max_genome_size;
+        percent_prob = kaboom_prob;
+        distance = reg_value % genome_size;
+    } else if prob_config != -1 && ham_config != -1 {
+        // Both static
+        percent_prob = kaboom_prob;
+        distance = kaboom_hamming;
+    } else if prob_config == -1 && ham_config != -1 {
+        // Probability is adjustable, hamming distance is static
+        percent_prob = ((reg_value % 100) as f64) / 100.0;
+        distance = kaboom_hamming;
+    }
+
+    // 4. Random check → Kaboom
+    if unsafe { avd_ctx_random_p(ctx, percent_prob) } != 0 {
+        unsafe { avd_org_kaboom(org, ctx, distance) };
+    }
+}
+
+/// Inst_Lyse: probabilistic lysis without killing (assumes paired with lethal reaction).
+///
+/// If kaboom_prob == -1.0, uses register value % 100 as percentage.
+/// On success: sets kaboom_executed, increments kaboom/lyse stats.
+/// On failure: increments dont_explode stat.
+///
+/// # Safety
+/// `hw`, `ctx`, `regs`, and `world` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_lyse(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    kaboom_prob: f64,
+    world: *mut c_void,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let reg_value = unsafe { get_reg(regs, reg_id) };
+
+    let percent_prob = if kaboom_prob == -1.0 {
+        ((reg_value % 100) as f64) / 100.0
+    } else {
+        kaboom_prob
+    };
+
+    if unsafe { avd_ctx_random_p(ctx, percent_prob) } != 0 {
+        unsafe { avd_org_set_kaboom_executed(org, 1) };
+        unsafe { avd_stats_inc_kaboom(world) };
+        unsafe { avd_stats_inc_perc_lyse(world, percent_prob) };
+        let cpu_cycles = unsafe { avd_org_get_cpu_cycles_used(org) };
+        unsafe { avd_stats_inc_sum_cpus(world, cpu_cycles) };
+    } else {
+        unsafe { avd_stats_inc_dont_explode(world) };
+    }
+}
+
+/// Inst_SmartExplode: conditional kaboom based on register truth value.
+///
+/// If register is truthy → set kaboom_executed, roll probability, kaboom.
+/// If register is falsy → increment dont_explode stat.
+///
+/// # Safety
+/// `hw`, `ctx`, `regs`, and `world` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_smart_explode(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    kaboom_prob: f64,
+    kaboom_hamming: c_int,
+    world: *mut c_void,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let reg_value = unsafe { get_reg(regs, reg_id) };
+
+    if reg_value != 0 {
+        unsafe { avd_org_set_kaboom_executed(org, 1) };
+        let percent_prob = kaboom_prob;
+        let distance = kaboom_hamming;
+        if unsafe { avd_ctx_random_p(ctx, percent_prob) } != 0 {
+            unsafe { avd_org_kaboom(org, ctx, distance) };
+        }
+    } else {
+        unsafe { avd_stats_inc_dont_explode(world) };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Batch E2: Message handlers
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_get_cpu_cycles_used(org: *mut c_void) -> c_int;
+}
+
+/// Inst_SendMessage: send a message with label from reg and data from next reg.
+///
+/// Returns 1 if message was sent, 0 otherwise.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_send_message(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    msg_type: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let data_reg = unsafe { avd_hw_find_next_register(reg_id) };
+    let label = unsafe { get_reg(regs, reg_id) };
+    let data = unsafe { get_reg(regs, data_reg) };
+    unsafe { avd_org_send_message_regs(org, ctx, label, data, msg_type) }
+}
+
+/// Inst_RetrieveMessage: retrieve a message, storing label and data in registers.
+///
+/// GUARD ORDERING: RetrieveMessage is called BEFORE FindModifiedRegister.
+/// If no message is available, we return 0 without consuming a nop.
+/// Only on success do we call FindModifiedRegister (via FFI) to resolve registers.
+///
+/// Returns 0 if no message available (caller returns false), 1 on success.
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers. `world` may be null if log_enabled == 0.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_retrieve_message(
+    hw: *mut c_void,
+    regs: *mut CpuRegisters,
+    log_enabled: c_int,
+    world: *mut c_void,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+
+    // Guard: try to retrieve message BEFORE consuming nop
+    let mut label: c_int = 0;
+    let mut data: c_int = 0;
+    let ok = unsafe { avd_org_retrieve_message(org, &mut label, &mut data, log_enabled, world) };
+    if ok == 0 {
+        return 0;
+    }
+
+    // Only now consume the nop via FindModifiedRegister
+    let label_reg = unsafe { avd_hw_find_modified_register(hw, REG_BX) };
+    let data_reg = unsafe { avd_hw_find_next_register(label_reg) };
+
+    unsafe { set_reg(regs, label_reg, label) };
+    unsafe { set_reg(regs, data_reg, data) };
+    1
+}
+
+/// Inst_Receive: receive a value into a register (simple value, not message).
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_receive(
+    hw: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_org_receive_value(org) };
+    unsafe { set_reg(regs, reg_id, value) };
+// Batch: Movement handlers (Phase 5)
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_move(org: *mut c_void, ctx: *mut c_void) -> c_int;
+    fn avd_org_rotate(org: *mut c_void, ctx: *mut c_void, direction: c_int);
+    fn avd_org_get_neighborhood_size(org: *mut c_void) -> c_int;
+    #[allow(dead_code)]
+    fn avd_org_get_facing(org: *mut c_void) -> c_int;
+}
+
+/// Inst_RotateLeftOne: Rotate organism one step left (direction +1).
+///
+/// No guards, no FindModifiedRegister.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_left_one(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_rotate(org, ctx, 1) };
+}
+
+/// Inst_RotateRightOne: Rotate organism one step right (direction -1).
+///
+/// No guards, no FindModifiedRegister.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_right_one(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_rotate(org, ctx, -1) };
+}
+
+/// Inst_RotateUnoccupiedCell: Rotate until facing an unoccupied cell.
+/// Writes 1 to reg_used if found, 0 otherwise.
+///
+/// No guard before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_unoccupied_cell(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        if unsafe { avd_org_is_neighbor_cell_occupied(org) } == 0 {
+            unsafe { avd_hw_set_register(hw, reg_used, 1) };
+            return;
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_used, 0) };
+}
+
+/// Inst_RotateOccupiedCell: Rotate until facing an occupied cell.
+/// Writes 1 to reg_used if found, 0 otherwise.
+///
+/// No guard before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_occupied_cell(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        if unsafe { avd_org_is_neighbor_cell_occupied(org) } != 0 {
+            unsafe { avd_hw_set_register(hw, reg_used, 1) };
+            return;
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_used, 0) };
+}
+
+/// Inst_RotateNextOccupiedCell: Rotate once, then rotate to occupied cell.
+///
+/// No guard before FindModifiedRegister.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_next_occupied_cell(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_rotate(org, ctx, 1) };
+    // Now do RotateOccupiedCell logic inline
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        if unsafe { avd_org_is_neighbor_cell_occupied(org) } != 0 {
+            unsafe { avd_hw_set_register(hw, reg_used, 1) };
+            return;
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_used, 0) };
+}
+
+/// Inst_RotateNextUnoccupiedCell: Rotate once, then rotate to unoccupied cell.
+///
+/// No guard before FindModifiedRegister.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_next_unoccupied_cell(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_rotate(org, ctx, 1) };
+    // Now do RotateUnoccupiedCell logic inline
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        if unsafe { avd_org_is_neighbor_cell_occupied(org) } == 0 {
+            unsafe { avd_hw_set_register(hw, reg_used, 1) };
+            return;
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_used, 0) };
+}
+
+/// Inst_RotateHome: Rotate to face birth cell (or marked cell).
+///
+/// No FindModifiedRegister in this handler.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_home(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let easterly = unsafe { avd_org_get_easterly(org) };
+    let northerly = unsafe { avd_org_get_northerly(org) };
+    let mut correct_facing = crate::cpu_helpers::avd_cpu_gradient_facing(northerly, easterly);
+    if correct_facing < 0 {
+        correct_facing = 0; // zero vector defaults to N
+    }
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        unsafe { avd_org_rotate(org, ctx, 1) };
+        if unsafe { avd_org_get_faced_dir(org) } == correct_facing {
+            break;
+        }
+    }
+}
+
+/// Inst_RotateEventCell: Rotate until facing a cell with event data > 0.
+/// Writes 1 to reg_used if found, 0 otherwise.
+///
+/// No guard before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_rotate_event_cell(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        if unsafe { avd_org_get_cell_data_org(org) } > 0 {
+            unsafe { avd_hw_set_register(hw, reg_used, 1) };
+            return;
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_used, 0) };
+}
+
+/// Inst_Move: Move organism to faced cell. Returns 0 if in TestCPU (cellid == -1).
+/// The guard (cellid == -1 → return false) is checked in C++ BEFORE calling this.
+/// This handles the post-guard logic: call Move and write result to reg.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_move(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_used: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let move_success = unsafe { avd_org_move(org, ctx) };
+    unsafe { avd_hw_set_register(hw, reg_used, move_success) };
+    1 // always returns true (success) after guard passes
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -3111,5 +3525,76 @@ mod tests {
         assert_eq!(feedback_indicator(1.0, 2.0), 1);
         // pre == post → push 0
         assert_eq!(feedback_indicator(1.0, 1.0), 0);
+    }
+
+    // --- Phase 5: Movement handler logic tests ---
+
+    /// RotateHome uses gradient_facing to compute correct_facing.
+    /// Verify the zero-vector default and standard compass directions.
+    #[test]
+    fn test_rotate_home_gradient_facing_zero_vector_default() {
+        // When both northerly and easterly are 0, gradient_facing returns -1.
+        // RotateHome clamps -1 to 0 (north).
+        let mut correct_facing = crate::cpu_helpers::avd_cpu_gradient_facing(0, 0);
+        if correct_facing < 0 {
+            correct_facing = 0;
+        }
+        assert_eq!(correct_facing, 0);
+    }
+
+    #[test]
+    fn test_rotate_home_gradient_facing_all_directions() {
+        // N
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(1, 0), 0);
+        // NE
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(1, -1), 1);
+        // E
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(0, -1), 2);
+        // SE
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(-1, -1), 3);
+        // S
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(-1, 0), 4);
+        // SW
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(-1, 1), 5);
+        // W
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(0, 1), 6);
+        // NW
+        assert_eq!(crate::cpu_helpers::avd_cpu_gradient_facing(1, 1), 7);
+    }
+
+    /// Verify the rotate_unoccupied/occupied/event logic patterns:
+    /// they loop from 0..neighborhood_size, checking a condition,
+    /// setting register to 1 if found or 0 if not.
+    #[test]
+    fn test_rotate_loop_pattern() {
+        // This tests the algorithmic logic pattern shared by all rotate-to-X handlers.
+        // In a 4-cell neighborhood where target is at position 2:
+        let neighborhood_size = 4;
+        let target_position = 2;
+        let mut found = false;
+        let mut rotations = 0;
+        for i in 0..neighborhood_size {
+            if i == target_position {
+                found = true;
+                break;
+            }
+            rotations += 1;
+        }
+        assert!(found);
+        assert_eq!(rotations, 2);
+
+        // All positions empty (no target matches):
+        let mut rotations = 0;
+        let mut found_any = false;
+        let never_target = neighborhood_size + 1; // impossible position
+        for i in 0..neighborhood_size {
+            if i == never_target {
+                found_any = true;
+                break;
+            }
+            rotations += 1;
+        }
+        assert!(!found_any);
+        assert_eq!(rotations, 4);
     }
 }

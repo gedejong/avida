@@ -1784,6 +1784,22 @@ void avd_cpu_inst_set_opinion_to_value(cHardwareBase* hw, cAvidaContext* ctx, in
 void avd_cpu_inst_number_orgs_in_my_group(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_number_orgs_in_group(cHardwareBase* hw, int group_reg, int result_reg);
 void avd_cpu_inst_donate_res_to_deme(cHardwareBase* hw);
+// Movement FFI (Phase 5)
+int avd_org_move(cOrganism* org, cAvidaContext* ctx);
+void avd_org_rotate(cOrganism* org, cAvidaContext* ctx, int direction);
+int avd_org_get_neighborhood_size(cOrganism* org);
+int avd_org_get_facing(cOrganism* org);
+
+// Movement instruction handlers (Rust-backed)
+void avd_cpu_inst_rotate_left_one(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_rotate_right_one(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_rotate_unoccupied_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
+void avd_cpu_inst_rotate_occupied_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
+void avd_cpu_inst_rotate_next_occupied_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
+void avd_cpu_inst_rotate_next_unoccupied_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
+void avd_cpu_inst_rotate_home(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_rotate_event_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
+int  avd_cpu_inst_move(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
 
 #ifdef __cplusplus
 }

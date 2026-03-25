@@ -775,6 +775,26 @@ int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
 void avd_org_donate_res_consumed_to_deme(cOrganism* org) {
   if (!org) return;
   org->DonateResConsumedToDeme();
+// ---- Movement FFI (Phase 5: movement delegation) ----
+
+int avd_org_move(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return 0;
+  return org->Move(*ctx) ? 1 : 0;
+}
+
+void avd_org_rotate(cOrganism* org, cAvidaContext* ctx, int direction) {
+  if (!org || !ctx) return;
+  org->Rotate(*ctx, direction);
+}
+
+int avd_org_get_neighborhood_size(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetNeighborhoodSize();
+}
+
+int avd_org_get_facing(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetFacing();
 }
 
 } // extern "C"

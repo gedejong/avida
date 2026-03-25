@@ -6110,13 +6110,13 @@ bool cHardwareCPU::Inst_RotateR(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_RotateLeftOne(cAvidaContext& ctx)
 {
-  m_organism->Rotate(ctx, 1);
+  avd_cpu_inst_rotate_left_one(this, &ctx);
   return true;
 }
 
 bool cHardwareCPU::Inst_RotateRightOne(cAvidaContext& ctx)
 {
-  m_organism->Rotate(ctx, -1);
+  avd_cpu_inst_rotate_right_one(this, &ctx);
   return true;
 }
 
@@ -6149,57 +6149,35 @@ bool cHardwareCPU::Inst_RotateLabel(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_RotateUnoccupiedCell(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
-    if (!m_organism->IsNeighborCellOccupied()) { // faced cell is unoccupied
-      GetRegister(reg_used) = 1;      
-      return true;
-    }
-    m_organism->Rotate(ctx, 1); // continue to rotate
-  }  
-  GetRegister(reg_used) = 0;
+  avd_cpu_inst_rotate_unoccupied_cell(this, &ctx, reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_RotateOccupiedCell(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
-    if (m_organism->IsNeighborCellOccupied()) { // faced cell is occupied
-      GetRegister(reg_used) = 1;      
-      return true;
-    }
-    m_organism->Rotate(ctx, 1); // continue to rotate
-  }  
-  GetRegister(reg_used) = 0;
+  avd_cpu_inst_rotate_occupied_cell(this, &ctx, reg_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_RotateNextOccupiedCell(cAvidaContext& ctx)
 {
-  m_organism->Rotate(ctx, 1);
-  return Inst_RotateOccupiedCell(ctx);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_rotate_next_occupied_cell(this, &ctx, reg_used);
+  return true;
 }
 
 bool cHardwareCPU::Inst_RotateNextUnoccupiedCell(cAvidaContext& ctx)
 {
-  m_organism->Rotate(ctx, 1); // continue to rotate
-  return Inst_RotateUnoccupiedCell(ctx);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_rotate_next_unoccupied_cell(this, &ctx, reg_used);
+  return true;
 }
 
 bool cHardwareCPU::Inst_RotateEventCell(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
-    if (m_organism->GetCellData() > 0) { // event in faced cell
-      GetRegister(reg_used) = 1;      
-      return true;
-    }
-    m_organism->Rotate(ctx, 1); // continue to rotate
-  }  
-  GetRegister(reg_used) = 0;
+  avd_cpu_inst_rotate_event_cell(this, &ctx, reg_used);
   return true;
 }
 
@@ -6235,16 +6213,7 @@ bool cHardwareCPU::Inst_RotateUphill(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_RotateHome(cAvidaContext& ctx)
 {
-  // Will rotate organism to face birth cell if org never used zero-easterly or zero-northerly. Otherwise will rotate org
-  // to face the 'marked' spot where those instructions were executed.
-  int easterly = m_organism->GetEasterly();
-  int northerly = m_organism->GetNortherly();
-  int correct_facing = avd_cpu_gradient_facing(northerly, easterly);
-  if (correct_facing < 0) correct_facing = 0; // zero vector defaults to N
-  for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
-    m_organism->Rotate(ctx, 1);
-    if (m_organism->GetFacedDir() == correct_facing) break;
-  }
+  avd_cpu_inst_rotate_home(this, &ctx);
   return true;
 }
 
@@ -6376,12 +6345,11 @@ bool cHardwareCPU::Inst_SGSense(cAvidaContext&)
 // The cell selected as a destination is the one faced
 bool cHardwareCPU::Inst_Move(cAvidaContext& ctx)
 {
-  // In TestCPU, movement fails...
+  // Guard: in TestCPU, movement fails — must stay in C++ before FindModifiedRegister.
   if (m_organism->GetCellID() == -1) return false;
-  
-  bool move_success = m_organism->Move(ctx);  
-  const int out_reg = FindModifiedRegister(REG_BX);   
-  GetRegister(out_reg) = move_success;   
+
+  const int out_reg = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_move(this, &ctx, out_reg);
   return true;
 }
 
