@@ -334,6 +334,8 @@ public:
   int FFI_IfLabelMatch() { GetLabel().Rotate(1, NUM_NOPS); return (GetLabel() != GetReadLabel()) ? 1 : 0; }
   int FFI_IfLabelDirectMatch() { return (GetLabel() != GetReadLabel()) ? 1 : 0; }
   int FFI_SearchLabel(int direction) { GetLabel().Rotate(1, NUM_NOPS); return FindLabel(direction).GetPosition(); }
+  int FFI_SearchLabelDirect(int direction) { return FindLabel(direction).GetPosition(); }
+  int FFI_IsNextInstNop() { return m_inst_set->IsNop(getIP().GetNextInst()) ? 1 : 0; }
   int FFI_GetLabelSize() { return GetLabel().GetSize(); }
 
 

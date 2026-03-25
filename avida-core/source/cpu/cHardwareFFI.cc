@@ -321,4 +321,20 @@ void avd_hw_reset_flash_info(cHardwareBase* hw) {
   cpu->ResetFlashInfo();
 }
 
+// ---- Label search (direct, no complement rotation) ----
+
+int avd_hw_search_label_direct(cHardwareBase* hw, int direction) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return -1;
+  return cpu->FFI_SearchLabelDirect(direction);
+}
+
+// ---- Nop detection ----
+
+int avd_hw_is_next_inst_nop(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return 0;
+  return cpu->FFI_IsNextInstNop();
+}
+
 } // extern "C"

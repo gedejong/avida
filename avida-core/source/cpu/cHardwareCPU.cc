@@ -2697,18 +2697,14 @@ bool cHardwareCPU::Inst_Push(cAvidaContext&)
 bool cHardwareCPU::Inst_HeadPop(cAvidaContext&)
 {
   const int head_used = FindModifiedHead(nHardware::HEAD_IP);
-  getHead(head_used).Set(StackPop());
+  avd_cpu_inst_head_pop(this, head_used);
   return true;
 }
 
 bool cHardwareCPU::Inst_HeadPush(cAvidaContext&)
 {
   const int head_used = FindModifiedHead(nHardware::HEAD_IP);
-  StackPush(getHead(head_used).GetPosition());
-  if (head_used == nHardware::HEAD_IP) {
-    getHead(head_used).Set(getHead(nHardware::HEAD_FLOW));
-    m_advance_ip = false;
-  }
+  if (avd_cpu_inst_head_push(this, head_used)) m_advance_ip = false;
   return true;
 }
 
@@ -3267,7 +3263,7 @@ bool cHardwareCPU::Inst_MaxAllocMoveWriteHead(cAvidaContext& ctx)   // Allocate 
 
 bool cHardwareCPU::Inst_Transposon(cAvidaContext&)
 {
-  ReadLabel();
+  avd_cpu_inst_transposon(this);
   return true;
 }
 
@@ -6684,12 +6680,7 @@ bool cHardwareCPU::Inst_IfLabelDirect(cAvidaContext&)
 // is false, but it will also skip all nops following that command.
 bool cHardwareCPU::Inst_IfLabel2(cAvidaContext&)
 {
-  ReadLabel();
-  GetLabel().Rotate(1, NUM_NOPS);
-  if (GetLabel() != GetReadLabel()) {
-    getIP().Advance();
-    if (m_inst_set->IsNop( getIP().GetNextInst() ))  getIP().Advance();
-  }
+  avd_cpu_inst_if_label2(this);
   return true;
 }
 
@@ -6998,27 +6989,14 @@ bool cHardwareCPU::Inst_HeadCopy10(cAvidaContext& ctx) { return HeadCopy_ErrorCo
 
 bool cHardwareCPU::Inst_HeadSearch(cAvidaContext&)
 {
-  ReadLabel();
-  GetLabel().Rotate(1, NUM_NOPS);
-  cHeadCPU found_pos = FindLabel(0);
-  const int search_size = found_pos.GetPosition() - getIP().GetPosition();
-  GetRegister(REG_BX) = search_size;
-  GetRegister(REG_CX) = GetLabel().GetSize();
-  getHead(nHardware::HEAD_FLOW).Set(found_pos);
-  getHead(nHardware::HEAD_FLOW).Advance();
-  return true; 
+  avd_cpu_inst_head_search(this, m_threads[m_cur_thread].regs_rust());
+  return true;
 }
 
 bool cHardwareCPU::Inst_HeadSearchDirect(cAvidaContext&)
 {
-  ReadLabel();
-  cHeadCPU found_pos = FindLabel(1);
-  const int search_size = found_pos.GetPosition() - getIP().GetPosition();
-  GetRegister(REG_BX) = search_size;
-  GetRegister(REG_CX) = GetLabel().GetSize();
-  getHead(nHardware::HEAD_FLOW).Set(found_pos);
-  getHead(nHardware::HEAD_FLOW).Advance();
-  return true; 
+  avd_cpu_inst_head_search_direct(this, m_threads[m_cur_thread].regs_rust());
+  return true;
 }
 
 bool cHardwareCPU::Inst_SetFlow(cAvidaContext&)
