@@ -6242,14 +6242,14 @@ bool cHardwareCPU::Inst_MemSize(cAvidaContext&)
 }
 
 bool cHardwareCPU::Inst_IOBufAdd1(cAvidaContext&)
-{ 
-  m_organism->AddOutput(1);
+{
+  avd_cpu_inst_io_buf_add(this, 1);
   return true;
 }
 bool cHardwareCPU::Inst_IOBufAdd0(cAvidaContext&)
-{ 
-  m_organism->AddOutput(0);
-  return true; 
+{
+  avd_cpu_inst_io_buf_add(this, 0);
+  return true;
 }
 
 bool cHardwareCPU::Inst_RotateL(cAvidaContext& ctx)
@@ -6456,17 +6456,13 @@ bool cHardwareCPU::Inst_RotateHome(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_SetCopyMut(cAvidaContext&)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);
-  const int new_mut_rate = Apto::Max(GetRegister(reg_used), 1 );
-  m_organism->SetCopyMutProb(static_cast<double>(new_mut_rate) / 10000.0);
+  avd_cpu_inst_set_copy_mut(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
 bool cHardwareCPU::Inst_ModCopyMut(cAvidaContext&)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);
-  const double new_mut_rate = m_organism->GetCopyMutProb() + static_cast<double>(GetRegister(reg_used)) / 10000.0;
-  if (new_mut_rate > 0.0) m_organism->SetCopyMutProb(new_mut_rate);
+  avd_cpu_inst_mod_copy_mut(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -9295,9 +9291,7 @@ bool cHardwareCPU::Inst_ReadFacedCellDataFreshness(cAvidaContext&)
 
 bool cHardwareCPU::Inst_MarkCellWithID(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  m_organism->SetCellData(m_organism->GetID());
-  
+  avd_cpu_inst_mark_cell_with_id(this);
   return true;
 }
 
@@ -9310,11 +9304,7 @@ bool cHardwareCPU::Inst_GetResStored(cAvidaContext&)
 
 bool cHardwareCPU::Inst_MarkCellWithVitality(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  // SetCellData() needs to be int
-  int my_vit = (int) (m_organism->GetVitality() + 0.5);
-  m_organism->SetCellData(my_vit);
-  
+  avd_cpu_inst_mark_cell_with_vitality(this);
   return true;
 }
 
@@ -10770,26 +10760,14 @@ bool cHardwareCPU::Inst_IncrementMatingDisplayB(cAvidaContext&)
 }
 
 bool cHardwareCPU::Inst_SetMatingDisplayA(cAvidaContext&)
-//Sets the display value a to be equal to the value of ?BX?
 {
-  //Get the register and its contents as the new display value
-  const int reg_used = FindModifiedRegister(REG_BX);
-  const int new_display = GetRegister(reg_used);
-  
-  //Set the organism's mating display A trait
-  m_organism->GetPhenotype().SetCurMatingDisplayA(new_display);
+  avd_cpu_inst_set_mating_display_a(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
 bool cHardwareCPU::Inst_SetMatingDisplayB(cAvidaContext&)
-//Sets the display value b to be equal to the value of ?BX?
 {
-  //Get the register and its contents as the new display value
-  const int reg_used = FindModifiedRegister(REG_BX);
-  const int new_display = GetRegister(reg_used);
-  
-  //Set the organism's mating display A trait
-  m_organism->GetPhenotype().SetCurMatingDisplayB(new_display);
+  avd_cpu_inst_set_mating_display_b(this, FindModifiedRegister(REG_BX));
   return true;
 }
 

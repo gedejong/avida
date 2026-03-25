@@ -104,6 +104,7 @@ unsafe extern "C" {
     fn avd_org_set_cell_data(org: *mut c_void, data: c_int);
     fn avd_org_get_copy_mut_prob(org: *mut c_void) -> f64;
     fn avd_org_set_copy_mut_prob(org: *mut c_void, prob: f64);
+    fn avd_org_add_output(org: *mut c_void, val: c_int);
 }
 
 // Head IDs matching nHardware::tHeads
@@ -998,16 +999,28 @@ pub unsafe extern "C" fn avd_cpu_inst_mark_cell_with_vitality(hw: *mut c_void) {
 pub unsafe extern "C" fn avd_cpu_inst_set_copy_mut(hw: *mut c_void, reg_id: c_int) {
     let org = unsafe { avd_hw_get_organism(hw) };
     let reg_val = unsafe { avd_hw_get_register(hw, reg_id) };
-    let prob = reg_val as f64 / 10000.0;
+    let clamped = if reg_val < 1 { 1 } else { reg_val };
+    let prob = clamped as f64 / 10000.0;
     unsafe { avd_org_set_copy_mut_prob(org, prob) };
 }
 
+/// Inst_ModCopyMut: add register value / 10000 to copy mutation probability.
+/// Only applies if result is positive.
 #[no_mangle]
-pub unsafe extern "C" fn avd_cpu_inst_mod_copy_mut(hw: *mut c_void) {
+pub unsafe extern "C" fn avd_cpu_inst_mod_copy_mut(hw: *mut c_void, reg_id: c_int) {
     let org = unsafe { avd_hw_get_organism(hw) };
+    let reg_val = unsafe { avd_hw_get_register(hw, reg_id) };
     let old_prob = unsafe { avd_org_get_copy_mut_prob(org) };
-    // HACK: hard-coded .001 increase, same as C++ original
-    unsafe { avd_org_set_copy_mut_prob(org, old_prob + 0.001) };
+    let new_prob = old_prob + reg_val as f64 / 10000.0;
+    if new_prob > 0.0 {
+        unsafe { avd_org_set_copy_mut_prob(org, new_prob) };
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_io_buf_add(hw: *mut c_void, val: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_add_output(org, val) };
 }
 
 // ---------------------------------------------------------------------------

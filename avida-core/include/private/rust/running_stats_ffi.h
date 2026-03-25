@@ -1419,6 +1419,7 @@ void avd_org_set_cur_mating_display_b(cOrganism* org, int val);
 void avd_org_set_cell_data(cOrganism* org, int data);
 double avd_org_get_copy_mut_prob(cOrganism* org);
 void avd_org_set_copy_mut_prob(cOrganism* org, double prob);
+void avd_org_add_output(cOrganism* org, int val);
 
 // Cell accessors
 int avd_cell_is_occupied(cPopulationCell* cell);
@@ -1584,7 +1585,8 @@ void avd_cpu_inst_increment_mating_display_b(cHardwareBase* hw);
 void avd_cpu_inst_mark_cell_with_id(cHardwareBase* hw);
 void avd_cpu_inst_mark_cell_with_vitality(cHardwareBase* hw);
 void avd_cpu_inst_set_copy_mut(cHardwareBase* hw, int reg_id);
-void avd_cpu_inst_mod_copy_mut(cHardwareBase* hw);
+void avd_cpu_inst_io_buf_add(cHardwareBase* hw, int val);
+void avd_cpu_inst_mod_copy_mut(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_join_germline(cHardwareBase* hw);
 void avd_cpu_inst_exit_germline(cHardwareBase* hw);
 void avd_cpu_inst_phero_toggle(cHardwareBase* hw);

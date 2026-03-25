@@ -535,6 +535,12 @@ void avd_org_set_copy_mut_prob(cOrganism* org, double prob) {
   org->SetCopyMutProb(prob);
 }
 
+// Output buffer
+void avd_org_add_output(cOrganism* org, int val) {
+  if (!org) return;
+  org->AddOutput(val);
+}
+
 // Resource bin access
 double avd_org_get_rbin(cOrganism* org, int index) {
   if (!org) return 0.0;
