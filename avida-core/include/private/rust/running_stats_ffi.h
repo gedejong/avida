@@ -1586,6 +1586,8 @@ void avd_cpu_inst_mark_cell_with_id(cHardwareBase* hw);
 void avd_cpu_inst_mark_cell_with_vitality(cHardwareBase* hw);
 void avd_cpu_inst_set_copy_mut(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_io_buf_add(cHardwareBase* hw, int val);
+int avd_cpu_inst_if_faced_energy(cHardwareBase* hw, int expected_level, int negate);
+int avd_cpu_inst_get_faced_energy_level(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_mod_copy_mut(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_join_germline(cHardwareBase* hw);
 void avd_cpu_inst_exit_germline(cHardwareBase* hw);

@@ -1017,6 +1017,66 @@ pub unsafe extern "C" fn avd_cpu_inst_mod_copy_mut(hw: *mut c_void, reg_id: c_in
     }
 }
 
+// ---------------------------------------------------------------------------
+// Faced neighbor energy conditionals
+// ---------------------------------------------------------------------------
+
+/// Check faced neighbor's discrete energy level vs expected.
+/// Returns: 0 = no skip (or no valid neighbor), 1 = skip.
+/// `expected_level`: the energy level that SHOULD cause execution (don't skip).
+/// `negate`: if true, skip when level EQUALS expected (for "Not" variants).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy(
+    hw: *mut c_void,
+    expected_level: c_int,
+    negate: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    if unsafe { avd_org_is_dead(neighbor) } != 0 {
+        return 0;
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if negate == 0 {
+        // Skip if NOT expected level
+        if level != expected_level {
+            1
+        } else {
+            0
+        }
+    } else {
+        // Skip if IS expected level (for "Not" variants)
+        if level == expected_level {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+/// Get faced neighbor's energy level into a register.
+/// Returns 0 if no valid neighbor, 1 on success.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_faced_energy_level(
+    hw: *mut c_void,
+    reg_id: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    if unsafe { avd_org_is_dead(neighbor) } != 0 {
+        return 0;
+    }
+    let energy = unsafe { avd_org_get_stored_energy(neighbor) };
+    unsafe { avd_hw_set_register(hw, reg_id, energy.floor() as c_int) };
+    1
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn avd_cpu_inst_io_buf_add(hw: *mut c_void, val: c_int) {
     let org = unsafe { avd_hw_get_organism(hw) };

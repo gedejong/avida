@@ -7194,46 +7194,18 @@ bool cHardwareCPU::Inst_IfEnergyNotLow(cAvidaContext&)
 
 /* Execute the next instruction if the faced organism's energy level is low */
 bool cHardwareCPU::Inst_IfFacedEnergyLow(cAvidaContext&)
-{ 
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ){
-    // Note: these instructions should probably also make sure the returned energy level is not -1.
-    if (neighbor->GetPhenotype().GetDiscreteEnergyLevel() != cPhenotype::ENERGY_LEVEL_LOW) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 0)) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyLow()
+}
 
-
-/* Execute the next instruction if the faced organism's energy level is low */
 bool cHardwareCPU::Inst_IfFacedEnergyNotLow(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    // Note: these instructions should probably also make sure the returned energy level is not -1.
-    if (neighbor->GetPhenotype().GetDiscreteEnergyLevel() == cPhenotype::ENERGY_LEVEL_LOW) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 1)) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyNotLow()
+}
 
 
 bool cHardwareCPU::Inst_IfEnergyHigh(cAvidaContext&)
@@ -7254,48 +7226,19 @@ bool cHardwareCPU::Inst_IfEnergyNotHigh(cAvidaContext&)
 }
 
 
-/* Execute the next instruction if the faced organism's energy level is high */
 bool cHardwareCPU::Inst_IfFacedEnergyHigh(cAvidaContext&)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    // Note: these instructions should probably also make sure the returned energy level is not -1.
-    if (neighbor->GetPhenotype().GetDiscreteEnergyLevel() != cPhenotype::ENERGY_LEVEL_HIGH) {
-      getIP().Advance();
-    }    
-  }  
-	
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 0)) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyHigh()
+}
 
-
-/* Execute the next instruction if the faced organism's energy level is not high */
 bool cHardwareCPU::Inst_IfFacedEnergyNotHigh(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    // Note: these instructions should probably also make sure the returned energy level is not -1.
-    if (neighbor->GetPhenotype().GetDiscreteEnergyLevel() == cPhenotype::ENERGY_LEVEL_HIGH) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 1)) getIP().Advance();
   return true;
-	
-} //End Inst_IfFacedEnergyNotHigh()
+}
 
 
 /* Execute the next instruction if the organism's energy level is medium */
@@ -7309,21 +7252,10 @@ bool cHardwareCPU::Inst_IfEnergyMed(cAvidaContext&)
 
 /* Execute the next instruction if the faced organism's energy level is medium */
 bool cHardwareCPU::Inst_IfFacedEnergyMed(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-	
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    // Note: these instructions should probably also make sure the returned energy level is not -1.
-    if (neighbor->GetPhenotype().GetDiscreteEnergyLevel() != cPhenotype::ENERGY_LEVEL_MEDIUM) {
-      getIP().Advance();
-    }    
-  }  
-	
+{
+  if (m_organism->GetCellID() < 0) return false;
+  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_MEDIUM, 0)) getIP().Advance();
+
   return true;
 	
 } //End Inst_IfFacedEnergyMed()
@@ -7412,19 +7344,12 @@ bool cHardwareCPU::Inst_GetEnergyLevel(cAvidaContext&)
 
 
 bool cHardwareCPU::Inst_GetFacedEnergyLevel(cAvidaContext&)
-{  
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor == NULL) || (neighbor->IsDead()) ) {
-    return false;  
-  }
-  
-  const int reg = FindModifiedRegister(REG_BX);
-  GetRegister(reg) = (int) floor(neighbor->GetPhenotype().GetStoredEnergy());
+{
+  if (m_organism->GetCellID() < 0) return false;
+  // Guard: check neighbor exists before FindModifiedRegister (guard ordering rule)
+  cOrganism* neighbor = m_organism->GetNeighbor();
+  if (neighbor == NULL || neighbor->IsDead()) return false;
+  return avd_cpu_inst_get_faced_energy_level(this, FindModifiedRegister(REG_BX)) != 0;
   
   return true;
 	
