@@ -1650,6 +1650,18 @@ void avd_cpu_inst_task_input(cHardwareBase* hw, CpuRegisters* regs, int reg_id);
 void avd_cpu_inst_task_output(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
 void avd_cpu_inst_task_stack_get(cHardwareBase* hw);
 void avd_cpu_inst_task_stack_load(cHardwareBase* hw);
+// Organism state transitions (Phase 4: I/O reset, death)
+void avd_org_reset_inputs(cOrganism* org, cAvidaContext* ctx);
+void avd_org_clear_input(cOrganism* org);
+void avd_org_die(cOrganism* org, cAvidaContext* ctx);
+int avd_org_get_cpu_cycles_used(cOrganism* org);
+// I/O variant instruction handlers (Phase 4)
+void avd_cpu_inst_task_io_bonus_cost(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id, double bonus_cost);
+void avd_cpu_inst_task_io_feedback(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_put_reset_inputs(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_get2(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_die(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_prob_die(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id, double config_prob);
 
 /* ---------- Task_MatchStr FFI ---------- */
 double avd_task_eval_match_str(
@@ -1722,6 +1734,18 @@ void avd_cpu_inst_read_faced_cell_data(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_read_faced_cell_data_freshness(cHardwareBase* hw, int reg_id, int current_update);
 // GetDistanceFromDiagonal
 void avd_cpu_inst_get_distance_from_diagonal(cHardwareBase* hw, int reg_id, int pos_x, int pos_y);
+
+// Batch D6–D8: Opinion, Send, Donation handlers
+void avd_cpu_inst_set_opinion(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_clear_opinion(cHardwareBase* hw);
+int  avd_cpu_inst_get_opinion(cHardwareBase* hw, int opinion_reg, int age_reg, int current_update);
+void avd_cpu_inst_send(cHardwareBase* hw, int reg_id);
+int  avd_cpu_inst_donate_null(cHardwareBase* hw, cAvidaContext* ctx, int max_donates, double merit_given);
+int  avd_cpu_inst_donate_facing(cHardwareBase* hw, cAvidaContext* ctx, int max_donates);
+int  avd_cpu_inst_donate_energy_faced(cHardwareBase* hw, cAvidaContext* ctx, double loss_pct, int update_metabolic, int sharing_method);
+int  avd_cpu_inst_donate_energy_faced_amount(cHardwareBase* hw, cAvidaContext* ctx, double fixed_amount, double loss_pct, int update_metabolic, int sharing_method);
+int  avd_cpu_inst_receive_donated_energy(cHardwareBase* hw, cAvidaContext* ctx, int update_metabolic);
+void avd_cpu_inst_update_metabolic_rate(cHardwareBase* hw, cAvidaContext* ctx);
 
 #ifdef __cplusplus
 }

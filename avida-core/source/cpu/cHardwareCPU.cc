@@ -3969,21 +3969,15 @@ bool cHardwareCPU::Inst_Sterilize(cAvidaContext&)
 
 bool cHardwareCPU::Inst_Die(cAvidaContext& ctx)
 {
-  m_organism->Die(ctx);
+  avd_cpu_inst_die(this, &ctx);
   return true;
 }
 
 bool cHardwareCPU::Inst_Prob_Die(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_AX);
-  double percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-  if (percent_prob==-1.0){
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-  }
-  if (ctx.GetRandom().P(percent_prob)) {
-    m_organism->Die(ctx);
-    return true;
-    }
+  avd_cpu_inst_prob_die(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+                        (double) m_world->GetConfig().KABOOM_PROB.Get());
   return true;
 }
 
@@ -4076,22 +4070,11 @@ bool cHardwareCPU::Inst_TaskGet(cAvidaContext&)
 // @JEB - this instruction does more than two "gets" together, it also resets the inputs
 bool cHardwareCPU::Inst_TaskGet2(cAvidaContext& ctx)
 {
-  // Randomize the inputs so they can't save numbers
-  m_organism->GetOrgInterface().ResetInputs(ctx);   // Now re-randomize the inputs this organism sees
-  m_organism->ClearInput();                         // Also clear their input buffers, or they can still claim
-  // rewards for numbers no longer in their environment!
-  
-  const int reg_used_1 = FindModifiedRegister(REG_BX);
-  const int reg_used_2 = FindNextRegister(reg_used_1);
-  
-  const int value1 = m_organism->GetNextInput();
-  GetRegister(reg_used_1) = value1;
-  m_organism->DoInput(value1);
-  
-  const int value2 = m_organism->GetNextInput();
-  GetRegister(reg_used_2) = value2;
-  m_organism->DoInput(value2);
-  
+  // ResetInputs/ClearInput must happen BEFORE FindModifiedRegister (state change before nop consumption)
+  m_organism->GetOrgInterface().ResetInputs(ctx);
+  m_organism->ClearInput();
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_get2(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -4117,11 +4100,9 @@ bool cHardwareCPU::Inst_TaskPut(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_TaskPutResetInputs(cAvidaContext& ctx)
 {
-  bool return_value = Inst_TaskPut(ctx);          // Do a normal put
-  m_organism->GetOrgInterface().ResetInputs(ctx);   // Now re-randomize the inputs this organism sees
-  m_organism->ClearInput();                         // Also clear their input buffers, or they can still claim
-  // rewards for numbers no longer in their environment!
-  return return_value;
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_put_reset_inputs(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
+  return true;
 }
 
 bool cHardwareCPU::Inst_TaskIO(cAvidaContext& ctx)
@@ -4133,51 +4114,15 @@ bool cHardwareCPU::Inst_TaskIO(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_TaskIO_BonusCost(cAvidaContext& ctx, double bonus_cost)
 {
-  // Levy the cost
-  double new_bonus = m_organism->GetPhenotype().GetCurBonus() * (1 - bonus_cost);
-  if (new_bonus < 0) new_bonus = 0;
-  //keep the bonus positive or zero
-  m_organism->GetPhenotype().SetCurBonus(new_bonus);
-  
-  return Inst_TaskIO(ctx);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_io_bonus_cost(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, bonus_cost);
+  return true;
 }
 
 bool cHardwareCPU::Inst_TaskIO_Feedback(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  //check cur_bonus before the output
-  double preOutputBonus = m_organism->GetPhenotype().GetCurBonus();
-  
-  // Do the "put" component
-  const int value_out = GetRegister(reg_used);
-  m_organism->DoOutput(ctx, value_out);  // Check for tasks completed.
-  
-  //check cur_merit after the output
-  double postOutputBonus = m_organism->GetPhenotype().GetCurBonus(); 
-  
-  
-  //push the effect of the IO on merit (+,0,-) to the active stack
-  
-  if (preOutputBonus > postOutputBonus){
-    StackPush(-1);
-  }
-  else if (preOutputBonus == postOutputBonus){
-    StackPush(0);
-  }
-  else if (preOutputBonus < postOutputBonus){
-    StackPush(1);
-  }
-  else {
-    assert(0);
-    //Bollocks. There was an error.
-  }
-  
-  
-  // Do the "get" component
-  const int value_in = m_organism->GetNextInput();
-  GetRegister(reg_used) = value_in;
-  m_organism->DoInput(value_in);
+  avd_cpu_inst_task_io_feedback(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -4191,10 +4136,7 @@ bool cHardwareCPU::Inst_MatchStrings(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_Send(cAvidaContext&)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);
-  m_organism->SendValue(GetRegister(reg_used));
-  GetRegister(reg_used) = 0;
-  
+  avd_cpu_inst_send(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -4910,20 +4852,9 @@ void cHardwareCPU::DoEnergyDonateAmount(cAvidaContext& ctx, cOrganism* to_org, c
 
 bool cHardwareCPU::Inst_DonateFacing(cAvidaContext& ctx)
 {
-  if (m_organism->GetPhenotype().GetCurNumDonates() > m_world->GetConfig().MAX_DONATES.Get()) {
+  if (!avd_cpu_inst_donate_facing(this, &ctx,
+      m_world->GetConfig().MAX_DONATES.Get())) {
     return false;
-  }
-  m_organism->GetPhenotype().IncDonates();
-  m_organism->GetPhenotype().SetIsDonorRand();
-  
-  // Get faced neighbor
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  // Donate only if we have found a neighbor.
-  if (neighbor != NULL) {
-    DoEnergyDonate(ctx, neighbor);
-    
-    neighbor->GetPhenotype().SetIsReceiver();
   }
   return true;
 }
@@ -5712,23 +5643,11 @@ bool cHardwareCPU::Inst_DonateGreenBeardSameLocus(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_DonateNULL(cAvidaContext& ctx)
 {
-  if (m_organism->GetPhenotype().GetCurNumDonates() > m_world->GetConfig().MAX_DONATES.Get()) {
+  if (!avd_cpu_inst_donate_null(this, &ctx,
+      m_world->GetConfig().MAX_DONATES.Get(),
+      m_world->GetConfig().MERIT_GIVEN.Get())) {
     return false;
   }
-  
-  m_organism->GetPhenotype().IncDonates();
-  m_organism->GetPhenotype().SetIsDonorNull();
-  
-  // This is a fake donate command that causes the organism to lose merit,
-  // but no one else to gain any.
-  
-  const double merit_given = m_world->GetConfig().MERIT_GIVEN.Get();
-  double cur_merit = m_organism->GetPhenotype().GetMerit().GetDouble();
-  cur_merit -= merit_given;
-  
-  // Plug the current merit back into this organism and notify the scheduler.
-  m_organism->UpdateMerit(ctx, cur_merit);
-  
   return true;
 }
 
@@ -5736,22 +5655,11 @@ bool cHardwareCPU::Inst_DonateNULL(cAvidaContext& ctx)
 //Move energy from an organism's received energy buffer into their energy store, recalculate merit
 bool cHardwareCPU::Inst_ReceiveDonatedEnergy(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
+  if (!avd_cpu_inst_receive_donated_energy(this, &ctx,
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get())) {
     return false;
   }
-  
-  cPhenotype& phenotype = m_organism->GetPhenotype();
-  if (phenotype.GetEnergyInBufferAmount() > 0) {
-    phenotype.ApplyDonatedEnergy();
-    
-    if (m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get() == 1) {
-      double receiverMerit = phenotype.ConvertEnergyToMerit(phenotype.GetStoredEnergy() * phenotype.GetEnergyUsageRatio());
-      m_organism->UpdateMerit(ctx, receiverMerit);
-    }
-  }
-  
   return true;
-  
 } //End Inst_ReceiveDonatedEnergy()
 
 
@@ -5793,10 +5701,7 @@ bool cHardwareCPU::Inst_DonateEnergy(cAvidaContext& ctx)
 //Update the organism's metabolic rate
 bool cHardwareCPU::Inst_UpdateMetabolicRate(cAvidaContext& ctx)
 {
-  cPhenotype& phenotype = m_organism->GetPhenotype();
-  double newmerit = phenotype.ConvertEnergyToMerit(phenotype.GetStoredEnergy()  * phenotype.GetEnergyUsageRatio());
-  m_organism->UpdateMerit(ctx, newmerit);
-  
+  avd_cpu_inst_update_metabolic_rate(this, &ctx);
   return true;
 } //End Inst_UpdateMetabolocRate()
 
@@ -5804,170 +5709,78 @@ bool cHardwareCPU::Inst_UpdateMetabolicRate(cAvidaContext& ctx)
 //Donate a fraction of organism's energy to faced organism.
 bool cHardwareCPU::Inst_DonateEnergyFaced(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
+  if (!avd_cpu_inst_donate_energy_faced(this, &ctx,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) {
     return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonatePercent(ctx, neighbor, m_organism->GetFracEnergyDonating());
-    }
-  }  
-  
+  }
   return true;
-  
 } //End Inst_DonateEnergyFaced()
 
 
 bool cHardwareCPU::Inst_DonateEnergyFaced1(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 1);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 1,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced1()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced2(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 2);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 2,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced2()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced5(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 5);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 5,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced5()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced10(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 10);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 10,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced10()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced20(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 20);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 20,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced20()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced50(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 50);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 50,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced50()
-
+}
 
 bool cHardwareCPU::Inst_DonateEnergyFaced100(cAvidaContext& ctx)
 {
-  if (m_organism->GetCellID() < 0) {
-    return false;
-  }	
-  
-  cOrganism * neighbor = m_organism->GetNeighbor();
-  
-  if ( (neighbor != NULL) && (!neighbor->IsDead()) ) {
-    
-    // If the neighbor has requested energy or if we're allowing push sharing, share energy
-    if ( (neighbor->GetPhenotype().HasOpenEnergyRequest()) || (m_world->GetConfig().ENERGY_SHARING_METHOD.Get() == 1) ) {
-      DoEnergyDonateAmount(ctx, neighbor, 100);
-    }
-  }  
-  
+  if (!avd_cpu_inst_donate_energy_faced_amount(this, &ctx, 100,
+      m_world->GetConfig().RESOURCE_SHARING_LOSS.Get(),
+      m_world->GetConfig().ENERGY_SHARING_UPDATE_METABOLIC.Get(),
+      m_world->GetConfig().ENERGY_SHARING_METHOD.Get())) return false;
   return true;
-  
-} //End Inst_DonateEnergyFaced100()
+}
 
 
 // Rotate to face the most energy needy neighbor
@@ -8863,7 +8676,7 @@ bool cHardwareCPU::Inst_DropPheromone(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_SetOpinion(cAvidaContext&)
 {
   assert(m_organism != 0);
-  m_organism->GetOrgInterface().SetOpinion(GetRegister(FindModifiedRegister(REG_BX)), m_organism);
+  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -8875,13 +8688,9 @@ bool cHardwareCPU::Inst_SetOpinion(cAvidaContext&)
 bool cHardwareCPU::Inst_GetOpinion(cAvidaContext&)
 {
   assert(m_organism != 0);
-  if (m_organism->GetOrgInterface().HasOpinion(m_organism)) {
-    const int opinion_reg = FindModifiedRegister(REG_BX);
-    const int age_reg = FindNextRegister(opinion_reg);
-    
-    GetRegister(opinion_reg) = m_organism->GetOpinion().first;
-    GetRegister(age_reg) = m_world->GetStats().GetUpdate() - m_organism->GetOpinion().second;
-  }
+  const int opinion_reg = FindModifiedRegister(REG_BX);
+  const int age_reg = FindNextRegister(opinion_reg);
+  avd_cpu_inst_get_opinion(this, opinion_reg, age_reg, m_world->GetStats().GetUpdate());
   return true;
 }
 
@@ -8895,8 +8704,7 @@ bool cHardwareCPU::Inst_GetOpinionOnly_ZeroIfNone(cAvidaContext&)
 bool cHardwareCPU::Inst_ClearOpinion(cAvidaContext&)
 {
   assert(m_organism != 0);
-  m_organism->GetOrgInterface().ClearOpinion(m_organism);
-  
+  avd_cpu_inst_clear_opinion(this);
   return true;
 }
 
@@ -8918,9 +8726,11 @@ bool cHardwareCPU::Inst_IfOpinionNotSet(cAvidaContext&)
 bool cHardwareCPU::Inst_SetOpinionToZero(cAvidaContext& ctx)
 {
   assert(m_organism != 0);
+  // NOTE: Two FindModifiedRegister calls preserved for behavior parity.
+  // The first consumes a nop (if present); the second returns default BX.
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 0;
-  m_organism->GetOrgInterface().SetOpinion(GetRegister(FindModifiedRegister(REG_BX)), m_organism);
+  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
   m_organism->DoOutput(ctx, 0);
   return true;
 }
@@ -8931,7 +8741,7 @@ bool cHardwareCPU::Inst_SetOpinionToOne(cAvidaContext& ctx)
   assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 1;
-  m_organism->GetOrgInterface().SetOpinion(GetRegister(FindModifiedRegister(REG_BX)), m_organism);
+  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
   m_organism->DoOutput(ctx, 1);
   return true;
 }
@@ -8942,7 +8752,7 @@ bool cHardwareCPU::Inst_SetOpinionToTwo(cAvidaContext& ctx)
   assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 2;
-  m_organism->GetOrgInterface().SetOpinion(GetRegister(FindModifiedRegister(REG_BX)), m_organism);
+  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
   m_organism->DoOutput(ctx, 2);
   return true;
 }

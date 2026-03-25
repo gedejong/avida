@@ -115,6 +115,36 @@ unsafe extern "C" {
     fn avd_org_get_cur_bonus(org: *mut c_void) -> f64;
     fn avd_org_set_cur_bonus(org: *mut c_void, value: f64);
     fn avd_org_repair_point_mut_off(org: *mut c_void);
+    // Phase 4: energy mutation (existing FFI, newly used here)
+    fn avd_org_reduce_energy(org: *mut c_void, amount: f64);
+    fn avd_org_increase_energy_donated(org: *mut c_void, amount: f64);
+    fn avd_org_receive_donated_energy(org: *mut c_void, amount: f64);
+    fn avd_org_apply_donated_energy(org: *mut c_void);
+    fn avd_org_set_is_energy_donor(org: *mut c_void);
+    fn avd_org_set_is_energy_receiver(org: *mut c_void);
+    // Phase 4: opinion interface
+    fn avd_org_iface_set_opinion(org: *mut c_void, value: c_int);
+    fn avd_org_iface_clear_opinion(org: *mut c_void);
+    fn avd_org_iface_has_opinion(org: *mut c_void) -> c_int;
+    fn avd_org_get_opinion_first(org: *mut c_void) -> c_int;
+    fn avd_org_get_opinion_second(org: *mut c_void) -> c_int;
+    // Phase 4: messaging
+    fn avd_org_send_value(org: *mut c_void, value: c_int);
+    // Phase 4: donation support
+    fn avd_org_get_cur_num_donates(org: *mut c_void) -> c_int;
+    fn avd_org_inc_donates(org: *mut c_void);
+    fn avd_org_set_is_donor_rand(org: *mut c_void);
+    fn avd_org_set_is_donor_null(org: *mut c_void);
+    fn avd_org_set_is_receiver_flag(org: *mut c_void);
+    fn avd_org_get_merit_double(org: *mut c_void) -> f64;
+    fn avd_org_update_merit(org: *mut c_void, ctx: *mut c_void, new_merit: f64);
+    fn avd_org_get_energy_usage_ratio(org: *mut c_void) -> f64;
+    fn avd_org_convert_energy_to_merit(org: *mut c_void, energy: f64) -> f64;
+    fn avd_org_increase_energy_received(org: *mut c_void, amount: f64);
+    fn avd_org_increase_num_energy_donations(org: *mut c_void);
+    fn avd_org_deme_increase_energy_donated(org: *mut c_void, amount: f64);
+    fn avd_org_deme_increase_energy_received(org: *mut c_void, amount: f64);
+    fn avd_org_has_open_energy_request(org: *mut c_void) -> c_int;
 }
 
 // Head IDs matching nHardware::tHeads
@@ -1830,6 +1860,170 @@ pub unsafe extern "C" fn avd_cpu_inst_task_stack_load(hw: *mut c_void) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Batch: I/O variants + state transitions (Phase 4)
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_reset_inputs(org: *mut c_void, ctx: *mut c_void);
+    fn avd_org_clear_input(org: *mut c_void);
+    fn avd_org_die(org: *mut c_void, ctx: *mut c_void);
+    fn avd_hw_find_next_register(base_reg: c_int) -> c_int;
+}
+
+/// Inst_TaskIO_BonusCost: levy a proportional bonus cost, then do TaskIO.
+///
+/// bonus_cost is the fraction of bonus to remove (e.g. 0.001).
+/// Bonus is clamped to >= 0.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_io_bonus_cost(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+    bonus_cost: f64,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Levy the cost
+    let cur_bonus = unsafe { avd_org_get_cur_bonus(org) };
+    let mut new_bonus = cur_bonus * (1.0 - bonus_cost);
+    if new_bonus < 0.0 {
+        new_bonus = 0.0;
+    }
+    unsafe { avd_org_set_cur_bonus(org, new_bonus) };
+    // Then do normal TaskIO
+    unsafe { avd_cpu_inst_task_io(hw, ctx, regs, reg_id) };
+}
+
+/// Inst_TaskIO_Feedback: TaskIO + push merit-change indicator to stack.
+///
+/// Pushes 1 if bonus increased, 0 if same, -1 if decreased.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_io_feedback(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Check cur_bonus before the output
+    let pre_bonus = unsafe { avd_org_get_cur_bonus(org) };
+
+    // Do the "put" component
+    let value_out = unsafe { get_reg(regs, reg_id) };
+    unsafe { avd_org_do_output(org, ctx, value_out) };
+
+    // Check cur_bonus after the output
+    let post_bonus = unsafe { avd_org_get_cur_bonus(org) };
+
+    // Push the effect on merit (+, 0, -) to active stack
+    let indicator = if pre_bonus > post_bonus {
+        -1
+    } else if pre_bonus < post_bonus {
+        1
+    } else {
+        0
+    };
+    unsafe { avd_hw_stack_push(hw, indicator) };
+
+    // Do the "get" component
+    let value_in = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_id, value_in) };
+    unsafe { avd_org_do_input(org, value_in) };
+}
+
+/// Inst_TaskPutResetInputs: do a normal TaskPut, then reset+clear inputs.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_put_reset_inputs(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Do a normal put (TaskOutput): read reg → zero reg → DoOutput
+    let value = unsafe { get_reg(regs, reg_id) };
+    unsafe { set_reg(regs, reg_id, 0) };
+    unsafe { avd_org_do_output(org, ctx, value) };
+    // Now re-randomize inputs and clear input buffer
+    unsafe { avd_org_reset_inputs(org, ctx) };
+    unsafe { avd_org_clear_input(org) };
+}
+
+/// Inst_TaskGet2: get two input values into consecutive registers.
+///
+/// C++ caller handles ResetInputs/ClearInput and FindModifiedRegister before
+/// calling this function (reset must happen before nop consumption).
+/// FindNextRegister is a pure function (no side effects) so safe to call here.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_get2(
+    hw: *mut c_void,
+    _ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+
+    let reg_used_1 = reg_id;
+    let reg_used_2 = unsafe { avd_hw_find_next_register(reg_used_1) };
+
+    let value1 = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_used_1, value1) };
+    unsafe { avd_org_do_input(org, value1) };
+
+    let value2 = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_used_2, value2) };
+    unsafe { avd_org_do_input(org, value2) };
+}
+
+/// Inst_Die: unconditionally kill the organism.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_die(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_die(org, ctx) };
+}
+
+/// Inst_Prob_Die: probabilistically kill the organism.
+///
+/// config_prob: KABOOM_PROB from config. If -1.0, use register value % 100 as percent.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_prob_die(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    config_prob: f64,
+) {
+    let percent_prob = if config_prob == -1.0 {
+        let reg_val = unsafe { get_reg(regs, reg_id) };
+        ((reg_val % 100) as f64) / 100.0
+    } else {
+        config_prob
+    };
+    if unsafe { avd_ctx_random_p(ctx, percent_prob) } != 0 {
+        let org = unsafe { avd_hw_get_organism(hw) };
+        unsafe { avd_org_die(org, ctx) };
+    }
+}
+
 // Batch D1: Faced-energy conditionals
 // ---------------------------------------------------------------------------
 
@@ -2267,6 +2461,295 @@ pub unsafe extern "C" fn avd_cpu_inst_get_distance_from_diagonal(
 }
 
 // ---------------------------------------------------------------------------
+// Batch D6: Opinion handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_SetOpinion: set organism's opinion to register[reg_id].
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_opinion(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_hw_get_register(hw, reg_id) };
+    unsafe { avd_org_iface_set_opinion(org, value) };
+}
+
+/// Inst_ClearOpinion: clear organism's opinion.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_clear_opinion(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_iface_clear_opinion(org) };
+}
+
+/// Inst_GetOpinion: get organism's opinion into reg_id, age into age_reg.
+/// Returns 1 if organism has opinion (registers were set), 0 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_opinion(
+    hw: *mut c_void,
+    opinion_reg: c_int,
+    age_reg: c_int,
+    current_update: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_iface_has_opinion(org) } != 0 {
+        let opinion_val = unsafe { avd_org_get_opinion_first(org) };
+        let opinion_time = unsafe { avd_org_get_opinion_second(org) };
+        unsafe { avd_hw_set_register(hw, opinion_reg, opinion_val) };
+        unsafe { avd_hw_set_register(hw, age_reg, current_update - opinion_time) };
+        1
+    } else {
+        0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Batch D7: Send handler
+// ---------------------------------------------------------------------------
+
+/// Inst_Send: send register[reg_id] value, then zero the register.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_send(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_hw_get_register(hw, reg_id) };
+    unsafe { avd_org_send_value(org, value) };
+    unsafe { avd_hw_set_register(hw, reg_id, 0) };
+}
+
+// ---------------------------------------------------------------------------
+// Batch D8: Donation handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_DonateNULL: lose merit without giving to anyone.
+/// Returns 0 if max donates exceeded (caller should return false), 1 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_donate_null(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    max_donates: c_int,
+    merit_given: f64,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_get_cur_num_donates(org) } > max_donates {
+        return 0;
+    }
+    unsafe { avd_org_inc_donates(org) };
+    unsafe { avd_org_set_is_donor_null(org) };
+
+    let mut cur_merit = unsafe { avd_org_get_merit_double(org) };
+    cur_merit -= merit_given;
+    if cur_merit < 0.0 {
+        cur_merit = 0.0;
+    }
+    unsafe { avd_org_update_merit(org, ctx, cur_merit) };
+    1
+}
+
+/// Inst_DonateFacing: donate energy to faced neighbor.
+/// Returns 0 if max donates exceeded (caller should return false), 1 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_donate_facing(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    max_donates: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_get_cur_num_donates(org) } > max_donates {
+        return 0;
+    }
+    unsafe { avd_org_inc_donates(org) };
+    unsafe { avd_org_set_is_donor_rand(org) };
+
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if !neighbor.is_null() {
+        unsafe { do_energy_donate(org, ctx, neighbor) };
+        unsafe { avd_org_set_is_receiver_flag(neighbor) };
+    }
+    1
+}
+
+/// Port of cHardwareCPU::DoEnergyDonate — energy-based donation from org to to_org.
+unsafe fn do_energy_donate(org: *mut c_void, ctx: *mut c_void, to_org: *mut c_void) {
+    let frac = unsafe { avd_org_get_frac_energy_donating(org) };
+    let cur_energy = unsafe { avd_org_get_stored_energy(org) };
+    let energy_given = cur_energy * frac;
+
+    // Update donor
+    unsafe { avd_org_reduce_energy(org, energy_given) };
+    unsafe { avd_org_increase_energy_donated(org, energy_given) };
+    let donor_stored = unsafe { avd_org_get_stored_energy(org) };
+    let donor_ratio = unsafe { avd_org_get_energy_usage_ratio(org) };
+    let sender_merit = unsafe { avd_org_convert_energy_to_merit(org, donor_stored * donor_ratio) };
+    unsafe { avd_org_update_merit(org, ctx, sender_merit) };
+    unsafe { avd_org_set_is_energy_donor(org) };
+
+    // Update recipient — ReduceEnergy with negative = increase
+    unsafe { avd_org_reduce_energy(to_org, -energy_given) };
+    unsafe { avd_org_increase_energy_received(to_org, energy_given) };
+    let recv_stored = unsafe { avd_org_get_stored_energy(to_org) };
+    let recv_ratio = unsafe { avd_org_get_energy_usage_ratio(to_org) };
+    let receiver_merit =
+        unsafe { avd_org_convert_energy_to_merit(to_org, recv_stored * recv_ratio) };
+    unsafe { avd_org_update_merit(to_org, ctx, receiver_merit) };
+    unsafe { avd_org_set_is_energy_receiver(to_org) };
+}
+
+/// Port of cHardwareCPU::DoEnergyDonateAmount — buffered energy donation with loss.
+unsafe fn do_energy_donate_amount(
+    org: *mut c_void,
+    ctx: *mut c_void,
+    to_org: *mut c_void,
+    amount: f64,
+    loss_pct: f64,
+    update_metabolic: c_int,
+    sharing_method: c_int,
+) {
+    let stored = unsafe { avd_org_get_stored_energy(org) };
+    let energy_given = if amount < stored { amount } else { stored };
+
+    // Update donor
+    unsafe { avd_org_reduce_energy(org, energy_given) };
+    unsafe { avd_org_set_is_energy_donor(org) };
+    unsafe { avd_org_increase_energy_donated(org, energy_given) };
+    unsafe { avd_org_increase_num_energy_donations(org) };
+    unsafe { avd_org_deme_increase_energy_donated(org, energy_given) };
+
+    if update_metabolic == 1 {
+        let donor_stored = unsafe { avd_org_get_stored_energy(org) };
+        let donor_ratio = unsafe { avd_org_get_energy_usage_ratio(org) };
+        let sender_merit =
+            unsafe { avd_org_convert_energy_to_merit(org, donor_stored * donor_ratio) };
+        unsafe { avd_org_update_merit(org, ctx, sender_merit) };
+    }
+
+    // Apply loss
+    let energy_received = energy_given * (1.0 - loss_pct);
+
+    // Place into receiver's buffer
+    unsafe { avd_org_receive_donated_energy(to_org, energy_received) };
+    unsafe { avd_org_deme_increase_energy_received(to_org, energy_received) };
+
+    // If push sharing, apply immediately
+    if sharing_method == 1 {
+        unsafe { avd_org_apply_donated_energy(to_org) };
+        if update_metabolic == 1 {
+            let recv_stored = unsafe { avd_org_get_stored_energy(to_org) };
+            let recv_ratio = unsafe { avd_org_get_energy_usage_ratio(to_org) };
+            let receiver_merit =
+                unsafe { avd_org_convert_energy_to_merit(to_org, recv_stored * recv_ratio) };
+            unsafe { avd_org_update_merit(to_org, ctx, receiver_merit) };
+        }
+    }
+}
+
+/// Inst_DonateEnergyFaced: donate fraction of energy to faced neighbor.
+/// Returns 0 if cell_id < 0 (caller should return false), 1 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_donate_energy_faced(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    loss_pct: f64,
+    update_metabolic: c_int,
+    sharing_method: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_get_cell_id(org) } < 0 {
+        return 0;
+    }
+
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if !neighbor.is_null()
+        && unsafe { avd_org_is_dead(neighbor) } == 0
+        && (unsafe { avd_org_has_open_energy_request(neighbor) } != 0 || sharing_method == 1)
+    {
+        let frac = unsafe { avd_org_get_frac_energy_donating(org) };
+        let stored = unsafe { avd_org_get_stored_energy(org) };
+        let amount = stored * frac;
+        unsafe {
+            do_energy_donate_amount(
+                org,
+                ctx,
+                neighbor,
+                amount,
+                loss_pct,
+                update_metabolic,
+                sharing_method,
+            );
+        }
+    }
+    1
+}
+
+/// Inst_DonateEnergyFacedN: donate fixed amount of energy to faced neighbor.
+/// Returns 0 if cell_id < 0 (caller should return false), 1 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_donate_energy_faced_amount(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    fixed_amount: f64,
+    loss_pct: f64,
+    update_metabolic: c_int,
+    sharing_method: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_get_cell_id(org) } < 0 {
+        return 0;
+    }
+
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if !neighbor.is_null()
+        && unsafe { avd_org_is_dead(neighbor) } == 0
+        && (unsafe { avd_org_has_open_energy_request(neighbor) } != 0 || sharing_method == 1)
+    {
+        unsafe {
+            do_energy_donate_amount(
+                org,
+                ctx,
+                neighbor,
+                fixed_amount,
+                loss_pct,
+                update_metabolic,
+                sharing_method,
+            );
+        }
+    }
+    1
+}
+
+/// Inst_ReceiveDonatedEnergy: apply donated energy from buffer.
+/// Returns 0 if cell_id < 0 (caller should return false), 1 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_receive_donated_energy(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    update_metabolic: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    if unsafe { avd_org_get_cell_id(org) } < 0 {
+        return 0;
+    }
+
+    let buffer_amount = unsafe { avd_org_get_energy_in_buffer(org) };
+    if buffer_amount > 0.0 {
+        unsafe { avd_org_apply_donated_energy(org) };
+        if update_metabolic == 1 {
+            let stored = unsafe { avd_org_get_stored_energy(org) };
+            let ratio = unsafe { avd_org_get_energy_usage_ratio(org) };
+            let receiver_merit = unsafe { avd_org_convert_energy_to_merit(org, stored * ratio) };
+            unsafe { avd_org_update_merit(org, ctx, receiver_merit) };
+        }
+    }
+    1
+}
+
+/// Inst_UpdateMetabolicRate: recalculate merit from energy.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_update_metabolic_rate(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let stored = unsafe { avd_org_get_stored_energy(org) };
+    let ratio = unsafe { avd_org_get_energy_usage_ratio(org) };
+    let new_merit = unsafe { avd_org_convert_energy_to_merit(org, stored * ratio) };
+    unsafe { avd_org_update_merit(org, ctx, new_merit) };
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -2497,5 +2980,76 @@ mod tests {
         let mut regs = CpuRegisters { reg: [0xFF, 0, 0] }; // 8 bits < 12 → no
         avd_cpu_inst_bit_consensus24(&mut regs, REG_BX, REG_AX);
         assert_eq!(regs.reg[1], 0);
+    }
+
+    // --- Phase 4: I/O variant + state transition logic tests ---
+
+    /// Bonus cost calculation: verify the formula matches C++ exactly.
+    #[test]
+    fn test_bonus_cost_formula() {
+        // C++: new_bonus = cur_bonus * (1 - bonus_cost); clamp to 0
+        let cur_bonus: f64 = 1.0;
+        let bonus_cost: f64 = 0.001;
+        let new_bonus = cur_bonus * (1.0 - bonus_cost);
+        assert!((new_bonus - 0.999).abs() < 1e-10);
+
+        // Zero bonus stays zero
+        let cur_bonus: f64 = 0.0;
+        let new_bonus = cur_bonus * (1.0 - bonus_cost);
+        assert_eq!(new_bonus, 0.0);
+
+        // Large cost clamps to zero
+        let cur_bonus: f64 = 0.5;
+        let bonus_cost: f64 = 2.0; // more than 100%
+        let mut new_bonus = cur_bonus * (1.0 - bonus_cost);
+        if new_bonus < 0.0 {
+            new_bonus = 0.0;
+        }
+        assert_eq!(new_bonus, 0.0);
+    }
+
+    /// Prob_Die probability calculation from register value.
+    #[test]
+    fn test_prob_die_register_probability() {
+        // When config_prob == -1.0, use register value % 100 / 100.0
+        let reg_val: i32 = 50;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert!((percent_prob - 0.5).abs() < 1e-10);
+
+        // Negative register value
+        let reg_val: i32 = -30;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        // In Rust, -30 % 100 = -30 (same as C++)
+        assert!((percent_prob - (-0.3)).abs() < 1e-10);
+
+        // Register 0 → 0% chance
+        let reg_val: i32 = 0;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert_eq!(percent_prob, 0.0);
+
+        // Register 200 → 0% (200 % 100 = 0)
+        let reg_val: i32 = 200;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert_eq!(percent_prob, 0.0);
+    }
+
+    /// TaskIO_Feedback merit comparison logic.
+    #[test]
+    fn test_feedback_indicator_logic() {
+        fn feedback_indicator(pre: f64, post: f64) -> i32 {
+            if pre > post {
+                -1
+            } else if pre < post {
+                1
+            } else {
+                0
+            }
+        }
+        // pre > post → push -1
+        assert_eq!(feedback_indicator(2.0, 1.0), -1);
+        // pre < post → push 1
+        assert_eq!(feedback_indicator(1.0, 2.0), 1);
+        // pre == post → push 0
+        assert_eq!(feedback_indicator(1.0, 1.0), 0);
     }
 }

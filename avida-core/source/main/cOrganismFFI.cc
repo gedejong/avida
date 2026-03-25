@@ -625,4 +625,132 @@ int avd_org_is_donor(cOrganism* org, int neighbor_id) {
   return org->IsDonor(neighbor_id) ? 1 : 0;
 }
 
+// ---- Opinion interface (Phase 4: opinion via OrgInterface) ----
+
+void avd_org_iface_set_opinion(cOrganism* org, int value) {
+  if (!org) return;
+  org->GetOrgInterface().SetOpinion(value, org);
+}
+
+void avd_org_iface_clear_opinion(cOrganism* org) {
+  if (!org) return;
+  org->GetOrgInterface().ClearOpinion(org);
+}
+
+int avd_org_iface_has_opinion(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetOrgInterface().HasOpinion(org) ? 1 : 0;
+}
+
+int avd_org_get_opinion_first(cOrganism* org) {
+  if (!org || !org->HasOpinion()) return 0;
+  return org->GetOpinion().first;
+}
+
+int avd_org_get_opinion_second(cOrganism* org) {
+  if (!org || !org->HasOpinion()) return 0;
+  return org->GetOpinion().second;
+}
+
+// ---- Messaging (Phase 4) ----
+
+void avd_org_send_value(cOrganism* org, int value) {
+  if (!org) return;
+  org->SendValue(value);
+}
+
+// ---- Donation support (Phase 4) ----
+
+int avd_org_get_cur_num_donates(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetCurNumDonates();
+}
+
+void avd_org_inc_donates(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().IncDonates();
+}
+
+void avd_org_set_is_donor_rand(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsDonorRand();
+}
+
+void avd_org_set_is_donor_null(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsDonorNull();
+}
+
+void avd_org_set_is_receiver_flag(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsReceiver();
+}
+
+double avd_org_get_merit_double(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetPhenotype().GetMerit().GetDouble();
+}
+
+void avd_org_update_merit(cOrganism* org, cAvidaContext* ctx, double new_merit) {
+  if (!org || !ctx) return;
+  org->UpdateMerit(*ctx, new_merit);
+}
+
+double avd_org_get_energy_usage_ratio(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetPhenotype().GetEnergyUsageRatio();
+}
+
+double avd_org_convert_energy_to_merit(cOrganism* org, double energy) {
+  if (!org) return 0.0;
+  return org->GetPhenotype().ConvertEnergyToMerit(energy);
+}
+
+void avd_org_increase_energy_received(cOrganism* org, double amount) {
+  if (!org) return;
+  org->GetPhenotype().IncreaseEnergyReceived(amount);
+}
+
+void avd_org_increase_num_energy_donations(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().IncreaseNumEnergyDonations();
+}
+
+void avd_org_deme_increase_energy_donated(cOrganism* org, double amount) {
+  if (!org) return;
+  cDeme* deme = org->GetDeme();
+  if (deme) deme->IncreaseEnergyDonated(amount);
+}
+
+void avd_org_deme_increase_energy_received(cOrganism* org, double amount) {
+  if (!org) return;
+  cDeme* deme = org->GetDeme();
+  if (deme) deme->IncreaseEnergyReceived(amount);
+}
+
+int avd_org_has_open_energy_request(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().HasOpenEnergyRequest() ? 1 : 0;
+// ---- Organism state transitions (Phase 4: I/O reset, death) ----
+
+void avd_org_reset_inputs(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->GetOrgInterface().ResetInputs(*ctx);
+}
+
+void avd_org_clear_input(cOrganism* org) {
+  if (!org) return;
+  org->ClearInput();
+}
+
+void avd_org_die(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->Die(*ctx);
+}
+
+int avd_org_get_cpu_cycles_used(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetCPUCyclesUsed();
+}
+
 } // extern "C"
