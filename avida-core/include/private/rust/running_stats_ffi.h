@@ -1801,6 +1801,51 @@ void avd_cpu_inst_rotate_home(cHardwareBase* hw, cAvidaContext* ctx);
 void avd_cpu_inst_rotate_event_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
 int  avd_cpu_inst_move(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
 
+// -- Task_MatchProdStr helpers --
+// Returns packed i64: (max_num_matched * 1000 + num_real).
+// binary==0: bit-mode comparison of test_output; binary!=0: element-wise.
+int64_t avd_task_match_prod_str_core(
+    const unsigned char* string_ptr, int string_len,
+    const int* output_buf, int output_len,
+    int binary);
+
+// Compute bonus from match results.
+double avd_task_match_prod_str_bonus(
+    int max_num_matched, int string_len, int num_real,
+    int partial, double mypow);
+
+// -- Task_SGPathTraversal helper --
+// Compute traversal quality from history and state grid.
+double avd_task_sg_path_traversal_quality(
+    const int* history_ptr, int history_len,
+    const int* grid_states_ptr, int grid_len,
+    int poison_state, int poison_touch_count,
+    int target_count);
+
+// -- BirthChamber merit blending --
+typedef struct {
+    double merit0;
+    double merit1;
+    int swap;
+} MeritBlendResult;
+
+MeritBlendResult avd_birth_blend_merits(
+    double merit0, double merit1,
+    double cut_frac, double stay_frac);
+
+typedef struct {
+    int start0;
+    int end0;
+    int start1;
+    int end1;
+    double cut_frac;
+    double stay_frac;
+} RecombRegion;
+
+RecombRegion avd_birth_recomb_region(
+    double frac_a, double frac_b,
+    int genome0_size, int genome1_size);
+
 #ifdef __cplusplus
 }
 
