@@ -8688,9 +8688,12 @@ bool cHardwareCPU::Inst_SetOpinion(cAvidaContext&)
 bool cHardwareCPU::Inst_GetOpinion(cAvidaContext&)
 {
   assert(m_organism != 0);
-  const int opinion_reg = FindModifiedRegister(REG_BX);
-  const int age_reg = FindNextRegister(opinion_reg);
-  avd_cpu_inst_get_opinion(this, opinion_reg, age_reg, m_world->GetStats().GetUpdate());
+  // Guard: HasOpinion check BEFORE FindModifiedRegister (guard ordering rule)
+  if (m_organism->GetOrgInterface().HasOpinion(m_organism)) {
+    const int opinion_reg = FindModifiedRegister(REG_BX);
+    const int age_reg = FindNextRegister(opinion_reg);
+    avd_cpu_inst_get_opinion(this, opinion_reg, age_reg, m_world->GetStats().GetUpdate());
+  }
   return true;
 }
 
