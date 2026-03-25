@@ -106,7 +106,7 @@ When working at program scale, always read and maintain these documents:
 - **Issue #43**: Rust type system infrastructure
 - **Issue #48**: cPhenotype — 121 scalar fields in Rust, 11 energy methods, array bulk ops via FFI
 - **Issue #49**: cBirthEntry — 8 scalar fields in Rust
-- **Issue #50**: cTaskLib — 194/204 task eval functions (95.1%) in Rust; 10 remaining blocked on complex C++ deps
+- **Issue #50**: cTaskLib — 197/204 task eval functions (96.6%) in Rust; 7 remaining blocked on complex C++ deps
 - **Issues #51-52**: Wave 12 — newtype IDs, foundations established
 - **Issues #53-56**: Wave 13 — cResourceCount (41 FFI, 1,278 LOC Rust), cGradientCount (66 fields in Rust), cStats/cDeme foundations
 - **Issue #58**: Organism/deme/population FFI — 36 read-only functions (expanded from 18; now includes deme, opinion, cell position, group count)
