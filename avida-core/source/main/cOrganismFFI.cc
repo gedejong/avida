@@ -762,6 +762,16 @@ int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
   return org->GetOrgInterface().NumberOfOrganismsInGroup(group_id);
 }
 
+int avd_org_receive_value(cOrganism* org) {
+  if (!org) return 0;
+  return org->ReceiveValue();
+// ---- OrgInterface delegation (Phase 5: group/population queries) ----
+
+int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
+  if (!org) return 0;
+  return org->GetOrgInterface().NumberOfOrganismsInGroup(group_id);
+}
+
 void avd_org_donate_res_consumed_to_deme(cOrganism* org) {
   if (!org) return;
   org->DonateResConsumedToDeme();

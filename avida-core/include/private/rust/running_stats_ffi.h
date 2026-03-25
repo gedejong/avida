@@ -1747,6 +1747,37 @@ int  avd_cpu_inst_donate_energy_faced_amount(cHardwareBase* hw, cAvidaContext* c
 int  avd_cpu_inst_receive_donated_energy(cHardwareBase* hw, cAvidaContext* ctx, int update_metabolic);
 void avd_cpu_inst_update_metabolic_rate(cHardwareBase* hw, cAvidaContext* ctx);
 
+// Phase 5: Kaboom/Kazi organism FFI
+void avd_org_kaboom(cOrganism* org, cAvidaContext* ctx, int distance);
+// Phase 5: Stats wrappers (Lyse counters — take cWorld* opaque pointer)
+void avd_stats_inc_kaboom(cWorld* world);
+void avd_stats_inc_dont_explode(cWorld* world);
+void avd_stats_inc_perc_lyse(cWorld* world, double perc);
+void avd_stats_inc_sum_cpus(cWorld* world, int cpu_cycles);
+// Phase 5: Messaging FFI
+int avd_org_send_message_regs(cOrganism* org, cAvidaContext* ctx, int label, int data, int msg_type);
+int avd_org_retrieve_message(cOrganism* org, int* out_label, int* out_data, int log_enabled, cWorld* world);
+int avd_org_receive_value(cOrganism* org);
+// Phase 5: Kazi/Lyse/SmartExplode instruction handlers
+// kazi_generic: handles Kazi, Kazi1-5. C++ passes config values + reg_value.
+void avd_cpu_inst_kazi_generic(
+    cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id,
+    double kaboom_prob, int kaboom_hamming, int max_genome_size);
+// lyse: C++ passes config + world ptr for stats.
+void avd_cpu_inst_lyse(
+    cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id,
+    double kaboom_prob, cWorld* world);
+// smart_explode: C++ passes config + world ptr for stats.
+void avd_cpu_inst_smart_explode(
+    cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id,
+    double kaboom_prob, int kaboom_hamming, cWorld* world);
+// Phase 5: Message instruction handlers
+int avd_cpu_inst_send_message(
+    cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id, int msg_type);
+int avd_cpu_inst_retrieve_message(
+    cHardwareBase* hw, CpuRegisters* regs, int log_enabled, cWorld* world);
+// Phase 5: Receive (value, not message)
+void avd_cpu_inst_receive(cHardwareBase* hw, CpuRegisters* regs, int reg_id);
 // Batch D9: Cell data, group, opinion-to-value, donate-res-to-deme
 void avd_cpu_inst_collect_cell_data(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_set_opinion_to_value(cHardwareBase* hw, cAvidaContext* ctx, int value);
