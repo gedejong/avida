@@ -1405,86 +1405,59 @@ double cTaskLib::Task_MatchProdStr(cTaskContext& ctx) const
   // These even out the stats tracking.
   m_world->GetStats().AddTag(ctx.GetTaskEntry()->GetArguments().GetInt(2), 0);
   m_world->GetStats().AddTag(-1, 0);
-	
+
   tBuffer<int> temp_buf(ctx.GetOutputBuffer());
-  
+
   const cString& string_to_match = ctx.GetTaskEntry()->GetArguments().GetString(0);
   int partial = ctx.GetTaskEntry()->GetArguments().GetInt(0);
   int binary = ctx.GetTaskEntry()->GetArguments().GetInt(1);
   double mypow = ctx.GetTaskEntry()->GetArguments().GetDouble(0);
-  int string_index;
-  int num_matched = 0;
-  int test_output;
-  int max_num_matched = 0;
-  int num_real=0;
-	
-  if (!binary) {
-    if (temp_buf.GetNumStored() > 0) {
-      test_output = temp_buf[0];
-			
-      for (int j = 0; j < string_to_match.GetSize(); j++) {  
-	string_index = string_to_match.GetSize() - j - 1; // start with last char in string
-	int k = 1 << j;
-	if ((string_to_match[string_index] == '0' && !(test_output & k)) ||
-	    (string_to_match[string_index] == '1' && (test_output & k))) num_matched++;
-      }
-      max_num_matched = num_matched;
-    }
-  }
-  else {
-    for (int j = 0; j < string_to_match.GetSize(); j++) {
-      if (string_to_match[j]!='9') num_real++;
-      if ((string_to_match[j]=='0' && temp_buf[j]==0) ||
-	  (string_to_match[j]=='1' && temp_buf[j]==1))
-	num_matched++;
-    }
-    max_num_matched = num_matched;
-  }
-  
-  // Check if the organism already produced this string. 
+
+  // Extract output buffer to a contiguous array for Rust FFI
+  const int buf_len = binary ? string_to_match.GetSize() : (temp_buf.GetNumStored() > 0 ? 1 : 0);
+  std::vector<int> out_vec(buf_len);
+  for (int i = 0; i < buf_len; i++) out_vec[i] = temp_buf[i];
+
+  // Delegate core string matching to Rust
+  int64_t packed = avd_task_match_prod_str_core(
+    (const unsigned char*)(const char*)string_to_match,
+    string_to_match.GetSize(),
+    out_vec.data(), buf_len, binary);
+  int max_num_matched = static_cast<int>(packed / 1000);
+  int num_real = static_cast<int>(packed % 1000);
+
+  // Check if the organism already produced this string.
   // If so, it receives a perfect score for this task.
   int tag = ctx.GetTaskEntry()->GetArguments().GetInt(2);
-	
+
   if (m_world->GetConfig().MATCH_ALREADY_PRODUCED.Get()) {
-    int prod = ctx.GetOrganism()->GetNumberStringsProduced(tag); 
+    int prod = ctx.GetOrganism()->GetNumberStringsProduced(tag);
     if (prod) max_num_matched = string_to_match.GetSize();
   }
-	
-  
-  // Update the organism's tag. 
+
+  // Update the organism's tag.
   ctx.GetOrganism()->UpdateTag(tag, max_num_matched);
   if (ctx.GetOrganism()->GetTagLabel() == tag) {
     ctx.GetOrganism()->SetLineageLabel(ctx.GetTaskEntry()->GetArguments().GetInt(2));
-  } 
-	
-	
+  }
+
   // Update stats
   cString name;
-  name = "[produced"; 
+  name = "[produced";
   name += string_to_match;
   name += "]";
   m_world->GetStats().AddStringBitsMatchedValue(name, max_num_matched);
-  
-  // if the organism hasn't donated, then zero out its reputation. 
-  if ((ctx.GetOrganism()->GetReputation() > 0) && 
+
+  // if the organism hasn't donated, then zero out its reputation.
+  if ((ctx.GetOrganism()->GetReputation() > 0) &&
       (ctx.GetOrganism()->GetNumberOfDonations() == 0)) {
     ctx.GetOrganism()->SetReputation(0);
   }
-	
-  double bonus = 0.0;
-  double base_bonus = 0.0; 
-  
-  base_bonus = static_cast<double>(max_num_matched) * 2.0 / static_cast<double>(string_to_match.GetSize()) - 1;
-  
-  if (partial) {
-    base_bonus=double(max_num_matched)*2/double(num_real) -1;
-  }
-  
-  if (base_bonus > 0.0) {
-    bonus = pow(base_bonus,mypow);
-  }
-  return bonus;
-	
+
+  // Delegate bonus computation to Rust
+  return avd_task_match_prod_str_bonus(
+    max_num_matched, string_to_match.GetSize(), num_real,
+    partial, mypow);
 }
 
 
@@ -2213,33 +2186,29 @@ double cTaskLib::Task_SGPathTraversal(cTaskContext& ctx) const
 
   int state = sg.GetStateID(args.GetString(1));
   if (state < 0) return 0.0;
-  
+
   const AvidaArray<int>& ext_mem = ctx.GetExtendedMemory();
-  
-  // Build and sort history
+
+  // Extract history from extended memory (cells visited after header)
   const int history_offset = 3 + sg.GetNumStates();
-  AvidaArray<int> history(ext_mem.GetSize() - history_offset);
-  for (int i = 0; i < history.GetSize(); i++) history[i] = ext_mem[i + history_offset];
-  std::sort(history.begin(), history.end());
-  
-  // Calculate how many unique non-poison cells have been touched
-  int traversed = 0;
-  int last = -1;
-  for (int i = 0; i < history.GetSize(); i++) {
-    if (history[i] == last) continue;
-    last = history[i];
-    if (sg.GetStateAt(last) != state) traversed++;
-  }
-  
-  traversed -= ext_mem[3 + state];
-  
-  double quality = 0.0;
-  
-//  double halflife = -1.0 * fabs(args.GetDouble(0));
-//  quality = pow(args.GetDouble(1), (double)(args.GetInt(0) - ((traversed >= 0) ? traversed : 0)) / halflife);
-  quality = (double)((traversed >= 0) ? traversed : 0) / (double)args.GetInt(0);
-  
-  return quality;
+  const int history_len = ext_mem.GetSize() - history_offset;
+
+  // Extract state grid data for Rust
+  const int grid_size = sg.GetWidth() * sg.GetHeight();
+  std::vector<int> grid_data(grid_size);
+  for (int i = 0; i < grid_size; i++) grid_data[i] = sg.GetStateAt(i);
+
+  // Build history array for Rust
+  std::vector<int> history(history_len);
+  for (int i = 0; i < history_len; i++) history[i] = ext_mem[i + history_offset];
+
+  // Delegate traversal quality computation to Rust
+  return avd_task_sg_path_traversal_quality(
+    history.data(), history_len,
+    grid_data.data(), grid_size,
+    state,
+    ext_mem[3 + state],
+    args.GetInt(0));
 }  
 
 

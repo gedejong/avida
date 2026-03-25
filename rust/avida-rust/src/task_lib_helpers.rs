@@ -2040,6 +2040,268 @@ pub unsafe extern "C" fn avd_task_eval_sort_inputs(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Task_MatchProdStr — pure string-matching core
+// ---------------------------------------------------------------------------
+
+/// Compute the number of matching bits between a target string and an output value.
+///
+/// In non-binary mode (`binary == 0`), compares bits of `test_output` against the
+/// string characters ('0'/'1') from the least-significant bit upward.
+///
+/// In binary mode (`binary != 0`), compares element-wise: `string[j]` vs
+/// `output_buf[j]`, where '0' matches 0 and '1' matches 1 (characters '9'
+/// are wildcards that don't count toward `num_real`).
+///
+/// Returns `(max_num_matched, num_real)` packed as `max_num_matched * 1000 + num_real`.
+///
+/// # Safety
+/// - `string_ptr` must point to `string_len` valid bytes (the match-target string).
+/// - `output_buf` must point to `output_len` valid `c_int` values.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_match_prod_str_core(
+    string_ptr: *const u8,
+    string_len: c_int,
+    output_buf: *const c_int,
+    output_len: c_int,
+    binary: c_int,
+) -> i64 {
+    if string_ptr.is_null() || string_len <= 0 {
+        return 0;
+    }
+
+    let slen = string_len as usize;
+    // SAFETY: caller guarantees string_ptr is valid for slen bytes.
+    let string_bytes = unsafe { std::slice::from_raw_parts(string_ptr, slen) };
+
+    let mut num_matched: i32 = 0;
+    let mut num_real: i32 = 0;
+
+    if binary == 0 {
+        // Non-binary mode: compare bits of first output value
+        let test_output = if !output_buf.is_null() && output_len > 0 {
+            // SAFETY: we just checked output_buf is non-null and output_len > 0.
+            unsafe { *output_buf }
+        } else {
+            return 0;
+        };
+
+        for j in 0..slen {
+            let string_index = slen - j - 1; // start with last char
+            let k: i32 = 1 << j;
+            let ch = string_bytes[string_index];
+            if (ch == b'0' && (test_output & k) == 0) || (ch == b'1' && (test_output & k) != 0) {
+                num_matched += 1;
+            }
+        }
+        num_real = slen as i32;
+    } else {
+        // Binary mode: element-wise comparison
+        if output_buf.is_null() || output_len <= 0 {
+            return 0;
+        }
+        // SAFETY: we just checked output_buf is non-null and output_len > 0.
+        let out = unsafe { std::slice::from_raw_parts(output_buf, output_len as usize) };
+
+        for j in 0..slen {
+            let ch = string_bytes[j];
+            if ch != b'9' {
+                num_real += 1;
+            }
+            let buf_val = if j < out.len() { out[j] } else { 0 };
+            if (ch == b'0' && buf_val == 0) || (ch == b'1' && buf_val == 1) {
+                num_matched += 1;
+            }
+        }
+    }
+
+    // Pack both values: matched * 1000 + num_real
+    i64::from(num_matched) * 1000 + i64::from(num_real)
+}
+
+/// Compute the bonus for Task_MatchProdStr given match results.
+///
+/// `max_num_matched`: how many bits matched (possibly overridden to string_len if already produced).
+/// `string_len`: length of the target string.
+/// `num_real`: count of non-wildcard characters (only used when `partial != 0`).
+/// `partial`: if nonzero, use num_real instead of string_len for base_bonus.
+/// `mypow`: exponent for the bonus calculation.
+#[no_mangle]
+pub extern "C" fn avd_task_match_prod_str_bonus(
+    max_num_matched: c_int,
+    string_len: c_int,
+    num_real: c_int,
+    partial: c_int,
+    mypow: f64,
+) -> f64 {
+    let matched = f64::from(max_num_matched);
+    let base_bonus = if partial != 0 {
+        if num_real == 0 {
+            return 0.0;
+        }
+        matched * 2.0 / f64::from(num_real) - 1.0
+    } else {
+        if string_len == 0 {
+            return 0.0;
+        }
+        matched * 2.0 / f64::from(string_len) - 1.0
+    };
+
+    if base_bonus > 0.0 {
+        base_bonus.powf(mypow)
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task_SGPathTraversal — pure traversal quality computation
+// ---------------------------------------------------------------------------
+
+/// Compute the path traversal quality for Task_SGPathTraversal.
+///
+/// Given a history of visited grid cells, a state grid, and a "poison" state,
+/// counts how many unique non-poison cells were visited, subtracts the
+/// poison-touch count, and returns `max(0, traversed) / target_count`.
+///
+/// # Safety
+/// - `history_ptr` must point to `history_len` valid `c_int` values (cell IDs from ext_mem).
+/// - `grid_states_ptr` must point to `grid_len` valid `c_int` values (the state grid data).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_sg_path_traversal_quality(
+    history_ptr: *const c_int,
+    history_len: c_int,
+    grid_states_ptr: *const c_int,
+    grid_len: c_int,
+    poison_state: c_int,
+    poison_touch_count: c_int,
+    target_count: c_int,
+) -> f64 {
+    if history_ptr.is_null() || history_len <= 0 || target_count <= 0 {
+        return 0.0;
+    }
+    if grid_states_ptr.is_null() || grid_len <= 0 {
+        return 0.0;
+    }
+
+    let hlen = history_len as usize;
+    // SAFETY: caller guarantees history_ptr is valid for hlen elements.
+    let history_raw = unsafe { std::slice::from_raw_parts(history_ptr, hlen) };
+    // SAFETY: caller guarantees grid_states_ptr is valid for grid_len elements.
+    let grid = unsafe { std::slice::from_raw_parts(grid_states_ptr, grid_len as usize) };
+
+    // Sort history to count unique cells
+    let mut history: Vec<i32> = history_raw.to_vec();
+    history.sort_unstable();
+
+    let mut traversed: i32 = 0;
+    let mut last: i32 = -1;
+    for &cell_id in &history {
+        if cell_id == last {
+            continue;
+        }
+        last = cell_id;
+        // Check bounds and count non-poison cells
+        if cell_id >= 0 && (cell_id as usize) < grid.len() && grid[cell_id as usize] != poison_state
+        {
+            traversed += 1;
+        }
+    }
+
+    traversed -= poison_touch_count;
+
+    let effective = if traversed >= 0 { traversed } else { 0 };
+    f64::from(effective) / f64::from(target_count)
+}
+
+// ---------------------------------------------------------------------------
+// cBirthChamber — merit blending for recombination
+// ---------------------------------------------------------------------------
+
+/// Result of merit blending: two new merit values and whether a genome swap is needed.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct MeritBlendResult {
+    pub merit0: f64,
+    pub merit1: f64,
+    /// 1 if genomes should be swapped (majority of genome went to the other child).
+    pub swap: c_int,
+}
+
+/// Blend two merit values based on crossover fractions.
+///
+/// Computes:
+/// - `new_merit0 = merit0 * stay_frac + merit1 * cut_frac`
+/// - `new_merit1 = merit1 * stay_frac + merit0 * cut_frac`
+/// - swap = 1 if stay_frac < cut_frac (majority of genome crossed over)
+#[no_mangle]
+pub extern "C" fn avd_birth_blend_merits(
+    merit0: f64,
+    merit1: f64,
+    cut_frac: f64,
+    stay_frac: f64,
+) -> MeritBlendResult {
+    let new_merit0 = merit0 * stay_frac + merit1 * cut_frac;
+    let new_merit1 = merit1 * stay_frac + merit0 * cut_frac;
+    let swap = if stay_frac < cut_frac { 1 } else { 0 };
+    MeritBlendResult {
+        merit0: new_merit0,
+        merit1: new_merit1,
+        swap,
+    }
+}
+
+/// Compute cut_frac and stay_frac from start_frac and end_frac (after ordering).
+///
+/// Ensures start <= end, then returns `(cut_frac, stay_frac)` packed as
+/// `cut_frac` in out_cut and `stay_frac` in out_stay.
+/// Also computes the four region boundaries for two genomes.
+///
+/// Returns: start0, end0, start1, end1 packed into a `RecombRegion`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct RecombRegion {
+    pub start0: c_int,
+    pub end0: c_int,
+    pub start1: c_int,
+    pub end1: c_int,
+    pub cut_frac: f64,
+    pub stay_frac: f64,
+}
+
+/// Compute recombination region boundaries and fractions from two random doubles.
+///
+/// `frac_a` and `frac_b` are raw random doubles in [0, 1).
+/// `genome0_size` and `genome1_size` are the lengths of the two genomes.
+#[no_mangle]
+pub extern "C" fn avd_birth_recomb_region(
+    frac_a: f64,
+    frac_b: f64,
+    genome0_size: c_int,
+    genome1_size: c_int,
+) -> RecombRegion {
+    let (start_frac, end_frac) = if frac_a > frac_b {
+        (frac_b, frac_a)
+    } else {
+        (frac_a, frac_b)
+    };
+
+    let cut_frac = end_frac - start_frac;
+    let stay_frac = 1.0 - cut_frac;
+
+    let g0 = f64::from(genome0_size);
+    let g1 = f64::from(genome1_size);
+
+    RecombRegion {
+        start0: (start_frac * g0) as c_int,
+        end0: (end_frac * g0) as c_int,
+        start1: (start_frac * g1) as c_int,
+        end1: (end_frac * g1) as c_int,
+        cut_frac,
+        stay_frac,
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::undocumented_unsafe_blocks)]
 mod tests {
@@ -4120,5 +4382,218 @@ mod tests {
         // Fully reversed ascending: maximum disorder
         // score/maxscore >= 0.5, so quality = 0.0
         assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // -----------------------------------------------------------------------
+    // Task_MatchProdStr core tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn match_prod_str_nonbinary_perfect() {
+        // String "1010", output value = 0b1010 = 10
+        let string = b"1010";
+        let output = [10i32]; // binary 1010
+        let packed =
+            unsafe { avd_task_match_prod_str_core(string.as_ptr(), 4, output.as_ptr(), 1, 0) };
+        let matched = (packed / 1000) as i32;
+        assert_eq!(matched, 4);
+    }
+
+    #[test]
+    fn match_prod_str_nonbinary_none() {
+        // String "1111", output value = 0 (all zeros)
+        let string = b"1111";
+        let output = [0i32];
+        let packed =
+            unsafe { avd_task_match_prod_str_core(string.as_ptr(), 4, output.as_ptr(), 1, 0) };
+        let matched = (packed / 1000) as i32;
+        assert_eq!(matched, 0);
+    }
+
+    #[test]
+    fn match_prod_str_binary_mode() {
+        // String "1091", output buffer [1, 0, 0, 1]
+        // '1' matches 1, '0' matches 0, '9' is wildcard (not counted), '1' matches 1
+        let string = b"1091";
+        let output = [1i32, 0, 0, 1];
+        let packed =
+            unsafe { avd_task_match_prod_str_core(string.as_ptr(), 4, output.as_ptr(), 4, 1) };
+        let matched = (packed / 1000) as i32;
+        let num_real = (packed % 1000) as i32;
+        assert_eq!(matched, 3); // '1'=1, '0'=0, '1'=1 match; '9' ignored for matching but doesn't count
+        assert_eq!(num_real, 3); // 3 non-'9' chars
+    }
+
+    #[test]
+    fn match_prod_str_binary_wildcard() {
+        // String "99", output [1, 0]
+        let string = b"99";
+        let output = [1i32, 0];
+        let packed =
+            unsafe { avd_task_match_prod_str_core(string.as_ptr(), 2, output.as_ptr(), 2, 1) };
+        let matched = (packed / 1000) as i32;
+        let num_real = (packed % 1000) as i32;
+        assert_eq!(matched, 0); // '9' never matches
+        assert_eq!(num_real, 0); // all wildcards
+    }
+
+    #[test]
+    fn match_prod_str_bonus_full() {
+        // 4 out of 4 matched, string_len=4, partial=0, mypow=1.0
+        // base_bonus = 4*2/4 - 1 = 1.0, bonus = 1.0^1.0 = 1.0
+        let bonus = avd_task_match_prod_str_bonus(4, 4, 4, 0, 1.0);
+        assert!((bonus - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_prod_str_bonus_half() {
+        // 2 out of 4 matched: base_bonus = 2*2/4 - 1 = 0.0, bonus = 0.0
+        let bonus = avd_task_match_prod_str_bonus(2, 4, 4, 0, 1.0);
+        assert!((bonus - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_prod_str_bonus_partial() {
+        // 3 out of 3 real chars matched, string_len=4, partial=1, mypow=2.0
+        // base_bonus = 3*2/3 - 1 = 1.0, bonus = 1.0^2.0 = 1.0
+        let bonus = avd_task_match_prod_str_bonus(3, 4, 3, 1, 2.0);
+        assert!((bonus - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_prod_str_null_string() {
+        let output = [10i32];
+        let packed = unsafe { avd_task_match_prod_str_core(ptr::null(), 0, output.as_ptr(), 1, 0) };
+        assert_eq!(packed, 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // Task_SGPathTraversal tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn sg_path_traversal_basic() {
+        // Grid: 4 cells, states [0, 1, 0, 1], poison_state = 1
+        // History: [0, 2, 0, 3] -> unique: {0, 2, 3}
+        // Cell 0 state=0 (non-poison), cell 2 state=0 (non-poison), cell 3 state=1 (poison)
+        // traversed = 2, minus poison_touch_count=0 -> 2
+        // quality = 2/4 = 0.5
+        let grid = [0i32, 1, 0, 1];
+        let history = [0i32, 2, 0, 3];
+        let q = unsafe {
+            avd_task_sg_path_traversal_quality(
+                history.as_ptr(),
+                4,
+                grid.as_ptr(),
+                4,
+                1, // poison_state
+                0, // poison_touch_count
+                4, // target_count
+            )
+        };
+        assert!((q - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sg_path_traversal_with_poison_touch() {
+        // Same as above but poison_touch_count=1 -> traversed = 2 - 1 = 1
+        let grid = [0i32, 1, 0, 1];
+        let history = [0i32, 2, 0, 3];
+        let q = unsafe {
+            avd_task_sg_path_traversal_quality(history.as_ptr(), 4, grid.as_ptr(), 4, 1, 1, 4)
+        };
+        assert!((q - 0.25).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sg_path_traversal_empty_history() {
+        let grid = [0i32, 1, 0, 1];
+        let q = unsafe {
+            avd_task_sg_path_traversal_quality(ptr::null(), 0, grid.as_ptr(), 4, 1, 0, 4)
+        };
+        assert!((q - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sg_path_traversal_all_poison() {
+        // All cells are poison state
+        let grid = [1i32, 1, 1, 1];
+        let history = [0i32, 1, 2, 3];
+        let q = unsafe {
+            avd_task_sg_path_traversal_quality(history.as_ptr(), 4, grid.as_ptr(), 4, 1, 0, 4)
+        };
+        assert!((q - 0.0).abs() < f64::EPSILON);
+    }
+
+    // -----------------------------------------------------------------------
+    // BirthChamber merit blending tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn merit_blend_equal() {
+        // 50/50 split: cut_frac=0.5, stay_frac=0.5
+        let r = avd_birth_blend_merits(100.0, 200.0, 0.5, 0.5);
+        assert!((r.merit0 - 150.0).abs() < f64::EPSILON);
+        assert!((r.merit1 - 150.0).abs() < f64::EPSILON);
+        assert_eq!(r.swap, 0); // exactly equal, no swap
+    }
+
+    #[test]
+    fn merit_blend_no_crossover() {
+        // No crossover: cut_frac=0, stay_frac=1
+        let r = avd_birth_blend_merits(100.0, 200.0, 0.0, 1.0);
+        assert!((r.merit0 - 100.0).abs() < f64::EPSILON);
+        assert!((r.merit1 - 200.0).abs() < f64::EPSILON);
+        assert_eq!(r.swap, 0);
+    }
+
+    #[test]
+    fn merit_blend_full_crossover() {
+        // Full crossover: cut_frac=1, stay_frac=0 -> swap
+        let r = avd_birth_blend_merits(100.0, 200.0, 1.0, 0.0);
+        assert!((r.merit0 - 200.0).abs() < f64::EPSILON);
+        assert!((r.merit1 - 100.0).abs() < f64::EPSILON);
+        assert_eq!(r.swap, 1);
+    }
+
+    #[test]
+    fn merit_blend_majority_crossover() {
+        // Majority crosses: cut_frac=0.7, stay_frac=0.3 -> swap
+        let r = avd_birth_blend_merits(100.0, 200.0, 0.7, 0.3);
+        assert!((r.merit0 - (100.0 * 0.3 + 200.0 * 0.7)).abs() < 1e-10);
+        assert!((r.merit1 - (200.0 * 0.3 + 100.0 * 0.7)).abs() < 1e-10);
+        assert_eq!(r.swap, 1);
+    }
+
+    // -----------------------------------------------------------------------
+    // BirthChamber recombination region tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn recomb_region_ordered() {
+        let r = avd_birth_recomb_region(0.2, 0.8, 100, 200);
+        assert_eq!(r.start0, 20);
+        assert_eq!(r.end0, 80);
+        assert_eq!(r.start1, 40);
+        assert_eq!(r.end1, 160);
+        assert!((r.cut_frac - 0.6).abs() < 1e-10);
+        assert!((r.stay_frac - 0.4).abs() < 1e-10);
+    }
+
+    #[test]
+    fn recomb_region_reversed() {
+        // frac_a > frac_b: should swap
+        let r = avd_birth_recomb_region(0.9, 0.1, 100, 100);
+        assert_eq!(r.start0, 10);
+        assert_eq!(r.end0, 90);
+        assert!((r.cut_frac - 0.8).abs() < 1e-10);
+    }
+
+    #[test]
+    fn recomb_region_equal() {
+        let r = avd_birth_recomb_region(0.5, 0.5, 100, 100);
+        assert_eq!(r.start0, r.end0);
+        assert!((r.cut_frac - 0.0).abs() < 1e-10);
+        assert!((r.stay_frac - 1.0).abs() < 1e-10);
     }
 }
