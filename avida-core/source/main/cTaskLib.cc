@@ -1341,83 +1341,30 @@ void cTaskLib::Load_MatchStr(const cString& name, const cString& argstr, cEnvReq
 double cTaskLib::Task_MatchStr(cTaskContext& ctx) const
 {
   tBuffer<int> temp_buf(ctx.GetOutputBuffer());
-  //  if (temp_buf[0] != 357913941) return 0;
-  
-  //  temp_buf.Pop(); // pop the signal value off of the buffer
-  
   const cString& string_to_match = ctx.GetTaskEntry()->GetArguments().GetString(0);
   int partial = ctx.GetTaskEntry()->GetArguments().GetInt(0);
   int binary = ctx.GetTaskEntry()->GetArguments().GetInt(1);
-//  double mypow = ctx.GetTaskEntry()->GetArguments().GetDouble(0);
-  int string_index;
-  int num_matched = 0;
-  int test_output;
-  int max_num_matched = 0;
-  int num_real=0;
 
-  if (!binary) {
-    if (temp_buf.GetNumStored() > 0) {
-      test_output = temp_buf[0];
-      
-      for (int j = 0; j < string_to_match.GetSize(); j++) {  
-	string_index = string_to_match.GetSize() - j - 1; // start with last char in string
-	int k = 1 << j;
-	if ((string_to_match[string_index] == '0' && !(test_output & k)) ||
-	    (string_to_match[string_index] == '1' && (test_output & k))) num_matched++;
-      }
-      max_num_matched = num_matched;
-    }
-  }
-  else {
-    for (int j = 0; j < string_to_match.GetSize(); j++) {
-      if (string_to_match[j] != '9') {
-	num_real++;
-      }
-      if ((string_to_match[j] == '0' && temp_buf[j]==0) ||
-	  (string_to_match[j] == '1' && temp_buf[j]==1)) {
-          num_matched++;
-      }
-    }
-    max_num_matched = num_matched;
-  }
+  // Flatten output buffer for Rust FFI
+  int out_len = temp_buf.GetNumStored();
+  std::vector<int> out_flat(out_len);
+  for (int i = 0; i < out_len; i++) out_flat[i] = temp_buf[i];
 
-  bool used_received = false;
+  // Flatten received messages buffer if present
+  std::vector<int> recv_flat;
+  int recv_len = 0;
   if (ctx.GetReceivedMessages()) {
     tBuffer<int> received(*(ctx.GetReceivedMessages()));
-    for (int i = 0; i < received.GetNumStored(); i++) {
-      test_output = received[i];
-      num_matched = 0;
-      
-      for (int j = 0; j < string_to_match.GetSize(); j++) {
-        string_index = string_to_match.GetSize() - j - 1; // start with last char in string
-        int k = 1 << j;
-        if ((string_to_match[string_index]=='0' && !(test_output & k)) ||
-            (string_to_match[string_index]=='1' && (test_output & k))) {
-	  num_matched++;
-	}
-      }
-      
-      if (num_matched > max_num_matched) {
-        max_num_matched = num_matched;
-        used_received = true;
-      }
-    }
-  }
-  
-  double bonus = 0.0;
-  // return value between 0 & 1 representing the percentage of string that was matched
-  double base_bonus = static_cast<double>(max_num_matched) * 2.0 / static_cast<double>(string_to_match.GetSize()) - 1;
-
-  if (partial) {
-    base_bonus=double(max_num_matched)*2/double(num_real) -1;
+    recv_len = received.GetNumStored();
+    recv_flat.resize(recv_len);
+    for (int i = 0; i < recv_len; i++) recv_flat[i] = received[i];
   }
 
-  if (base_bonus > 0.0) {
-    bonus = pow(base_bonus, 2);
-//    if (used_received) m_world->GetStats().AddMarketItemUsed();
-//    else m_world->GetStats().AddMarketOwnItemUsed();
-  }
-  return bonus;
+  return avd_task_eval_match_str(
+    out_flat.data(), out_len,
+    recv_flat.empty() ? nullptr : recv_flat.data(), recv_len,
+    (const unsigned char*)(const char*)string_to_match, string_to_match.GetSize(),
+    partial, binary);
 }
 
 vector<cString> cTaskLib::GetMatchStrings()
@@ -1590,105 +1537,22 @@ double cTaskLib::Task_SortInputs(cTaskContext& ctx) const
   const tBuffer<int>& output = ctx.GetOutputBuffer();
   const int size = args.GetInt(0);
   const int stored = output.GetNumStored();
-  
+
   // if less than half, can't possibly reach threshold
   if (stored <= (size / 2)) return 0.0;
-  
-  Apto::Map<int, int> valmap;
-  int score = 0;
-  int maxscore = 0;
-  
-  // add all valid inputs into the value map
-  for (int i = 0; i < size; i++) valmap.Set(ctx.GetOrganism()->GetInputAt(i), -1);
-  
-  int span_start = -1;
-  int span_end = stored;
-  
-  if (args.GetInt(2)) { // Contiguous
-    // scan for the largest contiguous span
-    // - in the event of a tie, keep the first discovered
-    for (int i = 0; i < stored; i++) {
-      if (valmap.Has(output[i])) {
-        int t_start = i;
-        while (++i < stored && valmap.Has(output[i])) ;
-        if (span_start == -1 || (i - t_start) > (span_end - span_start)) {
-          span_start = t_start;
-          span_end = i;
-        }
-      }
-    }
-    
-    // no span was found
-    if (span_start == -1) return 0.0;    
-  } else { // Scattered
-    // search for first valid entry
-    while (++span_start < stored && valmap.Has(output[span_start])) ;
-    
-    // scanned past the end of the output, nothing to validate
-    if (span_start >= stored) return 0.0;
-  }
-  
-  // again, if span is less than half the size can't possibly reach threshold
-  if ((span_end - span_start) <= (size / 2)) return 0.0;
-  
-  // insertion sort span
-  // - count number of actual entries
-  // - count moves required
-  // - update valmap, tracking observed inputs
-  AvidaArray<int> sorted(size);
-  const bool ascending = (args.GetInt(1) >= 0);
-  int count = 1;
-  
-  // store first value
-  valmap.Set(output[span_start], span_start);
-  sorted[0] = output[span_start];
-  
-  // iterate over the remaining span (discovered for contiguous, full output for scattered)
-  for (int i = span_start + 1; i < span_end; i++) {      
-    int value = output[i];
-    
-    // check for a dup or invalid output, skip it if so
-    int idx;
-    if (!valmap.Get(value, idx) || idx != -1) continue;
-    
-    maxscore += count; // count the maximum moves possible
-    count++; // iterate the observed count
-    valmap.Set(value,i); // save position, so that missing values can be determined later
-    
-    // sort value based on ascending for descending, counting moves
-    int j = count - 2;
-    while (j >= 0 && ((ascending && sorted[j] > value) || (!ascending && sorted[j] < value))) {
-      sorted[j + 1] = sorted[j];
-      j--;
-      score++;
-    }
-    sorted[j + 1] = value;
-  }
-  
-  // if not all of the inputs were observed
-  if (count < size) {
-    // iterate over all inputs
-    for (int i = 0; i < size; i++) {
-      int idx;
-      // if input was not observed
-      if (valmap.Get(ctx.GetOrganism()->GetInputAt(i), idx) && idx == -1) {
-        maxscore += count; // add to the maximum move count
-        score += count; // missing values, scored as maximally out of order
-        count++; // increment observed count
-      }
-    }
-  }
-  
-  double quality = 0.0;
-  
-  // score of 50% expected with random output
-  // - only grant quality when less than 50% maximum moves are required
-  if (static_cast<double>(score) / static_cast<double>(maxscore) < 0.5) {
-    double halflife = -1.0 * fabs(args.GetDouble(0));
-    quality = pow(2.0, static_cast<double>(score) / halflife);
-  }
-  
-  return quality;
+
+  // Flatten output buffer for Rust FFI
+  std::vector<int> out_flat(stored);
+  for (int i = 0; i < stored; i++) out_flat[i] = output[i];
+
+  // Collect organism inputs for Rust FFI
+  std::vector<int> in_flat(size);
+  for (int i = 0; i < size; i++) in_flat[i] = ctx.GetOrganism()->GetInputAt(i);
+
+  return avd_task_eval_sort_inputs(
+    out_flat.data(), stored,
+    in_flat.data(), size,
+    size, args.GetInt(1), args.GetInt(2), args.GetDouble(0));
 }
 
 
@@ -1779,289 +1643,39 @@ double cTaskLib::Task_Optimize(cTaskContext& ctx) const
 {
   // if the org hasn't output yet enough numbers, just return without completing any tasks
   if (ctx.GetOutputBuffer().GetNumStored() < ctx.GetOutputBuffer().GetCapacity()) return 0;
-  
-  double quality = 0.0;
+
   const cArgContainer& args = ctx.GetTaskEntry()->GetArguments();
-  
-  // which function are we currently checking?
   const int function = args.GetInt(0);
-  
-  // get however many variables need, turn them into doubles between 0 and 1
-  AvidaArray<double> vars;
-  vars.Resize(args.GetInt(3));
-  
-  double Fx = 0.0;
-  
-  // some of the problems don't need double variables but use the bit string as a bit string
-  // string match, Fx=length - num_matched (0 best, length worst)
+
+  // Flatten output buffer for Rust FFI
+  tBuffer<int> buf(ctx.GetOutputBuffer());
+  int out_len = buf.GetNumStored();
+  std::vector<int> out_flat(out_len);
+  for (int i = 0; i < out_len; i++) out_flat[i] = buf[i];
+
+  // Get string argument for function 20
+  const unsigned char* str_ptr = nullptr;
+  int str_len = 0;
   if (function == 20) {
-    const cString& string_to_match = args.GetString(0);
-    int matched=0;
-    for (int i=0; i<args.GetInt(2); i++) {
-      if ((string_to_match[i] == '0' && ctx.GetOutputBuffer()[i]==0)  ||
-	  (string_to_match[i] == '1' && ctx.GetOutputBuffer()[i]==1))
-	matched++;
-    }
-    Fx=args.GetInt(2) - matched;
+    const cString& s = args.GetString(0);
+    str_ptr = (const unsigned char*)(const char*)s;
+    str_len = s.GetSize();
   }
 
-  // string with all 1's at beginning until pattern 0101, reward for # 1's
-  else if (function == 21) {
-    int numOnes=0;
-    int patFound=0;
-    for (int i=0; i<args.GetInt(2)-3; i++) {
-      if (ctx.GetOutputBuffer()[i]==1) numOnes++;
-      else {
-	if (ctx.GetOutputBuffer()[i+1] == 1 &&
-	    ctx.GetOutputBuffer()[i+2]==0 && ctx.GetOutputBuffer()[i+3]==1) {
-	  patFound=1;
-	}
-	break;
-      }
-    }
-    if (patFound) Fx=args.GetInt(2)-4-numOnes;
-    else Fx=args.GetInt(2);
+  OptimizeResult result = avd_task_eval_optimize(
+    out_flat.data(), out_len, ctx.GetOutputBuffer().GetCapacity(),
+    function, args.GetInt(1), args.GetInt(2), args.GetInt(3),
+    args.GetDouble(0), args.GetDouble(1), args.GetDouble(2),
+    args.GetDouble(3), args.GetDouble(4),
+    str_ptr, str_len);
+
+  ctx.SetTaskValue(result.fx);
+
+  if (result.quality > 1) {
+    cout << "\n\nquality > 1!  quality= " << result.quality << "  Fx= " << result.fx << endl;
   }
 
-  // simply rewared for number of 1's at beginning of string, maxFx=length of string
-  else if (function == 22) {
-    int numOnes=0;
-    for (int i=0; i<args.GetInt(2); i++) {
-      if (ctx.GetOutputBuffer()[i]==1) numOnes++;
-      else break;
-    }
-    Fx=args.GetInt(2)-numOnes;
-  }
-
-  // simply reward for number 0's in string
-  else if (function == 23) {
-    int numZeros=0;
-    for (int i=0; i<args.GetInt(2); i++) {
-      if (ctx.GetOutputBuffer()[i]==0) numZeros++;
-      else break;
-    }
-    Fx=args.GetInt(2)-numZeros;
-  }
-
-  else if (function == 18) {
-    int tot=0;
-    for (int i=0; i<30; i++) {
-      tot+= ctx.GetOutputBuffer()[i];
-    }
-    Fx = 1+tot;
-  }
-
-  else if (function == 19) {
-    AvidaArray<double> tempVars;
-    tempVars.Resize(args.GetInt(3));
-    for (int i=0; i<args.GetInt(3); i++) {
-      tempVars[i]=0;
-    }
-    
-    for (int i=0; i<30; i++) {
-      tempVars[0]+= ctx.GetOutputBuffer()[i];
-    }
-    
-    int len = args.GetInt(2);
-    for (int i = len - 1; i >= 0; i--) {
-      for (int j=1; j<args.GetInt(3); j++) {
-        tempVars[j-1] += ctx.GetOutputBuffer()[30+i + len*(args.GetInt(3)-j-1)];
-      }
-    }
-    
-    int Gx = 0;
-    for (int i = 1; i < args.GetInt(3); i++) {
-      if (tempVars[i] == 5) Gx += 1;
-      else Gx += int(tempVars[i]) + 2;
-    }
-    Fx = Gx * (1 / (1 + tempVars[0]));
-  }
-
-  else {
-    if (args.GetInt(1)) {
-      int len = args.GetInt(2);
-      double base_pow = args.GetDouble(0);
-      
-      AvidaArray<double> tempVars;
-      tempVars.Resize(args.GetInt(3));
-      for (int i=0; i<args.GetInt(3); i++) tempVars[i] = 0;
-      
-      double tot = 0;
-      for (int i = len - 1; i >= 0; i--) {
-        for (int j=0; j<args.GetInt(3); j++) {
-          tempVars[j] += ctx.GetOutputBuffer()[i + len*(args.GetInt(3)-j-1)] * pow(base_pow, (len - 1) - i);
-        }
-        tot += pow(base_pow, double(i));
-      }
-      for (int i=0; i<args.GetInt(3); i++) {
-        vars[i] = tempVars[i] / tot;
-      }
-      //	cout << "x: " << vars[0] << " ";
-    } 
-    else {
-      for (int j=0; j<args.GetInt(3); j++) {
-        vars[j] = double(ctx.GetOutputBuffer()[j]) / 0xffffffff;
-      }
-    }
-    
-    for (int j=0; j<args.GetInt(3); j++) {
-      if (vars[j] < 0) vars[j] = 0;
-      else if (vars[j] > 1) vars[j] = 1;
-    }
-    
-    switch(function) {
-    case 1:
-      Fx = vars[0];		// F1
-      //	  cout << "Fx1: " << Fx << " ";
-      break;
-        
-    case 2:
-      Fx = (1.0 + vars[1]) * (1.0 - sqrt(vars[0] / (1.0 + vars[1])));   // F2
-      break;
-        
-    case 3:
-      Fx = (1.0 + vars[1]) * (1.0 - pow(vars[0] / (1.0 + vars[1]), 2.0));  // F3
-      break;
-        
-    case 4:
-      Fx = (1.0 + vars[1]) * (1.0 - sqrt(vars[0] / (1.0 + vars[1])) - (vars[0] / (1.0 + vars[1])) * sin(3.14159 * vars[0] * 10.0));
-      break;
-        
-    case 5:
-      vars[0] = vars[0] * -2.0;
-      Fx = vars[0]*vars[0] + vars[1]*vars[1];
-      break;
-        
-    case 6:
-      vars[0] = vars[0] * -2.0;
-      Fx = (vars[0] + 2.0)*(vars[0] + 2.0) + vars[1]*vars[1];
-      break;
-        
-    case 7:
-      vars[0] = vars[0] * 4.0;
-      Fx = sqrt(vars[0]) + vars[1];
-      break;
-        
-    case 8:
-      vars[0] = vars[0] * 4.0;
-      Fx = sqrt(4.0 - vars[0]) + vars[1];
-      break;
-        
-    case 9: {
-      double sum = 0;
-      //      cout << "9x: " << vars[0] << " ";
-      for (int i=1; i<args.GetInt(3); i++)
-	sum += vars[i]/double(args.GetInt(3)-1);
-      double Gx = 1+9*sum;
-      Fx = Gx * (1.0 - sqrt(vars[0]/Gx));
-      break;
-    }
-      
-    case 10: {
-      double sum = 0;
-      for (int i=1; i<args.GetInt(3); i++)
-	sum += vars[i]/double(args.GetInt(3)-1);
-      double Gx = 1+9*sum;
-      Fx = Gx * (1.0 - pow(vars[0]/Gx, 2.0));
-      break;
-    }
-      
-    case 11: {
-      double sum = 0;
-      for (int i=1; i<args.GetInt(3); i++)
-	sum += vars[i]/double(args.GetInt(3)-1);
-      double Gx = 1+9*sum;
-      Fx = Gx * (1 - sqrt(vars[0]/Gx) - (vars[0]/Gx)*(sin(3.14159*vars[0]*10)));
-      break;
-    }
-        
-    case 12: {
-      vars[0] = vars[0]*.9+.1;
-      Fx = vars[0];
-      break;
-    }
-        
-    case 13: {
-      vars[0] = vars[0]*.9+.1;
-      vars[1] = vars[1]*5;
-      Fx = (1+vars[1])/vars[0];
-      break;
-    }
-        
-    case 14: {
-      vars[0] = vars[0]*6-3;
-      vars[1] = vars[1]*6-3;
-      Fx = .5*(vars[0]*vars[0]+vars[1]*vars[1]) + sin(vars[0]*vars[0]+vars[1]*vars[1]);
-      break;
-    }
-        
-    case 15: {
-      vars[0] = vars[0]*6-3;
-      vars[1] = vars[1]*6-3;
-      Fx = pow((3*vars[0]-2*vars[1]+4),2)/8.0 + pow((vars[0]-vars[1]+1),2)/27.0 + 15;
-      break;
-    }
-        
-    case 16: {
-      vars[0] = vars[0]*6-3;
-      vars[1] = vars[1]*6-3;
-      Fx = 1.0/(vars[0]*vars[0]+vars[1]*vars[1]+1) - 1.1*exp(-vars[0]*vars[0]-vars[1]*vars[1]);
-      break;
-    }
-        
-    case 17: {
-      double sum = 0;
-      for (int i=1; i<args.GetInt(3); i++)
-	sum += (pow((vars[i]*6-3),2)-10*cos(4*3.14159*(vars[i]*6-3)))/10.0;
-      double Gx = 10+sum;
-      Fx = Gx * (1.0 - sqrt(vars[0]/Gx));
-      break;
-    }
-      
-    default:
-      quality = .001;
-    }
-  }
-
-  ctx.SetTaskValue(Fx);
-  if (args.GetDouble(3) < 0.0) {
-    double q1 = (args.GetDouble(1) - Fx+.001);
-    double q2 = (args.GetDouble(1) - args.GetDouble(2)+.001);
-    assert(q1 > 0.0);
-    assert(q2 > 0.0);
-    quality = q1 / q2;
-  } 
-  else {
-    if (args.GetDouble(4) < 0.0) {
-      if (Fx <= (args.GetDouble(1) - args.GetDouble(2))*args.GetDouble(3) + args.GetDouble(2)) {
-        quality = 1.0;
-      } else {
-        quality = 0.0;
-      }
-    }
-    else {
-      if ( (Fx >= (args.GetDouble(1) - args.GetDouble(2))*args.GetDouble(3) + args.GetDouble(2)) &&
-	   (Fx <= (args.GetDouble(1) - args.GetDouble(2))*args.GetDouble(4) + args.GetDouble(2)) ){
-        quality = 1.0;
-      } else {
-        quality = 0.0;
-      }
-    }
-  }
-  
-  // because want org to only have 1 shot to use outputs for all functions at once, even if they
-  // output numbers that give a quality of 0 on a function, still want to mark it as completed
-  // so give it a very low quality instead of 0 (if using limited resources they still will get
-  // no reward because set the minimum consumed to max*.001, meaning even if they get the max
-  // possible fraction they'll be below minimum allowed consumed and will consume nothing
-    
-  if (quality > 1) {
-    cout << "\n\nquality > 1!  quality= " << quality << "  Fx= " << Fx << endl;
-  }
-  
-  if (quality < 0.001) return .001;
-  
-  return quality;
+  return result.quality;
 }
 
 

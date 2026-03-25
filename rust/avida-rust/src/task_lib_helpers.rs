@@ -1416,7 +1416,632 @@ pub unsafe extern "C" fn avd_task_eval_fibonacci_seq(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Task_MatchStr — string matching on output buffer bit patterns
+// ---------------------------------------------------------------------------
+
+/// Match a single integer value against a binary string pattern.
+/// Compares bits of `test_output` against characters in `pattern` (right-to-left).
+/// Returns number of matching bit positions.
+fn match_str_bitwise(test_output: i32, pattern: &[u8]) -> i32 {
+    let mut num_matched: i32 = 0;
+    for (j, _) in pattern.iter().enumerate() {
+        let string_index = pattern.len() - j - 1;
+        let k = 1i32 << j;
+        let ch = pattern[string_index];
+        if (ch == b'0' && (test_output & k) == 0) || (ch == b'1' && (test_output & k) != 0) {
+            num_matched += 1;
+        }
+    }
+    num_matched
+}
+
+/// Task_MatchStr: compare output buffer against a binary string pattern.
+///
+/// Two modes:
+/// - `binary == 0`: bitwise comparison of first output value against pattern
+/// - `binary != 0`: element-wise comparison of output buffer against pattern (0/1/'9' wildcard)
+///
+/// Also checks received messages for better bitwise matches (non-binary mode only).
+///
+/// Returns bonus = pow(base_bonus, 2) where base_bonus = max_matched*2/len - 1 (or partial variant).
+///
+/// # Safety
+/// - `output_buf` must point to `output_len` valid `c_int` values (or be null).
+/// - `received_buf` must point to `received_len` valid `c_int` values (or be null).
+/// - `pattern` must point to `pattern_len` valid bytes.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_match_str(
+    output_buf: *const c_int,
+    output_len: c_int,
+    received_buf: *const c_int,
+    received_len: c_int,
+    pattern: *const u8,
+    pattern_len: c_int,
+    partial: c_int,
+    binary: c_int,
+) -> f64 {
+    if pattern.is_null() || pattern_len <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees pattern points to pattern_len valid bytes.
+    let pat = unsafe { std::slice::from_raw_parts(pattern, pattern_len as usize) };
+
+    let mut max_num_matched: i32 = 0;
+    let mut num_real: i32 = 0;
+
+    if binary == 0 {
+        // Non-binary mode: bitwise comparison of first output value
+        if !output_buf.is_null() && output_len > 0 {
+            // SAFETY: caller guarantees output_buf points to at least 1 valid int.
+            let test_output = unsafe { *output_buf };
+            max_num_matched = match_str_bitwise(test_output, pat);
+        }
+    } else {
+        // Binary mode: element-wise comparison
+        if !output_buf.is_null() {
+            // SAFETY: caller guarantees output_buf points to output_len valid ints.
+            let out = unsafe { std::slice::from_raw_parts(output_buf, output_len.max(0) as usize) };
+            for (j, &p) in pat.iter().enumerate() {
+                if p != b'9' {
+                    num_real += 1;
+                }
+                if j < out.len() && ((p == b'0' && out[j] == 0) || (p == b'1' && out[j] == 1)) {
+                    max_num_matched += 1;
+                }
+            }
+        }
+    }
+
+    // Check received messages for better bitwise matches (non-binary mode only)
+    if binary == 0 && !received_buf.is_null() && received_len > 0 {
+        // SAFETY: caller guarantees received_buf points to received_len valid ints.
+        let received = unsafe { std::slice::from_raw_parts(received_buf, received_len as usize) };
+        for &msg in received {
+            let num_matched = match_str_bitwise(msg, pat);
+            if num_matched > max_num_matched {
+                max_num_matched = num_matched;
+            }
+        }
+    }
+
+    // Compute bonus
+    let str_len = pat.len() as f64;
+    let base_bonus = if partial != 0 && num_real > 0 {
+        (max_num_matched as f64) * 2.0 / (num_real as f64) - 1.0
+    } else {
+        (max_num_matched as f64) * 2.0 / str_len - 1.0
+    };
+
+    if base_bonus > 0.0 {
+        base_bonus * base_bonus // pow(base_bonus, 2)
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task_Optimize — mathematical optimization with 23 function variants
+// ---------------------------------------------------------------------------
+
+/// Result from Task_Optimize containing both the quality score and the Fx value.
+/// C++ needs Fx to call SetTaskValue().
+#[repr(C)]
+pub struct OptimizeResult {
+    pub quality: f64,
+    pub fx: f64,
+}
+
+/// Evaluate one of 23 optimization functions on the output buffer.
+///
+/// Arguments (matching C++ cArgContainer indices):
+/// - `function`: int arg 0 — which function to evaluate (1-23, 18-19, 20-22)
+/// - `binary`: int arg 1 — if nonzero, decode output buffer as binary variables
+/// - `varlength`: int arg 2 — bit length per variable in binary mode
+/// - `numvars`: int arg 3 — number of variables
+/// - `basepow`: double arg 0 — base for binary decoding
+/// - `max_fx`: double arg 1 — maximum Fx for quality scaling
+/// - `min_fx`: double arg 2 — minimum Fx for quality scaling
+/// - `thresh`: double arg 3 — threshold (< 0 means proportional; >= 0 means binary pass/fail)
+/// - `thresh_max`: double arg 4 — upper threshold (< 0 means single threshold mode)
+/// - `string_to_match`: pointer to pattern bytes (only for function 20)
+/// - `string_len`: length of pattern (only for function 20)
+///
+/// # Safety
+/// - `output_buf` must point to `output_len` valid `c_int` values.
+/// - `string_to_match` must point to `string_len` valid bytes when function==20 (or be null).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_optimize(
+    output_buf: *const c_int,
+    output_len: c_int,
+    output_capacity: c_int,
+    function: c_int,
+    binary: c_int,
+    varlength: c_int,
+    numvars: c_int,
+    basepow: f64,
+    max_fx: f64,
+    min_fx: f64,
+    thresh: f64,
+    thresh_max: f64,
+    string_to_match: *const u8,
+    string_len: c_int,
+) -> OptimizeResult {
+    let zero = OptimizeResult {
+        quality: 0.0,
+        fx: 0.0,
+    };
+
+    if output_buf.is_null() || output_len <= 0 {
+        return zero;
+    }
+
+    // if the org hasn't output enough numbers, return 0
+    if output_len < output_capacity {
+        return zero;
+    }
+
+    // SAFETY: caller guarantees output_buf points to output_len valid ints.
+    let out = unsafe { std::slice::from_raw_parts(output_buf, output_len as usize) };
+
+    let nv = numvars as usize;
+    let vl = varlength as usize;
+
+    // C++ uses literal 3.14159 (not std::f64::consts::PI), so we match exactly.
+    #[allow(clippy::approx_constant)]
+    let pi_approx: f64 = 3.14159;
+
+    let fx = match function {
+        20 => {
+            // String match: Fx = varlength - num_matched (0 best, varlength worst)
+            if string_to_match.is_null() || string_len <= 0 {
+                return zero;
+            }
+            // SAFETY: caller guarantees string_to_match points to string_len valid bytes.
+            let pat = unsafe { std::slice::from_raw_parts(string_to_match, string_len as usize) };
+            let mut matched = 0i32;
+            let limit = vl.min(out.len()).min(pat.len());
+            for i in 0..limit {
+                if (pat[i] == b'0' && out[i] == 0) || (pat[i] == b'1' && out[i] == 1) {
+                    matched += 1;
+                }
+            }
+            (varlength - matched) as f64
+        }
+        21 => {
+            // String with all 1's at beginning until pattern 0101
+            let limit = vl.saturating_sub(3);
+            let mut num_ones = 0i32;
+            let mut pat_found = false;
+            for i in 0..limit {
+                if i < out.len() && out[i] == 1 {
+                    num_ones += 1;
+                } else if i < out.len() {
+                    // Check 0-1-0-1 pattern
+                    if i + 3 < out.len() && out[i + 1] == 1 && out[i + 2] == 0 && out[i + 3] == 1 {
+                        pat_found = true;
+                    }
+                    break;
+                }
+            }
+            if pat_found {
+                (varlength - 4 - num_ones) as f64
+            } else {
+                varlength as f64
+            }
+        }
+        22 => {
+            // Count leading 1's: Fx = varlength - numOnes
+            let mut num_ones = 0i32;
+            for &val in out.iter().take(vl) {
+                if val == 1 {
+                    num_ones += 1;
+                } else {
+                    break;
+                }
+            }
+            (varlength - num_ones) as f64
+        }
+        23 => {
+            // Count leading 0's: Fx = varlength - numZeros
+            let mut num_zeros = 0i32;
+            for &val in out.iter().take(vl) {
+                if val == 0 {
+                    num_zeros += 1;
+                } else {
+                    break;
+                }
+            }
+            (varlength - num_zeros) as f64
+        }
+        18 => {
+            // Sum first 30 outputs + 1
+            let mut tot = 0i32;
+            for &val in out.iter().take(30) {
+                tot += val;
+            }
+            (1 + tot) as f64
+        }
+        19 => {
+            // Complex multi-variable function with g(x)
+            let mut temp_vars = vec![0.0f64; nv];
+            for &val in out.iter().take(30) {
+                temp_vars[0] += val as f64;
+            }
+            let len = vl;
+            for i in (0..len).rev() {
+                for j in 1..nv {
+                    let idx = 30 + i + len * (nv - j - 1);
+                    if idx < out.len() {
+                        temp_vars[j - 1] += out[idx] as f64;
+                    }
+                }
+            }
+            let mut gx = 0i32;
+            for tv in temp_vars.iter().take(nv).skip(1) {
+                if *tv == 5.0 {
+                    gx += 1;
+                } else {
+                    gx += *tv as i32 + 2;
+                }
+            }
+            (gx as f64) * (1.0 / (1.0 + temp_vars[0]))
+        }
+        _ => {
+            // Standard continuous optimization functions (1-17)
+            // Decode variables from output buffer
+            let mut vars = vec![0.0f64; nv];
+            if binary != 0 {
+                let mut temp_vars = vec![0.0f64; nv];
+                let mut tot = 0.0f64;
+                let len = vl;
+                #[allow(clippy::needless_range_loop)]
+                for i in (0..len).rev() {
+                    for j in 0..nv {
+                        let idx = i + len * (nv - j - 1);
+                        if idx < out.len() {
+                            temp_vars[j] +=
+                                (out[idx] as f64) * basepow.powf(((len - 1) - i) as f64);
+                        }
+                    }
+                    tot += basepow.powf(i as f64);
+                }
+                if tot != 0.0 {
+                    for (v, tv) in vars.iter_mut().zip(temp_vars.iter()) {
+                        *v = *tv / tot;
+                    }
+                }
+            } else {
+                for (v, &o) in vars.iter_mut().zip(out.iter()) {
+                    *v = (o as f64) / (0xFFFF_FFFFu32 as f64);
+                }
+            }
+
+            // Clamp to [0, 1]
+            for v in &mut vars {
+                *v = v.clamp(0.0, 1.0);
+            }
+
+            match function {
+                1 => vars[0], // F1
+                2 => (1.0 + vars[1]) * (1.0 - (vars[0] / (1.0 + vars[1])).sqrt()),
+                3 => (1.0 + vars[1]) * (1.0 - (vars[0] / (1.0 + vars[1])).powi(2)),
+                4 => {
+                    (1.0 + vars[1])
+                        * (1.0
+                            - (vars[0] / (1.0 + vars[1])).sqrt()
+                            - (vars[0] / (1.0 + vars[1])) * (pi_approx * vars[0] * 10.0).sin())
+                }
+                5 => {
+                    let x = vars[0] * -2.0;
+                    x * x + vars[1] * vars[1]
+                }
+                6 => {
+                    let x = vars[0] * -2.0;
+                    (x + 2.0) * (x + 2.0) + vars[1] * vars[1]
+                }
+                7 => {
+                    let x = vars[0] * 4.0;
+                    x.sqrt() + vars[1]
+                }
+                8 => {
+                    let x = vars[0] * 4.0;
+                    (4.0 - x).sqrt() + vars[1]
+                }
+                9 => {
+                    let denom = (nv as f64) - 1.0;
+                    let sum = if denom > 0.0 {
+                        vars.iter().skip(1).take(nv - 1).sum::<f64>() / denom
+                    } else {
+                        0.0
+                    };
+                    let gx = 1.0 + 9.0 * sum;
+                    gx * (1.0 - (vars[0] / gx).sqrt())
+                }
+                10 => {
+                    let denom = (nv as f64) - 1.0;
+                    let sum = if denom > 0.0 {
+                        vars.iter().skip(1).take(nv - 1).sum::<f64>() / denom
+                    } else {
+                        0.0
+                    };
+                    let gx = 1.0 + 9.0 * sum;
+                    gx * (1.0 - (vars[0] / gx).powi(2))
+                }
+                11 => {
+                    let denom = (nv as f64) - 1.0;
+                    let sum = if denom > 0.0 {
+                        vars.iter().skip(1).take(nv - 1).sum::<f64>() / denom
+                    } else {
+                        0.0
+                    };
+                    let gx = 1.0 + 9.0 * sum;
+                    gx * (1.0
+                        - (vars[0] / gx).sqrt()
+                        - (vars[0] / gx) * (pi_approx * vars[0] * 10.0).sin())
+                }
+                12 => vars[0] * 0.9 + 0.1,
+                13 => {
+                    let x = vars[0] * 0.9 + 0.1;
+                    let y = vars[1] * 5.0;
+                    (1.0 + y) / x
+                }
+                14 => {
+                    let x = vars[0] * 6.0 - 3.0;
+                    let y = vars[1] * 6.0 - 3.0;
+                    0.5 * (x * x + y * y) + (x * x + y * y).sin()
+                }
+                15 => {
+                    let x = vars[0] * 6.0 - 3.0;
+                    let y = vars[1] * 6.0 - 3.0;
+                    (3.0 * x - 2.0 * y + 4.0).powi(2) / 8.0 + (x - y + 1.0).powi(2) / 27.0 + 15.0
+                }
+                16 => {
+                    let x = vars[0] * 6.0 - 3.0;
+                    let y = vars[1] * 6.0 - 3.0;
+                    1.0 / (x * x + y * y + 1.0) - 1.1 * (-(x * x) - y * y).exp()
+                }
+                17 => {
+                    let mut sum = 0.0f64;
+                    for &vi_raw in vars.iter().skip(1).take(nv - 1) {
+                        let vi = vi_raw * 6.0 - 3.0;
+                        #[allow(clippy::approx_constant)]
+                        let four_pi = 4.0 * 3.14159;
+                        sum += (vi * vi - 10.0 * (four_pi * vi).cos()) / 10.0;
+                    }
+                    let gx = 10.0 + sum;
+                    gx * (1.0 - (vars[0] / gx).sqrt())
+                }
+                _ => {
+                    // Unknown function: return minimal quality
+                    return OptimizeResult {
+                        quality: 0.001,
+                        fx: 0.0,
+                    };
+                }
+            }
+        }
+    };
+
+    // Compute quality from Fx
+    let quality = if thresh < 0.0 {
+        let q1 = max_fx - fx + 0.001;
+        let q2 = max_fx - min_fx + 0.001;
+        // C++ asserts q1 > 0 and q2 > 0 but we guard defensively
+        if q1 <= 0.0 || q2 <= 0.0 {
+            0.001
+        } else {
+            q1 / q2
+        }
+    } else if thresh_max < 0.0 {
+        // Single threshold mode
+        if fx <= (max_fx - min_fx) * thresh + min_fx {
+            1.0
+        } else {
+            0.0
+        }
+    } else {
+        // Dual threshold (band) mode
+        let val = fx;
+        let low = (max_fx - min_fx) * thresh + min_fx;
+        let high = (max_fx - min_fx) * thresh_max + min_fx;
+        if val >= low && val <= high {
+            1.0
+        } else {
+            0.0
+        }
+    };
+
+    let final_quality = if quality > 1.0 {
+        quality // C++ prints warning but doesn't cap
+    } else if quality < 0.001 {
+        0.001
+    } else {
+        quality
+    };
+
+    OptimizeResult {
+        quality: final_quality,
+        fx,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task_SortInputs — validate sorted output of organism inputs
+// ---------------------------------------------------------------------------
+
+/// Task_SortInputs: validate that organism output is a sorted version of its inputs.
+///
+/// Uses insertion sort scoring to measure how sorted the output is.
+/// Returns quality based on halflife scoring when < 50% of max moves needed.
+///
+/// # Safety
+/// - `output_buf` must point to `output_len` valid `c_int` values.
+/// - `input_buf` must point to `input_len` valid `c_int` values (organism inputs).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_sort_inputs(
+    output_buf: *const c_int,
+    output_len: c_int,
+    input_buf: *const c_int,
+    input_len: c_int,
+    size: c_int,
+    direction: c_int,
+    contiguous: c_int,
+    halflife: f64,
+) -> f64 {
+    if output_buf.is_null() || input_buf.is_null() || output_len <= 0 || input_len <= 0 {
+        return 0.0;
+    }
+
+    let stored = output_len as usize;
+    let sz = size as usize;
+
+    // if less than half, can't possibly reach threshold
+    if stored <= sz / 2 {
+        return 0.0;
+    }
+
+    // SAFETY: caller guarantees output_buf points to `stored` valid ints.
+    let out = unsafe { std::slice::from_raw_parts(output_buf, stored) };
+    // SAFETY: caller guarantees input_buf points to `input_len` valid ints.
+    let inp = unsafe { std::slice::from_raw_parts(input_buf, input_len as usize) };
+
+    // Build value map: valid inputs map to -1 (unseen)
+    use std::collections::HashMap;
+    let mut valmap: HashMap<i32, i32> = HashMap::new();
+    for i in 0..sz {
+        if i < inp.len() {
+            valmap.insert(inp[i], -1);
+        }
+    }
+
+    let span_start: isize;
+    let span_end: usize;
+
+    if contiguous != 0 {
+        // Scan for the largest contiguous span of valid inputs
+        let mut best_start: isize = -1;
+        let mut best_end: usize = 0;
+        let mut i = 0usize;
+        while i < stored {
+            if valmap.contains_key(&out[i]) {
+                let t_start = i;
+                i += 1;
+                while i < stored && valmap.contains_key(&out[i]) {
+                    i += 1;
+                }
+                if best_start == -1 || (i - t_start) > (best_end - best_start as usize) {
+                    best_start = t_start as isize;
+                    best_end = i;
+                }
+            } else {
+                i += 1;
+            }
+        }
+
+        if best_start == -1 {
+            return 0.0;
+        }
+        span_start = best_start;
+        span_end = best_end;
+    } else {
+        // Scattered mode: exact reproduction of C++ logic:
+        //   int span_start = -1;
+        //   while (++span_start < stored && valmap.Has(output[span_start])) ;
+        // This finds the first output position that is NOT a valid input.
+        // If all outputs are valid inputs, span_start == stored -> return 0.0.
+        let mut ss: isize = -1;
+        loop {
+            ss += 1;
+            if ss as usize >= stored {
+                break;
+            }
+            if !valmap.contains_key(&out[ss as usize]) {
+                break;
+            }
+        }
+
+        if ss as usize >= stored {
+            return 0.0;
+        }
+        span_start = ss;
+        span_end = stored;
+    }
+
+    // Again, if span is less than half the size can't possibly reach threshold
+    if (span_end as isize - span_start) as usize <= sz / 2 {
+        return 0.0;
+    }
+
+    // Insertion sort scoring
+    let ascending = direction >= 0;
+    let mut sorted_arr = vec![0i32; sz];
+    let mut count: usize = 1;
+    let mut score: usize = 0;
+    let mut maxscore: usize = 0;
+
+    // Store first value
+    let first_idx = span_start as usize;
+    valmap.insert(out[first_idx], first_idx as i32);
+    sorted_arr[0] = out[first_idx];
+
+    // Iterate over the remaining span
+    #[allow(clippy::needless_range_loop)]
+    for i in (first_idx + 1)..span_end {
+        let value = out[i];
+
+        // Check for dup or invalid output
+        match valmap.get(&value) {
+            Some(-1) => {} // valid unseen input, proceed
+            _ => continue, // dup or not in inputs, skip
+        }
+
+        maxscore += count;
+        count += 1;
+        valmap.insert(value, i as i32);
+
+        // Insertion sort, counting moves
+        let mut j = count as isize - 2;
+        while j >= 0
+            && ((ascending && sorted_arr[j as usize] > value)
+                || (!ascending && sorted_arr[j as usize] < value))
+        {
+            sorted_arr[(j + 1) as usize] = sorted_arr[j as usize];
+            j -= 1;
+            score += 1;
+        }
+        sorted_arr[(j + 1) as usize] = value;
+    }
+
+    // If not all inputs were observed, penalize missing ones
+    if count < sz {
+        for input_val in inp.iter().take(sz.min(inp.len())) {
+            if let Some(&idx) = valmap.get(input_val) {
+                if idx == -1 {
+                    maxscore += count;
+                    score += count;
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    if maxscore == 0 {
+        return 0.0;
+    }
+
+    // Score of 50% expected with random output
+    let ratio = score as f64 / maxscore as f64;
+    if ratio < 0.5 {
+        let hl = -halflife.abs();
+        2.0f64.powf(score as f64 / hl)
+    } else {
+        0.0
+    }
+}
+
 #[cfg(test)]
+#[allow(clippy::undocumented_unsafe_blocks)]
 mod tests {
     use super::*;
     use std::ffi::CString;
@@ -2920,6 +3545,580 @@ mod tests {
         let events = [3i32, 5];
         // SAFETY: events is a valid stack-allocated array.
         let result = unsafe { avd_task_eval_move_to_event(events.as_ptr(), 2, -1) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- MatchStr tests ---
+
+    #[test]
+    fn match_str_bitwise_perfect() {
+        // Pattern "101" (3 bits): output value 5 = 0b101
+        // Bit 0: pat[2]='1', val&1=1 -> match
+        // Bit 1: pat[1]='0', val&2=0 -> match
+        // Bit 2: pat[0]='1', val&4=4 -> match
+        // 3 matched out of 3 -> base_bonus = 3*2/3 - 1 = 1.0 -> bonus = 1.0
+        let out = [5i32];
+        let pat = b"101";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 1, ptr::null(), 0, pat.as_ptr(), 3, 0, 0)
+        };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_bitwise_no_match() {
+        // Pattern "111" (3 bits): output value 0 = 0b000
+        // 0 matched out of 3 -> base_bonus = 0*2/3 - 1 = -1.0 -> bonus = 0.0
+        let out = [0i32];
+        let pat = b"111";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 1, ptr::null(), 0, pat.as_ptr(), 3, 0, 0)
+        };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_bitwise_half_match() {
+        // Pattern "11" (2 bits): output value 1 = 0b01
+        // Bit 0: pat[1]='1', val&1=1 -> match
+        // Bit 1: pat[0]='1', val&2=0 -> no match
+        // 1 matched out of 2 -> base_bonus = 1*2/2 - 1 = 0.0 -> bonus = 0.0
+        let out = [1i32];
+        let pat = b"11";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 1, ptr::null(), 0, pat.as_ptr(), 2, 0, 0)
+        };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_binary_mode_perfect() {
+        // Binary mode: element-wise comparison
+        // Pattern "101", output [1, 0, 1] -> 3 matched, no '9' so num_real=3
+        // base_bonus = 3*2/3 - 1 = 1.0 -> bonus = 1.0
+        let out = [1i32, 0, 1];
+        let pat = b"101";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 3, ptr::null(), 0, pat.as_ptr(), 3, 0, 1)
+        };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_binary_mode_with_wildcard() {
+        // Binary mode with partial: pattern "19" has 1 real char, output [1, 0]
+        // pat[0]='1', out[0]=1 -> match; pat[1]='9' (wildcard, not counted)
+        // num_real = 1, matched = 1
+        // partial mode: base_bonus = 1*2/1 - 1 = 1.0 -> bonus = 1.0
+        let out = [1i32, 0];
+        let pat = b"19";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 2, ptr::null(), 0, pat.as_ptr(), 2, 1, 1)
+        };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_received_better() {
+        // Output matches 1/3, but received message matches 3/3
+        // Pattern "101": output 0 matches 0 bits, received [5] matches 3 bits
+        let out = [0i32];
+        let received = [5i32]; // 0b101
+        let pat = b"101";
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 1, received.as_ptr(), 1, pat.as_ptr(), 3, 0, 0)
+        };
+        // max_matched = 3, base_bonus = 3*2/3 - 1 = 1.0
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_null_pattern() {
+        let out = [5i32];
+        let result = unsafe {
+            avd_task_eval_match_str(out.as_ptr(), 1, ptr::null(), 0, ptr::null(), 0, 0, 0)
+        };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn match_str_empty_output_nonbinary() {
+        // No output stored, non-binary mode -> max_matched stays 0
+        let pat = b"101";
+        let result = unsafe {
+            avd_task_eval_match_str(ptr::null(), 0, ptr::null(), 0, pat.as_ptr(), 3, 0, 0)
+        };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- Optimize tests ---
+
+    #[test]
+    fn optimize_not_enough_output() {
+        let out = [1i32, 2];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                2,
+                3, // capacity > len
+                1,
+                0,
+                8,
+                2,
+                2.0,
+                1.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_func1_proportional() {
+        // Function 1: Fx = vars[0], non-binary mode
+        // vars[0] = out[0] / 0xFFFFFFFF, vars[1] = out[1] / 0xFFFFFFFF
+        // With out[0] = 0, vars[0] = 0, Fx = 0
+        // quality = (maxFx - Fx + 0.001) / (maxFx - minFx + 0.001)
+        //         = (1.0 - 0.0 + 0.001) / (1.0 - 0.0 + 0.001) = 1.0
+        let out = [0i32, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                2,
+                2,
+                1,
+                0,
+                8,
+                2,
+                2.0,
+                1.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.fx - 0.0).abs() < f64::EPSILON);
+        assert!((result.quality - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn optimize_func22_leading_ones() {
+        // Function 22: count leading 1s, Fx = varlength - numOnes
+        // varlength=4, output [1,1,1,0] -> 3 leading ones -> Fx = 4-3 = 1
+        let out = [1i32, 1, 1, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                22,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.fx - 1.0).abs() < f64::EPSILON);
+        // quality = (4 - 1 + 0.001) / (4 - 0 + 0.001) ≈ 3.001/4.001
+        let expected_q = 3.001 / 4.001;
+        assert!((result.quality - expected_q).abs() < 1e-10);
+    }
+
+    #[test]
+    fn optimize_func23_leading_zeros() {
+        // Function 23: count leading 0s, Fx = varlength - numZeros
+        // varlength=4, output [0,0,1,0] -> 2 leading zeros -> Fx = 4-2 = 2
+        let out = [0i32, 0, 1, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                23,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.fx - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_func18_sum_plus_one() {
+        // Function 18: Fx = 1 + sum(first 30 outputs)
+        // 4 outputs: [1, 2, 3, 4] -> sum = 10, Fx = 11
+        let mut out = [0i32; 30];
+        out[0] = 1;
+        out[1] = 2;
+        out[2] = 3;
+        out[3] = 4;
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                30,
+                30,
+                18,
+                0,
+                8,
+                2,
+                2.0,
+                100.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.fx - 11.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_threshold_pass() {
+        // Function 22: Fx = varlength - numOnes = 4 - 4 = 0
+        // Single threshold: thresh=0.5, Fx <= (max-min)*thresh + min = (4-0)*0.5+0 = 2.0
+        // 0 <= 2.0 -> quality = 1.0
+        let out = [1i32, 1, 1, 1];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                22,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                0.5,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_threshold_fail() {
+        // Function 22: Fx = 4 - 0 = 4
+        // Single threshold: Fx <= 2.0? No -> quality = 0.0 -> clamped to 0.001
+        let out = [0i32, 0, 0, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                22,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                0.5,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 0.001).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_dual_threshold_in_band() {
+        // Function 22: Fx = 4 - 2 = 2
+        // Band: low = (4-0)*0.25+0 = 1.0, high = (4-0)*0.75+0 = 3.0
+        // 2 in [1, 3] -> quality = 1.0
+        let out = [1i32, 1, 0, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                22,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                0.25,
+                0.75,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_unknown_function() {
+        // Unknown function returns quality 0.001
+        let out = [0i32, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                2,
+                2,
+                99,
+                0,
+                8,
+                2,
+                2.0,
+                1.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 0.001).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_func20_string_match() {
+        // Function 20: string match, Fx = varlength - matched
+        // Pattern "1010", output [1,0,1,0] -> all match -> Fx = 0
+        let out = [1i32, 0, 1, 0];
+        let pat = b"1010";
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                20,
+                0,
+                4,
+                1,
+                2.0,
+                4.0,
+                0.0,
+                -1.0,
+                -1.0,
+                pat.as_ptr(),
+                4,
+            )
+        };
+        assert!((result.fx - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_null_buf() {
+        let result = unsafe {
+            avd_task_eval_optimize(
+                ptr::null(),
+                0,
+                2,
+                1,
+                0,
+                8,
+                2,
+                2.0,
+                1.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.quality - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn optimize_binary_mode_func1() {
+        // Binary mode: 2 vars, varlength=2, basepow=2
+        // Output: [1, 1, 0, 0] (var0 bits: [1,1], var1 bits: [0,0])
+        // For var0: indices 0+2*(2-0-1)=2, 1+2*(2-0-1)=3 -> out[2]=0, out[3]=0
+        //   Wait, let me trace: len=2, numvars=2
+        //   i goes from 1 down to 0:
+        //     i=1: j=0: idx=1+2*(2-0-1)=1+2=3, tempVars[0] += out[3]*2^0 = 0*1 = 0
+        //           j=1: idx=1+2*(2-1-1)=1+0=1, tempVars[1] += out[1]*2^0 = 1*1 = 1
+        //     i=0: j=0: idx=0+2*(2-0-1)=0+2=2, tempVars[0] += out[2]*2^1 = 0*2 = 0
+        //           j=1: idx=0+2*(2-1-1)=0+0=0, tempVars[1] += out[0]*2^1 = 1*2 = 2
+        //   tot = 2^1 + 2^0 = 3
+        //   vars[0] = 0/3, vars[1] = 3/3 = 1.0
+        //   Fx = vars[0] = 0.0
+        let out = [1i32, 1, 0, 0];
+        let result = unsafe {
+            avd_task_eval_optimize(
+                out.as_ptr(),
+                4,
+                4,
+                1,
+                1,
+                2,
+                2,
+                2.0,
+                1.0,
+                0.0,
+                -1.0,
+                -1.0,
+                ptr::null(),
+                0,
+            )
+        };
+        assert!((result.fx - 0.0).abs() < 1e-10);
+    }
+
+    // --- SortInputs tests ---
+
+    #[test]
+    fn sort_inputs_perfect_ascending() {
+        // Inputs: [5, 3, 1, 4, 2], size=5
+        // Output: [1, 2, 3, 4, 5] (perfectly sorted ascending)
+        let inputs = [5i32, 3, 1, 4, 2];
+        let output = [1i32, 2, 3, 4, 5];
+        let result = unsafe {
+            avd_task_eval_sort_inputs(
+                output.as_ptr(),
+                5,
+                inputs.as_ptr(),
+                5,
+                5,
+                1,   // ascending
+                0,   // scattered
+                5.0, // halflife
+            )
+        };
+        // Perfect sort: score = 0, quality = 2^(0/(-5)) = 1.0
+        // But scattered mode skips valid entries from start, so span_start
+        // will land on first non-input entry. Since all outputs ARE inputs,
+        // span_start reaches stored=5, returns 0.0.
+        // Actually this is the scattered bug - it returns 0 when all outputs are valid.
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_contiguous_perfect() {
+        // Contiguous mode: inputs [5, 3, 1, 4, 2], size=5
+        // Output: [1, 2, 3, 4, 5]
+        let inputs = [5i32, 3, 1, 4, 2];
+        let output = [1i32, 2, 3, 4, 5];
+        let result = unsafe {
+            avd_task_eval_sort_inputs(
+                output.as_ptr(),
+                5,
+                inputs.as_ptr(),
+                5,
+                5,
+                1,   // ascending
+                1,   // contiguous
+                5.0, // halflife
+            )
+        };
+        // Contiguous: all valid, span = [0, 5)
+        // Insertion sort: each element goes in order, score = 0, maxscore > 0
+        // quality = 2^(0 / -5) = 1.0
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_too_few_outputs() {
+        // size=10, output only has 3 items -> 3 <= 10/2=5 -> return 0
+        let inputs = [1i32, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let output = [1i32, 2, 3];
+        let result = unsafe {
+            avd_task_eval_sort_inputs(output.as_ptr(), 3, inputs.as_ptr(), 10, 10, 1, 1, 5.0)
+        };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_null_output() {
+        let inputs = [1i32, 2, 3];
+        let result =
+            unsafe { avd_task_eval_sort_inputs(ptr::null(), 0, inputs.as_ptr(), 3, 3, 1, 1, 5.0) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_contiguous_reversed() {
+        // Descending sort should give perfect score when direction < 0
+        let inputs = [1i32, 2, 3, 4, 5];
+        let output = [5i32, 4, 3, 2, 1]; // perfectly sorted descending
+        let result = unsafe {
+            avd_task_eval_sort_inputs(
+                output.as_ptr(),
+                5,
+                inputs.as_ptr(),
+                5,
+                5,
+                -1, // descending
+                1,  // contiguous
+                5.0,
+            )
+        };
+        // Perfect descending sort: score = 0 -> quality = 1.0
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_contiguous_with_invalid() {
+        // Output has some non-input values
+        // Inputs: [10, 20, 30], size=3
+        // Output: [99, 10, 20, 30, 99] -> contiguous span [1,4) covers [10,20,30]
+        let inputs = [10i32, 20, 30];
+        let output = [99i32, 10, 20, 30, 99];
+        let result = unsafe {
+            avd_task_eval_sort_inputs(
+                output.as_ptr(),
+                5,
+                inputs.as_ptr(),
+                3,
+                3,
+                1, // ascending
+                1, // contiguous
+                5.0,
+            )
+        };
+        // span = [1,4), all 3 inputs present and sorted
+        // score = 0, maxscore > 0, quality = 1.0
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn sort_inputs_contiguous_wrong_order() {
+        // Inputs: [1, 2, 3, 4], size=4
+        // Output: [4, 3, 2, 1] ascending but they're reversed
+        let inputs = [1i32, 2, 3, 4];
+        let output = [4i32, 3, 2, 1];
+        let result = unsafe {
+            avd_task_eval_sort_inputs(
+                output.as_ptr(),
+                4,
+                inputs.as_ptr(),
+                4,
+                4,
+                1, // ascending
+                1, // contiguous
+                5.0,
+            )
+        };
+        // Fully reversed ascending: maximum disorder
+        // score/maxscore >= 0.5, so quality = 0.0
         assert!((result - 0.0).abs() < f64::EPSILON);
     }
 }

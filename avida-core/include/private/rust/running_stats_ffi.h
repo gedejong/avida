@@ -1632,6 +1632,32 @@ int avd_cpu_inst_get_cell_position_x(cHardwareBase* hw, int reg_id);
 int avd_cpu_inst_get_cell_position_y_guarded(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_get_opinion_only(cHardwareBase* hw, int reg_id);
 
+/* ---------- Task_MatchStr FFI ---------- */
+double avd_task_eval_match_str(
+    const int* output_buf, int output_len,
+    const int* received_buf, int received_len,
+    const unsigned char* pattern, int pattern_len,
+    int partial, int binary);
+
+/* ---------- Task_Optimize FFI ---------- */
+typedef struct OptimizeResult {
+    double quality;
+    double fx;
+} OptimizeResult;
+
+OptimizeResult avd_task_eval_optimize(
+    const int* output_buf, int output_len, int output_capacity,
+    int function, int binary, int varlength, int numvars,
+    double basepow, double max_fx, double min_fx,
+    double thresh, double thresh_max,
+    const unsigned char* string_to_match, int string_len);
+
+/* ---------- Task_SortInputs FFI ---------- */
+double avd_task_eval_sort_inputs(
+    const int* output_buf, int output_len,
+    const int* input_buf, int input_len,
+    int size, int direction, int contiguous, double halflife);
+
 #ifdef __cplusplus
 }
 
