@@ -1631,6 +1631,16 @@ int avd_cpu_inst_get_energy_level_guarded(cHardwareBase* hw, int reg_id);
 int avd_cpu_inst_get_cell_position_x(cHardwareBase* hw, int reg_id);
 int avd_cpu_inst_get_cell_position_y_guarded(cHardwareBase* hw, int reg_id);
 void avd_cpu_inst_get_opinion_only(cHardwareBase* hw, int reg_id);
+// I/O organism FFI (Phase 3: DoOutput/DoInput/GetNextInput)
+void avd_org_do_output(cOrganism* org, cAvidaContext* ctx, int value);
+int avd_org_get_next_input(cOrganism* org);
+void avd_org_do_input(cOrganism* org, int value);
+// I/O CPU instruction handlers (Phase 3)
+void avd_cpu_inst_task_io(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_input(cHardwareBase* hw, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_output(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_stack_get(cHardwareBase* hw);
+void avd_cpu_inst_task_stack_load(cHardwareBase* hw);
 
 #ifdef __cplusplus
 }

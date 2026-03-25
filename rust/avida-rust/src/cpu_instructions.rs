@@ -105,6 +105,10 @@ unsafe extern "C" {
     fn avd_org_get_copy_mut_prob(org: *mut c_void) -> f64;
     fn avd_org_set_copy_mut_prob(org: *mut c_void, prob: f64);
     fn avd_org_add_output(org: *mut c_void, val: c_int);
+    // Phase 3: I/O organism methods
+    fn avd_org_do_output(org: *mut c_void, ctx: *mut c_void, value: c_int);
+    fn avd_org_get_next_input(org: *mut c_void) -> c_int;
+    fn avd_org_do_input(org: *mut c_void, value: c_int);
 }
 
 // Head IDs matching nHardware::tHeads
@@ -1588,6 +1592,98 @@ pub extern "C" fn avd_cpu_inst_bit_consensus24(regs: *mut CpuRegisters, dst: c_i
     } else {
         0
     };
+}
+
+// ---------------------------------------------------------------------------
+// Batch: I/O instruction handlers (Phase 3)
+// ---------------------------------------------------------------------------
+
+/// Inst_TaskIO: read reg → DoOutput → GetNextInput → write reg → DoInput.
+///
+/// This is the core I/O instruction that triggers task evaluation.
+/// No guards before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers. `ctx` is a cAvidaContext*.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_io(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Do the "put" component
+    let value_out = unsafe { get_reg(regs, reg_id) };
+    unsafe { avd_org_do_output(org, ctx, value_out) };
+    // Do the "get" component
+    let value_in = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_id, value_in) };
+    unsafe { avd_org_do_input(org, value_in) };
+}
+
+/// Inst_TaskGet (TaskInput): GetNextInput → write reg → DoInput.
+///
+/// No guards before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_input(
+    hw: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_id, value) };
+    unsafe { avd_org_do_input(org, value) };
+}
+
+/// Inst_TaskPut (TaskOutput): read reg → DoOutput → zero reg.
+///
+/// No guards before FindModifiedRegister in the original C++.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_output(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { get_reg(regs, reg_id) };
+    unsafe { set_reg(regs, reg_id, 0) };
+    unsafe { avd_org_do_output(org, ctx, value) };
+}
+
+/// Inst_TaskStackGet: GetNextInput → push to stack → DoInput.
+///
+/// No register operand, no FindModifiedRegister.
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_stack_get(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_org_get_next_input(org) };
+    unsafe { avd_hw_stack_push(hw, value) };
+    unsafe { avd_org_do_input(org, value) };
+}
+
+/// Inst_TaskStackLoad: push 3 inputs onto stack (no DoInput).
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_stack_load(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    for _ in 0..3 {
+        let value = unsafe { avd_org_get_next_input(org) };
+        unsafe { avd_hw_stack_push(hw, value) };
+    }
 }
 
 // ---------------------------------------------------------------------------
