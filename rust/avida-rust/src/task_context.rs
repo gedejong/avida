@@ -388,6 +388,84 @@ pub unsafe extern "C" fn avd_task_ctx_event_killed(ctx: *const TaskContextSnapsh
     task_event_killed(unsafe { &*ctx })
 }
 
+// --- ConsumeTargetEcho ---
+
+/// Task_ConsumeTargetEcho: if forage_target matches task_arg_int[0], evaluate Echo.
+/// Echo returns 1.0 if output_value matches any input_buffer entry.
+fn task_consume_target_echo(snap: &TaskContextSnapshot) -> f64 {
+    if snap.forage_target != snap.task_arg_int[0] {
+        return 0.0;
+    }
+    // Echo: check if output_value matches any input
+    let count = snap.input_count.min(TASK_CTX_BUFFER_CAP as c_int) as usize;
+    for i in 0..count {
+        if snap.input_buffer[i] == snap.output_value {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
+/// FFI: ConsumeTargetEcho
+///
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_consume_target_echo(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees `ctx` is a valid pointer to an initialized snapshot.
+    task_consume_target_echo(unsafe { &*ctx })
+}
+
+// --- CollectOddCell ---
+
+/// Task_CollectOddCell: check if organism is in odd or even cell.
+/// `task_arg_int[0] == 0` → reward for odd cell_id, else reward for even cell_id.
+fn task_collect_odd_cell(snap: &TaskContextSnapshot) -> f64 {
+    let cell_mod2 = snap.cell_id % 2;
+    if snap.task_arg_int[0] == 0 {
+        if cell_mod2 != 0 {
+            1.0
+        } else {
+            0.0
+        }
+    } else if cell_mod2 == 0 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// FFI: CollectOddCell
+///
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_collect_odd_cell(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees `ctx` is a valid pointer to an initialized snapshot.
+    task_collect_odd_cell(unsafe { &*ctx })
+}
+
+// --- ProducePublicGood ---
+
+/// Task_ProducePublicGood: identical to Task_Exploded (returns kaboom_executed).
+fn task_produce_public_good(snap: &TaskContextSnapshot) -> f64 {
+    if snap.kaboom_executed != 0 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// FFI: ProducePublicGood
+///
+/// # Safety
+/// `ctx` must point to a valid `TaskContextSnapshot`.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_ctx_produce_public_good(ctx: *const TaskContextSnapshot) -> f64 {
+    // SAFETY: caller guarantees `ctx` is a valid pointer to an initialized snapshot.
+    task_produce_public_good(unsafe { &*ctx })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -564,6 +642,124 @@ mod tests {
         snap.output_value = 100;
         // SAFETY: `snap` is a valid, stack-allocated snapshot.
         assert!((unsafe { avd_task_ctx_match_number(&snap) } - 1.0).abs() < f64::EPSILON);
+    }
+
+    // --- ConsumeTargetEcho tests ---
+
+    #[test]
+    fn test_consume_target_echo_wrong_target() {
+        let mut snap = TaskContextSnapshot::default();
+        snap.task_arg_int[0] = 5; // desired target
+        snap.forage_target = 3; // organism on wrong target
+        snap.input_count = 1;
+        snap.input_buffer[0] = 42;
+        snap.output_value = 42;
+        assert!((task_consume_target_echo(&snap) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_consume_target_echo_right_target_match() {
+        let mut snap = TaskContextSnapshot::default();
+        snap.task_arg_int[0] = 5;
+        snap.forage_target = 5;
+        snap.input_count = 2;
+        snap.input_buffer[0] = 10;
+        snap.input_buffer[1] = 42;
+        snap.output_value = 42;
+        assert!((task_consume_target_echo(&snap) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_consume_target_echo_right_target_no_match() {
+        let mut snap = TaskContextSnapshot::default();
+        snap.task_arg_int[0] = 5;
+        snap.forage_target = 5;
+        snap.input_count = 2;
+        snap.input_buffer[0] = 10;
+        snap.input_buffer[1] = 20;
+        snap.output_value = 42;
+        assert!((task_consume_target_echo(&snap) - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- ProducePublicGood tests ---
+
+    #[test]
+    fn test_produce_public_good_false() {
+        let snap = TaskContextSnapshot::default();
+        assert!((task_produce_public_good(&snap) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_produce_public_good_true() {
+        let snap = TaskContextSnapshot {
+            kaboom_executed: 1,
+            ..TaskContextSnapshot::default()
+        };
+        assert!((task_produce_public_good(&snap) - 1.0).abs() < f64::EPSILON);
+    }
+
+    // --- FFI wrappers for new tasks ---
+
+    #[test]
+    fn test_ffi_consume_target_echo() {
+        let mut snap = avd_task_ctx_default();
+        snap.task_arg_int[0] = 3;
+        snap.forage_target = 3;
+        snap.input_count = 1;
+        snap.input_buffer[0] = 99;
+        snap.output_value = 99;
+        // SAFETY: `snap` is a valid, stack-allocated snapshot.
+        assert!((unsafe { avd_task_ctx_consume_target_echo(&snap) } - 1.0).abs() < f64::EPSILON);
+    }
+
+    // --- CollectOddCell tests ---
+
+    #[test]
+    fn test_collect_odd_cell_odd() {
+        let snap = TaskContextSnapshot {
+            cell_id: 5,
+            ..TaskContextSnapshot::default()
+        };
+        // task_arg_int[0] defaults to 0 → check for odd
+        assert!((task_collect_odd_cell(&snap) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_collect_odd_cell_even() {
+        let snap = TaskContextSnapshot {
+            cell_id: 4,
+            ..TaskContextSnapshot::default()
+        };
+        assert!((task_collect_odd_cell(&snap) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_collect_even_cell() {
+        let snap = TaskContextSnapshot {
+            cell_id: 4,
+            task_arg_int: [1, 0, 0, 0],
+            ..TaskContextSnapshot::default()
+        };
+        assert!((task_collect_odd_cell(&snap) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_ffi_collect_odd_cell() {
+        let mut snap = avd_task_ctx_default();
+        snap.cell_id = 7;
+        snap.task_arg_int[0] = 0;
+        // SAFETY: `snap` is a valid, stack-allocated snapshot.
+        assert!((unsafe { avd_task_ctx_collect_odd_cell(&snap) } - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_ffi_produce_public_good() {
+        let mut snap = avd_task_ctx_default();
+        // SAFETY: `snap` is a valid, stack-allocated snapshot.
+        assert!((unsafe { avd_task_ctx_produce_public_good(&snap) } - 0.0).abs() < f64::EPSILON);
+        snap.kaboom_executed = 1;
+        // SAFETY: `snap` is a valid, stack-allocated snapshot.
+        assert!((unsafe { avd_task_ctx_produce_public_good(&snap) } - 1.0).abs() < f64::EPSILON);
     }
 
     /// Verify struct size is stable for ABI compatibility.

@@ -10,8 +10,11 @@
 #include "cPhenotype.h"
 #include "cPopulation.h"
 #include "cPopulationCell.h"
+#include "cDeme.h"
+#include "cDemeCellEvent.h"
 #include "cStats.h"
 #include "cWorld.h"
+#include "cEnvironment.h"
 #include "rust/running_stats_ffi.h"
 
 extern "C" {
@@ -100,6 +103,375 @@ int avd_pop_get_size(cPopulation* pop) {
 int avd_pop_get_num_organisms(cPopulation* pop) {
   if (!pop) return 0;
   return pop->GetNumOrganisms();
+}
+
+// ---- Organism accessors (extended) ----
+
+int avd_org_get_av_cell_id(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetAVCellID();
+}
+
+int avd_org_get_prev_seen_cell_id(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetPrevSeenCellID();
+}
+
+void avd_org_set_prev_seen_cell_id(cOrganism* org, int id) {
+  if (!org) return;
+  org->SetPrevSeenCellID(id);
+}
+
+int avd_org_has_opinion(cOrganism* org) {
+  if (!org) return 0;
+  return org->HasOpinion() ? 1 : 0;
+}
+
+int avd_org_get_opinion_value(cOrganism* org) {
+  if (!org || !org->HasOpinion()) return -1;
+  return org->GetOpinion().first;
+}
+
+cDeme* avd_org_get_deme(cOrganism* org) {
+  if (!org) return nullptr;
+  return org->GetDeme();
+}
+
+// ---- Cell accessors (extended) ----
+
+int avd_cell_get_data(cPopulationCell* cell) {
+  if (!cell) return 0;
+  return cell->GetCellData();
+}
+
+int avd_cell_get_x(cPopulationCell* cell) {
+  if (!cell) return -1;
+  int x, y;
+  cell->GetPosition(x, y);
+  return x;
+}
+
+int avd_cell_get_y(cPopulationCell* cell) {
+  if (!cell) return -1;
+  int x, y;
+  cell->GetPosition(x, y);
+  return y;
+}
+
+// ---- Population accessors (extended) ----
+
+int avd_pop_get_num_demes(cPopulation* pop) {
+  if (!pop) return 0;
+  return pop->GetNumDemes();
+}
+
+cDeme* avd_pop_get_deme(cPopulation* pop, int deme_id) {
+  if (!pop || deme_id < 0 || deme_id >= pop->GetNumDemes()) return nullptr;
+  return &pop->GetDeme(deme_id);
+}
+
+int avd_pop_get_num_in_group(cPopulation* pop, int group_id) {
+  if (!pop) return 0;
+  return pop->NumberOfOrganismsInGroup(group_id);
+}
+
+// ---- Deme accessors ----
+
+int avd_deme_get_id(cDeme* deme) {
+  if (!deme) return -1;
+  return deme->GetID();
+}
+
+int avd_deme_get_size(cDeme* deme) {
+  if (!deme) return 0;
+  return deme->GetSize();
+}
+
+int avd_deme_get_width(cDeme* deme) {
+  if (!deme) return 0;
+  return deme->GetWidth();
+}
+
+int avd_deme_get_height(cDeme* deme) {
+  if (!deme) return 0;
+  return deme->GetHeight();
+}
+
+int avd_deme_get_cell_position_x(cDeme* deme, int cell_id) {
+  if (!deme) return -1;
+  return deme->GetCellPosition(cell_id).first;
+}
+
+int avd_deme_get_cell_position_y(cDeme* deme, int cell_id) {
+  if (!deme) return -1;
+  return deme->GetCellPosition(cell_id).second;
+}
+
+int avd_deme_get_relative_cell_id(cDeme* deme, int absolute_cell_id) {
+  if (!deme) return -1;
+  return deme->GetRelativeCellID(absolute_cell_id);
+}
+
+int avd_deme_get_num_events(cDeme* deme) {
+  if (!deme) return 0;
+  return deme->GetNumEvents();
+}
+
+int avd_deme_get_cell_event_id(cDeme* deme, int event_idx) {
+  if (!deme) return -1;
+  cDemeCellEvent* ev = deme->GetCellEvent(event_idx);
+  if (!ev) return -1;
+  return ev->GetEventID();
+}
+
+int avd_deme_get_org_count(cDeme* deme) {
+  if (!deme) return 0;
+  return deme->GetOrgCount();
+}
+
+// ---- Organism accessors (Phase 1: read-only phenotype/identity) ----
+
+int avd_org_get_id(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetID();
+}
+
+int avd_org_get_lyse_display(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetLyseDisplay() ? 1 : 0;
+}
+
+int avd_org_get_cell_data_org(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetCellData();
+}
+
+int avd_org_get_input_at(cOrganism* org, int index) {
+  if (!org) return 0;
+  return org->GetInputAt(index);
+}
+
+double avd_org_get_stored_energy(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetPhenotype().GetStoredEnergy();
+}
+
+int avd_org_is_fertile(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().IsFertile() ? 1 : 0;
+}
+
+int avd_org_is_germline(cOrganism* org) {
+  if (!org) return 0;
+  return org->IsGermline() ? 1 : 0;
+}
+
+int avd_org_get_num_divides(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetNumDivides();
+}
+
+int avd_org_get_kaboom_executed(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetKaboomExecuted() ? 1 : 0;
+}
+
+// ---- Organism accessors (Phase 1b: more reads for CPU handlers) ----
+
+int avd_org_get_reputation(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetReputation();
+}
+
+int avd_org_get_faced_dir(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetFacedDir();
+}
+
+int avd_org_get_northerly(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetNortherly();
+}
+
+int avd_org_get_easterly(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetEasterly();
+}
+
+int avd_org_get_neighbor_cell_contents(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetNeighborCellContents();
+}
+
+int avd_org_get_faced_cell_data_org_id(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetFacedCellDataOrgID();
+}
+
+int avd_org_get_number_strings_on_hand(cOrganism* org, int type) {
+  if (!org) return 0;
+  return org->GetNumberStringsOnHand(type);
+}
+
+int avd_org_get_mating_type(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetPhenotype().GetMatingType();
+}
+
+double avd_org_get_energy_in_buffer(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetPhenotype().GetEnergyInBufferAmount();
+}
+
+int avd_org_get_cell_y_position(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetOrgInterface().GetCellYPosition();
+}
+
+// ---- Organism accessors (Phase 1c: neighbor + energy level) ----
+
+cOrganism* avd_org_get_neighbor(cOrganism* org) {
+  if (!org) return nullptr;
+  return org->GetNeighbor();
+}
+
+int avd_org_is_neighbor_cell_occupied(cOrganism* org) {
+  if (!org) return 0;
+  return org->IsNeighborCellOccupied() ? 1 : 0;
+}
+
+int avd_org_is_dead(cOrganism* org) {
+  if (!org) return 1;
+  return org->IsDead() ? 1 : 0;
+}
+
+double avd_org_get_vitality(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetVitality();
+}
+
+int avd_org_get_discrete_energy_level(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetPhenotype().GetDiscreteEnergyLevel();
+}
+
+int avd_org_get_cell_position_x(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetOrgInterface().GetCellXPosition();
+}
+
+int avd_org_get_opinion_only(cOrganism* org) {
+  if (!org) return 0;
+  if (!org->HasOpinion()) return 0;
+  return org->GetOpinion().first;
+}
+
+// ---- Organism WRITE accessors (Phase 2: mutable state) ----
+
+// Energy writes
+void avd_org_reduce_energy(cOrganism* org, double amount) {
+  if (!org) return;
+  org->GetPhenotype().ReduceEnergy(amount);
+}
+
+void avd_org_increase_energy_donated(cOrganism* org, double amount) {
+  if (!org) return;
+  org->GetPhenotype().IncreaseEnergyDonated(amount);
+}
+
+void avd_org_receive_donated_energy(cOrganism* org, double amount) {
+  if (!org) return;
+  org->GetPhenotype().ReceiveDonatedEnergy(amount);
+}
+
+void avd_org_apply_donated_energy(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().ApplyDonatedEnergy();
+}
+
+void avd_org_set_frac_energy_donating(cOrganism* org, double frac) {
+  if (!org) return;
+  org->SetFracEnergyDonating(frac);
+}
+
+// Flag writes
+void avd_org_set_fertile(cOrganism* org, int value) {
+  if (!org) return;
+  org->GetPhenotype().IsFertile() = value;
+}
+
+void avd_org_set_kaboom_executed(cOrganism* org, int value) {
+  if (!org) return;
+  org->GetPhenotype().SetKaboomExecuted(value != 0);
+}
+
+void avd_org_set_is_energy_donor(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsEnergyDonor();
+}
+
+void avd_org_set_is_energy_receiver(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsEnergyReceiver();
+}
+
+// Bonus/merit writes
+void avd_org_set_cur_bonus(cOrganism* org, double value) {
+  if (!org) return;
+  org->GetPhenotype().SetCurBonus(value);
+}
+
+// Pheromone
+void avd_org_set_pheromone(cOrganism* org, int value) {
+  if (!org) return;
+  org->SetPheromone(value != 0);
+}
+
+// Energy request flags
+void avd_org_set_is_energy_requestor(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetIsEnergyRequestor();
+}
+
+void avd_org_increase_num_energy_requests(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().IncreaseNumEnergyRequests();
+}
+
+void avd_org_set_has_open_energy_request(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().SetHasOpenEnergyRequest();
+}
+
+void avd_org_clear_has_open_energy_request(cOrganism* org) {
+  if (!org) return;
+  org->GetPhenotype().ClearHasOpenEnergyRequest();
+}
+
+double avd_org_get_frac_energy_donating(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetFracEnergyDonating();
+}
+
+// Resource bin access
+double avd_org_get_rbin(cOrganism* org, int index) {
+  if (!org) return 0.0;
+  return org->GetRBin(index);
+}
+
+int avd_org_get_num_rbins(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetRBins().GetSize();
+}
+
+void avd_org_add_to_rbin(cOrganism* org, int index, double amount) {
+  if (!org) return;
+  org->AddToRBin(index, amount);
+}
+
+void avd_org_set_rbin(cOrganism* org, int index, double value) {
+  if (!org) return;
+  org->SetRBin(index, value);
 }
 
 // ---- World accessors ----

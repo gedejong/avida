@@ -36,6 +36,7 @@
 #include "cWorld.h"
 #include "cStats.h"
 #include "AvidaTools.h"
+#include "rust/running_stats_ffi.h"
 
 using namespace AvidaTools;
 
@@ -90,22 +91,10 @@ cBirthSelectionHandler* cBirthChamber::getSelectionHandler(int hw_type)
 
 bool cBirthChamber::ValidBirthEntry(const cBirthEntry& entry) const
 {
-  // If there is no organism in the entry, return false.
-  if (entry.m_scalars.timestamp == -1) return false;
-
-  // If there is an organism, determine if it is still alive.
-  const int max_wait_time = m_world->GetConfig().MAX_BIRTH_WAIT_TIME.Get();
-
-  // If the max_wait_time is -1, there is no timeout, so its alive.
-  if (max_wait_time == -1) return true;
-
-  // Otherwise, check if few enough updates have gone by...
-  const int cur_update = m_world->GetStats().GetUpdate();
-  const int max_update = entry.m_scalars.timestamp + max_wait_time;
-
-  if (cur_update > max_update) return false; // Too many updates...
-
-  return true;
+  return avd_birth_is_valid_entry(
+    entry.m_scalars.timestamp,
+    m_world->GetConfig().MAX_BIRTH_WAIT_TIME.Get(),
+    m_world->GetStats().GetUpdate()) != 0;
 }
 
 bool cBirthChamber::ValidateBirthEntry(cBirthEntry& entry) 

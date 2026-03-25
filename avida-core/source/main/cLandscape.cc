@@ -158,22 +158,16 @@ void cLandscape::Process(cAvidaContext& ctx)
 
   delete testcpu;
   
-  // Calculate the complexity...
-  
-  double max_ent = log((double) m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize());
-  total_entropy = 0;
-  ConstInstructionSequencePtr base_seq_p;
-  GeneticRepresentationPtr rep_p = base_genome.Representation();
-  base_seq_p.DynamicCastFrom(rep_p);
-  const InstructionSequence& base_seq = *base_seq_p;
-  for (int i = 0; i < base_seq.GetSize(); i++) {
-    // Per-site entropy is the log of the number of legal states for that
-    // site.  Add one to account for the unmutated state.
-    total_entropy += (log((double) site_count[i] + 1) / max_ent);
+  // Calculate the complexity via Rust helper.
+  {
+    ConstInstructionSequencePtr base_seq_p;
+    GeneticRepresentationPtr rep_p = base_genome.Representation();
+    base_seq_p.DynamicCastFrom(rep_p);
+    const InstructionSequence& base_seq = *base_seq_p;
+    const int inst_size = m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize();
+    avd_landscape_entropy_complexity(site_count, base_seq.GetSize(), inst_size, &total_entropy, &complexity);
+    m_num_found = base_seq.GetSize() * (inst_size - 1);
   }
-  complexity = base_seq.GetSize() - total_entropy;
-  
-  m_num_found = base_seq.GetSize() * (m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize() - 1);
 }
 
 
@@ -442,17 +436,15 @@ void cLandscape::PredictWProcess(cAvidaContext& ctx, Avida::Output::File& df, in
   
   // Calculate the complexity...
   
-  double max_ent = log(static_cast<double>(m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize()));
-  total_entropy = 0;
-  ConstInstructionSequencePtr base_seq_p;
-  GeneticRepresentationPtr rep_p = base_genome.Representation();
-  base_seq_p.DynamicCastFrom(rep_p);
-  const InstructionSequence& base_seq = *base_seq_p;
-  for (int i = 0; i < base_seq.GetSize(); i++) {
-    total_entropy += (log(static_cast<double>(site_count[i] + 1)) / max_ent);
+  {
+    ConstInstructionSequencePtr base_seq_p;
+    GeneticRepresentationPtr rep_p = base_genome.Representation();
+    base_seq_p.DynamicCastFrom(rep_p);
+    const InstructionSequence& base_seq = *base_seq_p;
+    const int inst_size = m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize();
+    avd_landscape_entropy_complexity(site_count, base_seq.GetSize(), inst_size, &total_entropy, &complexity);
   }
-  complexity = base_seq.GetSize() - total_entropy;
-  
+
   delete testcpu;
 }
 
@@ -587,19 +579,16 @@ void cLandscape::PredictNuProcess(cAvidaContext& ctx, Avida::Output::File& df, i
     if (total_live_found < min_found / 2) break;
   }
   
-  // Calculate the complexity...
-  
-  double max_ent = log(static_cast<double>(m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize()));
-  total_entropy = 0;
-  ConstInstructionSequencePtr base_seq_p;
-  GeneticRepresentationPtr rep_p = base_genome.Representation();
-  base_seq_p.DynamicCastFrom(rep_p);
-  const InstructionSequence& base_seq = *base_seq_p;
-  for (int i = 0; i < base_seq.GetSize(); i++) {
-    total_entropy += (log(static_cast<double>(site_count[i] + 1)) / max_ent);
+  // Calculate the complexity via Rust helper.
+  {
+    ConstInstructionSequencePtr base_seq_p;
+    GeneticRepresentationPtr rep_p = base_genome.Representation();
+    base_seq_p.DynamicCastFrom(rep_p);
+    const InstructionSequence& base_seq = *base_seq_p;
+    const int inst_size = m_world->GetHardwareManager().GetInstSet(base_genome.Properties().Get("instset").StringValue()).GetSize();
+    avd_landscape_entropy_complexity(site_count, base_seq.GetSize(), inst_size, &total_entropy, &complexity);
   }
-  complexity = base_seq.GetSize() - total_entropy;
-  
+
   delete testcpu;
 }
 

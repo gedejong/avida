@@ -36,6 +36,8 @@
 #include "cTestCPU.h"
 #include "cInstSet.h"
 
+#include "rust/running_stats_ffi.h"
+
 #include <cassert>
 #include <algorithm>
 #include <iterator>
@@ -522,34 +524,30 @@ bool cPopulationInterface::TestOnDivide()
  */
 bool cPopulationInterface::SendMessage(cOrgMessage& msg, cPopulationCell& rcell) //**
 {
-  bool dropped = false;
-  bool lost = false;
-
+  // Compute policy inputs for Rust decision
   static const double drop_prob = m_world->GetConfig().NET_DROP_PROB.Get();
-  if ((drop_prob > 0.0) && m_world->GetRandom().P(drop_prob)) {
-    // message dropped
-    GetDeme()->messageDropped();
-    GetDeme()->messageSendFailed();
-    dropped = true;
-  }
+  const int drop_hit = ((drop_prob > 0.0) && m_world->GetRandom().P(drop_prob)) ? 1 : 0;
+  const int neural = m_world->GetConfig().NEURAL_NETWORKING.Get();
+  const int avatars2 = (m_world->GetConfig().USE_AVATARS.Get() == 2) ? 1 : 0;
+  const int self_comm = m_world->GetConfig().SELF_COMMUNICATION.Get();
 
-  if (!m_world->GetConfig().NEURAL_NETWORKING.Get() || m_world->GetConfig().USE_AVATARS.Get() != 2) {
-    // Not using neural networking avatars..
-    // Fail if the cell we're facing is not occupied.
-    if(!rcell.IsOccupied()) lost = true;
-  } else {
-    // If neural networking with avatars check for input avatars in this cell
-    if (!rcell.GetNumAVInputs()) lost = true;
-    // If self communication is not allowed, must check for an input avatar for another organism
-    else if (!m_world->GetConfig().SELF_COMMUNICATION.Get()) {
-      lost = true;
-      cOrganism* sender = GetOrganism();
-      for (int i = 0; i < rcell.GetNumAVInputs(); i++) {
-        if (sender != rcell.GetCellInputAVs()[i]) lost = false;
-      }
+  // Check if there's another organism's input avatar in the cell
+  int has_other = 0;
+  if (neural && avatars2 && !self_comm) {
+    cOrganism* sender = GetOrganism();
+    for (int i = 0; i < rcell.GetNumAVInputs(); i++) {
+      if (sender != rcell.GetCellInputAVs()[i]) { has_other = 1; break; }
     }
   }
 
+  const int policy = avd_popif_message_send_policy(
+    drop_hit, rcell.IsOccupied() ? 1 : 0,
+    neural, avatars2, rcell.GetNumAVInputs(), self_comm, has_other);
+
+  const bool dropped = (policy & 1) != 0;
+  const bool lost = (policy & 2) != 0;
+
+  if (dropped) { GetDeme()->messageDropped(); GetDeme()->messageSendFailed(); }
   if (lost) GetDeme()->messageSendFailed();
 
   // record this message, regardless of whether it's actually received.
@@ -1846,29 +1844,13 @@ int cPopulationInterface::GetAVNumNeighbors(int av_num)
     m_world->GetDriver().Feedback().Error("Not valid WORLD_GEOMETRY for USE_AVATAR, must be torus or bounded.");
     m_world->GetDriver().Abort(INVALID_CONFIG);
   }
-
-  // If the avatar exists..
   if (av_num < GetNumAV()) {
-    if (m_world->GetConfig().WORLD_GEOMETRY.Get() == 2) return 8;
-
-    const int cell_id = m_avatars[av_num].av_cell_id;
-    const int x_size = m_world->GetConfig().WORLD_X.Get();
-    const int y_size = m_world->GetConfig().WORLD_Y.Get() / m_world->GetConfig().NUM_DEMES.Get();
-    const int deme_size = x_size * y_size;
-    int deme_cell = cell_id % deme_size;
-    int x = deme_cell % x_size;
-    int y = deme_cell / x_size;
-
-    // Is the cell on a corner..
-    if (x == 0 || x == (x_size - 1)) {
-      if (y == 0 || y == (y_size - 1)) return 3;
-      // Is the cell on a side-edge..
-      else return 5;
-    }
-    // Is the cell on a top or bottom edge..
-    if (y == 0 || y == (y_size - 1)) return 5;
-    // The cell must be on the interior..
-    return 8;
+    return avd_popif_av_num_neighbors(
+      m_avatars[av_num].av_cell_id,
+      m_world->GetConfig().WORLD_X.Get(),
+      m_world->GetConfig().WORLD_Y.Get(),
+      m_world->GetConfig().NUM_DEMES.Get(),
+      m_world->GetConfig().WORLD_GEOMETRY.Get());
   }
   return 0;
 }
@@ -2028,239 +2010,19 @@ bool cPopulationInterface::SetAVCellID(cAvidaContext& ctx, int av_cell_id, int a
 void cPopulationInterface::SetAVFacedCellID(cAvidaContext& ctx, int av_num)
 {
   const int world_geometry = m_world->GetConfig().WORLD_GEOMETRY.Get();
-  // Avatars only supported in bounded and toroidal world geometries
   if ((world_geometry != 1) && (world_geometry != 2)) {
     m_world->GetDriver().Feedback().Error("Not valid WORLD_GEOMETRY for USE_AVATAR, must be torus or bounded.");
     m_world->GetDriver().Abort(INVALID_CONFIG);
   }
-
-  // If the avatar exists..
   if (av_num < GetNumAV()) {
-    // Convert the cell id into a deme x,y position
-    const int x_size = m_world->GetConfig().WORLD_X.Get();
-    const int y_size = m_world->GetConfig().WORLD_Y.Get() / m_world->GetConfig().NUM_DEMES.Get();
-    const int deme_size = x_size * y_size;
-
-    const int old_cell_id = m_avatars[av_num].av_cell_id;
-    const int facing = m_avatars[av_num].av_facing;
-
-    const int deme_id = old_cell_id / deme_size;
-    const int old_deme_cell = old_cell_id % deme_size;
-
-    int x = old_deme_cell % x_size;
-    int y = old_deme_cell / x_size;
-
-    // If this happens to be an avatar in a single cell world, it can't face any cell beyond its own
-    if (deme_size == 1) {
-      m_avatars[av_num].av_faced_cell = m_avatars[av_num].av_cell_id;
-      return;
-    }
-
-    bool off_the_edge_facing = false;
-    // If a bounded grid, do checks for facing off the edge of a bounded world grid..
-    if (world_geometry == 1) {
-      // Check if the avatar is at the end of a single column world
-      if (x_size == 1) {
-        if (y == 0) {
-          y += 1;
-          off_the_edge_facing = true;
-        } 
-        else if (y == (y_size - 1)) {
-          y -= 1;
-          off_the_edge_facing = true;
-        }
-      // Check if the avatar is at the end of a single row world
-      } else if (y_size == 1) {
-        if (x == 0) {
-          x += 1;
-          off_the_edge_facing = true;
-        } 
-        else if (y == (y_size - 1)) {
-          x -= 1;
-          off_the_edge_facing = true;
-        }
-      }
-
-      // The world is neither a single row or column, continuing border facing checks
-      if (!off_the_edge_facing) {
-        // West edge..
-        if (x == 0) {
-          // Northwest corner
-          if (y == 0) {
-            if (facing == 0 || facing == 7 || facing == 6) {
-              if (ctx.GetRandom().GetInt(0, 2)) x += 1;
-              else y += 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 5) {
-              y += 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 1) {
-              x += 1;
-              off_the_edge_facing = true;
-            }
-          }
-          // Southwest corner
-          else if (y == (y_size - 1)) {
-            if (facing == 4 || facing == 5 || facing == 6) {
-              if (ctx.GetRandom().GetInt(0, 2)) x += 1;
-              else y -= 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 7) {
-              x += 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 3) {
-              y -= 1;
-              off_the_edge_facing = true;
-            }
-          }
-          // West edge facings not checked yet
-          if (!off_the_edge_facing) {
-            // West edge facing southwest
-            if (facing == 5) {
-              y -= 1;
-              off_the_edge_facing = true;
-            // West edge facing west
-            } 
-            else if (facing == 6) {
-              if (ctx.GetRandom().GetInt(0, 2)) y += 1;
-              else y -= 1;
-              off_the_edge_facing = true;
-            }
-            // West edge facing northwest                                                   
-            else if (facing == 7) {
-              y += 1;
-              off_the_edge_facing = true;
-            }
-          }
-        }
-        // East edge..
-        else if (x == (x_size - 1)) {
-          // Northeast corner
-          if (y == 0) {
-            if (facing == 0 || facing == 1 || facing == 2) {
-              if (ctx.GetRandom().GetInt(0, 2)) x -= 1;
-              else y += 1;
-              off_the_edge_facing = true;
-            }
-            if (facing == 3) {
-              y += 1;
-              off_the_edge_facing = true;
-            }
-            if (facing == 7) {
-              x -= 1;
-              off_the_edge_facing = true;
-            }
-          }
-          // Southeast corner
-          else if (y == (y_size - 1)) {
-            if (facing == 2 || facing == 3 || facing == 4) {
-              if (ctx.GetRandom().GetInt(0, 2)) x -= 1;
-              else y -= 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 1) {
-              y -= 1;
-              off_the_edge_facing = true;
-            }
-            else if (facing == 5) {
-              x -= 1;
-              off_the_edge_facing = true;
-            }
-          }
-          // East edge facings not checked yet
-          if (!off_the_edge_facing) {
-            // East edge facing northeast
-            if (facing == 1) {
-              y -= 1;
-              off_the_edge_facing = true;
-            // East edge facing east
-            } 
-            else if (facing == 2) {
-              if (ctx.GetRandom().GetInt(0, 2)) y += 1;
-              else y -= 1;
-              off_the_edge_facing = true;
-            }
-            // East edge facing southeast
-            else if (facing == 3) {
-              y += 1;
-              off_the_edge_facing = true;
-            }
-          }
-        }
-        // North edge..
-        else if (y == 0) {
-          // North edge facing northwest
-          if (facing == 7) {
-            x -= 1;
-            off_the_edge_facing = true;
-          // North edge facing north
-          } 
-          else if (facing == 0) {
-            if (ctx.GetRandom().GetInt(0, 2)) x += 1;
-            else x -= 1;
-            off_the_edge_facing = true;
-          }
-          // North edge facing northeast
-          else if (facing == 1) {
-            x += 1;
-            off_the_edge_facing = true;
-          }
-        }
-        // South edge..
-        else if (y == (y_size - 1)) {
-          // South edge facing southeast
-          if (facing == 3) {
-            x += 1;
-            off_the_edge_facing = true;
-          // South edge facing south
-          } 
-          else if (facing == 4) {
-            if (ctx.GetRandom().GetInt(0, 2)) x += 1;
-            else x -= 1;
-            off_the_edge_facing = true;
-          }
-          // South edge facing southwest
-          else if (facing == 5) {
-            x -= 1;
-            off_the_edge_facing = true;
-          }
-        }
-      }
-    }
-
-    // Torus world geometry or not a bounded outward facing edge..
-    if (!off_the_edge_facing || world_geometry == 2) {
-      // North facing
-      if ((facing == 0) || (facing == 1) || (facing == 7)) {
-        y = (y - 1 + y_size) % y_size;
-      }
-
-      // South facing
-      if ((facing == 3) || (facing == 4) || (facing == 5)) {
-        y = (y + 1) % y_size;
-      }
-
-      // East facing
-      if ((facing == 1) || (facing == 2) || (facing == 3)) {
-        x = (x + 1) % x_size;
-      }
-
-      // West facing
-      if ((facing == 5) || (facing == 6) || (facing == 7)) {
-        x = (x - 1 + x_size) % x_size;
-      }
-    }
-
-    // Convert the x,y deme coordinates back into a cell id
-    const int new_deme_cell = y * x_size + x;
-    const int new_cell_id = deme_id * deme_size + new_deme_cell;
-
-    // Store the faced cell id
-    m_avatars[av_num].av_faced_cell = new_cell_id;
+    m_avatars[av_num].av_faced_cell = avd_popif_av_faced_cell(
+      m_avatars[av_num].av_cell_id,
+      m_avatars[av_num].av_facing,
+      m_world->GetConfig().WORLD_X.Get(),
+      m_world->GetConfig().WORLD_Y.Get(),
+      m_world->GetConfig().NUM_DEMES.Get(),
+      world_geometry,
+      &ctx);
   }
 }
 
@@ -2293,17 +2055,8 @@ bool cPopulationInterface::MoveAV(cAvidaContext& ctx, int av_num)
 // Rotate the avatar by input increment, then set the new faced cell
 bool cPopulationInterface::RotateAV(cAvidaContext& ctx, int increment, int av_num)
 {
-  // If the avatar exists..
   if (av_num < GetNumAV()) {
-    if (increment >= 0) {
-      increment %= 8;
-    } else {
-      increment = -increment;
-      increment %= 8;
-      increment = -increment;
-    }
-    // Adjust facing by increment
-    int new_facing = (m_avatars[av_num].av_facing + increment + 8) % 8;
+    int new_facing = avd_popif_rotate_av(m_avatars[av_num].av_facing, increment);
     SetAVFacing(ctx, new_facing);
     return true;
   }

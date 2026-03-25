@@ -516,9 +516,10 @@ double cTaskLib::Task_Sub(cTaskContext& ctx) const
 }
 
 // @WRE DontCare task always succeeds.
-double cTaskLib::Task_DontCare(cTaskContext&) const
+double cTaskLib::Task_DontCare(cTaskContext& ctx) const
 {
-  return 1.0;
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_dont_care(&ctx.GetSnapshot());
 }
 
 double cTaskLib::Task_Not(cTaskContext& ctx) const
@@ -569,52 +570,37 @@ double cTaskLib::Task_Equ(cTaskContext& ctx) const
 
 double cTaskLib::Task_Nand_ResourceDependent(cTaskContext& ctx) const
 {
-  const double resCrossoverLevel = 100;
-
   const int logic_id = ctx.GetLogicId();
-  if (!(logic_id == 63 || logic_id == 95 || logic_id == 119)) return 0.0;
-		
+  // Resolve pheromone resource amount — C++ handles resource lookup
+  double pher_amount = 0.0;
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
-  const AvidaArray<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
   const cResourceCount& resource_count = m_world->GetPopulation().GetResourceCount();
-	
-  if (resource_count.GetSize() == 0) assert(false); // change to: return false;
-	
-  double pher_amount = 0;
-  cResource* res = resLib.GetResource("pheromone");
-	
-  if (strncmp(resource_count.GetResName(res->GetID()), "pheromone", 9) == 0) {
-    pher_amount += resource_count_array[res->GetID()];
+  if (resource_count.GetSize() > 0) {
+    cResource* res = resLib.GetResource("pheromone");
+    if (res && strncmp(resource_count.GetResName(res->GetID()), "pheromone", 9) == 0) {
+      const AvidaArray<double>& ra = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
+      pher_amount = ra[res->GetID()];
+    }
   }
-  
-  if (pher_amount < resCrossoverLevel) return 1.0;
-  return 0.0;	
+  return avd_task_eval_nand_res_dep(logic_id, pher_amount);
 }
 
 
 double cTaskLib::Task_Nor_ResourceDependent(cTaskContext& ctx) const
 {
-  const double resCrossoverLevel = 100;
-
   const int logic_id = ctx.GetLogicId();
-  if (!(logic_id == 3 || logic_id == 5 || logic_id == 17))  return 0.0;
-	
+  // Resolve pheromone resource amount — C++ handles resource lookup
+  double pher_amount = 0.0;
   const cResourceLib& resLib = m_world->GetEnvironment().GetResourceLib();
-  const AvidaArray<double>& resource_count_array = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
   const cResourceCount& resource_count = m_world->GetPopulation().GetResourceCount();
-  
-  //if (resource_count.GetSize() == 0) assert(false); // change to: return false;
-  assert(resource_count.GetSize() != 0);
-	
-  double pher_amount = 0;
-  cResource* res = resLib.GetResource("pheromone");
-  
-  if (strncmp(resource_count.GetResName(res->GetID()), "pheromone", 9) == 0) {
-    pher_amount += resource_count_array[res->GetID()];
+  if (resource_count.GetSize() > 0) {
+    cResource* res = resLib.GetResource("pheromone");
+    if (res && strncmp(resource_count.GetResName(res->GetID()), "pheromone", 9) == 0) {
+      const AvidaArray<double>& ra = ctx.GetOrganism()->GetOrgInterface().GetResources(m_world->GetDefaultContext());
+      pher_amount = ra[res->GetID()];
+    }
   }
-	
-  if (pher_amount > resCrossoverLevel) return 1.0;
-  return 0.0;	
+  return avd_task_eval_nor_res_dep(logic_id, pher_amount);
 }
 
 
@@ -1740,22 +1726,9 @@ double cTaskLib::Task_FibonacciSequence(cTaskContext& ctx) const
     state = new cFibSeqState();
     ctx.AddTaskState(state);
   }
-  
-  const int next = state->seq[0] + state->seq[1];
-  
-  // If output matches next in sequence
-  if (ctx.GetOutputBuffer()[0] == next) {
-    // Increment count and store next value
-    state->count++;
-    state->seq[state->count % 2] = next;
-    
-    // If past target sequence ending point, return the penalty setting
-    if (state->count > args.GetInt(0)) return args.GetDouble(0);
-    
-    return 1.0;
-  }
-  
-  return 0.0;
+  return avd_task_eval_fibonacci_seq(
+    state->seq, &state->count, ctx.GetOutputBuffer()[0],
+    args.GetInt(0), args.GetDouble(0));
 }
 
 
@@ -2404,36 +2377,28 @@ double cTaskLib::Task_Cosine(cTaskContext& ctx) const
 double cTaskLib::Task_CommEcho(cTaskContext& ctx) const
 {
   const int test_output = ctx.GetOutputBuffer()[0];
-  
-  tConstListIterator<tBuffer<int> > buff_it(ctx.GetNeighborhoodInputBuffers());  
-  
+  // Flatten neighbor input buffers for Rust FFI
+  std::vector<int> flat;
+  tConstListIterator<tBuffer<int> > buff_it(ctx.GetNeighborhoodInputBuffers());
   while (buff_it.Next() != NULL) {
     const tBuffer<int>& cur_buff = *(buff_it.Get());
-    const int buff_size = cur_buff.GetNumStored();
-    for (int i = 0; i < buff_size; i++) {
-      if (test_output == cur_buff[i]) return 1.0;
-    }
+    for (int i = 0; i < cur_buff.GetNumStored(); i++) flat.push_back(cur_buff[i]);
   }
-  
-  return 0.0;
+  return avd_task_eval_comm_echo(test_output, flat.data(), static_cast<int>(flat.size()));
 }
 
 
 double cTaskLib::Task_CommNot(cTaskContext& ctx) const
 {
   const int test_output = ctx.GetOutputBuffer()[0];
-  
-  tConstListIterator<tBuffer<int> > buff_it(ctx.GetNeighborhoodInputBuffers());  
-  
+  // Flatten neighbor input buffers for Rust FFI
+  std::vector<int> flat;
+  tConstListIterator<tBuffer<int> > buff_it(ctx.GetNeighborhoodInputBuffers());
   while (buff_it.Next() != NULL) {
     const tBuffer<int>& cur_buff = *(buff_it.Get());
-    const int buff_size = cur_buff.GetNumStored();
-    for (int i = 0; i < buff_size; i++) {
-      if (test_output == (0-(cur_buff[i]+1))) return 1.0;
-    }
+    for (int i = 0; i < cur_buff.GetNumStored(); i++) flat.push_back(cur_buff[i]);
   }
-  
-  return 0.0;
+  return avd_task_eval_comm_not(test_output, flat.data(), static_cast<int>(flat.size()));
 }
 
 
@@ -2470,20 +2435,16 @@ double cTaskLib::Task_MoveNotUpGradient(cTaskContext& ctx) const
 double cTaskLib::Task_MoveToRightSide(cTaskContext& ctx) const
 {
   cDeme* deme = ctx.GetOrganism()->GetDeme();
-  std::pair<int, int> location = deme->GetCellPosition(ctx.GetOrganism()->GetCellID());
-  
-  if (location.first == m_world->GetConfig().WORLD_X.Get() - 1) return 1.0;
-  return 0.0;
+  int pos_x = deme->GetCellPosition(ctx.GetOrganism()->GetCellID()).first;
+  return avd_task_eval_move_to_side(pos_x, m_world->GetConfig().WORLD_X.Get() - 1);
 }
 
 
 double cTaskLib::Task_MoveToLeftSide(cTaskContext& ctx) const
 {
   cDeme* deme = ctx.GetOrganism()->GetDeme();
-  std::pair<int, int> location = deme->GetCellPosition(ctx.GetOrganism()->GetCellID());
-  
-  if (location.first == 0) return 1.0;
-  return 0.0;
+  int pos_x = deme->GetCellPosition(ctx.GetOrganism()->GetCellID()).first;
+  return avd_task_eval_move_to_side(pos_x, 0);
 }
 
 
@@ -2491,49 +2452,29 @@ double cTaskLib::Task_Move(cTaskContext& ctx) const
 {
   int cell_id = ctx.GetOrganism()->GetCellID();
   if (m_world->GetConfig().USE_AVATARS.Get()) cell_id = ctx.GetOrganism()->GetAVCellID();
-  if (cell_id != ctx.GetOrganism()->GetPrevSeenCellID()) {
-    ctx.GetOrganism()->SetPrevSeenCellID(cell_id);
-    return 1.0;
-  }
-  return 0.0;
-} //End cTaskLib::Task_Move()
+  int prev = ctx.GetOrganism()->GetPrevSeenCellID();
+  double reward = avd_task_eval_move(cell_id, prev);
+  if (reward > 0.0) ctx.GetOrganism()->SetPrevSeenCellID(cell_id);
+  return reward;
+}
 
 
 double cTaskLib::Task_MoveToTarget(cTaskContext& ctx) const
-//Note - a generic version of this is now at - Task_MoveToMovementEvent
 {
   cOrganism* org = ctx.GetOrganism();
-  
-  if (org->GetCellID() == -1) return 0.0;		
-	
+  if (org->GetCellID() == -1) return 0.0;
   cDeme* deme = org->GetDeme();
   assert(deme);
-  
   int cell_data = org->GetCellData();
-  if (cell_data <= 0) return 0.0;
-  
   int current_cell = deme->GetRelativeCellID(org->GetCellID());
   int prev_target = deme->GetRelativeCellID(org->GetPrevTaskCellID());
-  
-  // If the organism is currently on a target cell, see which target cell it previously
-  // visited.  Since we want them to move back and forth, only reward if we are on
-  // a different target cell.
-
-  if (cell_data > 1) 
-  {
-    if (current_cell == prev_target) {
-      // At some point, we may want to return a fraction
-      return 0;
-    } else {
-      org->AddReachedTaskCell();
-      org->SetPrevTaskCellID(current_cell);
-      return 1.0;
-    }
+  double reward = avd_task_eval_move_to_target(cell_data, current_cell, prev_target);
+  if (reward > 0.0) {
+    org->AddReachedTaskCell();
+    org->SetPrevTaskCellID(current_cell);
   }
-
-  return 0;
-
-} //End cTaskLib::TaskMoveToTarget()
+  return reward;
+}
 
 
 double cTaskLib::Task_MoveToMovementEvent(cTaskContext& ctx) const
@@ -2607,19 +2548,17 @@ double cTaskLib::Task_MoveBetweenMovementEvent(cTaskContext& ctx) const
 double cTaskLib::Task_MoveToEvent(cTaskContext& ctx) const
 {
   cOrganism* org = ctx.GetOrganism();
-  
   if (org->GetCellID() == -1) return 0.0;
-	
   cDeme* deme = org->GetDeme();
   assert(deme);
-  
   int cell_data = org->GetCellData();
-  if (cell_data <= 0) return 0.0;
-    
-  for (int i = 0; i < deme->GetNumEvents(); i++) {
-    if (deme->GetCellEvent(i)->GetEventID() == cell_data) return 1.0;
+  int num_events = deme->GetNumEvents();
+  // Extract event IDs into flat array for Rust FFI
+  std::vector<int> event_ids(num_events);
+  for (int i = 0; i < num_events; i++) {
+    event_ids[i] = deme->GetCellEvent(i)->GetEventID();
   }
-  return 0.0;
+  return avd_task_eval_move_to_event(event_ids.data(), num_events, cell_data);
 }
 
 
@@ -2740,25 +2679,13 @@ void cTaskLib::Load_FormSpatialGroup(const cString& name, const cString& argstr,
 
 double cTaskLib::Task_FormSpatialGroup(cTaskContext& ctx) const
 {
-  double t = (double) ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  double reward = 0.0;
-  int group_id = 0; 
+  int ideal_size = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  int group_id = 0;
   if (ctx.GetOrganism()->HasOpinion()) {
     group_id = ctx.GetOrganism()->GetOpinion().first;
   }
-  double g = (double) m_world->GetPopulation().NumberOfOrganismsInGroup(group_id);
-  double num = (t-g) * (t-g);
-  double denom = (t*t);
-  
-  reward = 1 - (num/denom);
-  if (reward < 0) reward = 0;
-  /*if (orgs_in_group < ideal_group_size) {
-    reward = orgs_in_group*orgs_in_group;
-    } else {
-    reward = ideal_group_size*ideal_group_size;
-    }
-    reward = reward / ideal_group_size;*/
-  return reward;
+  int group_size = m_world->GetPopulation().NumberOfOrganismsInGroup(group_id);
+  return avd_task_eval_form_spatial_group(ideal_size, group_size);
 }
 
 
@@ -2783,35 +2710,14 @@ void cTaskLib::Load_FormSpatialGroupWithID(const cString& name, const cString& a
 
 double cTaskLib::Task_FormSpatialGroupWithID(cTaskContext& ctx) const
 {
-  double t = (double) ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  int des_group_id = ctx.GetTaskEntry()->GetArguments().GetInt(1);
-  
-  double reward = 0.0;
-  int group_id = -1; 
+  int ideal_size = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  int desired_group_id = ctx.GetTaskEntry()->GetArguments().GetInt(1);
+  int group_id = -1;
   if (ctx.GetOrganism()->HasOpinion()) {
     group_id = ctx.GetOrganism()->GetOpinion().first;
   }
-	
-  // If the organism is in the group...
-  if (group_id == des_group_id) {
-    double g = (double) m_world->GetPopulation().NumberOfOrganismsInGroup(group_id);
-    // If the population size is less than the max size
-    if (g < t) {
-      reward = 1;
-    } else {
-      double num = (t-g) * (t-g);
-      double denom = (t*t);
-      
-      if (denom > 0) {
-	reward = 1 - (num/denom);
-	if (reward < 0) reward = 0;
-      } else {
-	reward = 0;
-      }
-    }	
-  }
-
-  return reward;
+  int group_size = m_world->GetPopulation().NumberOfOrganismsInGroup(group_id);
+  return avd_task_eval_form_spatial_group_with_id(ideal_size, group_id, desired_group_id, group_size);
 }
 
 /* Reward organisms for having a given group-id.*/
@@ -2830,20 +2736,10 @@ void cTaskLib::Load_LiveOnPatchRes(const cString& name, const cString& argstr, c
 
 double cTaskLib::Task_LiveOnPatchRes(cTaskContext& ctx) const
 {
-  int des_patch_id = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int patch_id = -1; 
-  if (ctx.GetOrganism()->HasOpinion()) {
-    patch_id = ctx.GetOrganism()->GetOpinion().first;
-  }
-  
-  // If the organism is in the group...
-  if (patch_id == des_patch_id) {
-    reward = 1;
-  }
-  
-  return reward;
+  // Identical to OpinionIs: reward if opinion matches desired patch ID.
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_opinion_is(&ctx.GetSnapshot());
 }
 
 void cTaskLib::Load_CollectOddCell(const cString& name, const cString& argstr, cEnvReqs& envreqs, Feedback& feedback)
@@ -2858,22 +2754,9 @@ void cTaskLib::Load_CollectOddCell(const cString& name, const cString& argstr, c
 
 double cTaskLib::Task_CollectOddCell(cTaskContext& ctx) const
 {
-  int even_odds = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  // If the organism is in an odd cell...
-  int cell_id_mod_2 = ctx.GetOrganism()->GetCellID()%2;
-  if (even_odds == 0) {
-    if (cell_id_mod_2 != 0){
-      reward = 1;
-    }
-  }
-  else {
-    if (cell_id_mod_2 == 0){
-      reward = 1;
-    }
-  }
-  return reward;
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_collect_odd_cell(&ctx.GetSnapshot());
 }
 
 /* Reward organisms for having found a targeted resource*/
@@ -3027,16 +2910,9 @@ double cTaskLib::Task_ConsumeTarget(cTaskContext& ctx) const
 
 double cTaskLib::Task_ConsumeTargetEcho(cTaskContext& ctx) const
 {
-  int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  double reward = 0.0;
-  int target_res = ctx.GetOrganism()->GetForageTarget();
-  
-  // If the organism is on the right resource...
-  if (target_res == des_target) {
-    reward = Task_Echo(ctx);
-  }
-  return reward;
+  ctx.EnsureSnapshot();
+  ctx.GetSnapshotMut().task_arg_int[0] = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  return avd_task_ctx_consume_target_echo(&ctx.GetSnapshot());
 }
 
 double cTaskLib::Task_ConsumeTargetNand(cTaskContext& ctx) const
@@ -3097,25 +2973,14 @@ double cTaskLib::Task_ConsumeTargetEqu(cTaskContext& ctx) const
 
 double cTaskLib::Task_MoveFT(cTaskContext& ctx) const
 {
-  double reward = 0.0;
-  bool moved = false;
-  
   int cell_id = ctx.GetOrganism()->GetCellID();
   if (m_world->GetConfig().USE_AVATARS.Get()) cell_id = ctx.GetOrganism()->GetAVCellID();
-  if (cell_id != ctx.GetOrganism()->GetPrevSeenCellID()) {
-    moved = true;
-  }
-
-  if (moved) {
-    int des_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-    
-    int target_res = ctx.GetOrganism()->GetForageTarget();
-    
-    // If the organism is on the right resource...
-    if (target_res == des_target) {
-      reward = 1;
-      ctx.GetOrganism()->SetPrevSeenCellID(cell_id);
-    }
+  int prev_seen = ctx.GetOrganism()->GetPrevSeenCellID();
+  int forage_target = ctx.GetOrganism()->GetForageTarget();
+  int desired_target = ctx.GetTaskEntry()->GetArguments().GetInt(0);
+  double reward = avd_task_eval_move_ft(cell_id, prev_seen, forage_target, desired_target);
+  if (reward > 0.0) {
+    ctx.GetOrganism()->SetPrevSeenCellID(cell_id);
   }
   return reward;
 }
@@ -3139,17 +3004,14 @@ double cTaskLib::Task_Exploded2(cTaskContext& ctx) const
 /*Charges organism for setting the autoinducer flag.*/
 double cTaskLib::Task_AIDisplayCost(cTaskContext& ctx) const
 {
-  cOrganism* org = ctx.GetOrganism();
-  return org->GetLyseDisplay();
-  
+  return avd_task_eval_ai_display_cost(avd_org_get_lyse_display(ctx.GetOrganism()));
 }
 
 /*Charges organism for producing public good.*/
 double cTaskLib::Task_ProducePublicGood(cTaskContext& ctx) const
 {
-  cOrganism* org = ctx.GetOrganism();
-  return org->GetPhenotype().GetKaboomExecuted();
-  
+  ctx.EnsureSnapshot();
+  return avd_task_ctx_produce_public_good(&ctx.GetSnapshot());
 }
 
 /*Reward organisms for having neighbors around them that are producing a public good. Currently assumes toroidal world.*/
@@ -3243,15 +3105,11 @@ void cTaskLib::Load_AllOnes(const cString& name, const cString& argstr, cEnvReqs
 
 double cTaskLib::Task_AllOnes(cTaskContext& ctx) const
 {
-  tBuffer<int> buf(ctx.GetOutputBuffer());
-  double num_ones = 0.0;
   int length = ctx.GetTaskEntry()->GetArguments().GetInt(0);
-  
-  for (int i=0; i<length; ++i) {
-    num_ones += buf[i];
-  }
-	
-  return (num_ones/length);
+  tBuffer<int> buf(ctx.GetOutputBuffer());
+  std::vector<int> flat(length);
+  for (int i = 0; i < length; i++) flat[i] = buf[i];
+  return avd_task_eval_all_ones(flat.data(), length, length);
 }
 
 
@@ -3267,29 +3125,13 @@ void cTaskLib::Load_RoyalRoad(const cString& name, const cString& argstr, cEnvRe
 
 double cTaskLib::Task_RoyalRoad(cTaskContext& ctx) const
 {
-  // block size
   int length = ctx.GetTaskEntry()->GetArguments().GetInt(0);
   int block_count = ctx.GetTaskEntry()->GetArguments().GetInt(1);
-  int block_size = floor(double(length) / double(block_count));
-  int block_reward; 
-  int current_spot;
-  double total_reward = 0.0;
   tBuffer<int> buf(ctx.GetOutputBuffer());
-  
-  // Cycle through each block. If a block is correct, then add a reward.
-  for (int i=0; i<block_count; ++i) {
-    block_reward = 1;
-    // AND the elements of each block.
-    for (int j=0; j<block_size; ++j) {
-      current_spot = i*block_size + j;
-      block_reward &= buf[current_spot];
-    }
-    
-    //				if (block_reward) total_reward += (block_size);
-    if (block_reward) total_reward ++;
-  }
-  
-  return (total_reward/block_count);
+  // Extract circular buffer to contiguous array for Rust FFI
+  std::vector<int> flat(length);
+  for (int i = 0; i < length; i++) flat[i] = buf[i];
+  return avd_task_eval_royal_road(flat.data(), length, length, block_count);
 }
 
 
@@ -3308,79 +3150,15 @@ void cTaskLib::Load_RoyalRoadWithDitches(const cString& name, const cString& arg
 
 double cTaskLib::Task_RoyalRoadWithDitches(cTaskContext& ctx) const
 {
-  // block size
   int length = ctx.GetTaskEntry()->GetArguments().GetInt(0);
   int block_count = ctx.GetTaskEntry()->GetArguments().GetInt(1);
-  int block_size = floor(double(length) / double(block_count));
-  int block_correct;
-  int num_b_blocks = 0;
-  int current_spot;
-  double total_reward = 0.0;
   int width = ctx.GetTaskEntry()->GetArguments().GetInt(2);
   int height = ctx.GetTaskEntry()->GetArguments().GetInt(3);
-  int next_case = 1;
-  int block_type = -1; // -1 undefined; 0 X; 1 A; 2 B
   tBuffer<int> buf(ctx.GetOutputBuffer());
-  
-  // Cycle through each block. If a block is correct, then add a reward.
-  for (int i=0; i<block_count; ++i) {
-    block_correct = 1;
-    block_type = -1;
-    
-    
-    // Identify the type of block... 
-    // Check for block A
-    for (int j=0; j<(block_size); ++j) {
-      current_spot = i*block_size + j;
-      block_correct &= buf[current_spot];
-    } 
-    
-    if (block_correct) block_type = 1;
-    
-    // Check for block B
-    if (block_type == -1) {
-      block_correct = 1;
-      for (int j=0; j<block_size; ++j) {
-	
-	current_spot = i*block_size + j;
-	
-	// For starter's lets just check for blocks of type B
-	if (j < (block_size -width)) { 
-	  if (buf[current_spot] == 0) block_correct = 0;
-	} else {
-	  if (buf[current_spot] == 1) block_correct = 0;
-	}
-	// this should escape the loop if the block reward is set to 0.
-	if (block_correct == 0) break;
-      }
-      if (block_correct) block_type = 2;
-    }
-
-    // Else consider it an X
-    if (block_type == -1) block_type = 0;
-    
-    // Based on the type of block... change states....
-    switch(next_case){
-    case 1:
-      if (block_type == 0) next_case = 2;
-      if (block_type == 1) {
-	total_reward = num_b_blocks + 2; 
-	next_case = 3; 
-      } 
-      if (block_type == 2) num_b_blocks++;
-      break;
-    case 2:
-      if(block_type == 1) total_reward = num_b_blocks + 2 - height;
-      next_case = 3;
-      break;
-    case 3: 		
-      break;
-    default: 
-      break;
-    }
-  }
-	
-  return (total_reward/block_count);
+  // Extract circular buffer to contiguous array for Rust FFI
+  std::vector<int> flat(length);
+  for (int i = 0; i < length; i++) flat[i] = buf[i];
+  return avd_task_eval_royal_road_wd(flat.data(), length, length, block_count, width, height);
 }
 
 	

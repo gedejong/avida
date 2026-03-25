@@ -22,6 +22,7 @@ Use this workflow for any migration slice. Pair with the program-docs rules belo
 - Preserve behavior parity by default (no silent policy changes).
 - Keep exported FFI signatures stable unless the slice explicitly changes API surface.
 - Prefer helper extraction and deterministic pure-function seams before stateful rewrites.
+- **CPU handler guard ordering**: When a C++ instruction handler has a guard (e.g., `if (!occupied) return false;`) BEFORE `FindModifiedRegister`, the guard MUST remain in C++ and execute BEFORE the Rust FFI call. Do NOT pass `FindModifiedRegister` as a function parameter to the Rust FFI — it would be evaluated before the guard, consuming a nop instruction and changing IP position even when the guard fails. Always: guard in C++ first, then call Rust.
 
 ### 4. Mandatory validation gates
 
@@ -94,9 +95,9 @@ When working at program scale, always read and maintain these documents:
 
 ---
 
-## Current Migration State (as of 2026-03-22, end of session 2)
+## Current Migration State (as of 2026-03-23, end of session 4)
 
-**550+ FFI exports. 553 Rust tests. ~18,000 LOC Rust across 41 modules.**
+**760+ FFI exports. 660 Rust tests. ~24,500 LOC Rust across 43 modules.**
 **9 `#[repr(C)]` type replacements**: Merit, CpuStack, CodeLabel, MutationRates, PhenotypeCoreMetrics, PhenotypeStatusFlags, PhenotypeLifetimeData, BirthEntryScalars, CpuRegisters. Plus GradientConfig, GradientState.
 
 ### Completed milestones:
@@ -105,23 +106,38 @@ When working at program scale, always read and maintain these documents:
 - **Issue #43**: Rust type system infrastructure
 - **Issue #48**: cPhenotype — 121 scalar fields in Rust, 11 energy methods, array bulk ops via FFI
 - **Issue #49**: cBirthEntry — 8 scalar fields in Rust
-- **Issue #50**: cTaskLib — 178/204 task eval functions (87%) in Rust; 26 remaining blocked on organism/deme/resource FFI
+- **Issue #50**: cTaskLib — 194/204 task eval functions (95.1%) in Rust; 10 remaining blocked on complex C++ deps
 - **Issues #51-52**: Wave 12 — newtype IDs, foundations established
 - **Issues #53-56**: Wave 13 — cResourceCount (41 FFI, 1,278 LOC Rust), cGradientCount (66 fields in Rust), cStats/cDeme foundations
-- **Issue #71**: CPU register operations — 32 instruction handlers ported to Rust
+- **Issue #58**: Organism/deme/population FFI — 36 read-only functions (expanded from 18; now includes deme, opinion, cell position, group count)
+- **Issue #58**: Organism FFI Phase 1 — +9 read-only functions (id, lyse_display, cell_data, input_at, stored_energy, is_fertile, is_germline, num_divides, kaboom_executed) + avd_hw_get_organism bridge
+- **Issue #57**: Hardware state FFI — 41 functions in cHardwareFFI.cc (heads, stacks, memory, registers, nop helpers, thread/cycle, labels/search, cAvidaContext RNG)
+- **Issue #57**: CPU instruction handlers — 140/513 (27.3%) delegate to Rust (register, conditional, stack, flow, head, mask, consensus, label, search, RNG-probabilistic, organism-read/write ops)
+- **Issue #74**: Viewer scaffold + simulation bridge — eframe app connected to live simulation via FFI (parked)
 
 ### Key infrastructure:
 - AvidaArray<T> shim with operator+/+=, RemoveAt, iterator support
 - FfiVec<T> for Rust-owned containers
 - AvidaRNG bit-exact Knuth subtractive generator in Rust
 - Newtype IDs: ReactionId, ResourceId, TaskId, CellId, OrganismId, DemeId
+- ConfigSnapshot (80 fields) + TaskContextSnapshot (26 fields) for Rust config/organism access
+- Buffer-pointer FFI pattern for variable-length data (RoyalRoad, AllOnes)
+- Parametric FFI pattern for tasks needing computed C++ values (FormSpatialGroup, resource-dependent)
 - 3 latent C++ bugs fixed (cDeme::Reset init, cResourceCount spatial cache, cBirthEntry Rule of Three)
 
-### PO priorities (updated 2026-03-22, after session 2):
-1. **DONE: Config access strategy (Option B)** — ConfigSnapshot (80 fields) + TaskContextSnapshot (26 fields) implemented. **Fix needed**: currently created per-task-call; must be hoisted to once-per-update in the simulation loop.
-2. **Task porting paused at 87%** (#50) — 178/204 done. Remaining 26 blocked on organism/deme/resource FFI. Will resume when those surfaces exist.
-3. **Next sprint: CPU instruction handlers** (#57) — 32 done, ~480 remaining. Highest ROI now that tasks are paused. Same `CpuRegisters` pattern.
-4. **Fix ConfigSnapshot hoisting** — move snapshot creation from per-task-call to once-per-update. Performance matters here since tasks are the hot path.
-5. **Viewer is an independent track** (#73-#81) — can proceed in parallel using Strategy A (thin C FFI around existing C++ viewer core). Do not block on migration progress.
-6. **Do NOT start Wave 14 yet** — cHardware/cOrganism/cPopulation/cWorld are 50K+ LOC of deeply coupled C++. Wait until Wave 12-13 are more complete.
-7. **Remaining 14 Apto::Array occurrences** — defer. Architectural decisions not blocking anything.
+### PO priorities (updated 2026-03-24, after session 13):
+
+**Situation**: The additive-seam approach is fully exploited. All major files scanned and extracted to their coupling ceiling:
+- Tasks: 192/204 (94.1%) — 12 remaining need complex organism/deme access
+- CPU handlers: 116/513 (22.6%) — ~397 remaining need organism access (293 org/world, 86 ctx+org, 15 label-complex, 3 private-state)
+- Seam extraction: cPopulationInterface, cLandscape, cBirthChamber, cStats, cEnvironment, cDeme all at plateau
+- 655 Rust tests, 710+ FFI exports, ~23.2K LOC Rust, 43 modules, 93% Rust line coverage
+
+**The next phase requires crossing the organism ownership boundary (Wave 14).**
+
+1. **Next: Thin mutable organism FFI** (#58) — the 36 read-only accessors unblocked tasks/viewer. Now add write accessors and organism method delegation (DoInput/DoOutput, division prep, energy updates) to unblock CPU handlers that modify organism state. Incremental, low-risk.
+2. **Continue: CPU handlers as organism FFI expands** (#57) — each new organism method exposed via FFI unblocks a batch of the 293 org-dependent handlers.
+3. **Future: Genome-level FFI for cBirthChamber** (#49) — 6 recombination methods identified as extractable once genome instruction manipulation is exposed.
+4. **Viewer is last** (#73-#81) — the ncurses TUI works.
+5. **Remaining 12 pure-C++ tasks** (#50) — defer until organism FFI is deep enough.
+6. **Remaining 14 Apto::Array occurrences** — defer.

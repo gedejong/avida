@@ -39,6 +39,33 @@ pub extern "C" fn avd_birth_scalars_default() -> BirthEntryScalars {
     BirthEntryScalars::default()
 }
 
+/// Check if a birth entry is still valid (not timed out).
+///
+/// Returns 1 if valid, 0 if expired or empty.
+/// `max_wait_time`: from config `MAX_BIRTH_WAIT_TIME`, -1 means no timeout.
+/// `cur_update`: current simulation update counter.
+#[no_mangle]
+pub extern "C" fn avd_birth_is_valid_entry(
+    timestamp: c_int,
+    max_wait_time: c_int,
+    cur_update: c_int,
+) -> c_int {
+    // No organism in entry
+    if timestamp == -1 {
+        return 0;
+    }
+    // No timeout configured
+    if max_wait_time == -1 {
+        return 1;
+    }
+    // Check if too many updates have passed
+    if cur_update > timestamp + max_wait_time {
+        0
+    } else {
+        1
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,5 +98,30 @@ mod tests {
         let s2 = s;
         assert_eq!(s2.mating_type, 5);
         assert_eq!(s2.timestamp, 42);
+    }
+
+    #[test]
+    fn test_valid_entry_empty() {
+        assert_eq!(avd_birth_is_valid_entry(-1, 100, 50), 0);
+    }
+
+    #[test]
+    fn test_valid_entry_no_timeout() {
+        assert_eq!(avd_birth_is_valid_entry(10, -1, 99999), 1);
+    }
+
+    #[test]
+    fn test_valid_entry_within_timeout() {
+        assert_eq!(avd_birth_is_valid_entry(10, 100, 50), 1);
+    }
+
+    #[test]
+    fn test_valid_entry_expired() {
+        assert_eq!(avd_birth_is_valid_entry(10, 100, 111), 0);
+    }
+
+    #[test]
+    fn test_valid_entry_at_boundary() {
+        assert_eq!(avd_birth_is_valid_entry(10, 100, 110), 1); // exactly at max
     }
 }

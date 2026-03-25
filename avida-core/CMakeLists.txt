@@ -186,6 +186,7 @@ SET(CPU_SOURCES
   ${CPU_DIR}/cHardwareBase.cc
   ${CPU_DIR}/cHardwareBCR.cc
   ${CPU_DIR}/cHardwareCPU.cc
+  ${CPU_DIR}/cHardwareFFI.cc
   ${CPU_DIR}/cHardwareExperimental.cc
   ${CPU_DIR}/cHardwareGP8.cc
   ${CPU_DIR}/cHardwareManager.cc
@@ -444,6 +445,15 @@ IF(AVD_RUST_ENABLED)
   ENDIF(NOT AVD_RUST_LIB_PATH)
   ADD_LIBRARY(avida-rust STATIC IMPORTED)
   SET_PROPERTY(TARGET avida-rust PROPERTY IMPORTED_LOCATION "${AVD_RUST_LIB_PATH}")
+  # Force all symbols from the Rust library to be loaded, resolving the
+  # circular dependency between avida-core (C++) and avida-rust (Rust).
+  # Without this, Rust functions that call back into C++ FFI would have
+  # unresolved symbols because the linker only loads .a members on demand.
+  IF(APPLE)
+    SET(AVD_RUST_LINK_FLAGS "-force_load" "${AVD_RUST_LIB_PATH}")
+  ELSE()
+    SET(AVD_RUST_LINK_FLAGS "-Wl,--whole-archive" "${AVD_RUST_LIB_PATH}" "-Wl,--no-whole-archive")
+  ENDIF()
 ENDIF(AVD_RUST_ENABLED)
 
 OPTION(AVD_CMDLINE
@@ -461,9 +471,10 @@ IF(AVD_CMDLINE)
   ADD_EXECUTABLE(avida ${AVIDA_CMDLINE_SOURCES})
   endif()
 
-  SET(AVIDA_CMDLINE_LIBS aptostatic avida-core aptostatic)
   IF(AVD_RUST_ENABLED)
-    LIST(APPEND AVIDA_CMDLINE_LIBS avida-rust)
+    SET(AVIDA_CMDLINE_LIBS ${AVD_RUST_LINK_FLAGS} aptostatic avida-core aptostatic)
+  ELSE()
+    SET(AVIDA_CMDLINE_LIBS aptostatic avida-core aptostatic)
   ENDIF(AVD_RUST_ENABLED)
   IF(AVD_ENABLE_TCMALLOC)
     LIST(APPEND AVIDA_CMDLINE_LIBS tcmalloc-1.4)
@@ -523,9 +534,10 @@ IF(AVD_GUI_NCURSES)
     SOURCE_GROUP(targets\\avida-viewer FILES ${AVIDA_VIEWER_SOURCES})
     ADD_EXECUTABLE(avida-viewer ${AVIDA_VIEWER_SOURCES})
     
-    SET(AVIDA_VIEWER_LIBS avida-core aptostatic ${NCURSES_LIBRARY})
     IF(AVD_RUST_ENABLED)
-      LIST(APPEND AVIDA_VIEWER_LIBS avida-rust)
+      SET(AVIDA_VIEWER_LIBS ${AVD_RUST_LINK_FLAGS} avida-core aptostatic ${NCURSES_LIBRARY})
+    ELSE()
+      SET(AVIDA_VIEWER_LIBS avida-core aptostatic ${NCURSES_LIBRARY})
     ENDIF(AVD_RUST_ENABLED)
     IF(NOT MSVC)
       LIST(APPEND AVIDA_VIEWER_LIBS pthread)
@@ -574,9 +586,10 @@ IF(AVD_GUI_PROTOTYPE_TEXT)
     SOURCE_GROUP(targets\\viewer-text FILES ${AVIDA_TEXT_VIEWER_SOURCES})
     ADD_EXECUTABLE(avida-text ${AVIDA_TEXT_VIEWER_SOURCES} ${Viewer_SOURCES} ${COREGUI_SOURCES})
     
-    SET(AVIDA_TEXT_VIEWER_LIBS avida-core ${NCURSES_LIBRARY})
     IF(AVD_RUST_ENABLED)
-      LIST(APPEND AVIDA_TEXT_VIEWER_LIBS avida-rust)
+      SET(AVIDA_TEXT_VIEWER_LIBS ${AVD_RUST_LINK_FLAGS} avida-core ${NCURSES_LIBRARY})
+    ELSE()
+      SET(AVIDA_TEXT_VIEWER_LIBS avida-core ${NCURSES_LIBRARY})
     ENDIF(AVD_RUST_ENABLED)
     IF(NOT MSVC)
       LIST(APPEND AVIDA_TEXT_VIEWER_LIBS pthread)
@@ -631,9 +644,12 @@ IF(AVD_UNIT_TESTS)
     ${TOOLS_DIR}/cRunningAverage.cc
   )
   ADD_EXECUTABLE(unit-tests ${UNIT_TESTS_SOURCES})
-  TARGET_LINK_LIBRARIES(unit-tests aptostatic)
   IF(AVD_RUST_ENABLED)
-    TARGET_LINK_LIBRARIES(unit-tests avida-rust)
+    # Unit tests need avida-core because force-loading the Rust lib pulls in
+    # CPU instruction handlers that reference cHardwareFFI symbols.
+    TARGET_LINK_LIBRARIES(unit-tests ${AVD_RUST_LINK_FLAGS} avida-core aptostatic)
+  ELSE()
+    TARGET_LINK_LIBRARIES(unit-tests aptostatic)
   ENDIF(AVD_RUST_ENABLED)
   INSTALL_TARGETS(/work unit-tests)
 ENDIF(AVD_UNIT_TESTS)

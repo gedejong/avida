@@ -311,6 +311,31 @@ public:
 
   int GetActiveStack() const { return m_threads[m_cur_thread].cur_stack; }
 
+  // --------  FFI forwarding methods (expose protected ops for Rust)  --------
+  void FFI_StackPush(int value) { StackPush(value); }
+  int FFI_StackPop() { return StackPop(); }
+  void FFI_SwitchStack() { SwitchStack(); }
+  void FFI_StackFlip() { StackFlip(); }
+  void FFI_StackClear() { StackClear(); }
+  int FFI_FindModifiedRegister(int default_reg) { return FindModifiedRegister(default_reg); }
+  int FFI_FindModifiedNextRegister(int default_reg) { return FindModifiedNextRegister(default_reg); }
+  int FFI_FindModifiedHead(int default_head) { return FindModifiedHead(default_head); }
+  CpuRegisters* FFI_GetRegs() { return m_threads[m_cur_thread].regs_rust(); }
+  int FFI_GetThreadID() { return m_threads[m_cur_thread].GetID(); }
+  unsigned int FFI_GetCycleCounter() { return m_cycle_counter; }
+  void FFI_SetCurHead(int head_id) { m_threads[m_cur_thread].cur_head = static_cast<unsigned char>(head_id); }
+  void FFI_ReadLabel() { ReadLabel(); }
+  int FFI_GetLabelAsInt(int base) { return GetLabel().AsInt(base); }
+  int FFI_GetLabelAsIntGreyCode(int base) { return GetLabel().AsIntGreyCode(base); }
+  int FFI_GetLabelAsIntDirect(int base) { return GetLabel().AsIntDirect(base); }
+  int FFI_GetLabelAsIntAdditivePolynomial(int base) { return GetLabel().AsIntAdditivePolynomial(base); }
+  int FFI_GetLabelAsIntFib(int base) { return GetLabel().AsIntFib(base); }
+  int FFI_GetLabelAsIntPolynomialCoefficent(int base) { return GetLabel().AsIntPolynomialCoefficent(base); }
+  int FFI_IfLabelMatch() { GetLabel().Rotate(1, NUM_NOPS); return (GetLabel() != GetReadLabel()) ? 1 : 0; }
+  int FFI_IfLabelDirectMatch() { return (GetLabel() != GetReadLabel()) ? 1 : 0; }
+  int FFI_SearchLabel(int direction) { GetLabel().Rotate(1, NUM_NOPS); return FindLabel(direction).GetPosition(); }
+  int FFI_GetLabelSize() { return GetLabel().GetSize(); }
+
 
 private:
   // ---------- Instruction Library -----------

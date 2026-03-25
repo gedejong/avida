@@ -1283,15 +1283,73 @@ double avd_task_ctx_move_neutral_gradient(const TaskContextSnapshot* ctx);
 double avd_task_ctx_move_down_gradient(const TaskContextSnapshot* ctx);
 double avd_task_ctx_move_not_up_gradient(const TaskContextSnapshot* ctx);
 double avd_task_ctx_event_killed(const TaskContextSnapshot* ctx);
+double avd_task_ctx_consume_target_echo(const TaskContextSnapshot* ctx);
+double avd_task_ctx_collect_odd_cell(const TaskContextSnapshot* ctx);
+double avd_task_ctx_produce_public_good(const TaskContextSnapshot* ctx);
+double avd_task_eval_fibonacci_seq(int* seq, int* count, int output_value, int target_count, double penalty);
+void avd_landscape_entropy_complexity(const int* site_count, int genome_size, int inst_set_size, double* out_entropy, double* out_complexity);
+int avd_birth_is_valid_entry(int timestamp, int max_wait_time, int cur_update);
+double avd_task_eval_ai_display_cost(int lyse_display);
+double avd_task_eval_move_to_event(const int* event_ids, int num_events, int cell_data);
+double avd_task_eval_royal_road(const int* buf, int buf_len, int length, int block_count);
+double avd_task_eval_royal_road_wd(const int* buf, int buf_len, int length, int block_count, int width, int height);
+double avd_task_eval_form_spatial_group(int ideal_size, int group_size);
+double avd_task_eval_form_spatial_group_with_id(int ideal_size, int group_id, int desired_group_id, int group_size);
+double avd_task_eval_comm_echo(int output_value, const int* neighbor_values, int count);
+double avd_task_eval_comm_not(int output_value, const int* neighbor_values, int count);
+double avd_task_eval_nand_res_dep(int logic_id, double pheromone_amount);
+double avd_task_eval_nor_res_dep(int logic_id, double pheromone_amount);
+double avd_task_eval_move_ft(int effective_cell_id, int prev_seen_cell_id, int forage_target, int desired_target);
+double avd_task_eval_all_ones(const int* buf, int buf_len, int length);
+double avd_task_eval_move_to_side(int cell_pos_x, int target_x);
+double avd_task_eval_move(int effective_cell_id, int prev_seen_cell_id);
+double avd_task_eval_move_to_target(int cell_data, int current_cell, int prev_target);
 
-// ---- Organism/Cell/Population read-only FFI ----
+// Forward declaration needed for popif helpers
+typedef struct cAvidaContext cAvidaContext;
+
+// ---- cPopulationInterface deterministic helpers ----
+int avd_popif_av_faced_cell(int old_cell_id, int facing, int x_size, int y_size, int num_demes, int world_geometry, cAvidaContext* ctx);
+int avd_popif_rotate_av(int current_facing, int increment);
+int avd_popif_av_num_neighbors(int cell_id, int x_size, int y_size, int num_demes, int world_geometry);
+int avd_popif_message_send_policy(int drop_hit, int cell_occupied, int neural_networking, int use_avatars_2, int num_av_inputs, int self_communication, int has_other_input_av);
+
+// ---- Organism/Cell/Population/Deme read-only FFI ----
 // Opaque pointers — C++ retains ownership, Rust reads through these.
 typedef struct cOrganism cOrganism;
 typedef struct cPopulationCell cPopulationCell;
 typedef struct cPopulation cPopulation;
 typedef struct cWorld cWorld;
+typedef struct cDeme cDeme;
 
+// Organism accessors
 double avd_org_get_fitness(cOrganism* org);
+int avd_org_get_id(cOrganism* org);
+int avd_org_get_lyse_display(cOrganism* org);
+int avd_org_get_cell_data_org(cOrganism* org);
+int avd_org_get_input_at(cOrganism* org, int index);
+double avd_org_get_stored_energy(cOrganism* org);
+int avd_org_is_fertile(cOrganism* org);
+int avd_org_is_germline(cOrganism* org);
+int avd_org_get_num_divides(cOrganism* org);
+int avd_org_get_kaboom_executed(cOrganism* org);
+int avd_org_get_reputation(cOrganism* org);
+int avd_org_get_faced_dir(cOrganism* org);
+int avd_org_get_northerly(cOrganism* org);
+int avd_org_get_easterly(cOrganism* org);
+int avd_org_get_neighbor_cell_contents(cOrganism* org);
+int avd_org_get_faced_cell_data_org_id(cOrganism* org);
+int avd_org_get_number_strings_on_hand(cOrganism* org, int type);
+int avd_org_get_mating_type(cOrganism* org);
+double avd_org_get_energy_in_buffer(cOrganism* org);
+int avd_org_get_cell_y_position(cOrganism* org);
+cOrganism* avd_org_get_neighbor(cOrganism* org);
+int avd_org_is_neighbor_cell_occupied(cOrganism* org);
+int avd_org_is_dead(cOrganism* org);
+double avd_org_get_vitality(cOrganism* org);
+int avd_org_get_discrete_energy_level(cOrganism* org);
+int avd_org_get_cell_position_x(cOrganism* org);
+int avd_org_get_opinion_only(cOrganism* org);
 double avd_org_get_merit(cOrganism* org);
 int avd_org_get_gestation_time(cOrganism* org);
 int avd_org_get_genome_length(cOrganism* org);
@@ -1300,18 +1358,243 @@ int avd_org_get_cell_id(cOrganism* org);
 double avd_org_get_cur_bonus(cOrganism* org);
 int avd_org_get_generation(cOrganism* org);
 int avd_org_get_time_used(cOrganism* org);
+int avd_org_get_av_cell_id(cOrganism* org);
+int avd_org_get_prev_seen_cell_id(cOrganism* org);
+void avd_org_set_prev_seen_cell_id(cOrganism* org, int id);
+int avd_org_has_opinion(cOrganism* org);
+int avd_org_get_opinion_value(cOrganism* org);
+cDeme* avd_org_get_deme(cOrganism* org);
+// Phase 1c read-only (session 15-16)
+int avd_org_get_reputation(cOrganism* org);
+int avd_org_get_faced_dir(cOrganism* org);
+int avd_org_get_northerly(cOrganism* org);
+int avd_org_get_easterly(cOrganism* org);
+int avd_org_get_neighbor_cell_contents(cOrganism* org);
+int avd_org_get_faced_cell_data_org_id(cOrganism* org);
+int avd_org_get_number_strings_on_hand(cOrganism* org, int type);
+int avd_org_get_mating_type(cOrganism* org);
+double avd_org_get_energy_in_buffer(cOrganism* org);
+int avd_org_get_cell_y_position(cOrganism* org);
+cOrganism* avd_org_get_neighbor(cOrganism* org);
+int avd_org_is_neighbor_cell_occupied(cOrganism* org);
+int avd_org_is_dead(cOrganism* org);
+double avd_org_get_vitality(cOrganism* org);
+int avd_org_get_discrete_energy_level(cOrganism* org);
+int avd_org_get_cell_position_x(cOrganism* org);
+int avd_org_get_opinion_only(cOrganism* org);
+// Phase 2: mutable organism state
+void avd_org_reduce_energy(cOrganism* org, double amount);
+void avd_org_increase_energy_donated(cOrganism* org, double amount);
+void avd_org_receive_donated_energy(cOrganism* org, double amount);
+void avd_org_apply_donated_energy(cOrganism* org);
+void avd_org_set_frac_energy_donating(cOrganism* org, double frac);
+void avd_org_set_fertile(cOrganism* org, int value);
+void avd_org_set_kaboom_executed(cOrganism* org, int value);
+void avd_org_set_is_energy_donor(cOrganism* org);
+void avd_org_set_is_energy_receiver(cOrganism* org);
+void avd_org_set_cur_bonus(cOrganism* org, double value);
+double avd_org_get_rbin(cOrganism* org, int index);
+int avd_org_get_num_rbins(cOrganism* org);
+void avd_org_add_to_rbin(cOrganism* org, int index, double amount);
+void avd_org_set_rbin(cOrganism* org, int index, double value);
+void avd_org_set_pheromone(cOrganism* org, int value);
+void avd_org_set_is_energy_requestor(cOrganism* org);
+void avd_org_increase_num_energy_requests(cOrganism* org);
+void avd_org_set_has_open_energy_request(cOrganism* org);
+void avd_org_clear_has_open_energy_request(cOrganism* org);
+double avd_org_get_frac_energy_donating(cOrganism* org);
 
+// Cell accessors
 int avd_cell_is_occupied(cPopulationCell* cell);
 cOrganism* avd_cell_get_organism(cPopulationCell* cell);
 int avd_cell_get_id(cPopulationCell* cell);
 int avd_cell_get_deme_id(cPopulationCell* cell);
+int avd_cell_get_data(cPopulationCell* cell);
+int avd_cell_get_x(cPopulationCell* cell);
+int avd_cell_get_y(cPopulationCell* cell);
 
+// Population accessors
 cPopulationCell* avd_pop_get_cell(cPopulation* pop, int cell_id);
 int avd_pop_get_size(cPopulation* pop);
 int avd_pop_get_num_organisms(cPopulation* pop);
+int avd_pop_get_num_demes(cPopulation* pop);
+cDeme* avd_pop_get_deme(cPopulation* pop, int deme_id);
+int avd_pop_get_num_in_group(cPopulation* pop, int group_id);
 
+// Deme accessors
+int avd_deme_get_id(cDeme* deme);
+int avd_deme_get_size(cDeme* deme);
+int avd_deme_get_width(cDeme* deme);
+int avd_deme_get_height(cDeme* deme);
+int avd_deme_get_cell_position_x(cDeme* deme, int cell_id);
+int avd_deme_get_cell_position_y(cDeme* deme, int cell_id);
+int avd_deme_get_relative_cell_id(cDeme* deme, int absolute_cell_id);
+int avd_deme_get_num_events(cDeme* deme);
+int avd_deme_get_cell_event_id(cDeme* deme, int event_idx);
+int avd_deme_get_org_count(cDeme* deme);
+
+// World accessors
 cPopulation* avd_world_get_population(cWorld* world);
 int avd_world_get_update(cWorld* world);
+
+// ---- Hardware (CPU) FFI ----
+// Opaque pointer: cHardwareBase* — always safe-cast to cHardwareCPU* inside.
+typedef struct cHardwareBase cHardwareBase;
+
+// Head accessors (head_id: 0=IP, 1=READ, 2=WRITE, 3=FLOW)
+int avd_hw_get_head_position(cHardwareBase* hw, int head_id);
+void avd_hw_set_head_position(cHardwareBase* hw, int head_id, int pos);
+int avd_hw_get_ip_position(cHardwareBase* hw);
+void avd_hw_set_ip_position(cHardwareBase* hw, int pos);
+void avd_hw_advance_ip(cHardwareBase* hw);
+
+// Stack accessors (active stack for current thread)
+void avd_hw_stack_push(cHardwareBase* hw, int value);
+int avd_hw_stack_pop(cHardwareBase* hw);
+void avd_hw_switch_stack(cHardwareBase* hw);
+void avd_hw_stack_flip(cHardwareBase* hw);
+void avd_hw_stack_clear(cHardwareBase* hw);
+int avd_hw_get_stack(cHardwareBase* hw, int depth, int stack_id);
+int avd_hw_get_cur_stack_id(cHardwareBase* hw);
+
+// Register accessors
+int avd_hw_get_register(cHardwareBase* hw, int reg_id);
+void avd_hw_set_register(cHardwareBase* hw, int reg_id, int value);
+CpuRegisters* avd_hw_get_regs(cHardwareBase* hw);
+
+// Register/nop helpers (FindModifiedRegister has IP side effects)
+int avd_hw_find_modified_register(cHardwareBase* hw, int default_reg);
+int avd_hw_find_modified_next_register(cHardwareBase* hw, int default_reg);
+int avd_hw_find_next_register(int base_reg);
+int avd_hw_find_modified_head(cHardwareBase* hw, int default_head);
+
+// Memory accessors
+int avd_hw_get_memory_size(cHardwareBase* hw);
+int avd_hw_get_memory_inst(cHardwareBase* hw, int idx);
+void avd_hw_set_memory_inst(cHardwareBase* hw, int idx, int inst_id);
+int avd_hw_get_memory_flags(cHardwareBase* hw, int idx);
+cOrganism* avd_hw_get_organism(cHardwareBase* hw);
+int avd_hw_get_inst_set_size(cHardwareBase* hw);
+
+// ---- cAvidaContext RNG accessors ----
+int avd_ctx_random_p(cAvidaContext* ctx, double prob);
+int avd_ctx_random_get_uint(cAvidaContext* ctx, unsigned int max);
+double avd_ctx_random_get_double(cAvidaContext* ctx);
+int avd_ctx_random_get_int(cAvidaContext* ctx, int max);
+int avd_hw_get_inst_at_raw_pos(cHardwareBase* hw, int raw_pos);
+int avd_hw_get_thread_id(cHardwareBase* hw);
+int avd_hw_get_cycle_counter(cHardwareBase* hw);
+void avd_hw_advance_head(cHardwareBase* hw, int head_id);
+void avd_hw_set_cur_head(cHardwareBase* hw, int head_id);
+void avd_hw_read_label(cHardwareBase* hw);
+int avd_hw_get_label_as_int(cHardwareBase* hw, int mode);
+int avd_hw_if_label_match(cHardwareBase* hw);
+int avd_hw_if_label_direct_match(cHardwareBase* hw);
+int avd_hw_search_label(cHardwareBase* hw, int direction);
+int avd_hw_get_label_size(cHardwareBase* hw);
+
+// ---- CPU instruction handlers (Rust-backed) ----
+// Stack operations
+void avd_cpu_inst_push(cHardwareBase* hw, const CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_pop(cHardwareBase* hw, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_switch_stack(cHardwareBase* hw);
+void avd_cpu_inst_flip_stack(cHardwareBase* hw);
+void avd_cpu_inst_head_pop(cHardwareBase* hw, int head_id);
+// Flow control
+int avd_cpu_inst_mov_head(cHardwareBase* hw, int head_id);
+int avd_cpu_inst_jmp_head(cHardwareBase* hw, const CpuRegisters* regs, int head_id, int reg_id);
+void avd_cpu_inst_get_head(cHardwareBase* hw, CpuRegisters* regs, int head_id, int reg_id);
+void avd_cpu_inst_set_flow(cHardwareBase* hw, const CpuRegisters* regs, int reg_id);
+// Conditional evaluators: return 1 if IP should advance (skip next), 0 otherwise.
+int avd_cpu_inst_if_n_equ(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_a_not_eq_b(const CpuRegisters* regs);
+int avd_cpu_inst_if_b_not_eq_c(const CpuRegisters* regs);
+int avd_cpu_inst_if_a_not_eq_c(const CpuRegisters* regs);
+int avd_cpu_inst_if_bit1(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_consensus(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_consensus24(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_less_consensus(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_less_consensus24(const CpuRegisters* regs, int op1, int op2);
+// Hardware-calling handlers
+void avd_cpu_inst_return(cHardwareBase* hw);
+void avd_cpu_inst_skip(cHardwareBase* hw);
+void avd_cpu_inst_advance_head(cHardwareBase* hw, int head_id);
+void avd_cpu_inst_set_head(cHardwareBase* hw, int head_id);
+void avd_cpu_inst_mem_size(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_thread_id(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_cycles(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_if_gr_equ(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_p(cAvidaContext* ctx, double skip_prob);
+void avd_cpu_inst_set_num(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_val_label(cHardwareBase* hw, int reg_id, int mode);
+int avd_cpu_inst_if_label(cHardwareBase* hw);
+int avd_cpu_inst_if_label_direct(cHardwareBase* hw);
+void avd_cpu_inst_search_f(cHardwareBase* hw, CpuRegisters* regs);
+void avd_cpu_inst_search_b(cHardwareBase* hw, CpuRegisters* regs);
+void avd_cpu_inst_read_inst(cHardwareBase* hw, CpuRegisters* regs, int dst, int src);
+void avd_cpu_inst_stack_read_inst(cHardwareBase* hw, const CpuRegisters* regs, int src);
+int avd_cpu_inst_if_0(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_not_0(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_equ(const CpuRegisters* regs, int op1, int op2);
+// Register operations
+void avd_cpu_reg_mask(CpuRegisters* regs, int reg_id, int mask);
+void avd_cpu_reg_nor(CpuRegisters* regs, int dst, int op1, int op2);
+// BitConsensus value producers
+void avd_cpu_inst_bit_consensus(CpuRegisters* regs, int dst, int src);
+void avd_cpu_inst_bit_consensus24(CpuRegisters* regs, int dst, int src);
+int avd_cpu_inst_if_less(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_grtr(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_less_equ(const CpuRegisters* regs, int op1, int op2);
+int avd_cpu_inst_if_gr0(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_gr_equ0(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_less0(const CpuRegisters* regs, int op);
+int avd_cpu_inst_if_ls_equ0(const CpuRegisters* regs, int op);
+// Mutable organism handlers (Phase 2)
+void avd_cpu_inst_sterilize(cHardwareBase* hw);
+void avd_cpu_inst_phero_on(cHardwareBase* hw);
+void avd_cpu_inst_phero_off(cHardwareBase* hw);
+void avd_cpu_inst_request_energy_flag_on(cHardwareBase* hw);
+void avd_cpu_inst_request_energy_flag_off(cHardwareBase* hw);
+void avd_cpu_inst_increase_energy_donation(cHardwareBase* hw, double increment);
+// Organism-reading handlers
+int avd_cpu_inst_if_germ(cHardwareBase* hw);
+int avd_cpu_inst_if_soma(cHardwareBase* hw);
+void avd_cpu_inst_get_id(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_if_fertile(cHardwareBase* hw);
+int avd_cpu_inst_if_not_fertile(cHardwareBase* hw);
+void avd_cpu_inst_get_cell_id(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_energy_level(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_reputation(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_direction_off_north(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_northerly(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_easterly(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_read_cell_data(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_read_faced_cell_data_org_id(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_raw_materials(cHardwareBase* hw, int reg_id, int material_type);
+void avd_cpu_inst_get_cell_position_y(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_if_opinion_set(cHardwareBase* hw);
+int avd_cpu_inst_if_opinion_not_set(cHardwareBase* hw);
+int avd_cpu_inst_if_event_in_cell(cHardwareBase* hw);
+int avd_cpu_inst_if_facing_event_cell(cHardwareBase* hw);
+int avd_cpu_inst_if_mating_type_female(cHardwareBase* hw);
+int avd_cpu_inst_if_mating_type_male(cHardwareBase* hw);
+int avd_cpu_inst_if_mating_type_juvenile(cHardwareBase* hw);
+int avd_cpu_inst_if_energy_not_in_buffer(cHardwareBase* hw);
+int avd_cpu_inst_nop_pre(cHardwareBase* hw);
+int avd_cpu_inst_nop_post(cHardwareBase* hw);
+// Neighbor-reading handlers (return 0 on failure, 1 on success)
+int avd_cpu_inst_get_faced_org_id(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_get_faced_vitality_diff(cHardwareBase* hw, int reg_id);
+// Energy conditionals
+int avd_cpu_inst_if_energy_low(cHardwareBase* hw);
+int avd_cpu_inst_if_energy_not_low(cHardwareBase* hw);
+int avd_cpu_inst_if_energy_high(cHardwareBase* hw);
+int avd_cpu_inst_if_energy_not_high(cHardwareBase* hw);
+int avd_cpu_inst_if_energy_med(cHardwareBase* hw);
+int avd_cpu_inst_get_energy_level_guarded(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_get_cell_position_x(cHardwareBase* hw, int reg_id);
+int avd_cpu_inst_get_cell_position_y_guarded(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_get_opinion_only(cHardwareBase* hw, int reg_id);
 
 #ifdef __cplusplus
 }

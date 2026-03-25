@@ -931,6 +931,491 @@ pub extern "C" fn avd_task_eval_math2in(
     0.0
 }
 
+// ---------------------------------------------------------------------------
+// FormSpatialGroup / FormSpatialGroupWithID — parametric FFI
+// ---------------------------------------------------------------------------
+
+/// Task_FormSpatialGroup: reward = max(0, 1 - ((t - g)^2 / t^2))
+/// where t = ideal group size, g = actual group size.
+///
+/// # Safety
+/// No pointers involved — pure scalar computation.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_form_spatial_group(ideal_size: c_int, group_size: c_int) -> f64 {
+    let t = f64::from(ideal_size);
+    let g = f64::from(group_size);
+    if t == 0.0 {
+        return 0.0;
+    }
+    let num = (t - g) * (t - g);
+    let denom = t * t;
+    let reward = 1.0 - (num / denom);
+    if reward < 0.0 {
+        0.0
+    } else {
+        reward
+    }
+}
+
+/// Task_FormSpatialGroupWithID: if organism's group matches desired group,
+/// compute reward. If group_size < ideal_size, reward = 1.0. Otherwise
+/// uses same quadratic penalty as FormSpatialGroup.
+///
+/// # Safety
+/// No pointers involved — pure scalar computation.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_form_spatial_group_with_id(
+    ideal_size: c_int,
+    group_id: c_int,
+    desired_group_id: c_int,
+    group_size: c_int,
+) -> f64 {
+    if group_id != desired_group_id {
+        return 0.0;
+    }
+    let t = f64::from(ideal_size);
+    let g = f64::from(group_size);
+    if g < t {
+        return 1.0;
+    }
+    if t == 0.0 {
+        return 0.0;
+    }
+    let num = (t - g) * (t - g);
+    let denom = t * t;
+    let reward = 1.0 - (num / denom);
+    if reward < 0.0 {
+        0.0
+    } else {
+        reward
+    }
+}
+
+// ---------------------------------------------------------------------------
+// CommEcho / CommNot — neighbor-buffer FFI
+// ---------------------------------------------------------------------------
+
+/// Task_CommEcho: returns 1.0 if `output_value` matches any value in the
+/// flattened neighbor input buffer.
+///
+/// # Safety
+/// `neighbor_values` must point to at least `count` valid `c_int` values,
+/// or be null (returns 0.0).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_comm_echo(
+    output_value: c_int,
+    neighbor_values: *const c_int,
+    count: c_int,
+) -> f64 {
+    if neighbor_values.is_null() || count <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees neighbor_values points to at least count valid ints.
+    let slice = unsafe { std::slice::from_raw_parts(neighbor_values, count as usize) };
+    for &val in slice {
+        if output_value == val {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
+/// Task_CommNot: returns 1.0 if `output_value` matches `-(val + 1)` for any
+/// value in the flattened neighbor input buffer (bitwise NOT for two's complement).
+///
+/// # Safety
+/// `neighbor_values` must point to at least `count` valid `c_int` values,
+/// or be null (returns 0.0).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_comm_not(
+    output_value: c_int,
+    neighbor_values: *const c_int,
+    count: c_int,
+) -> f64 {
+    if neighbor_values.is_null() || count <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees neighbor_values points to at least count valid ints.
+    let slice = unsafe { std::slice::from_raw_parts(neighbor_values, count as usize) };
+    for &val in slice {
+        if output_value == (0i32.wrapping_sub(val.wrapping_add(1))) {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
+// ---------------------------------------------------------------------------
+// Nand/Nor_ResourceDependent — parametric FFI
+// ---------------------------------------------------------------------------
+
+/// Task_Nand_ResourceDependent: returns 1.0 if logic_id is 63, 95, or 119
+/// AND pheromone_amount < crossover_level (100.0).
+#[no_mangle]
+pub extern "C" fn avd_task_eval_nand_res_dep(logic_id: c_int, pheromone_amount: f64) -> f64 {
+    const CROSSOVER: f64 = 100.0;
+    if !(logic_id == 63 || logic_id == 95 || logic_id == 119) {
+        return 0.0;
+    }
+    if pheromone_amount < CROSSOVER {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_Nor_ResourceDependent: returns 1.0 if logic_id is 3, 5, or 17
+/// AND pheromone_amount > crossover_level (100.0).
+#[no_mangle]
+pub extern "C" fn avd_task_eval_nor_res_dep(logic_id: c_int, pheromone_amount: f64) -> f64 {
+    const CROSSOVER: f64 = 100.0;
+    if !(logic_id == 3 || logic_id == 5 || logic_id == 17) {
+        return 0.0;
+    }
+    if pheromone_amount > CROSSOVER {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// MoveFT — parametric FFI
+// ---------------------------------------------------------------------------
+
+/// Task_MoveFT: returns 1.0 if organism moved (cell_id != prev_seen) AND
+/// forage_target matches desired_target.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_move_ft(
+    effective_cell_id: c_int,
+    prev_seen_cell_id: c_int,
+    forage_target: c_int,
+    desired_target: c_int,
+) -> f64 {
+    if effective_cell_id == prev_seen_cell_id {
+        return 0.0;
+    }
+    if forage_target == desired_target {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AllOnes — buffer-pointer FFI (variable-length output buffer)
+// ---------------------------------------------------------------------------
+
+/// Task_AllOnes: average of the first `length` output buffer values.
+///
+/// # Safety
+/// `buf` must point to at least `buf_len` valid `c_int` values, or be null.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_all_ones(
+    buf: *const c_int,
+    buf_len: c_int,
+    length: c_int,
+) -> f64 {
+    if buf.is_null() || buf_len <= 0 || length <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees buf points to at least buf_len valid ints.
+    let slice = unsafe { std::slice::from_raw_parts(buf, buf_len as usize) };
+    let mut sum: f64 = 0.0;
+    for i in 0..length as usize {
+        if i < slice.len() {
+            sum += f64::from(slice[i]);
+        }
+    }
+    sum / f64::from(length)
+}
+
+// ---------------------------------------------------------------------------
+// Movement tasks — parametric FFI
+// ---------------------------------------------------------------------------
+
+/// Task_MoveToRightSide/MoveToLeftSide: reward if cell x-position matches edge.
+/// `target_x` is 0 for left side, `world_x - 1` for right side.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_move_to_side(cell_pos_x: c_int, target_x: c_int) -> f64 {
+    if cell_pos_x == target_x {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_Move: returns 1.0 if organism moved (cell_id != prev_seen_cell_id).
+#[no_mangle]
+pub extern "C" fn avd_task_eval_move(effective_cell_id: c_int, prev_seen_cell_id: c_int) -> f64 {
+    if effective_cell_id != prev_seen_cell_id {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Task_MoveToTarget: returns 1.0 if on a target cell (cell_data > 1) and
+/// not the same as previously visited target cell.
+/// Returns 0.0 if cell_data <= 0, cell_data == 1, or same target.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_move_to_target(
+    cell_data: c_int,
+    current_cell: c_int,
+    prev_target: c_int,
+) -> f64 {
+    if cell_data <= 0 {
+        return 0.0;
+    }
+    if cell_data > 1 {
+        if current_cell == prev_target {
+            0.0
+        } else {
+            1.0
+        }
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RoyalRoad / RoyalRoadWithDitches — buffer-pointer FFI
+// ---------------------------------------------------------------------------
+
+/// Task_RoyalRoad: divide output buffer into `block_count` blocks of size
+/// `floor(length / block_count)`. A block is "correct" if ALL its values are
+/// non-zero (bitwise AND). Returns fraction of correct blocks.
+///
+/// # Safety
+/// `buf` must point to at least `buf_len` valid `c_int` values, or be null
+/// (in which case 0.0 is returned).
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_royal_road(
+    buf: *const c_int,
+    buf_len: c_int,
+    length: c_int,
+    block_count: c_int,
+) -> f64 {
+    if buf.is_null() || buf_len <= 0 || length <= 0 || block_count <= 0 {
+        return 0.0;
+    }
+    let block_size = (length as f64 / block_count as f64).floor() as usize;
+    if block_size == 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees buf points to at least buf_len valid ints.
+    let slice = unsafe { std::slice::from_raw_parts(buf, buf_len as usize) };
+    let mut total_reward = 0.0;
+
+    for i in 0..block_count as usize {
+        let mut block_reward: c_int = 1;
+        for j in 0..block_size {
+            let idx = i * block_size + j;
+            let val = if idx < slice.len() { slice[idx] } else { 0 };
+            block_reward &= val;
+        }
+        if block_reward != 0 {
+            total_reward += 1.0;
+        }
+    }
+
+    total_reward / block_count as f64
+}
+
+/// Task_RoyalRoadWithDitches: state-machine variant of RoyalRoad.
+///
+/// Block types:
+/// - A: all values non-zero (like basic RoyalRoad block)
+/// - B: first `block_size - width` values non-zero, last `width` values zero
+/// - X: anything else
+///
+/// State machine (starts in case 1):
+/// - Case 1: X → case 2; A → reward = num_b_blocks + 2, case 3; B → num_b_blocks++
+/// - Case 2: A → reward = num_b_blocks + 2 - height, case 3; else → case 3
+/// - Case 3: terminal (no more reward changes)
+///
+/// # Safety
+/// `buf` must point to at least `buf_len` valid `c_int` values, or be null.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_royal_road_wd(
+    buf: *const c_int,
+    buf_len: c_int,
+    length: c_int,
+    block_count: c_int,
+    width: c_int,
+    height: c_int,
+) -> f64 {
+    if buf.is_null() || buf_len <= 0 || length <= 0 || block_count <= 0 {
+        return 0.0;
+    }
+    let block_size = (length as f64 / block_count as f64).floor() as usize;
+    if block_size == 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees buf points to at least buf_len valid ints.
+    let slice = unsafe { std::slice::from_raw_parts(buf, buf_len as usize) };
+    let width = width as usize;
+
+    let mut total_reward: f64 = 0.0;
+    let mut num_b_blocks: i32 = 0;
+    let mut next_case: i32 = 1;
+
+    for i in 0..block_count as usize {
+        // Determine block type: A, B, or X
+        let mut block_type: i32 = -1; // -1 undefined, 0 X, 1 A, 2 B
+
+        // Check for block A (all non-zero)
+        let mut block_correct: c_int = 1;
+        for j in 0..block_size {
+            let idx = i * block_size + j;
+            let val = if idx < slice.len() { slice[idx] } else { 0 };
+            block_correct &= val;
+        }
+        if block_correct != 0 {
+            block_type = 1; // A
+        }
+
+        // Check for block B if not A
+        if block_type == -1 {
+            block_correct = 1;
+            for j in 0..block_size {
+                let idx = i * block_size + j;
+                let val = if idx < slice.len() { slice[idx] } else { 0 };
+                if j < block_size.saturating_sub(width) {
+                    if val == 0 {
+                        block_correct = 0;
+                    }
+                } else if val == 1 {
+                    block_correct = 0;
+                }
+                if block_correct == 0 {
+                    break;
+                }
+            }
+            if block_correct != 0 {
+                block_type = 2; // B
+            }
+        }
+
+        // Default to X
+        if block_type == -1 {
+            block_type = 0;
+        }
+
+        // State machine
+        match next_case {
+            1 => {
+                if block_type == 0 {
+                    next_case = 2;
+                } else if block_type == 1 {
+                    total_reward = (num_b_blocks + 2) as f64;
+                    next_case = 3;
+                } else if block_type == 2 {
+                    num_b_blocks += 1;
+                }
+            }
+            2 => {
+                if block_type == 1 {
+                    total_reward = (num_b_blocks + 2 - height) as f64;
+                }
+                next_case = 3;
+            }
+            _ => {} // case 3+: terminal
+        }
+    }
+
+    total_reward / block_count as f64
+}
+
+// ---------------------------------------------------------------------------
+// Task_AIDisplayCost — simple lyse display check
+// ---------------------------------------------------------------------------
+
+/// Task_AIDisplayCost: returns 1.0 if lyse_display is set, 0.0 otherwise.
+#[no_mangle]
+pub extern "C" fn avd_task_eval_ai_display_cost(lyse_display: c_int) -> f64 {
+    if lyse_display != 0 {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task_MoveToEvent — match cell_data against deme events
+// ---------------------------------------------------------------------------
+
+/// Task_MoveToEvent: return 1.0 if cell_data matches any deme event ID.
+///
+/// `event_ids`: pointer to array of event IDs from deme.
+/// `num_events`: number of events in the array.
+/// `cell_data`: organism's cell data value.
+///
+/// # Safety
+/// `event_ids` must point to at least `num_events` valid `c_int` values, or be null.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_move_to_event(
+    event_ids: *const c_int,
+    num_events: c_int,
+    cell_data: c_int,
+) -> f64 {
+    if cell_data <= 0 {
+        return 0.0;
+    }
+    if event_ids.is_null() || num_events <= 0 {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees event_ids points to at least num_events valid ints.
+    let ids = unsafe { std::slice::from_raw_parts(event_ids, num_events as usize) };
+    for &id in ids {
+        if id == cell_data {
+            return 1.0;
+        }
+    }
+    0.0
+}
+
+// ---------------------------------------------------------------------------
+// FibonacciSequence — stateful task evaluator
+// ---------------------------------------------------------------------------
+
+/// Task_FibonacciSequence: evaluate if output matches next Fibonacci number.
+///
+/// State: `seq[2]` (last two values), `count` (matches so far).
+/// Returns 1.0 on match, `penalty` if past target, 0.0 on miss.
+///
+/// # Safety
+/// `seq` must point to at least 2 `c_int` values. `count` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn avd_task_eval_fibonacci_seq(
+    seq: *mut c_int,
+    count: *mut c_int,
+    output_value: c_int,
+    target_count: c_int,
+    penalty: f64,
+) -> f64 {
+    if seq.is_null() || count.is_null() {
+        return 0.0;
+    }
+    // SAFETY: caller guarantees seq points to 2 valid ints, count is valid.
+    let (s, cnt) = unsafe { (std::slice::from_raw_parts_mut(seq, 2), &mut *count) };
+    let next = s[0] + s[1];
+
+    if output_value != next {
+        return 0.0;
+    }
+
+    // Match found — advance state
+    *cnt += 1;
+    s[(*cnt as usize) % 2] = next;
+
+    if *cnt > target_count {
+        penalty
+    } else {
+        1.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2123,5 +2608,318 @@ mod tests {
     fn arith_invalid_op() {
         let inputs: [c_int; 2] = [1, 2];
         assert_eq!(avd_task_eval_simple_arith(inputs.as_ptr(), 2, 3, 99), 0.0);
+    }
+
+    // --- Movement task tests ---
+
+    #[test]
+    fn move_to_side_right() {
+        assert!((avd_task_eval_move_to_side(59, 59) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_side_not_right() {
+        assert!((avd_task_eval_move_to_side(30, 59) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_side_left() {
+        assert!((avd_task_eval_move_to_side(0, 0) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_yes() {
+        assert!((avd_task_eval_move(5, 3) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_no() {
+        assert!((avd_task_eval_move(5, 5) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_target_on_target() {
+        // cell_data > 1, different from prev target
+        assert!((avd_task_eval_move_to_target(2, 10, 5) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_target_same_target() {
+        assert!((avd_task_eval_move_to_target(2, 10, 10) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_target_no_data() {
+        assert!((avd_task_eval_move_to_target(0, 10, 5) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_target_data_one() {
+        assert!((avd_task_eval_move_to_target(1, 10, 5) - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- FormSpatialGroup tests ---
+
+    #[test]
+    fn form_spatial_group_exact() {
+        // t=10, g=10 → 1 - 0/100 = 1.0
+        assert!((avd_task_eval_form_spatial_group(10, 10) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn form_spatial_group_half() {
+        // t=10, g=5 → 1 - 25/100 = 0.75
+        assert!((avd_task_eval_form_spatial_group(10, 5) - 0.75).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn form_spatial_group_zero_ideal() {
+        assert!((avd_task_eval_form_spatial_group(0, 5) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn form_spatial_group_with_id_match() {
+        // group matches, g < t → 1.0
+        assert!((avd_task_eval_form_spatial_group_with_id(10, 3, 3, 5) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn form_spatial_group_with_id_no_match() {
+        assert!((avd_task_eval_form_spatial_group_with_id(10, 3, 5, 5) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn form_spatial_group_with_id_over_size() {
+        // group matches, g=12 > t=10 → 1 - 4/100 = 0.96
+        assert!((avd_task_eval_form_spatial_group_with_id(10, 3, 3, 12) - 0.96).abs() < 1e-10);
+    }
+
+    // --- CommEcho/CommNot tests ---
+
+    #[test]
+    fn comm_echo_match() {
+        let vals: [c_int; 3] = [10, 42, 20];
+        // SAFETY: vals is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_comm_echo(42, vals.as_ptr(), 3) };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn comm_echo_no_match() {
+        let vals: [c_int; 3] = [10, 20, 30];
+        // SAFETY: vals is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_comm_echo(42, vals.as_ptr(), 3) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn comm_echo_null() {
+        // SAFETY: null is handled gracefully.
+        let result = unsafe { avd_task_eval_comm_echo(42, std::ptr::null(), 0) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn comm_not_match() {
+        // NOT of 42 in two's complement: -(42+1) = -43
+        let vals: [c_int; 2] = [10, 42];
+        // SAFETY: vals is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_comm_not(-43, vals.as_ptr(), 2) };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn comm_not_no_match() {
+        let vals: [c_int; 2] = [10, 42];
+        // SAFETY: vals is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_comm_not(99, vals.as_ptr(), 2) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- Nand/Nor_ResourceDependent tests ---
+
+    #[test]
+    fn nand_res_dep_below_threshold() {
+        assert!((avd_task_eval_nand_res_dep(63, 50.0) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn nand_res_dep_above_threshold() {
+        assert!((avd_task_eval_nand_res_dep(63, 150.0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn nand_res_dep_wrong_logic_id() {
+        assert!((avd_task_eval_nand_res_dep(42, 50.0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn nor_res_dep_above_threshold() {
+        assert!((avd_task_eval_nor_res_dep(3, 150.0) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn nor_res_dep_below_threshold() {
+        assert!((avd_task_eval_nor_res_dep(3, 50.0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn nor_res_dep_wrong_logic_id() {
+        assert!((avd_task_eval_nor_res_dep(42, 150.0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- MoveFT tests ---
+
+    #[test]
+    fn move_ft_moved_right_target() {
+        assert!((avd_task_eval_move_ft(5, 3, 2, 2) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_ft_didnt_move() {
+        assert!((avd_task_eval_move_ft(5, 5, 2, 2) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_ft_wrong_target() {
+        assert!((avd_task_eval_move_ft(5, 3, 2, 7) - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- RoyalRoad tests ---
+
+    #[test]
+    fn royal_road_all_ones() {
+        // 4 blocks of size 2, all 1s → 4/4 = 1.0
+        let buf: [c_int; 8] = [1, 1, 1, 1, 1, 1, 1, 1];
+        // SAFETY: buf is a valid stack-allocated array with 8 elements.
+        let result = unsafe { avd_task_eval_royal_road(buf.as_ptr(), 8, 8, 4) };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn royal_road_half_correct() {
+        // 4 blocks of size 2: [1,1], [1,0], [1,1], [0,1]
+        // block 0: 1&1=1, block 1: 1&0=0, block 2: 1&1=1, block 3: 0&1=0
+        // reward = 2/4 = 0.5
+        let buf: [c_int; 8] = [1, 1, 1, 0, 1, 1, 0, 1];
+        // SAFETY: buf is a valid stack-allocated array with 8 elements.
+        let result = unsafe { avd_task_eval_royal_road(buf.as_ptr(), 8, 8, 4) };
+        assert!((result - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn royal_road_all_zeros() {
+        let buf: [c_int; 8] = [0; 8];
+        // SAFETY: buf is a valid stack-allocated array with 8 elements.
+        let result = unsafe { avd_task_eval_royal_road(buf.as_ptr(), 8, 8, 4) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn royal_road_null_buf() {
+        // SAFETY: null pointer is handled gracefully by the function.
+        let result = unsafe { avd_task_eval_royal_road(std::ptr::null(), 0, 8, 4) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn royal_road_zero_block_count() {
+        let buf: [c_int; 4] = [1; 4];
+        // SAFETY: buf is a valid stack-allocated array with 4 elements.
+        let result = unsafe { avd_task_eval_royal_road(buf.as_ptr(), 4, 4, 0) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- RoyalRoadWithDitches tests ---
+
+    #[test]
+    fn royal_road_wd_all_a_blocks() {
+        // 3 blocks of size 2, all 1s → type A blocks
+        // State machine: case 1, block A → total_reward = 0 + 2 = 2, next_case = 3
+        // Then remaining blocks are case 3 (no-op)
+        // Result: 2/3
+        let buf: [c_int; 6] = [1, 1, 1, 1, 1, 1];
+        // SAFETY: buf is a valid stack-allocated array with 6 elements.
+        let result = unsafe { avd_task_eval_royal_road_wd(buf.as_ptr(), 6, 6, 3, 1, 1) };
+        assert!((result - 2.0 / 3.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn royal_road_wd_null_buf() {
+        // SAFETY: null pointer is handled gracefully by the function.
+        let result = unsafe { avd_task_eval_royal_road_wd(std::ptr::null(), 0, 4, 2, 1, 1) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    // --- FibonacciSequence tests ---
+
+    #[test]
+    fn fib_seq_first_match() {
+        let mut seq = [1i32, 0i32];
+        let mut count = 0i32;
+        // SAFETY: seq and count are valid stack-allocated variables.
+        let result =
+            unsafe { avd_task_eval_fibonacci_seq(seq.as_mut_ptr(), &mut count, 1, 10, 0.5) };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn fib_seq_no_match() {
+        let mut seq = [1i32, 0i32];
+        let mut count = 0i32;
+        // SAFETY: seq and count are valid stack-allocated variables.
+        let result =
+            unsafe { avd_task_eval_fibonacci_seq(seq.as_mut_ptr(), &mut count, 42, 10, 0.5) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn fib_seq_past_target() {
+        let mut seq = [1i32, 1i32];
+        let mut count = 5i32;
+        // SAFETY: seq and count are valid stack-allocated variables.
+        let result =
+            unsafe { avd_task_eval_fibonacci_seq(seq.as_mut_ptr(), &mut count, 2, 5, 0.25) };
+        assert!((result - 0.25).abs() < f64::EPSILON);
+    }
+
+    // --- AIDisplayCost tests ---
+
+    #[test]
+    fn ai_display_cost_off() {
+        assert!((avd_task_eval_ai_display_cost(0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn ai_display_cost_on() {
+        assert!((avd_task_eval_ai_display_cost(1) - 1.0).abs() < f64::EPSILON);
+    }
+
+    // --- MoveToEvent tests ---
+
+    #[test]
+    fn move_to_event_match() {
+        let events = [3i32, 5, 7];
+        // SAFETY: events is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_move_to_event(events.as_ptr(), 3, 5) };
+        assert!((result - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_event_no_match() {
+        let events = [3i32, 5, 7];
+        // SAFETY: events is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_move_to_event(events.as_ptr(), 3, 9) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn move_to_event_negative_data() {
+        let events = [3i32, 5];
+        // SAFETY: events is a valid stack-allocated array.
+        let result = unsafe { avd_task_eval_move_to_event(events.as_ptr(), 2, -1) };
+        assert!((result - 0.0).abs() < f64::EPSILON);
     }
 }
