@@ -479,6 +479,62 @@ void avd_org_repair_point_mut_off(cOrganism* org) {
   org->RepairPointMutOff();
 }
 
+// Simple state writes (Phase 2 batch)
+void avd_org_clear_easterly(cOrganism* org) {
+  if (!org) return;
+  org->ClearEasterly();
+}
+
+void avd_org_clear_northerly(cOrganism* org) {
+  if (!org) return;
+  org->ClearNortherly();
+}
+
+void avd_org_set_lyse_display(cOrganism* org) {
+  if (!org) return;
+  org->SetLyseDisplay();
+}
+
+void avd_org_set_mate_preference(cOrganism* org, int pref) {
+  if (!org) return;
+  org->GetPhenotype().SetMatePreference(pref);
+}
+
+int avd_org_get_cur_mating_display_a(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetCurMatingDisplayA();
+}
+
+int avd_org_get_cur_mating_display_b(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetCurMatingDisplayB();
+}
+
+void avd_org_set_cur_mating_display_a(cOrganism* org, int val) {
+  if (!org) return;
+  org->GetPhenotype().SetCurMatingDisplayA(val);
+}
+
+void avd_org_set_cur_mating_display_b(cOrganism* org, int val) {
+  if (!org) return;
+  org->GetPhenotype().SetCurMatingDisplayB(val);
+}
+
+void avd_org_set_cell_data(cOrganism* org, int data) {
+  if (!org) return;
+  org->SetCellData(data);
+}
+
+double avd_org_get_copy_mut_prob(cOrganism* org) {
+  if (!org) return 0.0;
+  return org->GetCopyMutProb();
+}
+
+void avd_org_set_copy_mut_prob(cOrganism* org, double prob) {
+  if (!org) return;
+  org->SetCopyMutProb(prob);
+}
+
 // Resource bin access
 double avd_org_get_rbin(cOrganism* org, int index) {
   if (!org) return 0.0;

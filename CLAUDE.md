@@ -112,7 +112,7 @@ When working at program scale, always read and maintain these documents:
 - **Issue #58**: Organism/deme/population FFI — 36 read-only functions (expanded from 18; now includes deme, opinion, cell position, group count)
 - **Issue #58**: Organism FFI Phase 1 — +9 read-only functions (id, lyse_display, cell_data, input_at, stored_energy, is_fertile, is_germline, num_divides, kaboom_executed) + avd_hw_get_organism bridge
 - **Issue #57**: Hardware state FFI — 41 functions in cHardwareFFI.cc (heads, stacks, memory, registers, nop helpers, thread/cycle, labels/search, cAvidaContext RNG)
-- **Issue #57**: CPU instruction handlers — 140/513 (27.3%) delegate to Rust (register, conditional, stack, flow, head, mask, consensus, label, search, RNG-probabilistic, organism-read/write ops)
+- **Issue #57**: CPU instruction handlers — 152/513 (29.6%) delegate to Rust (register, conditional, stack, flow, head, mask, consensus, label, search, RNG-probabilistic, organism-read/write ops)
 - **Issue #74**: Viewer scaffold + simulation bridge — eframe app connected to live simulation via FFI (parked)
 
 ### Key infrastructure:

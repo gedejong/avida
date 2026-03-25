@@ -93,6 +93,17 @@ unsafe extern "C" {
     fn avd_org_toggle_pheromone(org: *mut c_void);
     fn avd_org_repair_point_mut_on(org: *mut c_void);
     fn avd_org_get_rbin(org: *mut c_void, index: c_int) -> f64;
+    fn avd_org_clear_easterly(org: *mut c_void);
+    fn avd_org_clear_northerly(org: *mut c_void);
+    fn avd_org_set_lyse_display(org: *mut c_void);
+    fn avd_org_set_mate_preference(org: *mut c_void, pref: c_int);
+    fn avd_org_get_cur_mating_display_a(org: *mut c_void) -> c_int;
+    fn avd_org_get_cur_mating_display_b(org: *mut c_void) -> c_int;
+    fn avd_org_set_cur_mating_display_a(org: *mut c_void, val: c_int);
+    fn avd_org_set_cur_mating_display_b(org: *mut c_void, val: c_int);
+    fn avd_org_set_cell_data(org: *mut c_void, data: c_int);
+    fn avd_org_get_copy_mut_prob(org: *mut c_void) -> f64;
+    fn avd_org_set_copy_mut_prob(org: *mut c_void, prob: f64);
 }
 
 // Head IDs matching nHardware::tHeads
@@ -910,6 +921,93 @@ pub unsafe extern "C" fn avd_cpu_inst_get_res_stored(
     let res = unsafe { avd_org_get_rbin(org, resource_id) };
     let res_stored = (res * 100.0 - 0.5) as c_int;
     unsafe { avd_hw_set_register(hw, reg_id, res_stored) };
+}
+
+// ---------------------------------------------------------------------------
+// Batch C2+: Simple state-write handlers
+// ---------------------------------------------------------------------------
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_zero_easterly(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_clear_easterly(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_zero_northerly(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_clear_northerly(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_display_lyse(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_set_lyse_display(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_mate_preference(hw: *mut c_void, pref: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_set_mate_preference(org, pref) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_mating_display_a(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let val = unsafe { avd_hw_get_register(hw, reg_id) };
+    unsafe { avd_org_set_cur_mating_display_a(org, val) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_mating_display_b(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let val = unsafe { avd_hw_get_register(hw, reg_id) };
+    unsafe { avd_org_set_cur_mating_display_b(org, val) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_increment_mating_display_a(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let counter = unsafe { avd_org_get_cur_mating_display_a(org) } + 1;
+    unsafe { avd_org_set_cur_mating_display_a(org, counter) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_increment_mating_display_b(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let counter = unsafe { avd_org_get_cur_mating_display_b(org) } + 1;
+    unsafe { avd_org_set_cur_mating_display_b(org, counter) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_mark_cell_with_id(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let id = unsafe { avd_org_get_id(org) };
+    unsafe { avd_org_set_cell_data(org, id) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_mark_cell_with_vitality(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let vit = unsafe { avd_org_get_vitality(org) };
+    let rounded = (vit + 0.5) as c_int;
+    unsafe { avd_org_set_cell_data(org, rounded) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_copy_mut(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let reg_val = unsafe { avd_hw_get_register(hw, reg_id) };
+    let prob = reg_val as f64 / 10000.0;
+    unsafe { avd_org_set_copy_mut_prob(org, prob) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_mod_copy_mut(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let old_prob = unsafe { avd_org_get_copy_mut_prob(org) };
+    // HACK: hard-coded .001 increase, same as C++ original
+    unsafe { avd_org_set_copy_mut_prob(org, old_prob + 0.001) };
 }
 
 // ---------------------------------------------------------------------------

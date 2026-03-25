@@ -3624,7 +3624,7 @@ bool cHardwareCPU::Inst_Lyse(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_DisplayLyse(cAvidaContext& ctx)
 {
-  m_organism->SetLyseDisplay();
+  avd_cpu_inst_display_lyse(this);
   return true;
 }
 
@@ -7621,12 +7621,12 @@ bool cHardwareCPU::Inst_GetEasterly(cAvidaContext&) {
 }
 
 bool cHardwareCPU::Inst_ZeroEasterly(cAvidaContext&) {
-  m_organism->ClearEasterly();
+  avd_cpu_inst_zero_easterly(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_ZeroNortherly(cAvidaContext&) {
-  m_organism->ClearNortherly();
+  avd_cpu_inst_zero_northerly(this);
   return true;
 }
 
@@ -10758,18 +10758,14 @@ bool cHardwareCPU::Inst_IfMatingTypeJuvenile(cAvidaContext&)
 bool cHardwareCPU::Inst_IncrementMatingDisplayA(cAvidaContext&)
 {
   //Increment the organism's mating display A trait
-  int counter = m_organism->GetPhenotype().GetCurMatingDisplayA();
-  counter++;
-  m_organism->GetPhenotype().SetCurMatingDisplayA(counter);
+  avd_cpu_inst_increment_mating_display_a(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_IncrementMatingDisplayB(cAvidaContext&)
 {
   //Increment the organism's mating display A trait
-  int counter = m_organism->GetPhenotype().GetCurMatingDisplayB();
-  counter++;
-  m_organism->GetPhenotype().SetCurMatingDisplayB(counter);
+  avd_cpu_inst_increment_mating_display_b(this);
   return true;
 }
 
@@ -10799,7 +10795,7 @@ bool cHardwareCPU::Inst_SetMatingDisplayB(cAvidaContext&)
 
 bool cHardwareCPU::Inst_SetMatePreference(cAvidaContext&, int mate_pref)
 {
-  m_organism->GetPhenotype().SetMatePreference(mate_pref);
+  avd_cpu_inst_set_mate_preference(this, mate_pref);
   return true;
 }
 bool cHardwareCPU::Inst_SetMatePreferenceRandom(cAvidaContext& ctx) { return Inst_SetMatePreference(ctx, MATE_PREFERENCE_RANDOM); }
