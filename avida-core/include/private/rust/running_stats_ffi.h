@@ -1508,6 +1508,8 @@ int avd_hw_get_label_as_int(cHardwareBase* hw, int mode);
 int avd_hw_if_label_match(cHardwareBase* hw);
 int avd_hw_if_label_direct_match(cHardwareBase* hw);
 int avd_hw_search_label(cHardwareBase* hw, int direction);
+int avd_hw_search_label_direct(cHardwareBase* hw, int direction);
+int avd_hw_is_next_inst_nop(cHardwareBase* hw);
 int avd_hw_get_label_size(cHardwareBase* hw);
 
 // ---- CPU instruction handlers (Rust-backed) ----
@@ -1548,6 +1550,11 @@ int avd_cpu_inst_if_label(cHardwareBase* hw);
 int avd_cpu_inst_if_label_direct(cHardwareBase* hw);
 void avd_cpu_inst_search_f(cHardwareBase* hw, CpuRegisters* regs);
 void avd_cpu_inst_search_b(cHardwareBase* hw, CpuRegisters* regs);
+void avd_cpu_inst_head_search(cHardwareBase* hw, CpuRegisters* regs);
+void avd_cpu_inst_head_search_direct(cHardwareBase* hw, CpuRegisters* regs);
+int avd_cpu_inst_head_push(cHardwareBase* hw, int head_id);
+int avd_cpu_inst_if_label2(cHardwareBase* hw);
+void avd_cpu_inst_transposon(cHardwareBase* hw);
 void avd_cpu_inst_read_inst(cHardwareBase* hw, CpuRegisters* regs, int dst, int src);
 void avd_cpu_inst_stack_read_inst(cHardwareBase* hw, const CpuRegisters* regs, int src);
 int avd_cpu_inst_if_0(const CpuRegisters* regs, int op);

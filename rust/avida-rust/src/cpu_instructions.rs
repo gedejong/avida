@@ -45,6 +45,8 @@ unsafe extern "C" {
     fn avd_hw_if_label_match(hw: *mut c_void) -> c_int;
     fn avd_hw_if_label_direct_match(hw: *mut c_void) -> c_int;
     fn avd_hw_search_label(hw: *mut c_void, direction: c_int) -> c_int;
+    fn avd_hw_search_label_direct(hw: *mut c_void, direction: c_int) -> c_int;
+    fn avd_hw_is_next_inst_nop(hw: *mut c_void) -> c_int;
     fn avd_hw_get_label_size(hw: *mut c_void) -> c_int;
     // cAvidaContext RNG
     fn avd_ctx_random_p(ctx: *mut c_void, prob: f64) -> c_int;
@@ -1192,6 +1194,102 @@ pub unsafe extern "C" fn avd_cpu_inst_search_b(hw: *mut c_void, regs: *mut CpuRe
     unsafe { set_reg(regs, 1, search_size) }; // REG_BX = 1
                                               // SAFETY: set_reg null-checks internally.
     unsafe { set_reg(regs, 2, label_size) }; // REG_CX = 2
+}
+
+// ---------------------------------------------------------------------------
+// Batch: Head-search + label + head-push/transposon handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_HeadSearch: read label, rotate complement, find from beginning.
+/// Sets BX = search distance, CX = label size, FLOW = found position + 1.
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_head_search(hw: *mut c_void, regs: *mut CpuRegisters) {
+    // ReadLabel
+    unsafe { avd_hw_read_label(hw) };
+    let ip_pos = unsafe { avd_hw_get_head_position(hw, HEAD_IP) };
+    // search_label rotates complement and searches from direction 0 (beginning)
+    let found_pos = unsafe { avd_hw_search_label(hw, 0) };
+    let search_size = found_pos - ip_pos;
+    let label_size = unsafe { avd_hw_get_label_size(hw) };
+    unsafe { set_reg(regs, 1, search_size) }; // REG_BX = 1
+    unsafe { set_reg(regs, 2, label_size) }; // REG_CX = 2
+                                             // Set FLOW head to found position, then advance
+    unsafe { avd_hw_set_head_position(hw, HEAD_FLOW, found_pos) };
+    unsafe { avd_hw_advance_head(hw, HEAD_FLOW) };
+}
+
+/// Inst_HeadSearchDirect: read label, find direct match forward from IP.
+/// Sets BX = search distance, CX = label size, FLOW = found position + 1.
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_head_search_direct(hw: *mut c_void, regs: *mut CpuRegisters) {
+    // ReadLabel (no complement rotation)
+    unsafe { avd_hw_read_label(hw) };
+    let ip_pos = unsafe { avd_hw_get_head_position(hw, HEAD_IP) };
+    // search_label_direct does NOT rotate; direction 1 = forward from IP
+    let found_pos = unsafe { avd_hw_search_label_direct(hw, 1) };
+    let search_size = found_pos - ip_pos;
+    let label_size = unsafe { avd_hw_get_label_size(hw) };
+    unsafe { set_reg(regs, 1, search_size) }; // REG_BX = 1
+    unsafe { set_reg(regs, 2, label_size) }; // REG_CX = 2
+                                             // Set FLOW head to found position, then advance
+    unsafe { avd_hw_set_head_position(hw, HEAD_FLOW, found_pos) };
+    unsafe { avd_hw_advance_head(hw, HEAD_FLOW) };
+}
+
+/// Inst_HeadPush: push head[head_id] position onto stack.
+/// If head_id == IP, also set IP to FLOW position.
+/// Returns 1 if IP should NOT auto-advance (head_id == IP), 0 otherwise.
+///
+/// # Safety
+/// `hw` must be a valid cHardwareBase pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_head_push(hw: *mut c_void, head_id: c_int) -> c_int {
+    let pos = unsafe { avd_hw_get_head_position(hw, head_id) };
+    unsafe { avd_hw_stack_push(hw, pos) };
+    if head_id == HEAD_IP {
+        let flow_pos = unsafe { avd_hw_get_head_position(hw, HEAD_FLOW) };
+        unsafe { avd_hw_set_head_position(hw, head_id, flow_pos) };
+        1 // suppress auto-advance
+    } else {
+        0
+    }
+}
+
+/// Inst_IfLabel2: read label, rotate complement, skip instruction + following nops
+/// if labels don't match.
+/// Returns a skip count: 0 = no skip, 1 = skip one, 2 = skip one + a nop.
+///
+/// # Safety
+/// `hw` must be a valid cHardwareBase pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_label2(hw: *mut c_void) -> c_int {
+    // ReadLabel + rotate + compare (reuses avd_hw_if_label_match which does rotate+compare)
+    unsafe { avd_hw_read_label(hw) };
+    let mismatch = unsafe { avd_hw_if_label_match(hw) };
+    if mismatch != 0 {
+        // Labels don't match: skip next instruction.
+        // Also skip any nop following that instruction.
+        unsafe { avd_hw_advance_ip(hw) }; // skip one
+        if unsafe { avd_hw_is_next_inst_nop(hw) } != 0 {
+            unsafe { avd_hw_advance_ip(hw) }; // skip nop after it
+        }
+    }
+    0 // we already did our own IP advances; caller should not skip further
+}
+
+/// Inst_Transposon: just read the label (no other effect).
+///
+/// # Safety
+/// `hw` must be a valid cHardwareBase pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_transposon(hw: *mut c_void) {
+    unsafe { avd_hw_read_label(hw) };
 }
 
 /// Inst_ReadInst: read instruction opcode at position reg[src] into reg[dst].
