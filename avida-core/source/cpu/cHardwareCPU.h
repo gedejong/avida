@@ -976,12 +976,17 @@ public:
   //! Current "time": the number of cycles this CPU has been "alive."
   bool Inst_GetCycles(cAvidaContext& ctx);
 
+  // ---- Flash info accessors (for FFI) ----
+  unsigned int GetFlashReceived() const { return m_flash_info.first; }
+  unsigned int GetFlashCycle() const { return m_flash_info.second; }
+  void ResetFlashInfo() { m_flash_info.first = 0; m_flash_info.second = 0; }
+
 private:
-  /*! Used to track the last flash received; first=whether we've received a flash, 
+  /*! Used to track the last flash received; first=whether we've received a flash,
   second= #cycles since we've received a flash, or 0 if we haven't. */
   std::pair<unsigned int, unsigned int> m_flash_info;
   //! Cycle timer; counts the number of cycles this virtual CPU has executed.
-  unsigned int m_cycle_counter;	
+  unsigned int m_cycle_counter;
 
   // -------- Neighborhood-sensing support --------
 public:	

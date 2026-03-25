@@ -300,4 +300,25 @@ int avd_ctx_random_get_int(cAvidaContext* ctx, int max) {
   return ctx->GetRandom().GetInt(max);
 }
 
+
+// ---- Flash info accessors (m_flash_info on cHardwareCPU) ----
+
+unsigned int avd_hw_get_flash_received(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return 0;
+  return cpu->GetFlashReceived();
+}
+
+unsigned int avd_hw_get_flash_cycle(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return 0;
+  return cpu->GetFlashCycle();
+}
+
+void avd_hw_reset_flash_info(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return;
+  cpu->ResetFlashInfo();
+}
+
 } // extern "C"

@@ -105,6 +105,9 @@ unsafe extern "C" {
     fn avd_org_get_copy_mut_prob(org: *mut c_void) -> f64;
     fn avd_org_set_copy_mut_prob(org: *mut c_void, prob: f64);
     fn avd_org_add_output(org: *mut c_void, val: c_int);
+    fn avd_org_get_cur_bonus(org: *mut c_void) -> f64;
+    fn avd_org_set_cur_bonus(org: *mut c_void, value: f64);
+    fn avd_org_repair_point_mut_off(org: *mut c_void);
 }
 
 // Head IDs matching nHardware::tHeads
@@ -1588,6 +1591,443 @@ pub extern "C" fn avd_cpu_inst_bit_consensus24(regs: *mut CpuRegisters, dst: c_i
     } else {
         0
     };
+}
+
+// ---------------------------------------------------------------------------
+// Batch D1: Faced-energy conditionals
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_is_energy_requestor(org: *mut c_void) -> c_int;
+    #[allow(dead_code)]
+    fn avd_org_has_open_energy_request_read(org: *mut c_void) -> c_int;
+    fn avd_org_set_reputation(org: *mut c_void, rep: c_int);
+    fn avd_org_get_faced_cell_data(org: *mut c_void) -> c_int;
+    fn avd_org_get_faced_cell_data_update(org: *mut c_void) -> c_int;
+    fn avd_org_is_donor(org: *mut c_void, neighbor_id: c_int) -> c_int;
+    // Hardware flash info
+    fn avd_hw_get_flash_received(hw: *mut c_void) -> c_int;
+    fn avd_hw_get_flash_cycle(hw: *mut c_void) -> c_int;
+    fn avd_hw_reset_flash_info(hw: *mut c_void);
+}
+
+/// Helper: get neighbor organism pointer, checking occupied and alive.
+/// Returns null if no valid neighbor.
+#[inline]
+unsafe fn get_live_neighbor(org: *mut c_void) -> *mut c_void {
+    if unsafe { avd_org_is_neighbor_cell_occupied(org) } == 0 {
+        return std::ptr::null_mut();
+    }
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if neighbor.is_null() || unsafe { avd_org_is_dead(neighbor) } != 0 {
+        return std::ptr::null_mut();
+    }
+    neighbor
+}
+
+/// Inst_IfFacedEnergyLow: skip if faced neighbor's energy is NOT low.
+/// Only acts if neighbor exists and is alive.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_low(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0; // no skip, no neighbor
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if level != ENERGY_LEVEL_LOW {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_not_low(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if level == ENERGY_LEVEL_LOW {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_high(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if level != ENERGY_LEVEL_HIGH {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_not_high(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if level == ENERGY_LEVEL_HIGH {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_med(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let level = unsafe { avd_org_get_discrete_energy_level(neighbor) };
+    if level != ENERGY_LEVEL_MEDIUM {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_IfFacedEnergyLess: skip if neighbor energy >= my energy * (1-epsilon).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_less(hw: *mut c_void, epsilon: f64) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let neighbor_energy = unsafe { avd_org_get_stored_energy(neighbor) };
+    let my_energy = unsafe { avd_org_get_stored_energy(org) };
+    if neighbor_energy >= my_energy * (1.0 - epsilon) {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_IfFacedEnergyMore: skip if neighbor energy <= my energy * (1+epsilon).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_more(hw: *mut c_void, epsilon: f64) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let neighbor_energy = unsafe { avd_org_get_stored_energy(neighbor) };
+    let my_energy = unsafe { avd_org_get_stored_energy(org) };
+    if neighbor_energy <= my_energy * (1.0 + epsilon) {
+        1
+    } else {
+        0
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Batch D2: Faced energy request handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_IfFacedEnergyRequestOn: skip if neighbor is NOT an energy requestor.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_request_on(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return -1; // signal failure to C++
+    }
+    if unsafe { avd_org_is_energy_requestor(neighbor) } == 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_IfFacedEnergyRequestOff: skip if neighbor IS an energy requestor.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_faced_energy_request_off(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return -1;
+    }
+    if unsafe { avd_org_is_energy_requestor(neighbor) } != 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_GetEnergyRequestStatus: store 1 if self is energy requestor, 0 otherwise.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_energy_request_status(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let status = if unsafe { avd_org_is_energy_requestor(org) } != 0 {
+        1
+    } else {
+        0
+    };
+    unsafe { avd_hw_set_register(hw, reg_id, status) };
+}
+
+/// Inst_GetFacedEnergyRequestStatus: store 1 if neighbor is energy requestor.
+/// Returns -1 on failure (no neighbor), 0 on success.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_faced_energy_request_status(
+    hw: *mut c_void,
+    reg_id: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return -1;
+    }
+    let status = if unsafe { avd_org_is_energy_requestor(neighbor) } != 0 {
+        1
+    } else {
+        0
+    };
+    unsafe { avd_hw_set_register(hw, reg_id, status) };
+    0
+}
+
+/// Inst_GetFacedEnergyLevel: store faced neighbor's stored energy (floored).
+/// Returns 0 on failure, 1 on success.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_faced_energy_level(
+    hw: *mut c_void,
+    reg_id: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { get_live_neighbor(org) };
+    if neighbor.is_null() {
+        return 0;
+    }
+    let energy = unsafe { avd_org_get_stored_energy(neighbor) };
+    unsafe { avd_hw_set_register(hw, reg_id, energy.floor() as c_int) };
+    1
+}
+
+// ---------------------------------------------------------------------------
+// Batch D3: Energy in buffer, GetUpdate, GetTimeUsed, Poison, Pose, etc.
+// ---------------------------------------------------------------------------
+
+/// Inst_IfEnergyInBuffer: skip if NO energy in buffer (energy == 0).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_energy_in_buffer(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let energy = unsafe { avd_org_get_energy_in_buffer(org) };
+    if energy == 0.0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_GetUpdate: store world update into register.
+/// `update_val` is passed from C++ caller (m_world->GetStats().GetUpdate()).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_update(
+    hw: *mut c_void,
+    reg_id: c_int,
+    update_val: c_int,
+) {
+    unsafe { avd_hw_set_register(hw, reg_id, update_val) };
+}
+
+/// Inst_GetTimeUsed: store organism's time used into register.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_time_used(hw: *mut c_void, reg_id: c_int) {
+    unsafe { org_int_to_reg(hw, reg_id, avd_org_get_time_used) };
+}
+
+/// Inst_GetCellPosition: store x and y into two registers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_cell_position(hw: *mut c_void, xreg: c_int, yreg: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let x = unsafe { avd_org_get_cell_position_x(org) };
+    let y = unsafe { avd_org_get_cell_y_position(org) };
+    unsafe { avd_hw_set_register(hw, xreg, x) };
+    unsafe { avd_hw_set_register(hw, yreg, y) };
+}
+
+/// Inst_Poison: multiply current bonus by (1 - penalty).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_poison(hw: *mut c_void, penalty: f64) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let cur = unsafe { avd_org_get_cur_bonus(org) };
+    unsafe { avd_org_set_cur_bonus(org, cur * (1.0 - penalty)) };
+}
+
+/// Inst_Pose: increment organism's reputation by 1.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_pose(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let rep = unsafe { avd_org_get_reputation(org) };
+    unsafe { avd_org_set_reputation(org, rep + 1) };
+}
+
+/// Inst_GetNeighborsReputation: read faced neighbor's reputation into register.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_neighbors_reputation(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if neighbor.is_null() {
+        return; // no neighbor, do nothing (matches C++ behavior)
+    }
+    let rep = unsafe { avd_org_get_reputation(neighbor) };
+    unsafe { avd_hw_set_register(hw, reg_id, rep) };
+}
+
+/// Inst_RepairPointMutOff: disable repair.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_repair_point_mut_off(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_repair_point_mut_off(org) };
+}
+
+// ---------------------------------------------------------------------------
+// Batch D4: Flash info handlers
+// ---------------------------------------------------------------------------
+
+/// Inst_IfRecvdFlash: skip if no flash has been received.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_recvd_flash(hw: *mut c_void) -> c_int {
+    let received = unsafe { avd_hw_get_flash_received(hw) };
+    if received == 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_FlashInfo: if flash received, store count in bx and cycles-since in cx.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_flash_info(hw: *mut c_void, bx: c_int, cx: c_int) {
+    let received = unsafe { avd_hw_get_flash_received(hw) };
+    if received > 0 {
+        let cycle = unsafe { avd_hw_get_flash_cycle(hw) };
+        let cur_cycle = unsafe { avd_hw_get_cycle_counter(hw) };
+        unsafe { avd_hw_set_register(hw, bx, received) };
+        unsafe { avd_hw_set_register(hw, cx, cur_cycle - cycle) };
+    } else {
+        unsafe { avd_hw_set_register(hw, bx, 0) };
+        unsafe { avd_hw_set_register(hw, cx, 0) };
+    }
+}
+
+/// Inst_FlashInfoB: store flash received count in bx (no cycle info).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_flash_info_b(hw: *mut c_void, bx: c_int) {
+    let received = unsafe { avd_hw_get_flash_received(hw) };
+    if received > 0 {
+        unsafe { avd_hw_set_register(hw, bx, received) };
+    } else {
+        unsafe { avd_hw_set_register(hw, bx, 0) };
+    }
+}
+
+/// Inst_ResetFlashInfo: reset flash info to (0, 0).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_reset_flash_info(hw: *mut c_void) {
+    unsafe { avd_hw_reset_flash_info(hw) };
+}
+
+// ---------------------------------------------------------------------------
+// Batch D5: Fixed-register stack ops, IfDonor, ReadFacedCellData*
+// ---------------------------------------------------------------------------
+
+/// Pop from active stack into a fixed register (for PopA/PopB/PopC).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_pop_fixed(hw: *mut c_void, reg_id: c_int) {
+    let value = unsafe { avd_hw_stack_pop(hw) };
+    unsafe { avd_hw_set_register(hw, reg_id, value) };
+}
+
+/// Push a fixed register onto the active stack (for PushA/PushB/PushC).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_push_fixed(hw: *mut c_void, reg_id: c_int) {
+    let value = unsafe { avd_hw_get_register(hw, reg_id) };
+    unsafe { avd_hw_stack_push(hw, value) };
+}
+
+/// Inst_IfDonor: skip if neighbor was NOT a donor to this organism.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_donor(hw: *mut c_void) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    if neighbor.is_null() {
+        return 1; // no neighbor → skip (not a donor)
+    }
+    let neighbor_id = unsafe { avd_org_get_id(neighbor) };
+    let is_donor = unsafe { avd_org_is_donor(org, neighbor_id) };
+    if is_donor == 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Inst_ReadFacedCellData: store % diff of faced cell data vs my vitality.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_read_faced_cell_data(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let my_vit = (unsafe { avd_org_get_vitality(org) } + 0.5) as c_int;
+    let faced_data = unsafe { avd_org_get_faced_cell_data(org) };
+    let vit_diff = if my_vit != 0 {
+        (faced_data - my_vit) / my_vit * 100
+    } else {
+        0
+    };
+    unsafe { avd_hw_set_register(hw, reg_id, vit_diff) };
+}
+
+/// Inst_ReadFacedCellDataFreshness: store update age of faced cell data.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_read_faced_cell_data_freshness(
+    hw: *mut c_void,
+    reg_id: c_int,
+    current_update: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let data_update = unsafe { avd_org_get_faced_cell_data_update(org) };
+    unsafe { avd_hw_set_register(hw, reg_id, current_update - data_update) };
+}
+
+/// Inst_GetDistanceFromDiagonal: store distance from diagonal.
+/// pos_x and pos_y are pre-computed by C++ caller from deme.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_distance_from_diagonal(
+    hw: *mut c_void,
+    reg_id: c_int,
+    pos_x: c_int,
+    pos_y: c_int,
+) {
+    let diff = pos_x - pos_y;
+    let result = if pos_x > pos_y {
+        // ceil(diff / 2.0)
+        (diff + 1) / 2
+    } else {
+        // floor(diff / 2.0) — diff is <= 0 here
+        if diff % 2 == 0 {
+            diff / 2
+        } else {
+            (diff - 1) / 2
+        }
+    };
+    unsafe { avd_hw_set_register(hw, reg_id, result) };
 }
 
 // ---------------------------------------------------------------------------
