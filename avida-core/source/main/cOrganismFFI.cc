@@ -802,6 +802,11 @@ void avd_org_kaboom(cOrganism* org, cAvidaContext* ctx, int distance) {
   org->GetOrgInterface().Kaboom(distance, *ctx);
 }
 
+void avd_org_kaboom_with_effect(cOrganism* org, cAvidaContext* ctx, int distance, double effect) {
+  if (!org || !ctx) return;
+  org->Kaboom(distance, *ctx, effect);
+}
+
 void avd_stats_inc_kaboom(cWorld* world) {
   if (!world) return;
   world->GetStats().IncKaboom();
@@ -842,6 +847,40 @@ int avd_org_retrieve_message(cOrganism* org, int* out_label, int* out_data, int 
   if (out_label) *out_label = result.second.GetLabel();
   if (out_data) *out_data = result.second.GetData();
   return 1;
+}
+
+// ---- Organism methods: Flash / Neighborhood ----
+
+void avd_org_send_flash(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->SendFlash(*ctx);
+}
+
+void avd_org_load_neighborhood(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->LoadNeighborhood(*ctx);
+}
+
+int avd_org_has_neighborhood_changed(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return 0;
+  return org->HasNeighborhoodChanged(*ctx) ? 1 : 0;
+}
+
+// ---- Organism methods: BroadcastMessage ----
+
+int avd_org_broadcast_message(cOrganism* org, cAvidaContext* ctx, int label, int data, int depth) {
+  if (!org || !ctx) return 0;
+  cOrgMessage msg(org);
+  msg.SetLabel(label);
+  msg.SetData(data);
+  return org->BroadcastMessage(*ctx, msg, depth) ? 1 : 0;
+}
+
+// ---- Organism methods: BcastAlarmMSG ----
+
+int avd_org_bcast_alarm_msg(cOrganism* org, cAvidaContext* ctx, int jump_label, int bcast_range) {
+  if (!org || !ctx) return 0;
+  return org->BcastAlarmMSG(*ctx, jump_label, bcast_range) ? 1 : 0;
 }
 
 } // extern "C"

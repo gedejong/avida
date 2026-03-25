@@ -2776,10 +2776,7 @@ bool cHardwareCPU::Inst_CopyRegCB(cAvidaContext&)
 
 bool cHardwareCPU::Inst_Reset(cAvidaContext&)
 {
-  GetRegister(REG_AX) = 0;
-  GetRegister(REG_BX) = 0;
-  GetRegister(REG_CX) = 0;
-  StackClear();
+  avd_cpu_inst_reset(this, m_threads[m_cur_thread].regs_rust());
   m_last_cell_data = std::make_pair(false, 0);
   return true;
 }
@@ -2998,17 +2995,10 @@ bool cHardwareCPU::Inst_Nand(cAvidaContext&)
   return true;
 }
 
-bool cHardwareCPU::Inst_NandTreatable(cAvidaContext& ctx)
+bool cHardwareCPU::Inst_NandTreatable(cAvidaContext&)
 {
-  /*	
-   if (!m_organism->GetDeme()->isTreatable() && ctx.GetRandom().P(probFail))
-   return true;
-   
-   const int dst = FindModifiedRegister(REG_BX);
-   const int op1 = REG_BX;
-   const int op2 = REG_CX;
-   GetRegister(dst) = ~(GetRegister(op1) & GetRegister(op2));
-   */return true;
+  // Body was commented out in original C++; this is a no-op.
+  return avd_cpu_inst_nop_true() != 0;
 }
 
 bool cHardwareCPU::Inst_Nor(cAvidaContext&)
@@ -3583,38 +3573,20 @@ bool cHardwareCPU::Inst_NoisyQuorum(cAvidaContext& ctx) {
 
 bool cHardwareCPU::Inst_SmartExplode(cAvidaContext& ctx)
 {
-  if (GetRegister(FindModifiedRegister(REG_AX))){ 
-  // execute explode chance
-    m_organism->GetPhenotype().SetKaboomExecuted(true);
-    //Case where both Probability and Hamming Distance are static
-    double percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    int distance = (int) m_world->GetConfig().KABOOM_HAMMING.Get();
-    if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
-  } else {
-    m_world->GetStats().IncDontExplode();
-  }
+  const int reg_used = FindModifiedRegister(REG_AX);
+  avd_cpu_inst_smart_explode(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM_HAMMING.Get(),
+    m_world);
   return true;
 }
 
 
 bool cHardwareCPU::Inst_Lyse(cAvidaContext& ctx)
 {
-  //Note: This instruction doesn't kill the organism and assumes it is paired with a lethal reaction
   const int reg_used = FindModifiedRegister(REG_AX);
-  double percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-  int cpu_cycles;
-  if (percent_prob==-1.0){
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-  }
-  if (ctx.GetRandom().P(percent_prob)) { 
-    m_organism->GetPhenotype().SetKaboomExecuted(true);
-    m_world->GetStats().IncKaboom();
-    m_world->GetStats().IncPercLyse(percent_prob);
-    cpu_cycles = m_organism->GetPhenotype().GetCPUCyclesUsed();
-    m_world->GetStats().IncSumCPUs(cpu_cycles);
-  } else {
-    m_world->GetStats().IncDontExplode();
-  }
+  avd_cpu_inst_lyse(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(), m_world);
   return true;
 }
 
@@ -3721,76 +3693,40 @@ bool cHardwareCPU::Inst_SenseAI(cAvidaContext& ctx)
 
 }
 
-bool cHardwareCPU::Inst_NopPre(cAvidaContext& ctx)
+bool cHardwareCPU::Inst_NopPre(cAvidaContext&)
 {
-  //A no-operation instruction that only succeeds pre-divide in order to measure base pre-divide executions
-  if (m_organism->GetPhenotype().GetNumDivides()==0){
-    return true;
-  } else {
-    return false;
-  }
+  return avd_cpu_inst_nop_pre(this) != 0;
 }
 
-bool cHardwareCPU::Inst_NopPost(cAvidaContext& ctx)
+bool cHardwareCPU::Inst_NopPost(cAvidaContext&)
 {
-  //A no-operation instruction that only succeeds pre-divide in order to measure base pre-divide executions
-  if (m_organism->GetPhenotype().GetNumDivides()>0){
-    return true;
-  } else {
-    return false;
-  }
+  return avd_cpu_inst_nop_post(this) != 0;
 }
 
 bool cHardwareCPU::Inst_Aggressive_SA(cAvidaContext& ctx){
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  if (ctx.GetRandom().P(m_world->GetConfig().KABOOM_PROB.Get())){
-    m_organism->Kaboom(m_world->GetConfig().KABOOM_HAMMING.Get(), ctx, 1.0/(m_world->GetConfig().KABOOM_EFFECT.Get()));
-    }
+  avd_cpu_inst_aggressive_sa(this, &ctx,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM_HAMMING.Get(),
+    m_world->GetConfig().KABOOM_EFFECT.Get());
   return true;
 }
 
 bool cHardwareCPU::Inst_Cooperative_SA(cAvidaContext& ctx){
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  if (ctx.GetRandom().P(m_world->GetConfig().KABOOM_PROB.Get())){
-    m_organism->Kaboom(m_world->GetConfig().KABOOM_HAMMING.Get(), ctx, m_world->GetConfig().KABOOM_EFFECT.Get());
-    }
+  avd_cpu_inst_cooperative_sa(this, &ctx,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM_HAMMING.Get(),
+    m_world->GetConfig().KABOOM_EFFECT.Get());
   return true;
 }
 
 bool cHardwareCPU::Inst_Kazi(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM_HAMMING.Get() != -1);
-    //You can not have both kaboom_prob and kaboom_hamming set to adjustable because both must pull from the same register to be backwards compatible
-  // Code changed to allow for AdjustableHD
   const int reg_used = FindModifiedRegister(REG_AX);
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-    
-  double percent_prob = 1.0;
-  int distance = -1;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM_HAMMING.Get() == -1) {
-    //Case where Probability is static and hamming distance is adjustable
-    int get_reg_value = GetRegister(reg_used);
-    //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-    int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM_HAMMING.Get() != -1) {
-    //Case where both Probability and Hamming Distance are static
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (int) m_world->GetConfig().KABOOM_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM_HAMMING.Get() != -1) {
-    // Case where Probability is adjustable and Hamming distance isn't
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-    distance = (int) m_world->GetConfig().KABOOM_HAMMING.Get();
-    }
-    
-  if (ctx.GetRandom().P(percent_prob)) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -3798,32 +3734,10 @@ bool cHardwareCPU::Inst_Kazi1(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM1_HAMMING.Get() != -1);
   const int reg_used = FindModifiedRegister(REG_AX);
-  
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  
-  //These must always be set in the if, they can't both be adjustable, so don't do it
-  int distance = -1;
-  double percent_prob = 1.0;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM1_HAMMING.Get() == -1) {
-    //Case where Probability is static and hamming distance is adjustable
-    int get_reg_value = GetRegister(reg_used);
-    //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-    int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM1_HAMMING.Get() != -1) {
-    //Case where both Probability and Hamming Distance are static
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (int) m_world->GetConfig().KABOOM1_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM1_HAMMING.Get() != -1) {
-    //Case where Probability is adjustable and Hamming distance isn't
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-    distance = (int) m_world->GetConfig().KABOOM1_HAMMING.Get();
-  }
-  
-  if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM1_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -3831,31 +3745,10 @@ bool cHardwareCPU::Inst_Kazi2(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM2_HAMMING.Get() != -1);
   const int reg_used = FindModifiedRegister(REG_AX);
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  
-  //These must always be set in the if, they can't both be adjustable, so don't do it
-  int distance = -1;
-  double percent_prob = 1.0;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM2_HAMMING.Get() == -1) {
-    //Case where Probability is static and hamming distance is adjustable
-    int get_reg_value = GetRegister(reg_used);
-    //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-    int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM2_HAMMING.Get() != -1) {
-    //Case where both Probability and Hamming Distance are static
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (int) m_world->GetConfig().KABOOM2_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM2_HAMMING.Get() != -1) {
-    //Case where Probability is adjustable and Hamming distance isn't
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-    distance = (int) m_world->GetConfig().KABOOM2_HAMMING.Get();
-  }
-  
-  if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM2_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -3863,32 +3756,10 @@ bool cHardwareCPU::Inst_Kazi3(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM3_HAMMING.Get() != -1);
   const int reg_used = FindModifiedRegister(REG_AX);
-  
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  
-  //These must always be set in the if, they can't both be adjustable, so don't do it
-  int distance = -1;
-  double percent_prob = 1.0;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM3_HAMMING.Get() == -1) {
-    //Case where Probability is static and hamming distance is adjustable
-    int get_reg_value = GetRegister(reg_used);
-    //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-    int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM3_HAMMING.Get() != -1) {
-    //Case where both Probability and Hamming Distance are static
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (int) m_world->GetConfig().KABOOM3_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM3_HAMMING.Get() != -1) {
-    //Case where Probability is adjustable and Hamming distance isn't
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-    distance = (int) m_world->GetConfig().KABOOM3_HAMMING.Get();
-  }
-  
-  if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM3_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -3896,32 +3767,10 @@ bool cHardwareCPU::Inst_Kazi4(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM4_HAMMING.Get() != -1);
   const int reg_used = FindModifiedRegister(REG_AX);
-  
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  
-  //These must always be set in the if, they can't both be adjustable, so don't do it
-  int distance = -1;
-  double percent_prob = 1.0;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM4_HAMMING.Get() == -1) {
-    //Case where Probability is static and hamming distance is adjustable
-    int get_reg_value = GetRegister(reg_used);
-    //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-    int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM4_HAMMING.Get() != -1) {
-    //Case where both Probability and Hamming Distance are static
-    percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-    distance = (int) m_world->GetConfig().KABOOM4_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM4_HAMMING.Get() != -1) {
-    //Case where Probability is adjustable and Hamming distance isn't
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-    distance = (int) m_world->GetConfig().KABOOM4_HAMMING.Get();
-  }
-  
-  if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM4_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -3929,32 +3778,10 @@ bool cHardwareCPU::Inst_Kazi5(cAvidaContext& ctx)
 {
   assert(m_world->GetConfig().KABOOM_PROB.Get() != -1 || m_world->GetConfig().KABOOM5_HAMMING.Get() != -1);
   const int reg_used = FindModifiedRegister(REG_AX);
-  
-  m_organism->GetPhenotype().SetKaboomExecuted(true);
-  //we're outputting just to trigger reaction checks
-  m_organism->DoOutput(ctx, 0);
-  
-  //These must always be set in the if, they can't both be adjustable, so don't do it
-  int distance = -1;
-  double percent_prob = 1.0;
-  if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM5_HAMMING.Get() == -1) {
-      //Case where Probability is static and hamming distance is adjustable
-      int get_reg_value = GetRegister(reg_used);
-      //MAX_GENOME_SIZE and MIN_GENOME_SIZE should be set for these experiments, otherwise hamming distance doesn't make sense
-      int genome_size = m_world->GetConfig().MAX_GENOME_SIZE.Get();
-      percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-      distance = (get_reg_value % genome_size);
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() != -1 && (int) m_world->GetConfig().KABOOM5_HAMMING.Get() != -1) {
-      //Case where both Probability and Hamming Distance are static
-      percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-      distance = (int) m_world->GetConfig().KABOOM5_HAMMING.Get();
-  } else if ((int) m_world->GetConfig().KABOOM_PROB.Get() == -1 && (int) m_world->GetConfig().KABOOM5_HAMMING.Get() != -1) {
-      //Case where Probability is adjustable and Hamming distance isn't
-      percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-      distance = (int) m_world->GetConfig().KABOOM5_HAMMING.Get();
-  }
-    
-  if ( ctx.GetRandom().P(percent_prob) ) m_organism->Kaboom(distance, ctx);
+  avd_cpu_inst_kazi_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+    m_world->GetConfig().KABOOM_PROB.Get(),
+    m_world->GetConfig().KABOOM5_HAMMING.Get(),
+    m_world->GetConfig().MAX_GENOME_SIZE.Get());
   return true;
 }
 
@@ -4142,9 +3969,7 @@ bool cHardwareCPU::Inst_Send(cAvidaContext&)
 
 bool cHardwareCPU::Inst_Receive(cAvidaContext&)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);
-  GetRegister(reg_used) = m_organism->ReceiveValue();
-  
+  avd_cpu_inst_receive_modified(this, m_threads[m_cur_thread].regs_rust());
   return true;
 }
 
@@ -6234,23 +6059,7 @@ bool cHardwareCPU::Inst_ModCopyMut(cAvidaContext&)
 // 
 bool cHardwareCPU::Inst_Tumble(cAvidaContext& ctx)
 {
-  // Get number of neighbor cells that the organism can move to.
-  const int num_neighbors = m_organism->GetNeighborhoodSize();
-  // Exclude extreme case of the completely disconnected cell
-  if (0 < num_neighbors) {
-    // Choose a base 0 random number of turns to make in facing, [0 .. num_neighbors-2].
-    int irot = ctx.GetRandom().GetUInt(num_neighbors-1);
-    // Treat as base 0 number of turns to make
-    for (int i = 0; i <= irot; i++) {
-      m_organism->Rotate(ctx, 1);
-    }
-  }
-  // Logging
-  // ofstream tumblelog;
-  // tumblelog.open("data/tumblelog.txt",ios::app);
-  // tumblelog << organism->GetID() << "," << irot << endl;
-  // tumblelog.close();
-  
+  avd_cpu_inst_tumble(this, &ctx);
   return true;
 }
 
@@ -6372,13 +6181,7 @@ bool cHardwareCPU::Inst_MoveToEvent(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_IfNeighborEventInUnoccupiedCell(cAvidaContext& ctx)
 {
-  for (int i = 0; i < m_organism->GetNeighborhoodSize(); i++) {
-    if (m_organism->GetNeighborCellContents() > 0 && !m_organism->IsNeighborCellOccupied()) { 
-      return true;
-    }
-    m_organism->Rotate(ctx, 1);
-  }
-  getIP().Advance();
+  if (avd_cpu_inst_if_neighbor_event_in_unoccupied(this, &ctx)) getIP().Advance();
   return true;
 }
 
@@ -6459,15 +6262,13 @@ bool cHardwareCPU::Inst_ThreadID(cAvidaContext&)
 
 bool cHardwareCPU::Inst_SetHead(cAvidaContext&)
 {
-  const int head_used = FindModifiedHead(nHardware::HEAD_IP);
-  m_threads[m_cur_thread].cur_head = static_cast<unsigned char>(head_used);
+  avd_cpu_inst_set_head_modified(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_AdvanceHead(cAvidaContext&)
 {
-  const int head_used = FindModifiedHead(nHardware::HEAD_WRITE);
-  getHead(head_used).Advance();
+  avd_cpu_inst_advance_head_modified(this);
   return true;
 }
 
@@ -6576,16 +6377,13 @@ bool cHardwareCPU::Inst_GetHead(cAvidaContext&)
 
 bool cHardwareCPU::Inst_IfLabel(cAvidaContext&)
 {
-  ReadLabel();
-  GetLabel().Rotate(1, NUM_NOPS);
-  if (GetLabel() != GetReadLabel())  getIP().Advance();
+  if (avd_cpu_inst_if_label_via_ffi(this)) getIP().Advance();
   return true;
 }
 
 bool cHardwareCPU::Inst_IfLabelDirect(cAvidaContext&)
 {
-  ReadLabel();
-  if (GetLabel() != GetReadLabel())  getIP().Advance();
+  if (avd_cpu_inst_if_label_direct_via_ffi(this)) getIP().Advance();
   return true;
 }
 
@@ -7595,16 +7393,15 @@ bool cHardwareCPU::Inst_MaskOffLower4Bits_defaultAX(cAvidaContext&)
  */
 bool cHardwareCPU::Inst_SendMessage(cAvidaContext& ctx)
 {
-  return SendMessage(ctx);
+  return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 0) != 0;
 }
 
-// Same as cHardwareCPU::Inst_SendMessage.  Added for clearity
-bool cHardwareCPU::Inst_SendMessageInterruptType0(cAvidaContext& ctx) { return SendMessage(ctx, 0); }
-bool cHardwareCPU::Inst_SendMessageInterruptType1(cAvidaContext& ctx) { return SendMessage(ctx, 1); }
-bool cHardwareCPU::Inst_SendMessageInterruptType2(cAvidaContext& ctx) { return SendMessage(ctx, 2); }
-bool cHardwareCPU::Inst_SendMessageInterruptType3(cAvidaContext& ctx) { return SendMessage(ctx, 3); }
-bool cHardwareCPU::Inst_SendMessageInterruptType4(cAvidaContext& ctx) { return SendMessage(ctx, 4); }
-bool cHardwareCPU::Inst_SendMessageInterruptType5(cAvidaContext& ctx) { return SendMessage(ctx, 5); }
+bool cHardwareCPU::Inst_SendMessageInterruptType0(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 0) != 0; }
+bool cHardwareCPU::Inst_SendMessageInterruptType1(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 1) != 0; }
+bool cHardwareCPU::Inst_SendMessageInterruptType2(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 2) != 0; }
+bool cHardwareCPU::Inst_SendMessageInterruptType3(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 3) != 0; }
+bool cHardwareCPU::Inst_SendMessageInterruptType4(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 4) != 0; }
+bool cHardwareCPU::Inst_SendMessageInterruptType5(cAvidaContext& ctx) { return avd_cpu_inst_send_message_modified(this, &ctx, m_threads[m_cur_thread].regs_rust(), 5) != 0; }
 
 // jumps one instruction passed end-handler
 bool cHardwareCPU::Inst_START_Handler(cAvidaContext&)
@@ -7664,50 +7461,41 @@ bool cHardwareCPU::SendMessage(cAvidaContext& ctx, int messageType)
  If a message is available, ?BX? is set to the message's label, and ~?BX? is set
  to its data.
  */
-bool cHardwareCPU::Inst_RetrieveMessage(cAvidaContext&) 
+bool cHardwareCPU::Inst_RetrieveMessage(cAvidaContext&)
 {
-  std::pair<bool, cOrgMessage> retrieved = m_organism->RetrieveMessage();
-  if (!retrieved.first) {
-    return false;
-  }
-  
-  const int label_reg = FindModifiedRegister(REG_BX);
-  const int data_reg = FindNextRegister(label_reg);
-  
-  GetRegister(label_reg) = retrieved.second.GetLabel();
-  GetRegister(data_reg) = retrieved.second.GetData();
-  if(m_world->GetConfig().NET_LOG_RETMESSAGES.Get()) m_world->GetStats().LogRetMessage(retrieved.second);
-  return true;
+  // GUARD ORDERING: Rust guard retrieves message BEFORE consuming nop.
+  return avd_cpu_inst_retrieve_message(this, m_threads[m_cur_thread].regs_rust(),
+    m_world->GetConfig().NET_LOG_RETMESSAGES.Get(), m_world) != 0;
 }
 
 bool cHardwareCPU::Inst_Alarm_MSG_multihop(cAvidaContext& ctx)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);  
-  return m_organism->BcastAlarmMSG(ctx, abs(GetRegister(reg_used)%2), m_world->GetConfig().BCAST_HOPS.Get()); // jump to Alarm-label-  odd=high  even=low
+  const int reg_used = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_alarm_msg_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, 0, m_world->GetConfig().BCAST_HOPS.Get()) != 0;
 }
 
 bool cHardwareCPU::Inst_Alarm_MSG_Bit_Cons24_multihop(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  return m_organism->BcastAlarmMSG(ctx, (BitCount(GetRegister(reg_used) & MASK24) >= CONSENSUS24) ? 1 : 0, m_world->GetConfig().BCAST_HOPS.Get());// jump to Alarm-label-high OR Alarm-label-low
+  return avd_cpu_inst_alarm_msg_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, 1, m_world->GetConfig().BCAST_HOPS.Get()) != 0;
 }
 
 bool cHardwareCPU::Inst_Alarm_MSG_local(cAvidaContext& ctx)
 {
-  const int reg_used = FindModifiedRegister(REG_BX);  
-  return m_organism->BcastAlarmMSG(ctx, abs(GetRegister(reg_used)%2), 1); // jump to Alarm-label-  odd=high  even=low
+  const int reg_used = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_alarm_msg_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, 0, 1) != 0;
 }
 
 bool cHardwareCPU::Inst_Alarm_MSG_Bit_Cons24_local(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  return m_organism->BcastAlarmMSG(ctx, (BitCount(GetRegister(reg_used) & MASK24) >= CONSENSUS24) ? 1 : 0, 1);// jump to Alarm-label-high OR Alarm-label-low
+  return avd_cpu_inst_alarm_msg_generic(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, 1, 1) != 0;
 }
 
 
 bool cHardwareCPU::Inst_Alarm_Label(cAvidaContext&)
 {
-  return true;
+  return avd_cpu_inst_nop_true() != 0;
 }
 
 bool cHardwareCPU::Jump_To_Alarm_Label(int jump_label)
@@ -8925,25 +8713,14 @@ bool cHardwareCPU::Inst_AttackFacedOrg(cAvidaContext& ctx)
 //Get odds of winning or tieing in a fight. This will use vitality bins if those are set.
 bool cHardwareCPU::Inst_GetAttackOdds(cAvidaContext&)
 {
+  // GUARD ORDERING: guards BEFORE FindModifiedRegister
   assert(m_organism != 0);
   if (!m_organism->IsNeighborCellOccupied()) return false;
-  
   cOrganism* target = m_organism->GetNeighbor();
-  if (target->IsDead()) return false;  
-  
-  const double attacker_vitality = m_organism->GetVitality();
-  const double target_vitality = target->GetVitality();
-  
-  const double attacker_win_odds = ((attacker_vitality) / (attacker_vitality + target_vitality));
-  const double target_win_odds = ((target_vitality) / (attacker_vitality + target_vitality)); 
-  
-  const double odds_someone_dies = max(attacker_win_odds, target_win_odds);
-  // my win odds are odds nobody dies or someone dies and it's the target
-  const double odds_I_dont_die = (1 - odds_someone_dies) + ((1 - target_win_odds) * odds_someone_dies);
-  
-  // return odds as %
+  if (target->IsDead()) return false;
+
   const int out_reg = FindModifiedRegister(REG_BX);
-  GetRegister(out_reg) = (int) (odds_I_dont_die * 100 + 0.5);
+  avd_cpu_inst_get_attack_odds(this, out_reg);
   return true;
 } 	
 
@@ -8958,8 +8735,7 @@ void cHardwareCPU::ReceiveFlash()
 /*! Send a "flash" event to all neighboring organisms. */
 bool cHardwareCPU::Inst_Flash(cAvidaContext& ctx)
 {
-  assert(m_organism != 0);
-  m_organism->SendFlash(ctx);
+  avd_cpu_inst_flash(this, &ctx);
   return true;
 }
 
@@ -9014,9 +8790,7 @@ bool cHardwareCPU::Inst_GetCycles(cAvidaContext&)
 //! Loads the current neighborhood into the organism's memory.
 bool cHardwareCPU::Inst_GetNeighborhood(cAvidaContext& ctx)
 {
-  assert(m_organism != 0);
-  m_organism->LoadNeighborhood(ctx);
-  
+  avd_cpu_inst_get_neighborhood(this, &ctx);
   return true;
 }
 
@@ -9024,11 +8798,7 @@ bool cHardwareCPU::Inst_GetNeighborhood(cAvidaContext& ctx)
 //! Test if the current neighborhood has changed from that in the organism's memory.
 bool cHardwareCPU::Inst_IfNeighborhoodChanged(cAvidaContext& ctx)
 {
-  assert(m_organism != 0);
-  if (!m_organism->HasNeighborhoodChanged(ctx)) {
-    getIP().Advance();
-  }
-	
+  if (avd_cpu_inst_if_neighborhood_changed(this, &ctx)) getIP().Advance();
   return true;
 }
 
@@ -9126,8 +8896,8 @@ bool cHardwareCPU::Inst_Else(cAvidaContext&)
 
 /*! This is just a placeholder; it has no functionality of its own.
  */
-bool cHardwareCPU::Inst_EndIf(cAvidaContext&) { 
-  return true; 
+bool cHardwareCPU::Inst_EndIf(cAvidaContext&) {
+  return avd_cpu_inst_nop_true() != 0;
 }
 
 
@@ -9150,31 +8920,23 @@ bool cHardwareCPU::BroadcastX(cAvidaContext& ctx, int depth)
  of this organism.
  */
 bool cHardwareCPU::Inst_Broadcast1(cAvidaContext& ctx) {
-  return BroadcastX(ctx, 1);
+  const int label_reg = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_broadcast_x(this, &ctx, m_threads[m_cur_thread].regs_rust(), label_reg, 1) != 0;
 }
 
-
-/*! A double-hop broadcast instruction - send a message to all 2-hop neighbors
- of this organism.
- */
 bool cHardwareCPU::Inst_Broadcast2(cAvidaContext& ctx) {
-  return BroadcastX(ctx, 2);
+  const int label_reg = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_broadcast_x(this, &ctx, m_threads[m_cur_thread].regs_rust(), label_reg, 2) != 0;
 }
 
-
-/*! Another broadcast instruction variant - send a message to all 4-hop neighbors
- of this organism.
- */
 bool cHardwareCPU::Inst_Broadcast4(cAvidaContext& ctx) {
-  return BroadcastX(ctx, 4);
+  const int label_reg = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_broadcast_x(this, &ctx, m_threads[m_cur_thread].regs_rust(), label_reg, 4) != 0;
 }
 
-
-/*! Another broadcast instruction variant - send a message to all 8-hop neighbors
- of this organism.
- */
 bool cHardwareCPU::Inst_Broadcast8(cAvidaContext& ctx) {
-  return BroadcastX(ctx, 8);
+  const int label_reg = FindModifiedRegister(REG_BX);
+  return avd_cpu_inst_broadcast_x(this, &ctx, m_threads[m_cur_thread].regs_rust(), label_reg, 8) != 0;
 }
 
 

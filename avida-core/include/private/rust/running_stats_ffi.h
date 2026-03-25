@@ -1801,6 +1801,37 @@ void avd_cpu_inst_rotate_home(cHardwareBase* hw, cAvidaContext* ctx);
 void avd_cpu_inst_rotate_event_cell(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
 int  avd_cpu_inst_move(cHardwareBase* hw, cAvidaContext* ctx, int reg_used);
 
+// Trivial/Reset/SA handlers (Rust-backed)
+int  avd_cpu_inst_nop_true(void);
+void avd_cpu_inst_reset(cHardwareBase* hw, CpuRegisters* regs);
+void avd_cpu_inst_aggressive_sa(cHardwareBase* hw, cAvidaContext* ctx, double kaboom_prob, int kaboom_hamming, double kaboom_effect);
+void avd_cpu_inst_cooperative_sa(cHardwareBase* hw, cAvidaContext* ctx, double kaboom_prob, int kaboom_hamming, double kaboom_effect);
+void avd_cpu_inst_set_head_modified(cHardwareBase* hw);
+void avd_cpu_inst_advance_head_modified(cHardwareBase* hw);
+int  avd_cpu_inst_if_label_via_ffi(cHardwareBase* hw);
+int  avd_cpu_inst_if_label_direct_via_ffi(cHardwareBase* hw);
+void avd_cpu_inst_receive_modified(cHardwareBase* hw, CpuRegisters* regs);
+int  avd_cpu_inst_send_message_modified(cHardwareBase* hw, cAvidaContext* ctx, const CpuRegisters* regs, int msg_type);
+// Organism FFI: Kaboom with effect factor
+void avd_org_kaboom_with_effect(cOrganism* org, cAvidaContext* ctx, int distance, double effect);
+// Organism FFI: Flash / Neighborhood / Broadcast
+void avd_org_send_flash(cOrganism* org, cAvidaContext* ctx);
+void avd_org_load_neighborhood(cOrganism* org, cAvidaContext* ctx);
+int  avd_org_has_neighborhood_changed(cOrganism* org, cAvidaContext* ctx);
+int  avd_org_broadcast_message(cOrganism* org, cAvidaContext* ctx, int label, int data, int depth);
+// Rust-backed: Flash / Neighborhood / Broadcast instruction handlers
+void avd_cpu_inst_flash(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_get_neighborhood(cHardwareBase* hw, cAvidaContext* ctx);
+int  avd_cpu_inst_if_neighborhood_changed(cHardwareBase* hw, cAvidaContext* ctx);
+int  avd_cpu_inst_broadcast_x(cHardwareBase* hw, cAvidaContext* ctx, const CpuRegisters* regs, int reg_id, int depth);
+void avd_cpu_inst_tumble(cHardwareBase* hw, cAvidaContext* ctx);
+int  avd_cpu_inst_if_neighbor_event_in_unoccupied(cHardwareBase* hw, cAvidaContext* ctx);
+// Organism FFI: BcastAlarmMSG
+int  avd_org_bcast_alarm_msg(cOrganism* org, cAvidaContext* ctx, int jump_label, int bcast_range);
+// Rust-backed: Alarm MSG generic handler
+int  avd_cpu_inst_alarm_msg_generic(cHardwareBase* hw, cAvidaContext* ctx, const CpuRegisters* regs, int reg_id, int use_bit_consensus, int bcast_range);
+int  avd_cpu_inst_get_attack_odds(cHardwareBase* hw, int reg_id);
+
 #ifdef __cplusplus
 }
 

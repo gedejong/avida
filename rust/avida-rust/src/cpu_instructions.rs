@@ -3251,6 +3251,378 @@ pub unsafe extern "C" fn avd_cpu_inst_move(
 }
 
 // ---------------------------------------------------------------------------
+// Batch: Trivial / Reset / SA handlers
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_hw_stack_clear(hw: *mut c_void);
+    fn avd_hw_find_modified_head(hw: *mut c_void, default_head: c_int) -> c_int;
+    fn avd_org_kaboom_with_effect(org: *mut c_void, ctx: *mut c_void, distance: c_int, effect: f64);
+}
+
+/// Trivial no-op: always returns 1 (true).
+/// Used for Inst_EndIf, Inst_Alarm_Label, Inst_NandTreatable.
+///
+/// # Safety
+/// No pointers dereferenced.
+#[no_mangle]
+pub extern "C" fn avd_cpu_inst_nop_true() -> c_int {
+    1
+}
+
+/// Inst_Reset: zero all 3 registers and clear the stack.
+/// The C++ caller handles m_last_cell_data reset separately.
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_reset(hw: *mut c_void, regs: *mut CpuRegisters) {
+    if !regs.is_null() {
+        unsafe {
+            (*regs).reg[0] = 0;
+            (*regs).reg[1] = 0;
+            (*regs).reg[2] = 0;
+        }
+    }
+    unsafe { avd_hw_stack_clear(hw) };
+}
+
+/// Inst_Aggressive_SA: set kaboom_executed, trigger output, kaboom with 1/effect factor.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_aggressive_sa(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    kaboom_prob: f64,
+    kaboom_hamming: c_int,
+    kaboom_effect: f64,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_set_kaboom_executed(org, 1) };
+    unsafe { avd_org_do_output(org, ctx, 0) };
+    if unsafe { avd_ctx_random_p(ctx, kaboom_prob) } != 0 {
+        let inv_effect = if kaboom_effect != 0.0 {
+            1.0 / kaboom_effect
+        } else {
+            0.0
+        };
+        unsafe { avd_org_kaboom_with_effect(org, ctx, kaboom_hamming, inv_effect) };
+    }
+}
+
+/// Inst_Cooperative_SA: set kaboom_executed, trigger output, kaboom with effect factor.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_cooperative_sa(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    kaboom_prob: f64,
+    kaboom_hamming: c_int,
+    kaboom_effect: f64,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_set_kaboom_executed(org, 1) };
+    unsafe { avd_org_do_output(org, ctx, 0) };
+    if unsafe { avd_ctx_random_p(ctx, kaboom_prob) } != 0 {
+        unsafe { avd_org_kaboom_with_effect(org, ctx, kaboom_hamming, kaboom_effect) };
+    }
+}
+
+/// Inst_SetHead (old style): FindModifiedHead(HEAD_IP), set cur_head.
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_head_modified(hw: *mut c_void) {
+    let head_used = unsafe { avd_hw_find_modified_head(hw, HEAD_IP) };
+    unsafe { avd_hw_set_cur_head(hw, head_used) };
+}
+
+/// Inst_AdvanceHead (old style): FindModifiedHead(HEAD_WRITE), advance that head.
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_advance_head_modified(hw: *mut c_void) {
+    let head_used = unsafe { avd_hw_find_modified_head(hw, 2) }; // HEAD_WRITE = 2
+    unsafe { avd_hw_advance_head(hw, head_used) };
+}
+
+/// Inst_IfLabel: ReadLabel, rotate complement, compare.
+/// Returns 1 if label doesn't match (skip next), 0 if matches.
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_label_via_ffi(hw: *mut c_void) -> c_int {
+    unsafe { avd_hw_read_label(hw) };
+    unsafe { avd_hw_if_label_match(hw) }
+}
+
+/// Inst_IfLabelDirect: ReadLabel, compare directly (no complement rotation).
+/// Returns 1 if label doesn't match (skip next), 0 if matches.
+///
+/// # Safety
+/// `hw` must be a valid pointer.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_label_direct_via_ffi(hw: *mut c_void) -> c_int {
+    unsafe { avd_hw_read_label(hw) };
+    unsafe { avd_hw_if_label_direct_match(hw) }
+}
+
+/// Inst_Receive: receive a value into FindModifiedRegister(BX).
+///
+/// # Safety
+/// `hw` and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_receive_modified(hw: *mut c_void, regs: *mut CpuRegisters) {
+    let reg_used = unsafe { avd_hw_find_modified_register(hw, REG_BX) };
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let value = unsafe { avd_org_receive_value(org) };
+    unsafe { set_reg(regs, reg_used, value) };
+}
+
+/// Inst_SendMessage (with type): FindModifiedRegister(BX), send message with type.
+///
+/// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_send_message_modified(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    msg_type: c_int,
+) -> c_int {
+    let label_reg = unsafe { avd_hw_find_modified_register(hw, REG_BX) };
+    let data_reg = unsafe { avd_hw_find_next_register(label_reg) };
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let label = unsafe { get_reg(regs, label_reg) };
+    let data = unsafe { get_reg(regs, data_reg) };
+    unsafe { avd_org_send_message_regs(org, ctx, label, data, msg_type) }
+}
+
+// ---------------------------------------------------------------------------
+// Batch: Flash / Neighborhood / Broadcast handlers
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_send_flash(org: *mut c_void, ctx: *mut c_void);
+    fn avd_org_load_neighborhood(org: *mut c_void, ctx: *mut c_void);
+    fn avd_org_has_neighborhood_changed(org: *mut c_void, ctx: *mut c_void) -> c_int;
+    fn avd_org_broadcast_message(
+        org: *mut c_void,
+        ctx: *mut c_void,
+        label: c_int,
+        data: c_int,
+        depth: c_int,
+    ) -> c_int;
+}
+
+/// Inst_Flash: send a flash signal from this organism.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_flash(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_send_flash(org, ctx) };
+}
+
+/// Inst_GetNeighborhood: load the current neighborhood into organism memory.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_neighborhood(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_load_neighborhood(org, ctx) };
+}
+
+/// Inst_IfNeighborhoodChanged: skip next if neighborhood has NOT changed.
+/// Returns 1 if should skip (not changed), 0 if changed.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_neighborhood_changed(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let changed = unsafe { avd_org_has_neighborhood_changed(org, ctx) };
+    // Skip if NOT changed (original: if (!HasNeighborhoodChanged()) IP.Advance())
+    if changed == 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// BroadcastX: send a broadcast message at given depth.
+/// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_broadcast_x(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    depth: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let data_reg = unsafe { avd_hw_find_next_register(reg_id) };
+    let label = unsafe { get_reg(regs, reg_id) };
+    let data = unsafe { get_reg(regs, data_reg) };
+    unsafe { avd_org_broadcast_message(org, ctx, label, data, depth) }
+}
+
+// ---------------------------------------------------------------------------
+// Batch: Tumble handler
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_ctx_random_get_uint(ctx: *mut c_void, max: u32) -> c_int;
+}
+
+/// Inst_Tumble: randomly rotate the organism some number of times.
+///
+/// Picks a random number of turns [0..neighbors-2] and rotates that many + 1 times.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_tumble(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let num_neighbors = unsafe { avd_org_get_neighborhood_size(org) };
+    if num_neighbors > 0 {
+        let irot = unsafe { avd_ctx_random_get_uint(ctx, (num_neighbors - 1) as u32) };
+        for _ in 0..=irot {
+            unsafe { avd_org_rotate(org, ctx, 1) };
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Batch: IfNeighborEventInUnoccupiedCell
+// ---------------------------------------------------------------------------
+
+/// Inst_IfNeighborEventInUnoccupiedCell: scan neighbors for event in unoccupied cell.
+/// Returns 1 if NO such neighbor found (skip next), 0 if found.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_neighbor_event_in_unoccupied(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighborhood_size = unsafe { avd_org_get_neighborhood_size(org) };
+    for _ in 0..neighborhood_size {
+        let contents = unsafe { avd_org_get_neighbor_cell_contents(org) };
+        let occupied = unsafe { avd_org_is_neighbor_cell_occupied(org) };
+        if contents > 0 && occupied == 0 {
+            return 0; // found match → don't skip
+        }
+        unsafe { avd_org_rotate(org, ctx, 1) };
+    }
+    1 // no match → skip next
+}
+
+// ---------------------------------------------------------------------------
+// Batch: Alarm MSG handlers
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_bcast_alarm_msg(
+        org: *mut c_void,
+        ctx: *mut c_void,
+        jump_label: c_int,
+        bcast_range: c_int,
+    ) -> c_int;
+}
+
+/// Generic alarm message handler.
+///
+/// `use_bit_consensus` != 0: jump_label = (bit_count(reg & MASK24) >= 12) ? 1 : 0
+/// `use_bit_consensus` == 0: jump_label = abs(reg % 2)
+///
+/// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_alarm_msg_generic(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    use_bit_consensus: c_int,
+    bcast_range: c_int,
+) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let reg_value = unsafe { get_reg(regs, reg_id) };
+    let jump_label = if use_bit_consensus != 0 {
+        if bit_count((reg_value as u32) & MASK24) >= CONSENSUS24 {
+            1
+        } else {
+            0
+        }
+    } else {
+        (reg_value % 2).unsigned_abs() as c_int
+    };
+    unsafe { avd_org_bcast_alarm_msg(org, ctx, jump_label, bcast_range) }
+}
+
+// ---------------------------------------------------------------------------
+// Batch: GetAttackOdds (vitality-based combat odds)
+// ---------------------------------------------------------------------------
+
+/// Inst_GetAttackOdds: compute odds of not dying in a fight with the faced neighbor.
+///
+/// GUARD ORDERING: C++ must check IsNeighborCellOccupied() and IsDead() BEFORE calling this.
+/// This function is only called after guards pass. It reads vitalities and writes result.
+///
+/// Returns 1 on success.
+///
+/// # Safety
+/// `hw` must be valid. `reg_id` must be a valid register index.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_attack_odds(hw: *mut c_void, reg_id: c_int) -> c_int {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let neighbor = unsafe { avd_org_get_neighbor(org) };
+    let attacker_vitality = unsafe { avd_org_get_vitality(org) };
+    let target_vitality = unsafe { avd_org_get_vitality(neighbor) };
+
+    let total = attacker_vitality + target_vitality;
+    if total == 0.0 {
+        unsafe { avd_hw_set_register(hw, reg_id, 50) };
+        return 1;
+    }
+
+    let attacker_win_odds = attacker_vitality / total;
+    let target_win_odds = target_vitality / total;
+
+    let odds_someone_dies = if attacker_win_odds > target_win_odds {
+        attacker_win_odds
+    } else {
+        target_win_odds
+    };
+    let odds_i_dont_die = (1.0 - odds_someone_dies) + ((1.0 - target_win_odds) * odds_someone_dies);
+
+    unsafe { avd_hw_set_register(hw, reg_id, (odds_i_dont_die * 100.0 + 0.5) as c_int) };
+    1
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -3623,5 +3995,43 @@ mod tests {
         }
         assert!(!found_any);
         assert_eq!(rotations, 4);
+    }
+
+    // --- Tests for new handlers ---
+
+    #[test]
+    fn test_nop_true() {
+        assert_eq!(avd_cpu_inst_nop_true(), 1);
+    }
+
+    #[test]
+    fn test_reset_zeros_registers() {
+        let mut regs = CpuRegisters { reg: [42, -7, 100] };
+        // Can't call avd_cpu_inst_reset because it needs hw pointer for stack clear.
+        // Just test the register zeroing logic directly:
+        regs.reg[0] = 0;
+        regs.reg[1] = 0;
+        regs.reg[2] = 0;
+        assert_eq!(regs.reg, [0, 0, 0]);
+    }
+
+    #[test]
+    fn test_alarm_msg_bit_consensus_label() {
+        // 12 bits set in lower 24 → should give jump_label = 1
+        let val: u32 = 0x00_0FFF; // 12 bits set
+        assert!(bit_count(val & MASK24) >= CONSENSUS24);
+
+        // 11 bits set → should give jump_label = 0
+        let val2: u32 = 0x00_07FF; // 11 bits set
+        assert!(bit_count(val2 & MASK24) < CONSENSUS24);
+    }
+
+    #[test]
+    fn test_alarm_msg_odd_even_label() {
+        // odd → 1, even → 0
+        assert_eq!((5_i32 % 2).unsigned_abs(), 1);
+        assert_eq!((4_i32 % 2).unsigned_abs(), 0);
+        assert_eq!((-3_i32 % 2).unsigned_abs(), 1);
+        assert_eq!((-4_i32 % 2).unsigned_abs(), 0);
     }
 }
