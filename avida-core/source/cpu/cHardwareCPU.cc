@@ -7181,18 +7181,13 @@ bool cHardwareCPU::Inst_IfEnergyNotLow(cAvidaContext&)
 bool cHardwareCPU::Inst_IfFacedEnergyLow(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 0)) getIP().Advance();
-  return true;
-}
   if (avd_cpu_inst_if_faced_energy_low(this)) getIP().Advance();
   return true;
 }
 
-
 bool cHardwareCPU::Inst_IfFacedEnergyNotLow(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_LOW, 1)) getIP().Advance();
   if (avd_cpu_inst_if_faced_energy_not_low(this)) getIP().Advance();
   return true;
 }
@@ -7219,18 +7214,13 @@ bool cHardwareCPU::Inst_IfEnergyNotHigh(cAvidaContext&)
 bool cHardwareCPU::Inst_IfFacedEnergyHigh(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 0)) getIP().Advance();
-  return true;
-}
   if (avd_cpu_inst_if_faced_energy_high(this)) getIP().Advance();
   return true;
 }
 
-
 bool cHardwareCPU::Inst_IfFacedEnergyNotHigh(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_HIGH, 1)) getIP().Advance();
   if (avd_cpu_inst_if_faced_energy_not_high(this)) getIP().Advance();
   return true;
 }
@@ -7248,8 +7238,6 @@ bool cHardwareCPU::Inst_IfEnergyMed(cAvidaContext&)
 bool cHardwareCPU::Inst_IfFacedEnergyMed(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  if (avd_cpu_inst_if_faced_energy(this, cPhenotype::ENERGY_LEVEL_MEDIUM, 0)) getIP().Advance();
-
   if (avd_cpu_inst_if_faced_energy_med(this)) getIP().Advance();
   return true;
 }
@@ -7298,23 +7286,9 @@ bool cHardwareCPU::Inst_GetEnergyLevel(cAvidaContext&)
 bool cHardwareCPU::Inst_GetFacedEnergyLevel(cAvidaContext&)
 {
   if (m_organism->GetCellID() < 0) return false;
-  // Guard: check neighbor exists before FindModifiedRegister (guard ordering rule)
   cOrganism* neighbor = m_organism->GetNeighbor();
   if (neighbor == NULL || neighbor->IsDead()) return false;
   return avd_cpu_inst_get_faced_energy_level(this, FindModifiedRegister(REG_BX)) != 0;
-  
-  // Neighbor check is inside Rust; returns 0 on failure (no neighbor / dead).
-  // FindModifiedRegister must be called AFTER guard but BEFORE Rust call only if
-  // Rust needs it. Here the neighbor guard is also before FindModifiedRegister in
-  // the original, so we let Rust handle the neighbor check and only call
-  // FindModifiedRegister on success path. But since the Rust function needs reg_id,
-  // and the original C++ would not consume nops if neighbor fails, we need to check
-  // the neighbor first in C++ to preserve nop-consumption semantics.
-  cOrganism* neighbor = m_organism->GetNeighbor();
-  if (neighbor == NULL || neighbor->IsDead()) return false;
-  const int reg = FindModifiedRegister(REG_BX);
-  avd_cpu_inst_get_faced_energy_level(this, reg);
-  return true;
 }
 
 
