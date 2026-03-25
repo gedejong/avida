@@ -145,6 +145,9 @@ unsafe extern "C" {
     fn avd_org_deme_increase_energy_donated(org: *mut c_void, amount: f64);
     fn avd_org_deme_increase_energy_received(org: *mut c_void, amount: f64);
     fn avd_org_has_open_energy_request(org: *mut c_void) -> c_int;
+    // Phase 5: group/population queries + deme donation
+    fn avd_org_iface_number_of_orgs_in_group(org: *mut c_void, group_id: c_int) -> c_int;
+    fn avd_org_donate_res_consumed_to_deme(org: *mut c_void);
 }
 
 // Head IDs matching nHardware::tHeads
@@ -862,7 +865,64 @@ pub unsafe extern "C" fn avd_cpu_inst_get_opinion_only(hw: *mut c_void, reg_id: 
     unsafe { avd_hw_set_register(hw, reg_id, val) };
 }
 
-// TODO: avd_cpu_inst_number_orgs_in_group needs population-level FFI query — skipped
+// ---------------------------------------------------------------------------
+// Batch D9: Cell data, group count, opinion-to-value, donate-res-to-deme
+// ---------------------------------------------------------------------------
+
+/// Inst_CollectCellData: read cell data into register.
+/// C++ caller is responsible for updating m_last_cell_data after this call.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_collect_cell_data(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let cell_data = unsafe { avd_org_get_cell_data_org(org) };
+    unsafe { avd_hw_set_register(hw, reg_id, cell_data) };
+}
+
+/// Inst_SetOpinionToZero/One/Two: set register to value, set opinion, do output.
+/// Consumes TWO FindModifiedRegister calls in C++ (behavior parity).
+/// C++ passes the first-consumed register as out_reg and second-consumed as opinion_reg.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_set_opinion_to_value(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    value: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_iface_set_opinion(org, value) };
+    unsafe { avd_org_do_output(org, ctx, value) };
+}
+
+/// Inst_NumberOrgsInMyGroup: get count of organisms in this org's group.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_number_orgs_in_my_group(hw: *mut c_void, reg_id: c_int) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let mut num_orgs = 0;
+    if unsafe { avd_org_iface_has_opinion(org) } != 0 {
+        let opinion = unsafe { avd_org_get_opinion_first(org) };
+        num_orgs = unsafe { avd_org_iface_number_of_orgs_in_group(org, opinion) };
+    }
+    unsafe { avd_hw_set_register(hw, reg_id, num_orgs) };
+}
+
+/// Inst_NumberOrgsInGroup: get count of organisms in the group specified by
+/// group_reg (the register index IS the group ID — matching C++ behavior).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_number_orgs_in_group(
+    hw: *mut c_void,
+    group_reg: c_int,
+    result_reg: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let num_orgs = unsafe { avd_org_iface_number_of_orgs_in_group(org, group_reg) };
+    unsafe { avd_hw_set_register(hw, result_reg, num_orgs) };
+}
+
+/// Inst_DonateResToDeme: donate consumed resources to the organism's deme.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_donate_res_to_deme(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_donate_res_consumed_to_deme(org) };
+}
 
 // ---------------------------------------------------------------------------
 // Phase 2: Mutable organism state handlers (Batch C1-C2)

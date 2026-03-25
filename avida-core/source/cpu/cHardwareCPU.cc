@@ -8733,8 +8733,8 @@ bool cHardwareCPU::Inst_SetOpinionToZero(cAvidaContext& ctx)
   // The first consumes a nop (if present); the second returns default BX.
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 0;
-  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
-  m_organism->DoOutput(ctx, 0);
+  (void)FindModifiedRegister(REG_BX); // consume second nop for parity
+  avd_cpu_inst_set_opinion_to_value(this, &ctx, 0);
   return true;
 }
 
@@ -8744,8 +8744,8 @@ bool cHardwareCPU::Inst_SetOpinionToOne(cAvidaContext& ctx)
   assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 1;
-  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
-  m_organism->DoOutput(ctx, 1);
+  (void)FindModifiedRegister(REG_BX); // consume second nop for parity
+  avd_cpu_inst_set_opinion_to_value(this, &ctx, 1);
   return true;
 }
 
@@ -8755,8 +8755,8 @@ bool cHardwareCPU::Inst_SetOpinionToTwo(cAvidaContext& ctx)
   assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
   GetRegister(out_reg) = 2;
-  avd_cpu_inst_set_opinion(this, FindModifiedRegister(REG_BX));
-  m_organism->DoOutput(ctx, 2);
+  (void)FindModifiedRegister(REG_BX); // consume second nop for parity
+  avd_cpu_inst_set_opinion_to_value(this, &ctx, 2);
   return true;
 }
 
@@ -8771,10 +8771,10 @@ bool cHardwareCPU::Inst_CollectCellData(cAvidaContext&)
 {
   assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
-  GetRegister(out_reg) = m_organism->GetCellData();
-  // Update last collected cell data:
+  avd_cpu_inst_collect_cell_data(this, out_reg);
+  // Update last collected cell data (m_last_cell_data stays in C++):
   m_last_cell_data = std::make_pair(true, GetRegister(out_reg));
-  
+
   return true;
 }
 
@@ -9693,14 +9693,7 @@ bool cHardwareCPU::Inst_JoinNextMTGroup(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_NumberOrgsInMyGroup(cAvidaContext& ctx)
 {
   assert(m_organism != 0);
-  
-  int num_orgs = 0;
-  if (m_organism->GetOrgInterface().HasOpinion(m_organism)) {
-    int opinion = m_organism->GetOpinion().first;
-    num_orgs = m_organism->GetOrgInterface().NumberOfOrganismsInGroup(opinion);
-  }
-  const int num_org_reg = FindModifiedRegister(REG_BX);
-  GetRegister(num_org_reg) = num_orgs;
+  avd_cpu_inst_number_orgs_in_my_group(this, FindModifiedRegister(REG_BX));
   return true;
 }
 
@@ -9732,11 +9725,9 @@ bool cHardwareCPU::Inst_NumberMTInMyGroup(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_NumberOrgsInGroup(cAvidaContext& ctx)
 {
   assert(m_organism != 0);
-  const int group_id = FindModifiedRegister(REG_BX);
-  const int num_org_reg = FindModifiedRegister(REG_CX);
-  
-  int num_orgs = m_organism->GetOrgInterface().NumberOfOrganismsInGroup(group_id);
-  GetRegister(num_org_reg) = num_orgs;
+  const int group_reg = FindModifiedRegister(REG_BX);
+  const int result_reg = FindModifiedRegister(REG_CX);
+  avd_cpu_inst_number_orgs_in_group(this, group_reg, result_reg);
   return true;
 }
 
@@ -10081,7 +10072,7 @@ bool cHardwareCPU::Inst_GetTimeUsed(cAvidaContext&)
 
 bool  cHardwareCPU::Inst_DonateResToDeme(cAvidaContext&)
 {
-  m_organism->DonateResConsumedToDeme();
+  avd_cpu_inst_donate_res_to_deme(this);
   return true;
 }
 

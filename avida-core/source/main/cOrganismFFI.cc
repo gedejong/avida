@@ -755,4 +755,16 @@ int avd_org_get_cpu_cycles_used(cOrganism* org) {
   return org->GetPhenotype().GetCPUCyclesUsed();
 }
 
+// ---- OrgInterface delegation (Phase 5: group/population queries) ----
+
+int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
+  if (!org) return 0;
+  return org->GetOrgInterface().NumberOfOrganismsInGroup(group_id);
+}
+
+void avd_org_donate_res_consumed_to_deme(cOrganism* org) {
+  if (!org) return;
+  org->DonateResConsumedToDeme();
+}
+
 } // extern "C"

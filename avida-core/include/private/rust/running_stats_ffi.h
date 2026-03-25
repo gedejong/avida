@@ -1747,6 +1747,13 @@ int  avd_cpu_inst_donate_energy_faced_amount(cHardwareBase* hw, cAvidaContext* c
 int  avd_cpu_inst_receive_donated_energy(cHardwareBase* hw, cAvidaContext* ctx, int update_metabolic);
 void avd_cpu_inst_update_metabolic_rate(cHardwareBase* hw, cAvidaContext* ctx);
 
+// Batch D9: Cell data, group, opinion-to-value, donate-res-to-deme
+void avd_cpu_inst_collect_cell_data(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_set_opinion_to_value(cHardwareBase* hw, cAvidaContext* ctx, int value);
+void avd_cpu_inst_number_orgs_in_my_group(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_number_orgs_in_group(cHardwareBase* hw, int group_reg, int result_reg);
+void avd_cpu_inst_donate_res_to_deme(cHardwareBase* hw);
+
 #ifdef __cplusplus
 }
 
