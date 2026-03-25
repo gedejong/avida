@@ -1716,6 +1716,18 @@ void avd_cpu_inst_read_faced_cell_data_freshness(cHardwareBase* hw, int reg_id, 
 // GetDistanceFromDiagonal
 void avd_cpu_inst_get_distance_from_diagonal(cHardwareBase* hw, int reg_id, int pos_x, int pos_y);
 
+// Batch D6–D8: Opinion, Send, Donation handlers
+void avd_cpu_inst_set_opinion(cHardwareBase* hw, int reg_id);
+void avd_cpu_inst_clear_opinion(cHardwareBase* hw);
+int  avd_cpu_inst_get_opinion(cHardwareBase* hw, int opinion_reg, int age_reg, int current_update);
+void avd_cpu_inst_send(cHardwareBase* hw, int reg_id);
+int  avd_cpu_inst_donate_null(cHardwareBase* hw, cAvidaContext* ctx, int max_donates, double merit_given);
+int  avd_cpu_inst_donate_facing(cHardwareBase* hw, cAvidaContext* ctx, int max_donates);
+int  avd_cpu_inst_donate_energy_faced(cHardwareBase* hw, cAvidaContext* ctx, double loss_pct, int update_metabolic, int sharing_method);
+int  avd_cpu_inst_donate_energy_faced_amount(cHardwareBase* hw, cAvidaContext* ctx, double fixed_amount, double loss_pct, int update_metabolic, int sharing_method);
+int  avd_cpu_inst_receive_donated_energy(cHardwareBase* hw, cAvidaContext* ctx, int update_metabolic);
+void avd_cpu_inst_update_metabolic_rate(cHardwareBase* hw, cAvidaContext* ctx);
+
 #ifdef __cplusplus
 }
 
