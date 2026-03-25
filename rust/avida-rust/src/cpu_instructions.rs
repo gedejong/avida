@@ -88,6 +88,11 @@ unsafe extern "C" {
     fn avd_org_get_frac_energy_donating(org: *mut c_void) -> f64;
     fn avd_org_set_frac_energy_donating(org: *mut c_void, frac: f64);
     fn avd_org_get_opinion_only(org: *mut c_void) -> c_int;
+    fn avd_org_join_germline(org: *mut c_void);
+    fn avd_org_exit_germline(org: *mut c_void);
+    fn avd_org_toggle_pheromone(org: *mut c_void);
+    fn avd_org_repair_point_mut_on(org: *mut c_void);
+    fn avd_org_get_rbin(org: *mut c_void, index: c_int) -> f64;
 }
 
 // Head IDs matching nHardware::tHeads
@@ -855,6 +860,56 @@ pub unsafe extern "C" fn avd_cpu_inst_increase_energy_donation(hw: *mut c_void, 
         curr + increment
     };
     unsafe { avd_org_set_frac_energy_donating(org, new_val) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_decrease_energy_donation(hw: *mut c_void, increment: f64) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let curr = unsafe { avd_org_get_frac_energy_donating(org) };
+    let new_val = if curr - increment < 0.0 {
+        0.0
+    } else {
+        curr - increment
+    };
+    unsafe { avd_org_set_frac_energy_donating(org, new_val) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_join_germline(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_join_germline(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_exit_germline(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_exit_germline(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_phero_toggle(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_toggle_pheromone(org) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_repair_point_mut_on(hw: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_repair_point_mut_on(org) };
+}
+
+/// Inst_GetResStored: read resource bin value into register.
+/// `resource_id`: COLLECT_SPECIFIC_RESOURCE config value (from C++ caller).
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_get_res_stored(
+    hw: *mut c_void,
+    reg_id: c_int,
+    resource_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let res = unsafe { avd_org_get_rbin(org, resource_id) };
+    let res_stored = (res * 100.0 - 0.5) as c_int;
+    unsafe { avd_hw_set_register(hw, reg_id, res_stored) };
 }
 
 // ---------------------------------------------------------------------------

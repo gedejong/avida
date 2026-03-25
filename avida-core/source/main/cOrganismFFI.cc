@@ -453,6 +453,32 @@ double avd_org_get_frac_energy_donating(cOrganism* org) {
   return org->GetFracEnergyDonating();
 }
 
+// Germline/repair
+void avd_org_join_germline(cOrganism* org) {
+  if (!org) return;
+  org->JoinGermline();
+}
+
+void avd_org_exit_germline(cOrganism* org) {
+  if (!org) return;
+  org->ExitGermline();
+}
+
+void avd_org_toggle_pheromone(cOrganism* org) {
+  if (!org) return;
+  org->TogglePheromone();
+}
+
+void avd_org_repair_point_mut_on(cOrganism* org) {
+  if (!org) return;
+  org->RepairPointMutOn();
+}
+
+void avd_org_repair_point_mut_off(cOrganism* org) {
+  if (!org) return;
+  org->RepairPointMutOff();
+}
+
 // Resource bin access
 double avd_org_get_rbin(cOrganism* org, int index) {
   if (!org) return 0.0;

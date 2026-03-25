@@ -6077,14 +6077,9 @@ bool cHardwareCPU::Inst_IncreaseEnergyDonation(cAvidaContext&)
 // Decrease the amount of energy to be donated
 bool cHardwareCPU::Inst_DecreaseEnergyDonation(cAvidaContext&)
 {
-  double curr_amount = m_organism->GetFracEnergyDonating();
-  double increment = m_world->GetConfig().ENERGY_SHARING_INCREMENT.Get();
-  
-  m_organism->SetFracEnergyDonating(max(0.0, curr_amount - increment));  
-  
+  avd_cpu_inst_decrease_energy_donation(this, m_world->GetConfig().ENERGY_SHARING_INCREMENT.Get());
   return true;
-  
-} //End Inst_DecreaseEnergyDonation()
+}
 
 
 // Move a fraction of the given resource present at the current cell to the specified cell.
@@ -8217,9 +8212,9 @@ bool cHardwareCPU::Inst_PheroOff(cAvidaContext&)
 
 bool cHardwareCPU::Inst_PheroToggle(cAvidaContext&)
 {
-  m_organism->TogglePheromone();
+  avd_cpu_inst_phero_toggle(this);
   return true;
-} //End Inst_PheroToggle()
+}
 
 // BDC: same as DoSense, but uses senses from cell that org is facing
 bool cHardwareCPU::DoSenseFacing(cAvidaContext& ctx, int conversion_method, double base)
@@ -9307,14 +9302,9 @@ bool cHardwareCPU::Inst_MarkCellWithID(cAvidaContext&)
 }
 
 bool cHardwareCPU::Inst_GetResStored(cAvidaContext&)
-//Get amount of stored collect specific resource (how much do I have available for res_cost instructions).
 {
-  assert(m_organism != 0);
   const int out_reg = FindModifiedRegister(REG_BX);
-  const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
-  // needs to return int...we round down so that they don't think there is more available than they need
-  int res_stored = (int) (m_organism->GetRBin(resource) * 100 - 0.5);
-  GetRegister(out_reg) = res_stored;
+  avd_cpu_inst_get_res_stored(this, out_reg, m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get());
   return true;
 }
 
@@ -10659,17 +10649,17 @@ bool cHardwareCPU::Inst_ApplyPointMutationsGroupGS(cAvidaContext& ctx)
 
 
 bool cHardwareCPU::Inst_JoinGermline(cAvidaContext& ctx) {
-  m_organism->JoinGermline();
+  avd_cpu_inst_join_germline(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_ExitGermline(cAvidaContext&) {
-  m_organism->ExitGermline();
+  avd_cpu_inst_exit_germline(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_RepairPointMutOn(cAvidaContext& ctx){
-  m_organism->RepairPointMutOn();
+  avd_cpu_inst_repair_point_mut_on(this);
   return true;
 }
 

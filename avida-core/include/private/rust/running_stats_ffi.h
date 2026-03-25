@@ -1403,6 +1403,11 @@ void avd_org_increase_num_energy_requests(cOrganism* org);
 void avd_org_set_has_open_energy_request(cOrganism* org);
 void avd_org_clear_has_open_energy_request(cOrganism* org);
 double avd_org_get_frac_energy_donating(cOrganism* org);
+void avd_org_join_germline(cOrganism* org);
+void avd_org_exit_germline(cOrganism* org);
+void avd_org_toggle_pheromone(cOrganism* org);
+void avd_org_repair_point_mut_on(cOrganism* org);
+void avd_org_repair_point_mut_off(cOrganism* org);
 
 // Cell accessors
 int avd_cell_is_occupied(cPopulationCell* cell);
@@ -1556,6 +1561,12 @@ void avd_cpu_inst_phero_off(cHardwareBase* hw);
 void avd_cpu_inst_request_energy_flag_on(cHardwareBase* hw);
 void avd_cpu_inst_request_energy_flag_off(cHardwareBase* hw);
 void avd_cpu_inst_increase_energy_donation(cHardwareBase* hw, double increment);
+void avd_cpu_inst_decrease_energy_donation(cHardwareBase* hw, double increment);
+void avd_cpu_inst_join_germline(cHardwareBase* hw);
+void avd_cpu_inst_exit_germline(cHardwareBase* hw);
+void avd_cpu_inst_phero_toggle(cHardwareBase* hw);
+void avd_cpu_inst_repair_point_mut_on(cHardwareBase* hw);
+void avd_cpu_inst_get_res_stored(cHardwareBase* hw, int reg_id, int resource_id);
 // Organism-reading handlers
 int avd_cpu_inst_if_germ(cHardwareBase* hw);
 int avd_cpu_inst_if_soma(cHardwareBase* hw);
