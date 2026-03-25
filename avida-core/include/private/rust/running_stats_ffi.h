@@ -1650,6 +1650,18 @@ void avd_cpu_inst_task_input(cHardwareBase* hw, CpuRegisters* regs, int reg_id);
 void avd_cpu_inst_task_output(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
 void avd_cpu_inst_task_stack_get(cHardwareBase* hw);
 void avd_cpu_inst_task_stack_load(cHardwareBase* hw);
+// Organism state transitions (Phase 4: I/O reset, death)
+void avd_org_reset_inputs(cOrganism* org, cAvidaContext* ctx);
+void avd_org_clear_input(cOrganism* org);
+void avd_org_die(cOrganism* org, cAvidaContext* ctx);
+int avd_org_get_cpu_cycles_used(cOrganism* org);
+// I/O variant instruction handlers (Phase 4)
+void avd_cpu_inst_task_io_bonus_cost(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id, double bonus_cost);
+void avd_cpu_inst_task_io_feedback(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_put_reset_inputs(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_task_get2(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id);
+void avd_cpu_inst_die(cHardwareBase* hw, cAvidaContext* ctx);
+void avd_cpu_inst_prob_die(cHardwareBase* hw, cAvidaContext* ctx, CpuRegisters* regs, int reg_id, double config_prob);
 
 /* ---------- Task_MatchStr FFI ---------- */
 double avd_task_eval_match_str(

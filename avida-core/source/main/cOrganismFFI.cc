@@ -731,6 +731,26 @@ void avd_org_deme_increase_energy_received(cOrganism* org, double amount) {
 int avd_org_has_open_energy_request(cOrganism* org) {
   if (!org) return 0;
   return org->GetPhenotype().HasOpenEnergyRequest() ? 1 : 0;
+// ---- Organism state transitions (Phase 4: I/O reset, death) ----
+
+void avd_org_reset_inputs(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->GetOrgInterface().ResetInputs(*ctx);
+}
+
+void avd_org_clear_input(cOrganism* org) {
+  if (!org) return;
+  org->ClearInput();
+}
+
+void avd_org_die(cOrganism* org, cAvidaContext* ctx) {
+  if (!org || !ctx) return;
+  org->Die(*ctx);
+}
+
+int avd_org_get_cpu_cycles_used(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetPhenotype().GetCPUCyclesUsed();
 }
 
 } // extern "C"

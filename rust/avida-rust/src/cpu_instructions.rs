@@ -1860,6 +1860,170 @@ pub unsafe extern "C" fn avd_cpu_inst_task_stack_load(hw: *mut c_void) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Batch: I/O variants + state transitions (Phase 4)
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_reset_inputs(org: *mut c_void, ctx: *mut c_void);
+    fn avd_org_clear_input(org: *mut c_void);
+    fn avd_org_die(org: *mut c_void, ctx: *mut c_void);
+    fn avd_hw_find_next_register(base_reg: c_int) -> c_int;
+}
+
+/// Inst_TaskIO_BonusCost: levy a proportional bonus cost, then do TaskIO.
+///
+/// bonus_cost is the fraction of bonus to remove (e.g. 0.001).
+/// Bonus is clamped to >= 0.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_io_bonus_cost(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+    bonus_cost: f64,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Levy the cost
+    let cur_bonus = unsafe { avd_org_get_cur_bonus(org) };
+    let mut new_bonus = cur_bonus * (1.0 - bonus_cost);
+    if new_bonus < 0.0 {
+        new_bonus = 0.0;
+    }
+    unsafe { avd_org_set_cur_bonus(org, new_bonus) };
+    // Then do normal TaskIO
+    unsafe { avd_cpu_inst_task_io(hw, ctx, regs, reg_id) };
+}
+
+/// Inst_TaskIO_Feedback: TaskIO + push merit-change indicator to stack.
+///
+/// Pushes 1 if bonus increased, 0 if same, -1 if decreased.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_io_feedback(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Check cur_bonus before the output
+    let pre_bonus = unsafe { avd_org_get_cur_bonus(org) };
+
+    // Do the "put" component
+    let value_out = unsafe { get_reg(regs, reg_id) };
+    unsafe { avd_org_do_output(org, ctx, value_out) };
+
+    // Check cur_bonus after the output
+    let post_bonus = unsafe { avd_org_get_cur_bonus(org) };
+
+    // Push the effect on merit (+, 0, -) to active stack
+    let indicator = if pre_bonus > post_bonus {
+        -1
+    } else if pre_bonus < post_bonus {
+        1
+    } else {
+        0
+    };
+    unsafe { avd_hw_stack_push(hw, indicator) };
+
+    // Do the "get" component
+    let value_in = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_id, value_in) };
+    unsafe { avd_org_do_input(org, value_in) };
+}
+
+/// Inst_TaskPutResetInputs: do a normal TaskPut, then reset+clear inputs.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_put_reset_inputs(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    // Do a normal put (TaskOutput): read reg → zero reg → DoOutput
+    let value = unsafe { get_reg(regs, reg_id) };
+    unsafe { set_reg(regs, reg_id, 0) };
+    unsafe { avd_org_do_output(org, ctx, value) };
+    // Now re-randomize inputs and clear input buffer
+    unsafe { avd_org_reset_inputs(org, ctx) };
+    unsafe { avd_org_clear_input(org) };
+}
+
+/// Inst_TaskGet2: get two input values into consecutive registers.
+///
+/// C++ caller handles ResetInputs/ClearInput and FindModifiedRegister before
+/// calling this function (reset must happen before nop consumption).
+/// FindNextRegister is a pure function (no side effects) so safe to call here.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_task_get2(
+    hw: *mut c_void,
+    _ctx: *mut c_void,
+    regs: *mut CpuRegisters,
+    reg_id: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+
+    let reg_used_1 = reg_id;
+    let reg_used_2 = unsafe { avd_hw_find_next_register(reg_used_1) };
+
+    let value1 = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_used_1, value1) };
+    unsafe { avd_org_do_input(org, value1) };
+
+    let value2 = unsafe { avd_org_get_next_input(org) };
+    unsafe { set_reg(regs, reg_used_2, value2) };
+    unsafe { avd_org_do_input(org, value2) };
+}
+
+/// Inst_Die: unconditionally kill the organism.
+///
+/// # Safety
+/// `hw` and `ctx` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_die(hw: *mut c_void, ctx: *mut c_void) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    unsafe { avd_org_die(org, ctx) };
+}
+
+/// Inst_Prob_Die: probabilistically kill the organism.
+///
+/// config_prob: KABOOM_PROB from config. If -1.0, use register value % 100 as percent.
+///
+/// # Safety
+/// `hw`, `ctx`, and `regs` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_prob_die(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    regs: *const CpuRegisters,
+    reg_id: c_int,
+    config_prob: f64,
+) {
+    let percent_prob = if config_prob == -1.0 {
+        let reg_val = unsafe { get_reg(regs, reg_id) };
+        ((reg_val % 100) as f64) / 100.0
+    } else {
+        config_prob
+    };
+    if unsafe { avd_ctx_random_p(ctx, percent_prob) } != 0 {
+        let org = unsafe { avd_hw_get_organism(hw) };
+        unsafe { avd_org_die(org, ctx) };
+    }
+}
+
 // Batch D1: Faced-energy conditionals
 // ---------------------------------------------------------------------------
 
@@ -2816,5 +2980,76 @@ mod tests {
         let mut regs = CpuRegisters { reg: [0xFF, 0, 0] }; // 8 bits < 12 → no
         avd_cpu_inst_bit_consensus24(&mut regs, REG_BX, REG_AX);
         assert_eq!(regs.reg[1], 0);
+    }
+
+    // --- Phase 4: I/O variant + state transition logic tests ---
+
+    /// Bonus cost calculation: verify the formula matches C++ exactly.
+    #[test]
+    fn test_bonus_cost_formula() {
+        // C++: new_bonus = cur_bonus * (1 - bonus_cost); clamp to 0
+        let cur_bonus: f64 = 1.0;
+        let bonus_cost: f64 = 0.001;
+        let new_bonus = cur_bonus * (1.0 - bonus_cost);
+        assert!((new_bonus - 0.999).abs() < 1e-10);
+
+        // Zero bonus stays zero
+        let cur_bonus: f64 = 0.0;
+        let new_bonus = cur_bonus * (1.0 - bonus_cost);
+        assert_eq!(new_bonus, 0.0);
+
+        // Large cost clamps to zero
+        let cur_bonus: f64 = 0.5;
+        let bonus_cost: f64 = 2.0; // more than 100%
+        let mut new_bonus = cur_bonus * (1.0 - bonus_cost);
+        if new_bonus < 0.0 {
+            new_bonus = 0.0;
+        }
+        assert_eq!(new_bonus, 0.0);
+    }
+
+    /// Prob_Die probability calculation from register value.
+    #[test]
+    fn test_prob_die_register_probability() {
+        // When config_prob == -1.0, use register value % 100 / 100.0
+        let reg_val: i32 = 50;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert!((percent_prob - 0.5).abs() < 1e-10);
+
+        // Negative register value
+        let reg_val: i32 = -30;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        // In Rust, -30 % 100 = -30 (same as C++)
+        assert!((percent_prob - (-0.3)).abs() < 1e-10);
+
+        // Register 0 → 0% chance
+        let reg_val: i32 = 0;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert_eq!(percent_prob, 0.0);
+
+        // Register 200 → 0% (200 % 100 = 0)
+        let reg_val: i32 = 200;
+        let percent_prob = ((reg_val % 100) as f64) / 100.0;
+        assert_eq!(percent_prob, 0.0);
+    }
+
+    /// TaskIO_Feedback merit comparison logic.
+    #[test]
+    fn test_feedback_indicator_logic() {
+        fn feedback_indicator(pre: f64, post: f64) -> i32 {
+            if pre > post {
+                -1
+            } else if pre < post {
+                1
+            } else {
+                0
+            }
+        }
+        // pre > post → push -1
+        assert_eq!(feedback_indicator(2.0, 1.0), -1);
+        // pre < post → push 1
+        assert_eq!(feedback_indicator(1.0, 2.0), 1);
+        // pre == post → push 0
+        assert_eq!(feedback_indicator(1.0, 1.0), 0);
     }
 }

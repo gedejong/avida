@@ -3969,21 +3969,15 @@ bool cHardwareCPU::Inst_Sterilize(cAvidaContext&)
 
 bool cHardwareCPU::Inst_Die(cAvidaContext& ctx)
 {
-  m_organism->Die(ctx);
+  avd_cpu_inst_die(this, &ctx);
   return true;
 }
 
 bool cHardwareCPU::Inst_Prob_Die(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_AX);
-  double percent_prob = (double) m_world->GetConfig().KABOOM_PROB.Get();
-  if (percent_prob==-1.0){
-    percent_prob = ((double) (GetRegister(reg_used) % 100)) / 100.0;
-  }
-  if (ctx.GetRandom().P(percent_prob)) {
-    m_organism->Die(ctx);
-    return true;
-    }
+  avd_cpu_inst_prob_die(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used,
+                        (double) m_world->GetConfig().KABOOM_PROB.Get());
   return true;
 }
 
@@ -4076,22 +4070,11 @@ bool cHardwareCPU::Inst_TaskGet(cAvidaContext&)
 // @JEB - this instruction does more than two "gets" together, it also resets the inputs
 bool cHardwareCPU::Inst_TaskGet2(cAvidaContext& ctx)
 {
-  // Randomize the inputs so they can't save numbers
-  m_organism->GetOrgInterface().ResetInputs(ctx);   // Now re-randomize the inputs this organism sees
-  m_organism->ClearInput();                         // Also clear their input buffers, or they can still claim
-  // rewards for numbers no longer in their environment!
-  
-  const int reg_used_1 = FindModifiedRegister(REG_BX);
-  const int reg_used_2 = FindNextRegister(reg_used_1);
-  
-  const int value1 = m_organism->GetNextInput();
-  GetRegister(reg_used_1) = value1;
-  m_organism->DoInput(value1);
-  
-  const int value2 = m_organism->GetNextInput();
-  GetRegister(reg_used_2) = value2;
-  m_organism->DoInput(value2);
-  
+  // ResetInputs/ClearInput must happen BEFORE FindModifiedRegister (state change before nop consumption)
+  m_organism->GetOrgInterface().ResetInputs(ctx);
+  m_organism->ClearInput();
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_get2(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -4117,11 +4100,9 @@ bool cHardwareCPU::Inst_TaskPut(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_TaskPutResetInputs(cAvidaContext& ctx)
 {
-  bool return_value = Inst_TaskPut(ctx);          // Do a normal put
-  m_organism->GetOrgInterface().ResetInputs(ctx);   // Now re-randomize the inputs this organism sees
-  m_organism->ClearInput();                         // Also clear their input buffers, or they can still claim
-  // rewards for numbers no longer in their environment!
-  return return_value;
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_put_reset_inputs(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
+  return true;
 }
 
 bool cHardwareCPU::Inst_TaskIO(cAvidaContext& ctx)
@@ -4133,51 +4114,15 @@ bool cHardwareCPU::Inst_TaskIO(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_TaskIO_BonusCost(cAvidaContext& ctx, double bonus_cost)
 {
-  // Levy the cost
-  double new_bonus = m_organism->GetPhenotype().GetCurBonus() * (1 - bonus_cost);
-  if (new_bonus < 0) new_bonus = 0;
-  //keep the bonus positive or zero
-  m_organism->GetPhenotype().SetCurBonus(new_bonus);
-  
-  return Inst_TaskIO(ctx);
+  const int reg_used = FindModifiedRegister(REG_BX);
+  avd_cpu_inst_task_io_bonus_cost(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used, bonus_cost);
+  return true;
 }
 
 bool cHardwareCPU::Inst_TaskIO_Feedback(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  //check cur_bonus before the output
-  double preOutputBonus = m_organism->GetPhenotype().GetCurBonus();
-  
-  // Do the "put" component
-  const int value_out = GetRegister(reg_used);
-  m_organism->DoOutput(ctx, value_out);  // Check for tasks completed.
-  
-  //check cur_merit after the output
-  double postOutputBonus = m_organism->GetPhenotype().GetCurBonus(); 
-  
-  
-  //push the effect of the IO on merit (+,0,-) to the active stack
-  
-  if (preOutputBonus > postOutputBonus){
-    StackPush(-1);
-  }
-  else if (preOutputBonus == postOutputBonus){
-    StackPush(0);
-  }
-  else if (preOutputBonus < postOutputBonus){
-    StackPush(1);
-  }
-  else {
-    assert(0);
-    //Bollocks. There was an error.
-  }
-  
-  
-  // Do the "get" component
-  const int value_in = m_organism->GetNextInput();
-  GetRegister(reg_used) = value_in;
-  m_organism->DoInput(value_in);
+  avd_cpu_inst_task_io_feedback(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
