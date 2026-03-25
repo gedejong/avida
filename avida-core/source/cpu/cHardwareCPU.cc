@@ -4073,9 +4073,7 @@ bool cHardwareCPU::Inst_RelinquishEnergyToOrganismsInDeme(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_TaskGet(cAvidaContext&)
 {
   const int reg_used = FindModifiedRegister(REG_CX);
-  const int value = m_organism->GetNextInput();
-  GetRegister(reg_used) = value;
-  m_organism->DoInput(value);
+  avd_cpu_inst_task_input(this, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -4104,25 +4102,21 @@ bool cHardwareCPU::Inst_TaskGet2(cAvidaContext& ctx)
 
 bool cHardwareCPU::Inst_TaskStackGet(cAvidaContext&)
 {
-  const int value = m_organism->GetNextInput();
-  StackPush(value);
-  m_organism->DoInput(value);
+  avd_cpu_inst_task_stack_get(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_TaskStackLoad(cAvidaContext&)
 {
   // @DMB - TODO: this should look at the input_size...
-  for (int i = 0; i < 3; i++) StackPush( m_organism->GetNextInput() );
+  avd_cpu_inst_task_stack_load(this);
   return true;
 }
 
 bool cHardwareCPU::Inst_TaskPut(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  const int value = GetRegister(reg_used);
-  GetRegister(reg_used) = 0;
-  m_organism->DoOutput(ctx, value);
+  avd_cpu_inst_task_output(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 
@@ -4138,15 +4132,7 @@ bool cHardwareCPU::Inst_TaskPutResetInputs(cAvidaContext& ctx)
 bool cHardwareCPU::Inst_TaskIO(cAvidaContext& ctx)
 {
   const int reg_used = FindModifiedRegister(REG_BX);
-  
-  // Do the "put" component
-  const int value_out = GetRegister(reg_used);
-  m_organism->DoOutput(ctx, value_out);  // Check for tasks completed.
-  
-  // Do the "get" component
-  const int value_in = m_organism->GetNextInput();
-  GetRegister(reg_used) = value_in;
-  m_organism->DoInput(value_in);
+  avd_cpu_inst_task_io(this, &ctx, m_threads[m_cur_thread].regs_rust(), reg_used);
   return true;
 }
 

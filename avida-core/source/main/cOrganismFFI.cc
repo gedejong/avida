@@ -562,6 +562,25 @@ void avd_org_set_rbin(cOrganism* org, int index, double value) {
   org->SetRBin(index, value);
 }
 
+// ---- Organism I/O delegation (Phase 3) ----
+
+// DoOutput triggers task evaluation — the core organism↔environment interaction.
+// Returns void; the task-checking side effects happen inside DoOutput.
+void avd_org_do_output(cOrganism* org, cAvidaContext* ctx, int value) {
+  if (!org || !ctx) return;
+  org->DoOutput(*ctx, value);
+}
+
+int avd_org_get_next_input(cOrganism* org) {
+  if (!org) return 0;
+  return org->GetNextInput();
+}
+
+void avd_org_do_input(cOrganism* org, int value) {
+  if (!org) return;
+  org->DoInput(value);
+}
+
 // ---- World accessors ----
 
 cPopulation* avd_world_get_population(cWorld* world) {
