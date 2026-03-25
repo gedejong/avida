@@ -11,9 +11,8 @@ use std::ffi::{c_int, c_void};
 
 use crate::cpu_registers::CpuRegisters;
 
-#[cfg(test)]
+#[allow(dead_code)]
 const REG_AX: c_int = 0;
-#[cfg(test)]
 const REG_BX: c_int = 1;
 
 // FFI declarations for hardware accessors (defined in cHardwareFFI.cc).
@@ -2813,6 +2812,32 @@ pub unsafe extern "C" fn avd_cpu_inst_update_metabolic_rate(hw: *mut c_void, ctx
 // Batch E1: Kazi/Lyse/SmartExplode handlers
 // ---------------------------------------------------------------------------
 
+// FFI declarations for kazi/message/receive handlers
+unsafe extern "C" {
+    fn avd_org_kaboom(org: *mut c_void, ctx: *mut c_void, distance: c_int) -> c_int;
+    fn avd_org_set_kaboom_executed(org: *mut c_void, value: c_int);
+    fn avd_stats_inc_kaboom(world: *mut c_void);
+    fn avd_stats_inc_dont_explode(world: *mut c_void);
+    fn avd_stats_inc_perc_lyse(world: *mut c_void, perc: f64);
+    fn avd_stats_inc_sum_cpus(world: *mut c_void, cpus: c_int);
+    fn avd_org_send_message_regs(
+        org: *mut c_void,
+        ctx: *mut c_void,
+        label: c_int,
+        data: c_int,
+        msg_type: c_int,
+    ) -> c_int;
+    fn avd_org_retrieve_message(
+        org: *mut c_void,
+        out_label: *mut c_int,
+        out_data: *mut c_int,
+        log_enabled: c_int,
+        world: *mut c_void,
+    ) -> c_int;
+    fn avd_org_receive_value(org: *mut c_void) -> c_int;
+    fn avd_hw_find_modified_register(hw: *mut c_void, default_reg: c_int) -> c_int;
+}
+
 /// Inst_Kazi (generic): handles Kazi, Kazi1-5.
 ///
 /// C++ passes pre-computed config values. The handler:
@@ -3019,6 +3044,8 @@ pub unsafe extern "C" fn avd_cpu_inst_receive(
     let org = unsafe { avd_hw_get_organism(hw) };
     let value = unsafe { avd_org_receive_value(org) };
     unsafe { set_reg(regs, reg_id, value) };
+}
+
 // Batch: Movement handlers (Phase 5)
 // ---------------------------------------------------------------------------
 

@@ -15,6 +15,7 @@
 #include "cStats.h"
 #include "cWorld.h"
 #include "cEnvironment.h"
+#include "cOrgMessage.h"
 #include "rust/running_stats_ffi.h"
 
 extern "C" {
@@ -765,16 +766,13 @@ int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
 int avd_org_receive_value(cOrganism* org) {
   if (!org) return 0;
   return org->ReceiveValue();
-// ---- OrgInterface delegation (Phase 5: group/population queries) ----
-
-int avd_org_iface_number_of_orgs_in_group(cOrganism* org, int group_id) {
-  if (!org) return 0;
-  return org->GetOrgInterface().NumberOfOrganismsInGroup(group_id);
 }
 
 void avd_org_donate_res_consumed_to_deme(cOrganism* org) {
   if (!org) return;
   org->DonateResConsumedToDeme();
+}
+
 // ---- Movement FFI (Phase 5: movement delegation) ----
 
 int avd_org_move(cOrganism* org, cAvidaContext* ctx) {
@@ -795,6 +793,55 @@ int avd_org_get_neighborhood_size(cOrganism* org) {
 int avd_org_get_facing(cOrganism* org) {
   if (!org) return 0;
   return org->GetFacing();
+}
+
+// ---- Kaboom/Stats FFI (Phase 5: kazi/lyse handlers) ----
+
+void avd_org_kaboom(cOrganism* org, cAvidaContext* ctx, int distance) {
+  if (!org || !ctx) return;
+  org->GetOrgInterface().Kaboom(distance, *ctx);
+}
+
+void avd_stats_inc_kaboom(cWorld* world) {
+  if (!world) return;
+  world->GetStats().IncKaboom();
+}
+
+void avd_stats_inc_dont_explode(cWorld* world) {
+  if (!world) return;
+  world->GetStats().IncDontExplode();
+}
+
+void avd_stats_inc_perc_lyse(cWorld* world, double perc) {
+  if (!world) return;
+  world->GetStats().IncPercLyse(perc);
+}
+
+void avd_stats_inc_sum_cpus(cWorld* world, int cpu_cycles) {
+  if (!world) return;
+  world->GetStats().IncSumCPUs(cpu_cycles);
+}
+
+// ---- Messaging FFI (Phase 5: send/retrieve message) ----
+
+int avd_org_send_message_regs(cOrganism* org, cAvidaContext* ctx, int label, int data, int msg_type) {
+  if (!org || !ctx) return 0;
+  cOrgMessage msg(org);
+  msg.SetData(data);
+  msg.SetLabel(label);
+  (void)msg_type; // msg_type not used in base API
+  return org->SendMessage(*ctx, msg) ? 1 : 0;
+}
+
+int avd_org_retrieve_message(cOrganism* org, int* out_label, int* out_data, int log_enabled, cWorld* world) {
+  if (!org) return 0;
+  (void)log_enabled;
+  (void)world;
+  std::pair<bool, cOrgMessage> result = org->RetrieveMessage();
+  if (!result.first) return 0;
+  if (out_label) *out_label = result.second.GetLabel();
+  if (out_data) *out_data = result.second.GetData();
+  return 1;
 }
 
 } // extern "C"
