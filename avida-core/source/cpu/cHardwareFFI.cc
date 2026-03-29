@@ -337,4 +337,18 @@ int avd_hw_is_next_inst_nop(cHardwareBase* hw) {
   return cpu->FFI_IsNextInstNop();
 }
 
+// ---- Hardware state: m_last_cell_data ----
+
+int avd_hw_get_last_cell_data_valid(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return 0;
+  return cpu->FFI_GetLastCellDataValid();
+}
+
+int avd_hw_get_last_cell_data_value(cHardwareBase* hw) {
+  auto* cpu = as_cpu(hw);
+  if (!cpu) return 0;
+  return cpu->FFI_GetLastCellDataValue();
+}
+
 } // extern "C"

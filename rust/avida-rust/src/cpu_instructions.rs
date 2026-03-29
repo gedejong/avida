@@ -4035,3 +4035,58 @@ mod tests {
         assert_eq!((-4_i32 % 2).unsigned_abs(), 0);
     }
 }
+
+// ---------------------------------------------------------------------------
+// Resource sensing + cell data handlers
+// ---------------------------------------------------------------------------
+
+unsafe extern "C" {
+    fn avd_org_sense_resource_x(
+        org: *mut c_void,
+        ctx: *mut c_void,
+        cell_id: c_int,
+        res_id: c_int,
+    ) -> c_int;
+    fn avd_org_get_faced_cell_id(org: *mut c_void) -> c_int;
+    fn avd_hw_get_last_cell_data_valid(hw: *mut c_void) -> c_int;
+    fn avd_hw_get_last_cell_data_value(hw: *mut c_void) -> c_int;
+}
+
+/// Inst_SenseResource*/Inst_SenseFacedResource*: read resource level into register.
+/// `use_faced`: 0 = own cell, 1 = faced cell.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_sense_resource_x(
+    hw: *mut c_void,
+    ctx: *mut c_void,
+    reg_id: c_int,
+    res_id: c_int,
+    use_faced: c_int,
+) {
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let cell_id = if use_faced != 0 {
+        unsafe { avd_org_get_faced_cell_id(org) }
+    } else {
+        unsafe { avd_org_get_cell_id(org) }
+    };
+    let value = unsafe { avd_org_sense_resource_x(org, ctx, cell_id, res_id) };
+    if value >= 0 {
+        unsafe { avd_hw_set_register(hw, reg_id, value) };
+    }
+}
+
+/// Inst_IfCellDataChanged: skip if cell data hasn't been collected or hasn't changed.
+#[no_mangle]
+pub unsafe extern "C" fn avd_cpu_inst_if_cell_data_changed(hw: *mut c_void) -> c_int {
+    let valid = unsafe { avd_hw_get_last_cell_data_valid(hw) };
+    if valid == 0 {
+        return 1; // never collected → skip
+    }
+    let org = unsafe { avd_hw_get_organism(hw) };
+    let current = unsafe { avd_org_get_cell_data_org(org) };
+    let last = unsafe { avd_hw_get_last_cell_data_value(hw) };
+    if current == last {
+        1
+    } else {
+        0
+    }
+}

@@ -4097,32 +4097,38 @@ bool cHardwareCPU::DoSense(cAvidaContext& ctx, int conversion_method, double bas
 
 bool cHardwareCPU::Inst_SenseResource0(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetCellID(), 0, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 0, 0);
+  return true;
 }
 
 bool cHardwareCPU::Inst_SenseResource1(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetCellID(), 1, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 1, 0);
+  return true;
 }
 
 bool cHardwareCPU::Inst_SenseResource2(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetCellID(), 2, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 2, 0);
+  return true;
 }
 
 bool cHardwareCPU::Inst_SenseFacedResource0(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetOrgInterface().GetFacedCellID(), 0, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 0, 1);
+  return true;
 }
 
 bool cHardwareCPU::Inst_SenseFacedResource1(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetOrgInterface().GetFacedCellID(), 1, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 1, 1);
+  return true;
 }
 
 bool cHardwareCPU::Inst_SenseFacedResource2(cAvidaContext& ctx)
 {
-  return DoSenseResourceX(REG_BX, m_organism->GetOrgInterface().GetFacedCellID(), 2, ctx);
+  avd_cpu_inst_sense_resource_x(this, &ctx, REG_BX, 2, 1);
+  return true;
 }
 
 
@@ -8542,13 +8548,7 @@ bool cHardwareCPU::Inst_CollectCellData(cAvidaContext&)
  */
 bool cHardwareCPU::Inst_IfCellDataChanged(cAvidaContext&)
 {
-  assert(m_organism != 0);
-  // If we haven't collected cell data yet, or it's the same as the current cell data, advance
-  // the IP:
-  if (!m_last_cell_data.first || (m_last_cell_data.second == m_organism->GetCellData())) {
-    getIP().Advance();
-  }
-  
+  if (avd_cpu_inst_if_cell_data_changed(this)) getIP().Advance();
   return true;
 }
 

@@ -337,6 +337,9 @@ public:
   int FFI_SearchLabelDirect(int direction) { return FindLabel(direction).GetPosition(); }
   int FFI_IsNextInstNop() { return m_inst_set->IsNop(getIP().GetNextInst()) ? 1 : 0; }
   int FFI_GetLabelSize() { return GetLabel().GetSize(); }
+  int FFI_GetLastCellDataValid() { return m_last_cell_data.first ? 1 : 0; }
+  int FFI_GetLastCellDataValue() { return m_last_cell_data.second; }
+  void FFI_SetLastCellData(int val) { m_last_cell_data = std::make_pair(true, val); }
 
 
 private:

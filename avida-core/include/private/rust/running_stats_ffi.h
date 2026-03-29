@@ -1876,6 +1876,14 @@ RecombRegion avd_birth_recomb_region(
     double frac_a, double frac_b,
     int genome0_size, int genome1_size);
 
+// Resource sensing + cell data FFI
+int avd_org_sense_resource_x(cOrganism* org, cAvidaContext* ctx, int cell_id, int res_id);
+int avd_org_get_faced_cell_id(cOrganism* org);
+int avd_hw_get_last_cell_data_valid(cHardwareBase* hw);
+int avd_hw_get_last_cell_data_value(cHardwareBase* hw);
+void avd_cpu_inst_sense_resource_x(cHardwareBase* hw, cAvidaContext* ctx, int reg_id, int res_id, int use_faced);
+int avd_cpu_inst_if_cell_data_changed(cHardwareBase* hw);
+
 #ifdef __cplusplus
 }
 

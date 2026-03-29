@@ -883,4 +883,21 @@ int avd_org_bcast_alarm_msg(cOrganism* org, cAvidaContext* ctx, int jump_label, 
   return org->BcastAlarmMSG(*ctx, jump_label, bcast_range) ? 1 : 0;
 }
 
+// ---- Resource sensing FFI ----
+
+int avd_org_sense_resource_x(cOrganism* org, cAvidaContext* ctx, int cell_id, int res_id) {
+  if (!org || !ctx || res_id < 0) return -1;
+  const AvidaArray<double> res_count = org->GetOrgInterface().GetResources(*ctx) +
+    org->GetOrgInterface().GetDemeResources(org->GetOrgInterface().GetDemeID(), *ctx);
+  if (res_id >= res_count.GetSize()) return -1;
+  return (int)res_count[res_id];
+}
+
+int avd_org_get_faced_cell_id(cOrganism* org) {
+  if (!org) return -1;
+  return org->GetOrgInterface().GetFacedCellID();
+}
+
+// Note: avd_hw_get_last_cell_data_valid/value are in cHardwareFFI.cc (need cHardwareCPU.h)
+
 } // extern "C"
